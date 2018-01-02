@@ -1,7 +1,0 @@
-celery==4.1.0
-envoy==0.0.3
-jwt==0.5.2
-requests==2.18.4
-statsd==3.2.2
-storyscript==0.0.1
-tornpsql==1.1.0
