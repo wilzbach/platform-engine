@@ -1,0 +1,11 @@
+# -*- coding: utf-8 -*-
+from .CeleryApp import CeleryApp
+from .Tasks import Tasks
+
+
+app = CeleryApp.start()
+
+
+@app.task
+def run(app_id, story_name, story_id=None):
+    Tasks.process_story(app_id, story_name, story_id=story_id)
