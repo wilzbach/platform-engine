@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models.Base import BaseModel
-from evenflow.models.Users import Users
+from evenflow.models import BaseModel, Users
 
 from peewee import CharField
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models.Base import BaseModel, db
+from evenflow.models import BaseModel, db
 
 from peewee import Model, PostgresqlDatabase
 

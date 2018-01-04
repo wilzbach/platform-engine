@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models.Base import BaseModel
-from evenflow.models.Repositories import Repositories
-from evenflow.models.Stories import Stories
+from evenflow.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
 

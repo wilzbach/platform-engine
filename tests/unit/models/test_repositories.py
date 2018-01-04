@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models.Base import BaseModel
-from evenflow.models.Repositories import Repositories
+from evenflow.models import BaseModel, Repositories
 
 from peewee import CharField, ForeignKeyField
 
