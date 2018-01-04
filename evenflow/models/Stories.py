@@ -8,6 +8,6 @@ from .Repositories import Repositories
 
 class Stories(BaseModel):
     filename = CharField()
-    version = CharField()
+    version = CharField(null=True)
     application = ForeignKeyField(Applications)
     repository = ForeignKeyField(Repositories)

@@ -6,6 +6,7 @@ from peewee import CharField, ForeignKeyField
 
 
 def test_stories():
+    assert Stories.version.null
     assert isinstance(Stories.filename, CharField)
     assert isinstance(Stories.version, CharField)
     assert isinstance(Stories.repository, ForeignKeyField)
