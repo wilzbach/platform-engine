@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from unittest.mock import MagicMock
+
 from evenflow.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
@@ -8,6 +10,7 @@ from pytest import fixture
 import requests
 
 import storyscript
+from storyscript import resolver
 
 
 @fixture
@@ -38,3 +41,12 @@ def test_stories_build_tree(mocker, story):
     story.build_tree()
     storyscript.parse().json.assert_called_with()
     assert story.tree == storyscript.parse().json()
+
+
+def test_stories_resolve(mocker, story):
+    mocker.patch.object(resolver, 'resolve_obj')
+    args = MagicMock()
+    story.tree = {'story': {1: {'args': args}}}
+    result = story.resolve(1, {})
+    resolver.resolve_obj.assert_called_with({}, args)
+    assert result == resolver.resolve_obj()

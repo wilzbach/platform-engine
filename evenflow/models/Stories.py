@@ -4,6 +4,7 @@ from peewee import CharField, ForeignKeyField
 import requests
 
 import storyscript
+from storyscript import resolver
 
 from .Applications import Applications
 from .Base import BaseModel
@@ -25,3 +26,7 @@ class Stories(BaseModel):
     def build_tree(self):
         story = self.get_contents()
         self.tree = storyscript.parse(story).json()
+
+    def resolve(self, line_number, data):
+        args = self.tree['story'][line_number]['args']
+        return resolver.resolve_obj(data, args)
