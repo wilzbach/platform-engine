@@ -23,10 +23,14 @@ def test_container(container):
 def test_docker_run(docker_mock, container):
     container.run()
     docker.from_env().containers.run.assert_called_with(command=None)
-    assert container.result == docker.from_env().containers.run()
+    assert container.output == docker.from_env().containers.run()
 
 
 def test_docker_run_command(docker_mock, container):
     container.run('command')
     docker.from_env().containers.run.assert_called_with(command='command')
-    assert container.result == docker.from_env().containers.run()
+
+
+def test_containers_results(container):
+    container.output = 'output'
+    assert container.result() == 'output'

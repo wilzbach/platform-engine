@@ -9,4 +9,7 @@ class Containers:
 
     def run(self, command=None):
         client = docker.from_env()
-        self.result = client.containers.run(command=command)
+        self.output = client.containers.run(command=command)
+
+    def result(self):
+        return self.output
