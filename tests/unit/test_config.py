@@ -9,6 +9,7 @@ def test_config():
     broker_url = 'amqp://:@localhost:5672/'
     assert Config.default['database'] == database_url
     assert Config.default['broker'] == broker_url
+    assert Config.default['github_pem'] == 'github.pem'
 
 
 def test_config_inheritance():
