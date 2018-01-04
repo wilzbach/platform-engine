@@ -31,7 +31,7 @@ setup(
     install_requires=[
         'aratrum==0.3.2',
         'celery==4.1.0',
-        'envoy==0.0.3',
+        'docker==2.7.0',
         'peewee==2.10.2',
         'psycopg2==2.7.3.2',
         'pyjwt==1.5.3',
