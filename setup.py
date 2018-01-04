@@ -31,11 +31,12 @@ setup(
     install_requires=[
         'celery==4.1.0',
         'envoy==0.0.3',
+        'peewee==2.10.2',
+        'psycopg2==2.7.3.2',
         'pyjwt==1.5.3',
         'requests==2.18.4',
         'statsd==3.2.2',
         'storyscript==0.0.2',
-        'tornpsql==1.1.0'
     ],
     classifiers=[
         'Environment :: Console',
