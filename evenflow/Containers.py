@@ -9,7 +9,8 @@ class Containers:
 
     def run(self, command=None):
         client = docker.from_env()
-        self.output = client.containers.run(command=command)
+        client.images.pull(self.name)
+        self.output = client.containers.run(self.name, command=command)
 
     def result(self):
         return self.output
