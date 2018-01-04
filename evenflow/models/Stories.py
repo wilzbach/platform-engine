@@ -3,6 +3,8 @@ from peewee import CharField, ForeignKeyField
 
 import requests
 
+import storyscript
+
 from .Applications import Applications
 from .Base import BaseModel
 from .Repositories import Repositories
@@ -19,3 +21,7 @@ class Stories(BaseModel):
         file_url = api_url.format(self.repository.owner, self.repository.name,
                                   self.filename)
         requests.get(file_url, params={'ref': self.version})
+
+    def build_tree(self):
+        story = self.get_contents()
+        self.tree = storyscript.parse(story).json()
