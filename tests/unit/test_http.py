@@ -3,54 +3,41 @@ import base64
 
 from evenflow.Http import Http
 
-from pytest import fixture
+from pytest import fixture, mark
 
 import requests
 
 
 @fixture
-def get(mocker):
+def requests_mocks(mocker):
     mocker.patch.object(requests, 'get')
-
-
-@fixture
-def post(mocker):
     mocker.patch.object(requests, 'post')
 
 
-def test_http_get(get):
-    response = Http.get('url')
-    requests.get.assert_called_with('url')
-    assert requests.get().raise_for_status.call_count == 1
-    assert response == requests.get().text
-
-
-def test_http_get_base64(mocker, get):
+@fixture
+def b64decode(mocker):
     mocker.patch.object(base64, 'b64decode')
-    response = Http.get('url', transformation='base64')
-    base64.b64decode.assert_called_with(requests.get().text)
-    assert response == base64.b64decode()
+    return base64.b64decode
 
 
-def test_http_get_json(get):
-    response = Http.get('url', transformation='json')
-    assert response == requests.get().json()
+@mark.parametrize('method', ['get', 'post'])
+def test_http_methods(requests_mocks, method):
+    response = getattr(Http, method)('url')
+    request_method = getattr(requests, method)
+    request_method.assert_called_with('url')
+    assert request_method().raise_for_status.call_count == 1
+    assert response == request_method().text
 
 
-def test_http_post(post):
-    response = Http.post('url')
-    requests.post.assert_called_with('url')
-    assert requests.post().raise_for_status.call_count == 1
-    assert response == requests.post().text
+@mark.parametrize('method', ['get', 'post'])
+def test_http_base64_transformation(b64decode, requests_mocks, method):
+    response = getattr(Http, method)('url', transformation='base64')
+    request_method = getattr(requests, method)
+    b64decode.assert_called_with(request_method().text)
+    assert response == b64decode()
 
 
-def test_http_post_base64(mocker, post):
-    mocker.patch.object(base64, 'b64decode')
-    response = Http.post('url', transformation='base64')
-    base64.b64decode.assert_called_with(requests.post().text)
-    assert response == base64.b64decode()
-
-
-def test_http_post_json(post):
-    response = Http.post('url', transformation='json')
-    assert response == requests.post().json()
+@mark.parametrize('method', ['get', 'post'])
+def test_http_get_json(requests_mocks, method):
+    response = getattr(Http, method)('url', transformation='json')
+    assert response == getattr(requests, method)().json()
