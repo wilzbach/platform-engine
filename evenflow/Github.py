@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from .Http import Http
+from .Jwt import Jwt
 
 
 class Github:
@@ -21,6 +22,13 @@ class Github:
 
     def make_url(self, page, *args):
         return self.url(page).format(*args)
+
+    def get_token(self):
+        token = Jwt.encode('secret', 500, iss='issuer')
+        url = self.make_url('installations', self.user.github_handle)
+        headers = {'Authorization': 'Bearer {}'.format(token)}
+        response = Http.post(url, transformation='json', headers=headers)
+        return response['token']
 
     def get_contents(self, organization, repository, file, version=None):
         url = self.make_url('repository', organization, repository, file)

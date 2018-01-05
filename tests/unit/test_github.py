@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from evenflow.Github import Github
 from evenflow.Http import Http
+from evenflow.Jwt import Jwt
 from evenflow.models import Users
 
 from pytest import fixture, mark
@@ -44,6 +45,18 @@ def test_github_make_url(mocker, gh):
     result = gh.make_url('page', 'argument')
     Github.url.assert_called_with('page')
     assert result == 'test/argument'
+
+
+def test_get_token(mocker, gh):
+    mocker.patch.object(Http, 'post')
+    mocker.patch.object(Jwt, 'encode', return_value='token')
+    mocker.patch.object(Github, 'make_url')
+    result = gh.get_token()
+    Jwt.encode.assert_called_with('secret', 500, iss='issuer')
+    headers = {'Authorization': 'Bearer token'}
+    args = {'transformation': 'json', 'headers': headers}
+    Http.post.assert_called_with(Github.make_url(), **args)
+    assert result == Http.post()['token']
 
 
 def test_get_contents(mocker, gh):
