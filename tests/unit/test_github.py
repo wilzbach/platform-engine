@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-import base64
-
 from evenflow.Github import Github
+from evenflow.Http import Http
 from evenflow.models import Users
 
 from pytest import fixture, mark
-
-import requests
 
 
 @fixture
@@ -50,11 +47,10 @@ def test_github_make_url(mocker, gh):
 
 
 def test_get_contents(mocker, gh):
-    mocker.patch.object(requests, 'get')
+    mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
-    mocker.patch.object(base64, 'b64decode')
     result = gh.get_contents('org', 'repo', 'file')
     Github.make_url.assert_called_with('repository', 'org', 'repo', 'file')
-    requests.get.assert_called_with(Github.make_url(), params={'ref': None})
-    requests.get().raise_for_status.assert_called_with()
-    assert result == base64.b64decode(requests.get().text, altchars=None)
+    Http.get.assert_called_with(Github.make_url(), transformation='base64',
+                                params={'ref': None})
+    assert result == Http.get()

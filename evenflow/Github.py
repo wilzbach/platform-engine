@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-import base64
-
-
-import requests
+from .Http import Http
 
 
 class Github:
@@ -27,6 +24,4 @@ class Github:
 
     def get_contents(self, organization, repository, file):
         url = self.make_url('repository', organization, repository, file)
-        response = requests.get(url, params={'ref': None})
-        response.raise_for_status()
-        return base64.b64decode(response.text)
+        return Http.get(url, transformation='base64', params={'ref': None})
