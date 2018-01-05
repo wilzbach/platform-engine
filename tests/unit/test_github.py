@@ -54,3 +54,11 @@ def test_get_contents(mocker, gh):
     Http.get.assert_called_with(Github.make_url(), transformation='base64',
                                 params={'ref': None})
     assert result == Http.get()
+
+
+def test_get_contents_version(mocker, gh):
+    mocker.patch.object(Http, 'get')
+    mocker.patch.object(Github, 'make_url')
+    gh.get_contents('org', 'repo', 'file', 'version')
+    Http.get.assert_called_with(Github.make_url(), transformation='base64',
+                                params={'ref': 'version'})

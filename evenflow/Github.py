@@ -22,6 +22,6 @@ class Github:
     def make_url(self, page, *args):
         return self.url(page).format(*args)
 
-    def get_contents(self, organization, repository, file):
+    def get_contents(self, organization, repository, file, version=None):
         url = self.make_url('repository', organization, repository, file)
-        return Http.get(url, transformation='base64', params={'ref': None})
+        return Http.get(url, transformation='base64', params={'ref': version})
