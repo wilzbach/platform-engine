@@ -15,16 +15,16 @@ class Http:
         return response.text
 
     @classmethod
-    def _call(cls, method, url, transformation=None):
+    def _call(cls, method, url, transformation=None, **kwargs):
         request = getattr(requests, method)
-        response = request(url)
+        response = request(url, **kwargs)
         response.raise_for_status()
         return cls._transform(response, transformation)
 
     @classmethod
-    def get(cls, url, transformation=None):
-        return cls._call('get', url, transformation=transformation)
+    def get(cls, url, transformation=None, **kwargs):
+        return cls._call('get', url, transformation=transformation, **kwargs)
 
     @classmethod
-    def post(cls, url, transformation=None):
-        return cls._call('post', url, transformation=transformation)
+    def post(cls, url, transformation=None, **kwargs):
+        return cls._call('post', url, transformation=transformation, **kwargs)

@@ -30,6 +30,15 @@ def test_http_methods(requests_mocks, method):
 
 
 @mark.parametrize('method', ['get', 'post'])
+def test_http_methods_kwargs(requests_mocks, method):
+    response = getattr(Http, method)('url', headers={})
+    request_method = getattr(requests, method)
+    request_method.assert_called_with('url', headers={})
+    assert request_method().raise_for_status.call_count == 1
+    assert response == request_method().text
+
+
+@mark.parametrize('method', ['get', 'post'])
 def test_http_base64_transformation(b64decode, requests_mocks, method):
     response = getattr(Http, method)('url', transformation='base64')
     request_method = getattr(requests, method)
