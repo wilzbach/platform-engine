@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import time
 
 from evenflow.Jwt import Jwt
@@ -15,8 +16,25 @@ def payload(mocker):
 
 
 @fixture
+def pem_key(request):
+    filename = 'key.pem'
+    with open(filename, 'w') as file:
+        file.write('key')
+
+    def teardown():
+        os.remove(filename)
+    request.addfinalizer(teardown)
+
+    return filename
+
+
+@fixture
 def encoder(mocker):
     mocker.patch.object(jwt, 'encode')
+
+
+def test_read_key(pem_key):
+    assert Jwt.read_key(pem_key) == 'key'
 
 
 def test_jwt_encode(encoder, payload):
