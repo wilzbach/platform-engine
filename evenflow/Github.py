@@ -7,8 +7,9 @@ class Github:
 
     api_url = 'https://api.github.com'
 
-    def __init__(self, github_pem, user=None):
+    def __init__(self, github_app, github_pem, user=None):
         self.github_pem = github_pem
+        self.github_app = github_app
         self.user = user
 
     def url(self, page):
@@ -25,7 +26,7 @@ class Github:
         return self.url(page).format(*args)
 
     def get_token(self):
-        token = Jwt.encode(self.github_pem, 500, iss='issuer')
+        token = Jwt.encode(self.github_pem, 500, iss=self.github_app)
         url = self.make_url('installations', self.user.github_handle)
         headers = {'Authorization': 'Bearer {}'.format(token)}
         response = Http.post(url, transformation='json', headers=headers)
