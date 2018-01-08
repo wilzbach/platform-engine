@@ -4,16 +4,13 @@ import pymongo
 
 class Results:
 
-    def __init__(self, data, application, story_name):
-        self.data = data
-        self.application = application
-        self.story_name = story_name
+    def __init__(self, mongo_url):
+        self.mongo = pymongo.MongoClient(mongo_url)
 
-    def save(self):
-        client = pymongo.MongoClient()
+    def save(self, application, story_name, data):
         document = {
-            'data': self.data,
-            'application': self.application,
-            'story': self.story_name
+            'data': data,
+            'application': application,
+            'story': story_name
         }
-        return client.asyncy.main.insert_one(document)
+        return self.mongo.asyncy.main.insert_one(document)
