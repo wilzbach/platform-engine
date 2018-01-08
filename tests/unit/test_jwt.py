@@ -37,13 +37,16 @@ def test_read_key(pem_key):
     assert Jwt.read_key(pem_key) == 'key'
 
 
-def test_jwt_encode(encoder, payload):
+def test_jwt_encode(mocker, encoder, payload):
+    mocker.patch.object(Jwt, 'read_key')
     result = Jwt.encode('secret', 60)
-    jwt.encode.assert_called_with(payload, 'secret', algorithm='RS256')
+    Jwt.read_key.assert_called_with('secret')
+    jwt.encode.assert_called_with(payload, Jwt.read_key(), algorithm='RS256')
     assert result == jwt.encode()
 
 
-def test_jwt_encode_extra_claims(encoder, payload):
+def test_jwt_encode_extra_claims(mocker, encoder, payload):
+    mocker.patch.object(Jwt, 'read_key')
     Jwt.encode('secret', 60, claim='claim')
     payload['claim'] = 'claim'
-    jwt.encode.assert_called_with(payload, 'secret', algorithm='RS256')
+    jwt.encode.assert_called_with(payload, Jwt.read_key(), algorithm='RS256')
