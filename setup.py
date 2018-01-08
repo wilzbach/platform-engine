@@ -35,6 +35,7 @@ setup(
         'peewee==2.10.2',
         'psycopg2==2.7.3.2',
         'pyjwt==1.5.3',
+        'pymongo==3.6.0',
         'requests==2.18.4',
         'statsd==3.2.2',
         'storyscript==0.0.2',
