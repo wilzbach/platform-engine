@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
-from aratrum import Aratrum
+import os
 
 
-class Config(Aratrum):
+class Config():
 
-    default = {
+    defaults = {
         'database': 'postgresql://postgres:postgres@localhost:5432/database',
         'broker': 'amqp://:@localhost:5672/',
-        'github': {
-            'pem_path': 'github.pem',
-            'app_identifier': '123456789'
-        }
+        'github.pem_path': 'github.pem',
+        'github.app_identifier': '123456789'
     }
+
+    @classmethod
+    def get(cls, option):
+        if option in cls.defaults:
+            return os.getenv(option, default=cls.defaults[option])
