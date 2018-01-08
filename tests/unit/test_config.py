@@ -16,6 +16,7 @@ def test_config():
     database_url = 'postgresql://postgres:postgres@localhost:5432/database'
     broker_url = 'amqp://:@localhost:5672/'
     assert Config.defaults['database'] == database_url
+    assert Config.defaults['mongo'] == 'mongodb://localhost:27017/'
     assert Config.defaults['broker'] == broker_url
     assert Config.defaults['github.pem_path'] == 'github.pem'
     assert Config.defaults['github.app_identifier'] == '123456789'
