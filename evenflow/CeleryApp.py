@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from celery import Celery
 
+from .Config import Config
+
 
 class CeleryApp:
 
     def start():
-        broker = 'amqp://user:password@localhost:5672/vhost'
+        broker = Config.get('broker')
         return Celery('asyncy', broker=broker)
