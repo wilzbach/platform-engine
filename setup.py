@@ -38,7 +38,7 @@ setup(
         'pymongo==3.6.0',
         'requests==2.18.4',
         'statsd==3.2.2',
-        'storyscript==0.0.2',
+        'storyscript==0.0.3'
     ],
     classifiers=[
         'Environment :: Console',
