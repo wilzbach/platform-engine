@@ -14,16 +14,17 @@ def user():
 
 @fixture
 def gh(user):
-    return Github(user=user)
+    return Github('github.pem', user=user)
 
 
 def test_github(user, gh):
     assert gh.api_url == 'https://api.github.com'
+    assert gh.github_pem == 'github.pem'
     assert gh.user is user
 
 
 def test_github_no_user():
-    github = Github()
+    github = Github('github.pem')
     assert github.user is None
 
 
@@ -52,7 +53,7 @@ def test_get_token(mocker, gh):
     mocker.patch.object(Jwt, 'encode', return_value='token')
     mocker.patch.object(Github, 'make_url')
     result = gh.get_token()
-    Jwt.encode.assert_called_with('secret', 500, iss='issuer')
+    Jwt.encode.assert_called_with(gh.github_pem, 500, iss='issuer')
     headers = {'Authorization': 'Bearer token'}
     args = {'transformation': 'json', 'headers': headers}
     Http.post.assert_called_with(Github.make_url(), **args)
