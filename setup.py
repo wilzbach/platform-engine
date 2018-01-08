@@ -29,7 +29,6 @@ setup(
     ],
     setup_requires=['pytest-runner'],
     install_requires=[
-        'aratrum==0.3.2',
         'celery==4.1.0',
         'docker==2.7.0',
         'peewee==2.10.2',
