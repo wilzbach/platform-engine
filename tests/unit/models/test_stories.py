@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock
 
+from evenflow.Github import Github
 from evenflow.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
 
 from pytest import fixture
-
-import requests
 
 import storyscript
 from storyscript import resolver
@@ -28,11 +27,17 @@ def test_stories():
     assert issubclass(Stories, BaseModel)
 
 
+def test_stories_provider(mocker, story):
+    story.provider('app_identifier', 'pem_path')
+    assert isinstance(story.github, Github)
+
+
 def test_stories_get(mocker, story):
-    mocker.patch.object(requests, 'get')
-    story.get_contents()
-    api_url = 'https://api.github.com/repos/user/project/contents/my.story'
-    requests.get.assert_called_with(api_url, params={'ref': story.version})
+    story.github = mocker.MagicMock()
+    result = story.get_contents()
+    args = (story.repository.owner, story.repository.name, story.filename)
+    story.github.get_contents.assert_called_with(*args, version=story.version)
+    assert result == story.github.get_contents()
 
 
 def test_stories_build_tree(mocker, story):
