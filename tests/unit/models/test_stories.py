@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from unittest.mock import MagicMock
-
 from evenflow.Github import Github
 from evenflow.models import BaseModel, Repositories, Stories
 
@@ -50,7 +48,7 @@ def test_stories_build_tree(mocker, story):
 
 def test_stories_resolve(mocker, story):
     mocker.patch.object(resolver, 'resolve_obj')
-    args = MagicMock()
+    args = mocker.MagicMock()
     story.tree = {'story': {1: {'args': args}}}
     result = story.resolve(1, {})
     resolver.resolve_obj.assert_called_with({}, args)
