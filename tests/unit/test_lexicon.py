@@ -15,3 +15,11 @@ def test_lexicon_if(line):
 
 def test_lexicon_if_false(line):
     assert Lexicon.if_condition(line, [False]) == 'exit'
+
+
+def test_lexicon_unless(line):
+    assert Lexicon.unless_condition(line, [True]) == 'exit'
+
+
+def test_lexicon_unless_false(line):
+    assert Lexicon.unless_condition(line, [False]) == 'enter'
