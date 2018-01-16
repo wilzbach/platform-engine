@@ -25,5 +25,6 @@ def test_build_story(mocker):
 
 
 def test_handler_run():
-    result = Handler.run('1', {})
+    line = {'ln': '1'}
+    result = Handler.run(line, {})
     assert result == '1'

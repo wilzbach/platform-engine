@@ -32,4 +32,4 @@ class Handler:
         """
         Run the story
         """
-        return line
+        return line['ln']
