@@ -1,29 +1,25 @@
 # -*- coding: utf-8 -*-
 from evenflow.Config import Config
+from evenflow.Handler import Handler
 from evenflow.Tasks import Tasks
-from evenflow.models import Applications, Stories, db
-
-from playhouse import db_url
+from evenflow.models import Applications, Stories
 
 from pytest import fixture, raises
 
 
 @fixture
 def database(mocker):
-    mocker.patch.object(db, 'init')
-    mocker.patch.object(db_url, 'parse')
     mocker.patch.object(Applications, 'get')
     mocker.patch.object(Stories, 'select')
 
 
 def test_process_story(mocker, database):
     mocker.patch.object(Config, 'get')
+    mocker.patch.object(Handler, 'init_db')
 
     result = Tasks.process_story('app_id', 'story_name')
 
-    Config.get.assert_called_with('database')
-    db_url.parse.assert_called_with(Config.get())
-    db.init.assert_called_with(db_url.parse())
+    Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
     Stories.select().where.assert_called_with(True)
     Stories.select().where().where.assert_called_with(True)
