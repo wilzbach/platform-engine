@@ -16,6 +16,7 @@ def database(mocker):
 def test_process_story(mocker, database):
     mocker.patch.object(Config, 'get')
     mocker.patch.object(Handler, 'init_db')
+    mocker.patch.object(Handler, 'build_story')
 
     result = Tasks.process_story('app_id', 'story_name')
 
@@ -23,6 +24,7 @@ def test_process_story(mocker, database):
     Applications.get.assert_called_with(True)
     Stories.select().where.assert_called_with(True)
     Stories.select().where().where.assert_called_with(True)
+    Handler.build_story.assert_called_with(Stories.select().where().where())
     assert result
 
 
