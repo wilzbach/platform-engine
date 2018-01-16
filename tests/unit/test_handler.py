@@ -14,3 +14,11 @@ def test_handler_init_db(mocker):
     Config.get.assert_called_with('database')
     db_url.parse.assert_called_with(Config.get())
     db.init.assert_called_with(db_url.parse())
+
+
+def test_build_story(mocker):
+    mocker.patch.object(Config, 'get')
+    story = mocker.MagicMock()
+    Handler.build_story(story)
+    story.provider.assert_called_with(Config.get(), Config.get())
+    assert story.build_tree.call_count == 1
