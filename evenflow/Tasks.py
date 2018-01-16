@@ -14,4 +14,8 @@ class Tasks:
             .where(Stories.filename == story_name)\
             .where(Stories.application == app)
         Handler.build_story(story)
-        return True
+
+        line = '1'
+        context = {}
+        while line:
+            line = Handler.run(line, context)

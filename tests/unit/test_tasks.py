@@ -8,31 +8,35 @@ from pytest import fixture, raises
 
 
 @fixture
-def database(mocker):
+def models(mocker):
     mocker.patch.object(Applications, 'get')
     mocker.patch.object(Stories, 'select')
 
 
-def test_process_story(mocker, database):
+@fixture
+def handler_run(mocker):
+    mocker.patch.object(Handler, 'run', return_value=0)
+
+
+def test_process_story(mocker, models, handler_run):
     mocker.patch.object(Config, 'get')
     mocker.patch.object(Handler, 'init_db')
     mocker.patch.object(Handler, 'build_story')
 
-    result = Tasks.process_story('app_id', 'story_name')
+    Tasks.process_story('app_id', 'story_name')
 
     Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
     Stories.select().where.assert_called_with(True)
     Stories.select().where().where.assert_called_with(True)
     Handler.build_story.assert_called_with(Stories.select().where().where())
-    assert result
+    Handler.run.assert_called_with('1', {})
 
 
-def test_process_story_force_keyword(database):
+def test_process_story_force_keyword(models, handler_run):
     with raises(TypeError):
         Tasks.process_story('app_id', 'story_name', 'story_id')
 
 
-def test_process_story_with_id(database):
-    result = Tasks.process_story('app_id', 'story_name', story_id='story_id')
-    assert result
+def test_process_story_with_id(models, handler_run):
+    Tasks.process_story('app_id', 'story_name', story_id='story_id')
