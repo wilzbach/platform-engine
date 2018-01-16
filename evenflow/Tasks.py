@@ -18,4 +18,4 @@ class Tasks:
         line = '1'
         context = {}
         while line:
-            line = Handler.run(line, context)
+            line = Handler.run(line, app.data, context)

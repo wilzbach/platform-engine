@@ -30,7 +30,7 @@ def test_process_story(mocker, models, handler_run):
     Stories.select().where.assert_called_with(True)
     Stories.select().where().where.assert_called_with(True)
     Handler.build_story.assert_called_with(Stories.select().where().where())
-    Handler.run.assert_called_with('1', {})
+    Handler.run.assert_called_with('1', Applications.get().data, {})
 
 
 def test_process_story_force_keyword(models, handler_run):
