@@ -2,6 +2,7 @@
 from playhouse import db_url
 
 from .Config import Config
+from .Containers import Containers
 from .models import db
 
 
@@ -32,4 +33,6 @@ class Handler:
         """
         Run the story
         """
+        container = Containers(line['container'])
+        container.run()
         return line['ln']

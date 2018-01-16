@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from evenflow.Config import Config
+from evenflow.Containers import Containers
 from evenflow.Handler import Handler
 from evenflow.models import db
 
@@ -24,7 +25,11 @@ def test_build_story(mocker):
     assert story.build_tree.call_count == 1
 
 
-def test_handler_run():
-    line = {'ln': '1'}
+def test_handler_run(mocker):
+    mocker.patch.object(Containers, 'run')
+    mocker.patch.object(Containers, '__init__', return_value=None)
+    line = {'ln': '1', 'container': 'hello-world'}
     result = Handler.run(line, {})
+    Containers.__init__.assert_called_with('hello-world')
+    Containers.run.assert_called_with()
     assert result == '1'
