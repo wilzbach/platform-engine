@@ -29,7 +29,7 @@ def test_handler_run(mocker):
     mocker.patch.object(Containers, 'run')
     mocker.patch.object(Containers, '__init__', return_value=None)
     line = {'ln': '1', 'container': 'hello-world'}
-    result = Handler.run(line, {})
+    result = Handler.run(line, {}, {})
     Containers.__init__.assert_called_with('hello-world')
     Containers.run.assert_called_with()
     assert result == '1'
