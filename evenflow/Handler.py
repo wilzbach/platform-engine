@@ -5,6 +5,7 @@ from storyscript import resolver
 
 from .Config import Config
 from .Containers import Containers
+from .Lexicon import Lexicon
 from .models import db
 
 
@@ -36,6 +37,10 @@ class Handler:
         Run the story
         """
         args = resolver.resolve_obj(data, line['args'])
+
+        if line['method'] == 'if':
+            return Lexicon.if_condition(line, args)
+
         container = Containers(line['container'])
         container.run(*args)
         return line['ln']
