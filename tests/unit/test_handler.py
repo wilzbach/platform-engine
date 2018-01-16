@@ -13,24 +13,27 @@ from storyscript import resolver
 
 
 @fixture
+def config(mocker):
+    mocker.patch.object(Config, 'get')
+
+
+@fixture
 def line():
     line = {'ln': '1', 'container': 'hello-world', 'args': 'args',
             'method': None}
     return line
 
 
-def test_handler_init_db(mocker):
+def test_handler_init_db(mocker, config):
     mocker.patch.object(db, 'init')
     mocker.patch.object(db_url, 'parse')
-    mocker.patch.object(Config, 'get')
     Handler.init_db()
     Config.get.assert_called_with('database')
     db_url.parse.assert_called_with(Config.get())
     db.init.assert_called_with(db_url.parse())
 
 
-def test_build_story(mocker):
-    mocker.patch.object(Config, 'get')
+def test_build_story(mocker, config):
     story = mocker.MagicMock()
     Handler.build_story(story)
     story.provider.assert_called_with(Config.get(), Config.get())
