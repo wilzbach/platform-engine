@@ -18,6 +18,11 @@ def config(mocker):
 
 
 @fixture
+def resolve_obj(mocker):
+    mocker.patch.object(resolver, 'resolve_obj')
+
+
+@fixture
 def line():
     line = {'ln': '1', 'container': 'hello-world', 'args': 'args',
             'method': None}
@@ -40,8 +45,7 @@ def test_build_story(mocker, config):
     assert story.build_tree.call_count == 1
 
 
-def test_handler_run(mocker, line):
-    mocker.patch.object(resolver, 'resolve_obj')
+def test_handler_run(mocker, resolve_obj, line):
     mocker.patch.object(Containers, 'run')
     mocker.patch.object(Containers, '__init__', return_value=None)
     result = Handler.run(line, {'data': 'data'}, {})
@@ -51,8 +55,7 @@ def test_handler_run(mocker, line):
     assert result == '1'
 
 
-def test_handler_run_if(mocker, line):
-    mocker.patch.object(resolver, 'resolve_obj')
+def test_handler_run_if(mocker, resolve_obj, line):
     mocker.patch.object(Lexicon, 'if_condition')
     line['method'] = 'if'
     result = Handler.run(line, {'data': 'data'}, {})
