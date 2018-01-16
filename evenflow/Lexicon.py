@@ -9,6 +9,7 @@ class Lexicon:
             return line['enter']
         return line['exit']
 
+    @staticmethod
     def unless_condition(line, args):
         if args[0]:
             return line['exit']
