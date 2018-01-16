@@ -6,6 +6,8 @@ from evenflow.models import db
 
 from playhouse import db_url
 
+from storyscript import resolver
+
 
 def test_handler_init_db(mocker):
     mocker.patch.object(db, 'init')
@@ -26,10 +28,12 @@ def test_build_story(mocker):
 
 
 def test_handler_run(mocker):
+    mocker.patch.object(resolver, 'resolve_obj')
     mocker.patch.object(Containers, 'run')
     mocker.patch.object(Containers, '__init__', return_value=None)
-    line = {'ln': '1', 'container': 'hello-world'}
-    result = Handler.run(line, {}, {})
+    line = {'ln': '1', 'container': 'hello-world', 'args': 'args'}
+    result = Handler.run(line, {'data': 'data'}, {})
+    resolver.resolve_obj.assert_called_with({'data': 'data'}, line['args'])
     Containers.__init__.assert_called_with('hello-world')
-    Containers.run.assert_called_with()
+    Containers.run.assert_called_with(*resolver.resolve_obj())
     assert result == '1'
