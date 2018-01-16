@@ -17,3 +17,7 @@ class Handler:
         pem_path = Config.get('github.pem_path')
         story.provider(app_identifier, pem_path)
         story.build_tree()
+
+    @staticmethod
+    def run(line, context):
+        return line

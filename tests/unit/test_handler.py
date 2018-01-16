@@ -22,3 +22,8 @@ def test_build_story(mocker):
     Handler.build_story(story)
     story.provider.assert_called_with(Config.get(), Config.get())
     assert story.build_tree.call_count == 1
+
+
+def test_handler_run():
+    result = Handler.run('1', {})
+    assert result == '1'
