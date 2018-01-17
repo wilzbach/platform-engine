@@ -39,7 +39,7 @@ class Handler:
         story.build_tree()
 
     @staticmethod
-    def run(line, data, context):
+    def run(line_number, line, data, context):
         """
         Run the story
         """
