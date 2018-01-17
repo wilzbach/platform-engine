@@ -18,7 +18,7 @@ class Stories(BaseModel):
 
     def provider(self, app_identifier, pem_path):
         owner = self.repository.owner
-        self.github = Github(app_identifier, pem_path, user=owner)
+        self.github = Github(app_identifier, pem_path, owner)
 
     def get_contents(self):
         args = (self.repository.owner, self.repository.name, self.filename)
