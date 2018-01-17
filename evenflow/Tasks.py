@@ -16,6 +16,6 @@ class Tasks:
         Handler.build_story(story)
 
         line = '1'
-        context = {}
+        context = {'application': app, 'story': 'story_name'}
         while line:
             line = Handler.run(line, app.data, context)
