@@ -19,7 +19,10 @@ class Handler:
         """
         Init the database
         """
-        db.init(db_url.parse(Config.get('database')))
+        db_dict = db_url.parse(Config.get('database'))
+        db.init(db_dict['database'], host=db_dict['host'],
+                port=db_dict['port'], user=db_dict['user'],
+                password=db_dict['password'])
 
     @staticmethod
     def init_mongo():
