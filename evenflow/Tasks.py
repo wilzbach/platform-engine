@@ -19,4 +19,4 @@ class Tasks:
         line = '1'
         context = {'application': app, 'story': 'story_name'}
         while line:
-            line = Handler.run(line, app.data, context)
+            line = Handler.run(line, app.initial_data, context)
