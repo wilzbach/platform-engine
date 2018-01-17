@@ -7,10 +7,10 @@ class Github:
 
     api_url = 'https://api.github.com'
 
-    def __init__(self, github_app, github_pem, user=None):
+    def __init__(self, github_app, github_pem, organization):
         self.github_pem = github_pem
         self.github_app = github_app
-        self.user = user
+        self.organization = organization
 
     def url(self, page):
         pages = {
@@ -27,7 +27,8 @@ class Github:
 
     def get_token(self):
         token = Jwt.encode(self.github_pem, 500, iss=self.github_app)
-        url = self.make_url('installations', self.user.github_handle)
+        url = self.make_url('installations', self.organization)
+
         headers = {'Authorization': 'Bearer {}'.format(token)}
         response = Http.post(url, transformation='json', headers=headers)
         return response['token']

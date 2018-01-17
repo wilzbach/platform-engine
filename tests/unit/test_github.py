@@ -14,19 +14,14 @@ def user():
 
 @fixture
 def gh(user):
-    return Github('123456789', 'github.pem', user=user)
+    return Github('123456789', 'github.pem', 'organization')
 
 
 def test_github(user, gh):
     assert gh.api_url == 'https://api.github.com'
     assert gh.github_app == '123456789'
     assert gh.github_pem == 'github.pem'
-    assert gh.user is user
-
-
-def test_github_no_user():
-    github = Github('123456789', 'github.pem')
-    assert github.user is None
+    assert gh.organization == 'organization'
 
 
 @mark.parametrize('page, url', [
