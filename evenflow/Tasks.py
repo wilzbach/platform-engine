@@ -16,7 +16,9 @@ class Tasks:
             .get()
         Handler.build_story(story)
 
-        line = '1'
+        line_number = '1'
         context = {'application': app, 'story': 'story_name'}
-        while line:
-            line = Handler.run(line, app.initial_data, context)
+        while line_number:
+            line = story.tree['script'][line_number]
+            line_number = Handler.run(line_number, line, app.initial_data,
+                                      context)

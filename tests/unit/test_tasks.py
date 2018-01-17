@@ -33,7 +33,8 @@ def test_process_story(mocker, models, handler_run):
     query_result = Stories.select().where().where().get()
     Handler.build_story.assert_called_with(query_result)
     context = {'application': Applications.get(), 'story': 'story_name'}
-    Handler.run.assert_called_with('1', Applications.get().initial_data,
+    Handler.run.assert_called_with('1', query_result.tree['script']['1'],
+                                   Applications.get().initial_data,
                                    context)
 
 
