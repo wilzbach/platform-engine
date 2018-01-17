@@ -66,7 +66,6 @@ def test_handler_run(mocker, resolve_obj, line):
     Handler.init_mongo.assert_called_with()
     Handler.init_mongo().save.assert_called_with('app', 'story',
                                                  Containers.result())
-    assert result == '1'
 
 
 def test_handler_run_if(mocker, resolve_obj, line):

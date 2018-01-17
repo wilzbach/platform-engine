@@ -50,4 +50,3 @@ class Handler:
         results = Handler.init_mongo()
         results.save(context['application'], context['story_name'],
                      container.result())
-        return line['ln']
