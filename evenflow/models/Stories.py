@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from peewee import CharField, ForeignKeyField
 
-import storyscript
 from storyscript import resolver
+from storyscript.parser import Parser
 
 from .Applications import Applications
 from .Base import BaseModel
@@ -26,7 +26,7 @@ class Stories(BaseModel):
 
     def build_tree(self):
         story = self.get_contents()
-        self.tree = storyscript.parse(story).json()
+        self.tree = Parser().parse(story).json()
 
     def resolve(self, line_number, data):
         args = self.tree['story'][line_number]['args']

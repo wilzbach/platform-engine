@@ -6,8 +6,8 @@ from peewee import CharField, ForeignKeyField
 
 from pytest import fixture
 
-import storyscript
 from storyscript import resolver
+from storyscript.parser import Parser
 
 
 @fixture
@@ -39,11 +39,12 @@ def test_stories_get(mocker, story):
 
 
 def test_stories_build_tree(mocker, story):
-    mocker.patch.object(storyscript, 'parse')
+    mocker.patch.object(Parser, '__init__', return_value=None)
+    mocker.patch.object(Parser, 'parse')
     mocker.patch.object(Stories, 'get_contents')
     story.build_tree()
-    storyscript.parse().json.assert_called_with()
-    assert story.tree == storyscript.parse().json()
+    Stories.get_contents.assert_called_with()
+    assert story.tree == Parser.parse().json()
 
 
 def test_stories_resolve(mocker, story):
