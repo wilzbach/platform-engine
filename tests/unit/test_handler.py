@@ -3,7 +3,7 @@ from evenflow.Config import Config
 from evenflow.Containers import Containers
 from evenflow.Handler import Handler
 from evenflow.Lexicon import Lexicon
-from evenflow.models import db
+from evenflow.models import Results, db
 
 from playhouse import db_url
 
@@ -36,6 +36,14 @@ def test_handler_init_db(mocker, config):
     Config.get.assert_called_with('database')
     db_url.parse.assert_called_with(Config.get())
     db.init.assert_called_with(db_url.parse())
+
+
+def test_handler_init_mongo(mocker, config):
+    mocker.patch.object(Results, '__init__', return_value=None)
+    result = Handler.init_mongo()
+    Config.get.assert_called_with('mongo')
+    Results.__init__.assert_called_with(Config.get())
+    assert isinstance(result, Results)
 
 
 def test_build_story(mocker, config):
