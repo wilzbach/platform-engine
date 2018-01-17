@@ -47,11 +47,14 @@ def test_build_story(mocker, config):
 
 def test_handler_run(mocker, resolve_obj, line):
     mocker.patch.object(Containers, 'run')
+    mocker.patch.object(Containers, 'result')
     mocker.patch.object(Containers, '__init__', return_value=None)
-    result = Handler.run(line, {'data': 'data'}, {})
+    context = {}
+    result = Handler.run(line, {'data': 'data'}, context)
     resolver.resolve_obj.assert_called_with({'data': 'data'}, line['args'])
     Containers.__init__.assert_called_with('hello-world')
     Containers.run.assert_called_with(*resolver.resolve_obj())
+    assert context['result'] == Containers.result()
     assert result == '1'
 
 

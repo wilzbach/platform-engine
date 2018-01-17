@@ -43,4 +43,5 @@ class Handler:
 
         container = Containers(line['container'])
         container.run(*args)
+        context['result'] = container.result()
         return line['ln']
