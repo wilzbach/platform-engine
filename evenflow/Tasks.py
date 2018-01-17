@@ -12,7 +12,8 @@ class Tasks:
 
         story = Stories.select()\
             .where(Stories.filename == story_name)\
-            .where(Stories.application == app)
+            .where(Stories.application == app)\
+            .get()
         Handler.build_story(story)
 
         line = '1'

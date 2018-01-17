@@ -29,7 +29,9 @@ def test_process_story(mocker, models, handler_run):
     Applications.get.assert_called_with(True)
     Stories.select().where.assert_called_with(True)
     Stories.select().where().where.assert_called_with(True)
-    Handler.build_story.assert_called_with(Stories.select().where().where())
+    Stories.select().where().where().get.assert_called_with()
+    query_result = Stories.select().where().where().get()
+    Handler.build_story.assert_called_with(query_result)
     context = {'application': Applications.get(), 'story': 'story_name'}
     Handler.run.assert_called_with('1', Applications.get().data, context)
 
