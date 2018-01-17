@@ -5,7 +5,7 @@ import os
 class Config():
 
     defaults = {
-        'database': 'postgresql://postgres:postgres@localhost:5432/database',
+        'database': 'postgresql://postgres:postgres@localhost:5432/asyncy',
         'mongo': 'mongodb://localhost:27017/',
         'broker': 'amqp://:@localhost:5672/',
         'github.pem_path': 'github.pem',

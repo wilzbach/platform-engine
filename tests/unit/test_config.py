@@ -13,7 +13,7 @@ def config():
 
 
 def test_config():
-    database_url = 'postgresql://postgres:postgres@localhost:5432/database'
+    database_url = 'postgresql://postgres:postgres@localhost:5432/asyncy'
     broker_url = 'amqp://:@localhost:5672/'
     assert Config.defaults['database'] == database_url
     assert Config.defaults['mongo'] == 'mongodb://localhost:27017/'
