@@ -57,12 +57,15 @@ def test_handler_run(mocker, resolve_obj, line):
     mocker.patch.object(Containers, 'run')
     mocker.patch.object(Containers, 'result')
     mocker.patch.object(Containers, '__init__', return_value=None)
-    context = {}
+    mocker.patch.object(Handler, 'init_mongo')
+    context = {'application': 'app', 'story_name': 'story'}
     result = Handler.run(line, {'data': 'data'}, context)
     resolver.resolve_obj.assert_called_with({'data': 'data'}, line['args'])
     Containers.__init__.assert_called_with('hello-world')
     Containers.run.assert_called_with(*resolver.resolve_obj())
-    assert context['result'] == Containers.result()
+    Handler.init_mongo.assert_called_with()
+    Handler.init_mongo().save.assert_called_with('app', 'story',
+                                                 Containers.result())
     assert result == '1'
 
 

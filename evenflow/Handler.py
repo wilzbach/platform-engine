@@ -47,5 +47,7 @@ class Handler:
 
         container = Containers(line['container'])
         container.run(*args)
-        context['result'] = container.result()
+        results = Handler.init_mongo()
+        results.save(context['application'], context['story_name'],
+                     container.result())
         return line['ln']
