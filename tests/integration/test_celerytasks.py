@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-from evenflow.CeleryTasks import logger
+from celery import Celery
+
+from evenflow.CeleryTasks import app, logger
+
+
+def test_celerytasks_app():
+    assert isinstance(app, Celery)
 
 
 def test_celerytasks_logger_start():

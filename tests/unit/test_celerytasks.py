@@ -13,11 +13,6 @@ def process_story(mocker):
     return Tasks.process_story
 
 
-def test_celerytasks_app(mocker, process_story):
-    mocker.patch.object(CeleryApp, 'start')
-    assert app == CeleryApp.start()
-
-
 def test_celerytasks_logger(mocker):
     assert isinstance(logger, Logger)
 
