@@ -13,7 +13,7 @@ class Jwt:
 
     @staticmethod
     def encode(secret, expiration, **kwargs):
-        kwargs['iat'] = time.time()
+        kwargs['iat'] = int(time.time())
         kwargs['exp'] = kwargs['iat'] + expiration
         pem_key = Jwt.read_key(secret)
         return jwt.encode(kwargs, pem_key, algorithm='RS256').decode()
