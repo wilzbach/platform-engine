@@ -5,6 +5,7 @@ from .Tasks import Tasks
 
 
 logger = Logger()
+logger.start()
 
 app = CeleryApp.start()
 
