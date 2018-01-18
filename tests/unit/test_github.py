@@ -17,6 +17,12 @@ def gh(user):
     return Github('123456789', 'github.pem', 'organization')
 
 
+@fixture
+def headers():
+    return {'Authorization': 'Bearer token',
+            'Accept': 'application/vnd.github.machine-man-preview+json'}
+
+
 def test_github(user, gh):
     assert gh.api_url == 'https://api.github.com'
     assert gh.github_app == '123456789'
@@ -44,37 +50,33 @@ def test_github_make_url(mocker, gh):
     assert result == 'test/argument'
 
 
-def test_get_token(mocker, gh):
+def test_get_token(mocker, gh, headers):
     mocker.patch.object(Http, 'post')
     mocker.patch.object(Jwt, 'encode', return_value='token')
     mocker.patch.object(Github, 'make_url')
     result = gh.get_token()
     Jwt.encode.assert_called_with(gh.github_pem, 500, iss=gh.github_app)
-    headers = {'Authorization': 'Bearer token',
-               'Accept': 'application/vnd.github.machine-man-preview+json'}
     args = {'transformation': 'json', 'headers': headers}
     Http.post.assert_called_with(Github.make_url(), **args)
     assert result == Http.post()['token']
 
 
-def test_get_contents(mocker, gh):
+def test_get_contents(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
     mocker.patch.object(Github, 'get_token', return_value='token')
     result = gh.get_contents('org', 'repo', 'file')
     Github.make_url.assert_called_with('repository', 'org', 'repo', 'file')
-    headers = {'Authorization': 'Bearer token'}
     Http.get.assert_called_with(Github.make_url(), transformation='base64',
                                 params={'ref': None}, headers=headers)
     assert Github.get_token.call_count == 1
     assert result == Http.get()
 
 
-def test_get_contents_version(mocker, gh):
+def test_get_contents_version(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
     mocker.patch.object(Github, 'get_token', return_value='token')
     gh.get_contents('org', 'repo', 'file', 'version')
-    headers = {'Authorization': 'Bearer token'}
     Http.get.assert_called_with(Github.make_url(), transformation='base64',
                                 params={'ref': 'version'}, headers=headers)

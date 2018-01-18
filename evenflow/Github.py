@@ -36,6 +36,7 @@ class Github:
 
     def get_contents(self, organization, repository, file, version=None):
         url = self.make_url('repository', organization, repository, file)
-        headers = {'Authorization': 'Bearer {}'.format(self.get_token())}
+        headers = {'Authorization': 'Bearer {}'.format(self.get_token()),
+                   'Accept': 'application/vnd.github.machine-man-preview+json'}
         kwargs = {'params': {'ref': version}, 'headers': headers}
         return Http.get(url, transformation='base64', **kwargs)
