@@ -30,6 +30,7 @@ setup(
     setup_requires=['pytest-runner'],
     install_requires=[
         'celery==4.1.0',
+        'cryptography>=2.1.4',
         'docker==2.7.0',
         'peewee==2.10.2',
         'psycopg2==2.7.3.2',
