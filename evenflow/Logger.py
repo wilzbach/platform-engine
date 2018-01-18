@@ -1,0 +1,8 @@
+# -*- coding: utf-8 -*-c
+from frustum import Frustum
+
+
+class Logger:
+
+    def __init__(self, verbosity=1):
+        self.frustum = Frustum(verbosity=1)
