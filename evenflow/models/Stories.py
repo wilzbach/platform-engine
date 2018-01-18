@@ -16,9 +16,8 @@ class Stories(BaseModel):
     application = ForeignKeyField(Applications)
     repository = ForeignKeyField(Repositories)
 
-    def provider(self, app_identifier, pem_path):
-        owner = self.repository.owner
-        self.github = Github(app_identifier, pem_path, owner)
+    def provider(self, app_identifier, app_name, pem_path):
+        self.github = Github(app_identifier, pem_path, app_name)
 
     def get_contents(self):
         args = (self.repository.owner, self.repository.name, self.filename)
