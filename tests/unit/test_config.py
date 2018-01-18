@@ -20,6 +20,7 @@ def test_config():
     assert Config.defaults['broker'] == broker_url
     assert Config.defaults['github.pem_path'] == 'github.pem'
     assert Config.defaults['github.app_identifier'] == '123456789'
+    assert Config.defaults['github.app_name'] == 'myapp'
 
 
 def test_config_get(mocker, config):
