@@ -16,4 +16,4 @@ class Jwt:
         kwargs['iat'] = time.time()
         kwargs['exp'] = kwargs['iat'] + expiration
         pem_key = Jwt.read_key(secret)
-        return jwt.encode(kwargs, pem_key, algorithm='RS256')
+        return jwt.encode(kwargs, pem_key, algorithm='RS256').decode()

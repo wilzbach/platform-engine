@@ -42,7 +42,7 @@ def test_jwt_encode(mocker, encoder, payload):
     result = Jwt.encode('secret', 60)
     Jwt.read_key.assert_called_with('secret')
     jwt.encode.assert_called_with(payload, Jwt.read_key(), algorithm='RS256')
-    assert result == jwt.encode()
+    assert result == jwt.encode().decode()
 
 
 def test_jwt_encode_extra_claims(mocker, encoder, payload):
