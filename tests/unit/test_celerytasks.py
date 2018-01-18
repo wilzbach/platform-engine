@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from evenflow.CeleryApp import CeleryApp
-from evenflow.CeleryTasks import app, run
+from evenflow.CeleryTasks import app, logger, run
+from evenflow.Logger import Logger
 from evenflow.Tasks import Tasks
 
 from pytest import fixture
@@ -15,6 +16,10 @@ def process_story(mocker):
 def test_tasks_app(mocker, process_story):
     mocker.patch.object(CeleryApp, 'start')
     assert app == CeleryApp.start()
+
+
+def test_tasks_logger(mocker):
+    assert isinstance(logger, Logger)
 
 
 def test_tasks_run(process_story):

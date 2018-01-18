@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from .CeleryApp import CeleryApp
+from .Logger import Logger
 from .Tasks import Tasks
 
+
+logger = Logger()
 
 app = CeleryApp.start()
 
