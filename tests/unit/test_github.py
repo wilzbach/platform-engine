@@ -50,7 +50,8 @@ def test_get_token(mocker, gh):
     mocker.patch.object(Github, 'make_url')
     result = gh.get_token()
     Jwt.encode.assert_called_with(gh.github_pem, 500, iss=gh.github_app)
-    headers = {'Authorization': 'Bearer token'}
+    headers = {'Authorization': 'Bearer token',
+               'Accept': 'application/vnd.github.machine-man-preview+json'}
     args = {'transformation': 'json', 'headers': headers}
     Http.post.assert_called_with(Github.make_url(), **args)
     assert result == Http.post()['token']

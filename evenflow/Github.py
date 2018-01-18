@@ -29,7 +29,8 @@ class Github:
         token = Jwt.encode(self.github_pem, 500, iss=self.github_app)
         url = self.make_url('installations', self.organization)
 
-        headers = {'Authorization': 'Bearer {}'.format(token)}
+        headers = {'Authorization': 'Bearer {}'.format(token),
+                   'Accept': 'application/vnd.github.machine-man-preview+json'}
         response = Http.post(url, transformation='json', headers=headers)
         return response['token']
 
