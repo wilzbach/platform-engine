@@ -61,13 +61,14 @@ def test_handler_run(mocker, resolve_obj, line):
     mocker.patch.object(Containers, 'result')
     mocker.patch.object(Containers, '__init__', return_value=None)
     mocker.patch.object(Handler, 'init_mongo')
-    context = {'application': 'app', 'story_name': 'story'}
-    result = Handler.run('1', line, {'data': 'data'}, context)
+    app = mocker.MagicMock()
+    context = {'application': app, 'story': 'story'}
+    Handler.run('1', line, {'data': 'data'}, context)
     resolver.resolve_obj.assert_called_with({'data': 'data'}, line['args'])
     Containers.__init__.assert_called_with('hello-world')
     Containers.run.assert_called_with(*resolver.resolve_obj())
     Handler.init_mongo.assert_called_with()
-    Handler.init_mongo().save.assert_called_with('app', 'story',
+    Handler.init_mongo().save.assert_called_with(app.name, 'story',
                                                  Containers.result())
 
 

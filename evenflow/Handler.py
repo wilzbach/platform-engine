@@ -51,5 +51,5 @@ class Handler:
         container = Containers(line['container'])
         container.run(*args)
         results = Handler.init_mongo()
-        results.save(context['application'], context['story_name'],
+        results.save(context['application'].name, context['story'],
                      container.result())
