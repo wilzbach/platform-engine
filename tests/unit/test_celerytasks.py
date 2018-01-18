@@ -13,20 +13,20 @@ def process_story(mocker):
     return Tasks.process_story
 
 
-def test_tasks_app(mocker, process_story):
+def test_celerytasks_app(mocker, process_story):
     mocker.patch.object(CeleryApp, 'start')
     assert app == CeleryApp.start()
 
 
-def test_tasks_logger(mocker):
+def test_celerytasks_logger(mocker):
     assert isinstance(logger, Logger)
 
 
-def test_tasks_run(process_story):
+def test_celerytasks_run(process_story):
     run('app_id', 'story_name')
     process_story.assert_called_with('app_id', 'story_name', story_id=None)
 
 
-def test_tasks_run_with_story_id(process_story):
+def test_celerytasks_run_with_story_id(process_story):
     run('app_id', 'story_name', story_id=1)
     process_story.assert_called_with('app_id', 'story_name', story_id=1)
