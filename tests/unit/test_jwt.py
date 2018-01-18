@@ -11,8 +11,8 @@ from pytest import fixture
 
 @fixture
 def payload(mocker):
-    mocker.patch.object(time, 'time')
-    return {'iat': time.time(), 'exp': time.time() + 60}
+    mocker.patch.object(time, 'time', return_value=1.2)
+    return {'iat': int(time.time()), 'exp': int(time.time() + 60)}
 
 
 @fixture
