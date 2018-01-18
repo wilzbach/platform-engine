@@ -32,6 +32,7 @@ setup(
         'celery>=4.1.0',
         'cryptography>=2.1.4',
         'docker>=2.7.0',
+        'frustum>=0.0.1',
         'peewee>=2.10.2',
         'psycopg2>=2.7.3.2',
         'pyjwt>=1.5.3',
