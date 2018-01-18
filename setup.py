@@ -29,16 +29,15 @@ setup(
     ],
     setup_requires=['pytest-runner'],
     install_requires=[
-        'celery==4.1.0',
+        'celery>=4.1.0',
         'cryptography>=2.1.4',
-        'docker==2.7.0',
-        'peewee==2.10.2',
-        'psycopg2==2.7.3.2',
-        'pyjwt==1.5.3',
-        'pymongo==3.6.0',
-        'requests==2.18.4',
-        'statsd==3.2.2',
-        'storyscript==0.0.3'
+        'docker>=2.7.0',
+        'peewee>=2.10.2',
+        'psycopg2>=2.7.3.2',
+        'pyjwt>=1.5.3',
+        'pymongo>=3.6.0',
+        'requests>=2.18.4',
+        'storyscript>=0.0.3'
     ],
     classifiers=[
         'Environment :: Console',
