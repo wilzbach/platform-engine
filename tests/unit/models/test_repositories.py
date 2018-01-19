@@ -6,5 +6,5 @@ from peewee import CharField
 
 def test_repositories():
     assert isinstance(Repositories.name, CharField)
-    assert isinstance(Repositories.owner, CharField)
+    assert isinstance(Repositories.organization, CharField)
     assert issubclass(Repositories, BaseModel)

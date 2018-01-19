@@ -6,4 +6,4 @@ from .Base import BaseModel
 
 class Repositories(BaseModel):
     name = CharField()
-    owner = CharField()
+    organization = CharField()
