@@ -2,14 +2,8 @@
 from evenflow.Github import Github
 from evenflow.Http import Http
 from evenflow.Jwt import Jwt
-from evenflow.models import Users
 
 from pytest import fixture, mark
-
-
-@fixture
-def user():
-    return Users('name', 'email', '@handle')
 
 
 @fixture
