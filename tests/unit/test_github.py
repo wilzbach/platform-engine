@@ -64,19 +64,18 @@ def test_get_token(mocker, gh, headers):
 def test_get_contents(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
-    mocker.patch.object(Github, 'get_token', return_value='token')
+    gh.access_token = 'token'
     result = gh.get_contents('org', 'repo', 'file')
     Github.make_url.assert_called_with('repository', 'org', 'repo', 'file')
     Http.get.assert_called_with(Github.make_url(), transformation='base64',
                                 params={'ref': None}, headers=headers)
-    assert Github.get_token.call_count == 1
     assert result == Http.get()
 
 
 def test_get_contents_version(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
-    mocker.patch.object(Github, 'get_token', return_value='token')
+    gh.access_token = 'token'
     gh.get_contents('org', 'repo', 'file', 'version')
     Http.get.assert_called_with(Github.make_url(), transformation='base64',
                                 params={'ref': 'version'}, headers=headers)
