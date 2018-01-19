@@ -13,7 +13,7 @@ from storyscript.parser import Parser
 @fixture
 def story():
     repo = Repositories(name='project', owner='user')
-    return Stories(filename='my.story', repository=repo, application='app')
+    return Stories(filename='my.story', repository=repo)
 
 
 def test_stories():
@@ -21,7 +21,6 @@ def test_stories():
     assert isinstance(Stories.filename, CharField)
     assert isinstance(Stories.version, CharField)
     assert isinstance(Stories.repository, ForeignKeyField)
-    assert isinstance(Stories.application, ForeignKeyField)
     assert issubclass(Stories, BaseModel)
 
 

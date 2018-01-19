@@ -4,7 +4,6 @@ from peewee import CharField, ForeignKeyField
 from storyscript import resolver
 from storyscript.parser import Parser
 
-from .Applications import Applications
 from .Base import BaseModel
 from .Repositories import Repositories
 from ..Github import Github
@@ -13,7 +12,6 @@ from ..Github import Github
 class Stories(BaseModel):
     filename = CharField()
     version = CharField(null=True)
-    application = ForeignKeyField(Applications)
     repository = ForeignKeyField(Repositories)
 
     def provider(self, app_identifier, app_name, pem_path):
