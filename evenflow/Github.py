@@ -14,7 +14,7 @@ class Github:
 
     def url(self, page):
         pages = {
-            'repository': 'repos/{}/{}/contents',
+            'contents': 'repos/{}/{}/contents/{}',
             'installations': 'installations/{}/access_tokens'
         }
 
@@ -37,7 +37,7 @@ class Github:
         self.access_token = response['token']
 
     def get_contents(self, organization, repository, file, version=None):
-        url = self.make_url('repository', organization, repository, file)
+        url = self.make_url('contents', organization, repository, file)
         headers = {'Authorization': 'Bearer {}'.format(self.access_token),
                    'Accept': 'application/vnd.github.machine-man-preview+json'}
         kwargs = {'params': {'ref': version}, 'headers': headers}

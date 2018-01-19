@@ -25,7 +25,7 @@ def test_github(user, gh):
 
 
 @mark.parametrize('page, url', [
-    ('repository', 'repos/{}/{}/contents'),
+    ('contents', 'repos/{}/{}/contents/{}'),
     ('installations', 'installations/{}/access_tokens')
 ])
 def test_github_url_repository(gh, page, url):
@@ -60,7 +60,7 @@ def test_get_contents(mocker, gh, headers):
     mocker.patch.object(Github, 'make_url')
     gh.access_token = 'token'
     result = gh.get_contents('org', 'repo', 'file')
-    Github.make_url.assert_called_with('repository', 'org', 'repo', 'file')
+    Github.make_url.assert_called_with('contents', 'org', 'repo', 'file')
     Http.get.assert_called_with(Github.make_url(), transformation='base64',
                                 params={'ref': None}, headers=headers)
     assert result == Http.get()
