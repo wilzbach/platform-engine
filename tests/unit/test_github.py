@@ -50,15 +50,15 @@ def test_github_make_url(mocker, gh):
     assert result == 'test/argument'
 
 
-def test_get_token(mocker, gh, headers):
+def test_authenticate(mocker, gh, headers):
     mocker.patch.object(Http, 'post')
     mocker.patch.object(Jwt, 'encode', return_value='token')
     mocker.patch.object(Github, 'make_url')
-    result = gh.get_token()
+    gh.authenticate('installation_id')
     Jwt.encode.assert_called_with(gh.github_pem, 500, iss=gh.github_app)
     args = {'transformation': 'json', 'headers': headers}
     Http.post.assert_called_with(Github.make_url(), **args)
-    assert result == Http.post()['token']
+    assert gh.access_token == Http.post()['token']
 
 
 def test_get_contents(mocker, gh, headers):
