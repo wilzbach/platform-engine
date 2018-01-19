@@ -19,7 +19,8 @@ class Stories(BaseModel):
         self.github.authenticate(installation_id)
 
     def get_contents(self):
-        args = (self.repository.owner, self.repository.name, self.filename)
+        args = (self.repository.organization, self.repository.name,
+                self.filename)
         return self.github.get_contents(*args, version=self.version)
 
     def build_tree(self):

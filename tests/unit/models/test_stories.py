@@ -34,10 +34,11 @@ def test_stories_backend(mocker, story):
     assert isinstance(story.github, Github)
 
 
-def test_stories_get(mocker, story):
-    story.github = mocker.MagicMock()
+def test_stories_get_contents(magic, story):
+    story.github = magic()
     result = story.get_contents()
-    args = (story.repository.owner, story.repository.name, story.filename)
+    repository = story.repository
+    args = (repository.organization, repository.name, story.filename)
     story.github.get_contents.assert_called_with(*args, version=story.version)
     assert result == story.github.get_contents()
 
