@@ -27,6 +27,7 @@ def test_github(user, gh):
     assert gh.api_url == 'https://api.github.com'
     assert gh.github_app == '123456789'
     assert gh.github_pem == 'github.pem'
+    assert gh.access_token is None
 
 
 @mark.parametrize('page, url', [

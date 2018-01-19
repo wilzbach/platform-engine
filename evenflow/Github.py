@@ -10,6 +10,7 @@ class Github:
     def __init__(self, github_app, github_pem):
         self.github_pem = github_pem
         self.github_app = github_app
+        self.access_token = None
 
     def url(self, page):
         pages = {
