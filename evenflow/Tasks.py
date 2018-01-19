@@ -9,8 +9,8 @@ class Tasks:
     def process_story(app_id, story_name, *, story_id=None):
         Handler.init_db()
         app = Applications.get(Applications.id == app_id)
-        story = app.stories.where(Stories.filename == story_name).get()
-        Handler.build_story(story)
+        story = app.get_story(story_name)
+        Handler.build_story(app.user.installation_id, story)
 
         line_number = '1'
         context = {'application': app, 'story': 'story_name'}
