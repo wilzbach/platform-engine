@@ -7,10 +7,9 @@ class Github:
 
     api_url = 'https://api.github.com'
 
-    def __init__(self, github_app, github_pem, organization):
+    def __init__(self, github_app, github_pem):
         self.github_pem = github_pem
         self.github_app = github_app
-        self.organization = organization
 
     def url(self, page):
         pages = {
