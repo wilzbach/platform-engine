@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import Applications, BaseModel
+from evenflow.models import Applications, BaseModel, Stories
 
 from peewee import CharField, ForeignKeyField
 
@@ -14,5 +14,6 @@ def test_applications():
 
 def test_applications_get_story(application):
     story = application.get_story('test.story')
-    application.stories.where.assert_called_with(True)
-    assert story == application.stories.where().get()
+    application.stories.join.assert_called_with(Stories)
+    application.stories.join().where.assert_called_with(True)
+    assert story == application.stories.join().where().get().story

@@ -13,4 +13,6 @@ class Applications(BaseModel):
     initial_data = CharField(null=True)
 
     def get_story(self, story_name):
-        return self.stories.where(Stories.filename == story_name).get()
+        appstory = self.stories.join(Stories)\
+                               .where(Stories.filename == story_name).get()
+        return appstory.story
