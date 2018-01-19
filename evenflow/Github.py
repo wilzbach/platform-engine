@@ -46,4 +46,5 @@ class Github:
         headers = {'Authorization': 'Bearer {}'.format(self.access_token),
                    'Accept': 'application/vnd.github.machine-man-preview+json'}
         kwargs = {'params': {'ref': version}, 'headers': headers}
-        return Http.get(url, json=True, **kwargs)
+        response = Http.get(url, json=True, **kwargs)
+        return self.decode_base64(response['content'])

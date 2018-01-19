@@ -62,17 +62,20 @@ def test_decode_base64(gh):
 def test_get_contents(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
+    mocker.patch.object(Github, 'decode_base64')
     gh.access_token = 'token'
     result = gh.get_contents('org', 'repo', 'file')
     Github.make_url.assert_called_with('contents', 'org', 'repo', 'file')
     Http.get.assert_called_with(Github.make_url(), json=True,
                                 params={'ref': None}, headers=headers)
-    assert result == Http.get()
+    Github.decode_base64.assert_called_with(Http.get()['content'])
+    assert result == Github.decode_base64()
 
 
 def test_get_contents_version(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
+    mocker.patch.object(Github, 'decode_base64')
     gh.access_token = 'token'
     gh.get_contents('org', 'repo', 'file', 'version')
     Http.get.assert_called_with(Github.make_url(), json=True,
