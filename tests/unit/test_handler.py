@@ -51,8 +51,8 @@ def test_handler_init_mongo(mocker, config):
 
 def test_build_story(mocker, config):
     story = mocker.MagicMock()
-    Handler.build_story(story)
-    story.provider.assert_called_with(Config.get(), Config.get(), Config.get())
+    Handler.build_story('install_id', story)
+    story.backend.assert_called_with(Config.get(), Config.get(), 'install_id')
     assert story.build_tree.call_count == 1
 
 

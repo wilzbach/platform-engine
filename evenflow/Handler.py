@@ -29,14 +29,13 @@ class Handler:
         return Results(Config.get('mongo'))
 
     @staticmethod
-    def build_story(story):
+    def build_story(installation_id, story):
         """
         Build a storytree, given a story
         """
         app_identifier = Config.get('github.app_identifier')
-        app_name = Config.get('github.app_name')
         pem_path = Config.get('github.pem_path')
-        story.provider(app_identifier, app_name, pem_path)
+        story.backend(app_identifier, pem_path, installation_id)
         story.build_tree()
 
     @staticmethod
