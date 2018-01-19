@@ -25,10 +25,12 @@ def test_stories():
     assert issubclass(Stories, BaseModel)
 
 
-def test_stories_provider(mocker, story):
+def test_stories_backend(mocker, story):
     mocker.patch.object(Github, '__init__', return_value=None)
-    story.provider('app_id', 'pem_path')
+    mocker.patch.object(Github, 'authenticate')
+    story.backend('app_id', 'pem_path', 'installation_id')
     Github.__init__.assert_called_with('app_id', 'pem_path')
+    Github.authenticate.assert_called_with('installation_id')
     assert isinstance(story.github, Github)
 
 

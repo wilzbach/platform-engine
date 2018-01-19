@@ -14,8 +14,9 @@ class Stories(BaseModel):
     version = CharField(null=True)
     repository = ForeignKeyField(Repositories)
 
-    def provider(self, app_identifier, pem_path):
+    def backend(self, app_identifier, pem_path, installation_id):
         self.github = Github(app_identifier, pem_path)
+        self.github.authenticate(installation_id)
 
     def get_contents(self):
         args = (self.repository.owner, self.repository.name, self.filename)
