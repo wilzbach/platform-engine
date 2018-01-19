@@ -27,8 +27,8 @@ def test_stories():
 
 def test_stories_provider(mocker, story):
     mocker.patch.object(Github, '__init__', return_value=None)
-    story.provider('app_id', 'app_name', 'pem_path')
-    Github.__init__.assert_called_with('app_id', 'pem_path', 'app_name')
+    story.provider('app_id', 'pem_path')
+    Github.__init__.assert_called_with('app_id', 'pem_path')
     assert isinstance(story.github, Github)
 
 
