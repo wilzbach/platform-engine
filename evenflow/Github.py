@@ -30,21 +30,23 @@ class Github:
     def decode_base64(self, string):
         return b64decode(string).decode()
 
+    def _headers(self, token):
+        return {'Authorization': 'Bearer {}'.format(token),
+                'Accept': 'application/vnd.github.machine-man-preview+json'}
+
     def authenticate(self, installation_id):
         """
         Authenticate the app as an installation
         """
         token = Jwt.encode(self.github_pem, 500, iss=self.github_app)
         url = self.make_url('installations', installation_id)
-        headers = {'Authorization': 'Bearer {}'.format(token),
-                   'Accept': 'application/vnd.github.machine-man-preview+json'}
+        headers = self._headers(token)
         response = Http.post(url, json=True, headers=headers)
         self.access_token = response['token']
 
     def get_contents(self, organization, repository, file, version=None):
         url = self.make_url('contents', organization, repository, file)
-        headers = {'Authorization': 'Bearer {}'.format(self.access_token),
-                   'Accept': 'application/vnd.github.machine-man-preview+json'}
+        headers = self._headers(self.access_token)
         kwargs = {'params': {'ref': version}, 'headers': headers}
         response = Http.get(url, json=True, **kwargs)
         return self.decode_base64(response['content'])
