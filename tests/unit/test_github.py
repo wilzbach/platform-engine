@@ -50,7 +50,7 @@ def test_authenticate(mocker, gh, headers):
     mocker.patch.object(Github, 'make_url')
     gh.authenticate('installation_id')
     Jwt.encode.assert_called_with(gh.github_pem, 500, iss=gh.github_app)
-    args = {'transformation': 'json', 'headers': headers}
+    args = {'json': True, 'headers': headers}
     Http.post.assert_called_with(Github.make_url(), **args)
     assert gh.access_token == Http.post()['token']
 
@@ -61,7 +61,7 @@ def test_get_contents(mocker, gh, headers):
     gh.access_token = 'token'
     result = gh.get_contents('org', 'repo', 'file')
     Github.make_url.assert_called_with('contents', 'org', 'repo', 'file')
-    Http.get.assert_called_with(Github.make_url(), transformation='base64',
+    Http.get.assert_called_with(Github.make_url(), json=True,
                                 params={'ref': None}, headers=headers)
     assert result == Http.get()
 
@@ -71,5 +71,5 @@ def test_get_contents_version(mocker, gh, headers):
     mocker.patch.object(Github, 'make_url')
     gh.access_token = 'token'
     gh.get_contents('org', 'repo', 'file', 'version')
-    Http.get.assert_called_with(Github.make_url(), transformation='base64',
+    Http.get.assert_called_with(Github.make_url(), json=True,
                                 params={'ref': 'version'}, headers=headers)
