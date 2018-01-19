@@ -9,11 +9,7 @@ class Tasks:
     def process_story(app_id, story_name, *, story_id=None):
         Handler.init_db()
         app = Applications.get(Applications.id == app_id)
-
-        story = Stories.select()\
-            .where(Stories.filename == story_name)\
-            .where(Stories.application == app)\
-            .get()
+        story = app.stories.where(Stories.filename == story_name).get()
         Handler.build_story(story)
 
         line_number = '1'

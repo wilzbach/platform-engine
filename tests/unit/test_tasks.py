@@ -2,7 +2,7 @@
 from evenflow.Config import Config
 from evenflow.Handler import Handler
 from evenflow.Tasks import Tasks
-from evenflow.models import Applications, Stories
+from evenflow.models import Applications
 
 from pytest import fixture, raises
 
@@ -10,7 +10,6 @@ from pytest import fixture, raises
 @fixture
 def models(mocker):
     mocker.patch.object(Applications, 'get')
-    mocker.patch.object(Stories, 'select')
 
 
 @fixture
@@ -27,10 +26,9 @@ def test_process_story(mocker, models, handler_run):
 
     Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
-    Stories.select().where.assert_called_with(True)
-    Stories.select().where().where.assert_called_with(True)
-    Stories.select().where().where().get.assert_called_with()
-    query_result = Stories.select().where().where().get()
+    Applications.get().stories.where.assert_called_with(True)
+    Applications.get().stories.where().get.assert_called_with()
+    query_result = Applications.get().stories.where().get()
     Handler.build_story.assert_called_with(query_result)
     context = {'application': Applications.get(), 'story': 'story_name'}
     Handler.run.assert_called_with('1', query_result.tree['script']['1'],

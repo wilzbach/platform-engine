@@ -11,5 +11,5 @@ class ApplicationsStories(BaseModel):
     Applications and Stories have an M:M relationship, signifying that a
     story has been enabled for that application.
     """
-    application = ForeignKeyField(Applications)
+    application = ForeignKeyField(Applications, related_name='stories')
     story = ForeignKeyField(Stories)
