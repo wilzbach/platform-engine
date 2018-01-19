@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from evenflow.Github import Github
-from evenflow.models import BaseModel, Repositories, Stories
+from evenflow.models import BaseModel, Repositories, Stories, Users
 
 from peewee import CharField, ForeignKeyField
 
@@ -12,7 +12,8 @@ from storyscript.parser import Parser
 
 @fixture
 def story():
-    repo = Repositories(name='project', owner='user')
+    owner = Users(name='test', email='test', github_handle='test')
+    repo = Repositories(name='project', organization='org', owner=owner)
     return Stories(filename='my.story', repository=repo)
 
 
