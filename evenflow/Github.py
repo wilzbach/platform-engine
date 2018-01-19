@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from base64 import b64decode
+
 from .Http import Http
 from .Jwt import Jwt
 
@@ -24,6 +26,9 @@ class Github:
 
     def make_url(self, page, *args):
         return self.url(page).format(*args)
+
+    def decode_base64(self, string):
+        return b64decode(string).decode()
 
     def authenticate(self, installation_id):
         """

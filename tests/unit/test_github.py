@@ -55,6 +55,10 @@ def test_authenticate(mocker, gh, headers):
     assert gh.access_token == Http.post()['token']
 
 
+def test_decode_base64(gh):
+    assert gh.decode_base64('aGVsbG93b3JsZA==') == 'helloworld'
+
+
 def test_get_contents(mocker, gh, headers):
     mocker.patch.object(Http, 'get')
     mocker.patch.object(Github, 'make_url')
