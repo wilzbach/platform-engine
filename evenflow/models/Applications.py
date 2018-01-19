@@ -9,4 +9,4 @@ class Applications(BaseModel):
 
     name = CharField()
     user = ForeignKeyField(Users)
-    initial_data = CharField()
+    initial_data = CharField(null=True)

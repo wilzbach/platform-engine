@@ -8,4 +8,5 @@ def test_applications():
     assert isinstance(Applications.name, CharField)
     assert isinstance(Applications.user, ForeignKeyField)
     assert isinstance(Applications.initial_data, CharField)
+    assert Applications.initial_data.null is True
     assert issubclass(Applications, BaseModel)
