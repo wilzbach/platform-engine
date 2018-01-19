@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import Users
+from evenflow.models import Applications, Users
 
 from pytest import fixture
 
@@ -15,3 +15,10 @@ def magic(mocker):
 @fixture
 def user():
     return Users('name', 'email', '@handle')
+
+
+@fixture
+def application(user, magic):
+    app = Applications(name='app', user=user)
+    app.stories = magic()
+    return app
