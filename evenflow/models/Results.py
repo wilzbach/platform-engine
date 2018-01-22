@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 import pymongo
 
 
@@ -11,6 +13,7 @@ class Results:
         document = {
             'data': data,
             'application': application,
-            'story': story_name
+            'story': story_name,
+            'finished': time.time()
         }
         return self.mongo.asyncy.main.insert_one(document)

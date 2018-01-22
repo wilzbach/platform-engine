@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 from evenflow.models import Results
 
 import pymongo
@@ -22,12 +24,14 @@ def test_results(mongo, results):
     assert results.mongo == pymongo.MongoClient()
 
 
-def test_results_save(mongo, results):
+def test_results_save(mocker, mongo, results):
+    mocker.patch.object(time, 'time', return_value=1)
     result = results.save('application', 'story', 'data')
     expected = {
         'application': 'application',
         'story': 'story',
-        'data': 'data'
+        'data': 'data',
+        'finished': time.time()
     }
     mongo().asyncy.main.insert_one.assert_called_with(expected)
     assert result == mongo().asyncy.main.insert_one()
