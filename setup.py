@@ -30,6 +30,7 @@ setup(
     setup_requires=['pytest-runner'],
     install_requires=[
         'celery>=4.1.0',
+        'click>=6.7',
         'cryptography>=2.1.4',
         'docker>=2.7.0',
         'frustum>=0.0.1',
