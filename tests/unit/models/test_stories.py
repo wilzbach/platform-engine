@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from evenflow.Github import Github
-from evenflow.models import BaseModel, Repositories, Stories, Users
+from evenflow.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
 
@@ -11,9 +11,8 @@ from storyscript.parser import Parser
 
 
 @fixture
-def story():
-    owner = Users(name='test', email='test', github_handle='test')
-    repo = Repositories(name='project', organization='org', owner=owner)
+def story(user):
+    repo = Repositories(name='project', organization='org', owner=user)
     return Stories(filename='my.story', repository=repo)
 
 
@@ -64,9 +63,9 @@ def test_stories_line(story):
 
 def test_stories_resolve(mocker, magic, story):
     mocker.patch.object(resolver, 'resolve_obj')
-    args = magic()
-    story.tree = {'story': {1: {'args': args}}}
+    mocker.patch.object(Stories, 'line')
     story._initial_data = {}
-    result = story.resolve(1)
-    resolver.resolve_obj.assert_called_with({}, args)
+    result = story.resolve('1')
+    Stories.line.assert_called_with('1')
+    resolver.resolve_obj.assert_called_with({}, Stories.line()['args'])
     assert result == resolver.resolve_obj()
