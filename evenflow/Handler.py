@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-from playhouse import db_url
-
 from storyscript import resolver
 
 from .Config import Config
 from .Containers import Containers
 from .Lexicon import Lexicon
-from .models import Results, database
+from .models import Results, db
 
 
 class Handler:
@@ -16,13 +14,7 @@ class Handler:
 
     @staticmethod
     def init_db():
-        """
-        Init the database
-        """
-        db_dict = db_url.parse(Config.get('database'))
-        database.init(db_dict['database'], host=db_dict['host'],
-                      port=db_dict['port'], user=db_dict['user'],
-                      password=db_dict['password'])
+        db.from_url(Config.get('database'))
 
     @staticmethod
     def init_mongo():
