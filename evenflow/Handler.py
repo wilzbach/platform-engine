@@ -6,7 +6,7 @@ from storyscript import resolver
 from .Config import Config
 from .Containers import Containers
 from .Lexicon import Lexicon
-from .models import Results, db
+from .models import Results, database
 
 
 class Handler:
@@ -20,9 +20,9 @@ class Handler:
         Init the database
         """
         db_dict = db_url.parse(Config.get('database'))
-        db.init(db_dict['database'], host=db_dict['host'],
-                port=db_dict['port'], user=db_dict['user'],
-                password=db_dict['password'])
+        database.init(db_dict['database'], host=db_dict['host'],
+                      port=db_dict['port'], user=db_dict['user'],
+                      password=db_dict['password'])
 
     @staticmethod
     def init_mongo():
