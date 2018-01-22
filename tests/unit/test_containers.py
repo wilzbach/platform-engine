@@ -31,7 +31,7 @@ def test_docker_run(docker_mock, container):
 def test_docker_run_commands(docker_mock, container):
     container.run('one', 'two')
     containers = docker_mock.containers.run
-    containers.assert_called_with('hello-world', command=('one', 'two'))
+    containers.assert_called_with('hello-world', command=())
 
 
 def test_containers_results(container):
