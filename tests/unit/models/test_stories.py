@@ -43,6 +43,11 @@ def test_stories_get_contents(magic, story):
     assert result == story.github.get_contents()
 
 
+def test_stories_data(story):
+    story.data({})
+    assert story._initial_data == {}
+
+
 def test_stories_build_tree(mocker, story):
     mocker.patch.object(Parser, '__init__', return_value=None)
     mocker.patch.object(Parser, 'parse')

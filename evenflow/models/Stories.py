@@ -23,6 +23,9 @@ class Stories(BaseModel):
                 self.filename)
         return self.github.get_contents(*args, version=self.version)
 
+    def data(self, initial_data):
+        self._initial_data = initial_data
+
     def build_tree(self):
         story = self.get_contents()
         self.tree = Parser().parse(story).json()
