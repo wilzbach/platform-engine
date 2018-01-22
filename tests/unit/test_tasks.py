@@ -29,9 +29,7 @@ def test_process_story(mocker, application, models, handler_run):
     story.data.assert_called_with(application.initial_data)
     Handler.build_story.assert_called_with(installation_id, story)
     context = {'application': Applications.get(), 'story': 'story_name'}
-    Handler.run.assert_called_with('1', story.tree['script']['1'],
-                                   Applications.get().initial_data,
-                                   context)
+    Handler.run.assert_called_with('1', story, context)
 
 
 def test_process_story_force_keyword(models, handler_run):
