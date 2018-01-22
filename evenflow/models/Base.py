@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from peewee import Model
 
-from .Database import database
+from .db import db
 
 
 class BaseModel(Model):
@@ -10,5 +10,5 @@ class BaseModel(Model):
     """
 
     class Meta:
-        database = database
+        database = db
         validate_backrefs = False
