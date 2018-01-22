@@ -10,6 +10,7 @@ class Tasks:
         Handler.init_db()
         app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
+        story.data(app.initial_data)
         Handler.build_story(app.user.installation_id, story)
 
         line_number = '1'

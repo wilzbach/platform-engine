@@ -26,6 +26,7 @@ def test_process_story(mocker, application, models, handler_run):
     application.get_story.assert_called_with('story_name')
     story = application.get_story()
     installation_id = application.user.installation_id
+    story.data.assert_called_with(application.initial_data)
     Handler.build_story.assert_called_with(installation_id, story)
     context = {'application': Applications.get(), 'story': 'story_name'}
     Handler.run.assert_called_with('1', story.tree['script']['1'],
