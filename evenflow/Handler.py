@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from storyscript import resolver
-
 from .Config import Config
 from .Containers import Containers
 from .Lexicon import Lexicon
@@ -31,11 +29,12 @@ class Handler:
         story.build_tree()
 
     @staticmethod
-    def run(line_number, line, data, context):
+    def run(line_number, story, context):
         """
         Run the story
         """
-        args = resolver.resolve_obj(data, line['args'])
+        line = story.line(line_number)
+        args = story.resolve(line_number)
 
         if line['method'] == 'if':
             return Lexicon.if_condition(line, args)

@@ -7,8 +7,6 @@ from evenflow.models import Results, db
 
 from pytest import fixture
 
-from storyscript import resolver
-
 
 @fixture
 def config(mocker):
@@ -16,15 +14,8 @@ def config(mocker):
 
 
 @fixture
-def resolve_obj(mocker):
-    mocker.patch.object(resolver, 'resolve_obj')
-
-
-@fixture
-def line():
-    line = {'ln': '1', 'container': 'hello-world', 'args': 'args',
-            'method': None}
-    return line
+def story(magic):
+    return magic()
 
 
 def test_handler_init_db(mocker, config):
@@ -49,24 +40,23 @@ def test_build_story(mocker, config):
     assert story.build_tree.call_count == 1
 
 
-def test_handler_run(mocker, resolve_obj, line):
+def test_handler_run(mocker, application, story):
     mocker.patch.object(Containers, 'run')
     mocker.patch.object(Containers, 'result')
     mocker.patch.object(Containers, '__init__', return_value=None)
     mocker.patch.object(Handler, 'init_mongo')
-    app = mocker.MagicMock()
-    context = {'application': app, 'story': 'story'}
-    Handler.run('1', line, {'data': 'data'}, context)
-    resolver.resolve_obj.assert_called_with({'data': 'data'}, line['args'])
-    Containers.__init__.assert_called_with('hello-world')
-    Containers.run.assert_called_with(*resolver.resolve_obj())
+    context = {'application': application, 'story': 'story'}
+    Handler.run('1', story, context)
+    story.resolve.assert_called_with('1')
+    Containers.__init__.assert_called_with(story.line()['container'])
+    Containers.run.assert_called_with(*story.resolve())
     Handler.init_mongo.assert_called_with()
-    Handler.init_mongo().save.assert_called_with(app.name, 'story',
+    Handler.init_mongo().save.assert_called_with(application.name, 'story',
                                                  Containers.result())
 
 
-def test_handler_run_if(mocker, resolve_obj, line):
+def test_handler_run_if(mocker, story):
     mocker.patch.object(Lexicon, 'if_condition')
-    line['method'] = 'if'
-    result = Handler.run('1', line, {'data': 'data'}, {})
+    mocker.patch.object(story, 'line', return_value={'method': 'if'})
+    result = Handler.run('1', story, {})
     assert result == Lexicon.if_condition()
