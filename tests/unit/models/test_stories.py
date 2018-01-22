@@ -57,6 +57,11 @@ def test_stories_build_tree(mocker, story):
     assert story.tree == Parser.parse().json()
 
 
+def test_stories_line(story):
+    story.tree = {'script': {'1': 'line one'}}
+    assert story.line('1') == story.tree['script']['1']
+
+
 def test_stories_resolve(mocker, magic, story):
     mocker.patch.object(resolver, 'resolve_obj')
     args = magic()
