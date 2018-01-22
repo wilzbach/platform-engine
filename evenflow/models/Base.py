@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-from peewee import Model, PostgresqlDatabase
+from peewee import Model
 
-
-db = PostgresqlDatabase('database',
-                        user='postgres',
-                        password='postgres',
-                        host='localhost'
-                        )
+from .Database import database
 
 
 class BaseModel(Model):
@@ -15,5 +10,5 @@ class BaseModel(Model):
     """
 
     class Meta:
-        database = db
+        database = database
         validate_backrefs = False

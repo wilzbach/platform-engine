@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import BaseModel, db
+from evenflow.models import BaseModel
 
-from peewee import Model, PostgresqlDatabase
-
-
-def test_db():
-    assert isinstance(db, PostgresqlDatabase)
+from peewee import Model
 
 
 def test_base_model():
