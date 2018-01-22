@@ -30,6 +30,6 @@ class Stories(BaseModel):
         story = self.get_contents()
         self.tree = Parser().parse(story).json()
 
-    def resolve(self, line_number, data):
+    def resolve(self, line_number):
         args = self.tree['story'][line_number]['args']
-        return resolver.resolve_obj(data, args)
+        return resolver.resolve_obj(self._initial_data, args)

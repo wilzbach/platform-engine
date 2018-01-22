@@ -57,10 +57,11 @@ def test_stories_build_tree(mocker, story):
     assert story.tree == Parser.parse().json()
 
 
-def test_stories_resolve(mocker, story):
+def test_stories_resolve(mocker, magic, story):
     mocker.patch.object(resolver, 'resolve_obj')
-    args = mocker.MagicMock()
+    args = magic()
     story.tree = {'story': {1: {'args': args}}}
-    result = story.resolve(1, {})
+    story._initial_data = {}
+    result = story.resolve(1)
     resolver.resolve_obj.assert_called_with({}, args)
     assert result == resolver.resolve_obj()
