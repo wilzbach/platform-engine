@@ -17,11 +17,15 @@ def test_logger_init(logger, config):
     Frustum.__init__.assert_called_with(verbosity=config.get())
 
 
-def test_logger_start(mocker, logger):
+def test_logger_events(logger):
+    assert logger.events[0] == ('jwt-token', 'debug', 'Encoded token: {}')
+
+
+def test_logger_register(mocker, logger):
     mocker.patch.object(Frustum, 'register_event')
-    logger.start()
-    message = 'Encoded token: {}'
-    Frustum.register_event.assert_called_with('jwt-token', 'debug', message)
+    logger.events = [('event', 'level', 'message')]
+    logger.register()
+    Frustum.register_event.assert_called_with('event', 'level', 'message')
 
 
 def test_logger_log(mocker, logger):
