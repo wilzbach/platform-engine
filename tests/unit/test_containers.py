@@ -21,15 +21,16 @@ def test_container(container):
     assert container.name == 'hello-world'
 
 
-def test_docker_run(docker_mock, container):
-    container.run()
+def test_docker_run(logger, docker_mock, container):
+    container.run(logger)
+    logger.log.assert_called_with('container-run', 'hello-world')
     docker_mock.containers.run.assert_called_with('hello-world', command=())
     docker_mock.images.pull.assert_called_with('hello-world')
     assert container.output == docker.from_env().containers.run()
 
 
-def test_docker_run_commands(docker_mock, container):
-    container.run('one', 'two')
+def test_docker_run_commands(logger, docker_mock, container):
+    container.run(logger, 'one', 'two')
     containers = docker_mock.containers.run
     containers.assert_called_with('hello-world', command=())
 
