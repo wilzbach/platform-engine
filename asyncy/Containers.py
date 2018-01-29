@@ -10,7 +10,7 @@ class Containers:
     }
 
     def __init__(self, name):
-        self.name = name
+        self.name = self.alias(name)
 
     def alias(self, name):
         if name in self.aliases:

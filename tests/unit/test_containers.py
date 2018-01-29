@@ -7,7 +7,8 @@ from pytest import fixture
 
 
 @fixture
-def container():
+def container(mocker):
+    mocker.patch.object(Containers, 'alias', return_value='hello-world')
     return Containers('hello-world')
 
 
@@ -18,7 +19,8 @@ def docker_mock(mocker):
 
 
 def test_containers(container):
-    assert container.name == 'hello-world'
+    Containers.alias.assert_called_with('hello-world')
+    assert container.name == Containers.alias()
 
 
 def test_containers_aliases(container):
@@ -26,7 +28,8 @@ def test_containers_aliases(container):
     assert container.aliases['python'] == 'asyncy/asyncy-python'
 
 
-def test_containers_alias(container):
+def test_containers_alias():
+    container = Containers('name')
     container.aliases = {'simple': 'complex'}
     assert container.alias('simple') == 'complex'
 
