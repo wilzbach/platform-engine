@@ -9,11 +9,6 @@ from pytest import fixture
 
 
 @fixture
-def config(mocker):
-    mocker.patch.object(Config, 'get')
-
-
-@fixture
 def story(magic):
     return magic()
 
@@ -21,14 +16,14 @@ def story(magic):
 def test_handler_init_db(mocker, config):
     mocker.patch.object(db, 'from_url')
     Handler.init_db()
-    Config.get.assert_called_with('database')
+    config.get.assert_called_with('database')
     db.from_url.assert_called_with(Config.get())
 
 
 def test_handler_init_mongo(mocker, config):
     mocker.patch.object(Results, '__init__', return_value=None)
     result = Handler.init_mongo()
-    Config.get.assert_called_with('mongo')
+    config.get.assert_called_with('mongo')
     Results.__init__.assert_called_with(Config.get())
     assert isinstance(result, Results)
 
