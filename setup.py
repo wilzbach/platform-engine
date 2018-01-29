@@ -15,7 +15,7 @@ if sys.argv[-1] == 'publish':
 readme = io.open('README.rst', 'r', encoding='utf-8').read()
 
 setup(
-    name='evenflow',
+    name='asyncy',
     description='Asyncy server',
     long_description=readme,
     author='Asyncy',
@@ -49,6 +49,6 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        evenflow=evenflow.Cli:Cli.main
+        asyncy=asyncy.Cli:Cli.main
     """
 )
