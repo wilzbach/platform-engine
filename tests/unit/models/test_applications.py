@@ -5,6 +5,8 @@ from peewee import CharField, ForeignKeyField
 
 from playhouse.postgres_ext import HStoreField
 
+from pytest import mark
+
 
 def test_applications():
     assert isinstance(Applications.name, CharField)
@@ -19,3 +21,16 @@ def test_applications_get_story(application):
     application.stories.join.assert_called_with(Stories)
     application.stories.join().where.assert_called_with(True)
     assert story == application.stories.join().where().get().story
+
+
+def test_applications_get_environment(application):
+    application.initial_data = {'environment': {}}
+    environment = application.get_environment()
+    assert environment == application.initial_data['environment']
+
+
+@mark.parametrize('data', [{'options': {}}, None])
+def test_applications_get_environment_none(application, data):
+    application.initial_data = data
+    environment = application.get_environment()
+    assert environment == {}
