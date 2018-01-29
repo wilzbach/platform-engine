@@ -39,17 +39,18 @@ def test_containers_alias_empty(container):
 
 
 def test_containers_run(logger, docker_mock, container):
-    container.run(logger)
+    container.run(logger, {})
     logger.log.assert_called_with('container-run', 'hello-world')
-    docker_mock.containers.run.assert_called_with('hello-world', command=())
+    kwargs = {'command': (), 'environment': {}}
+    docker_mock.containers.run.assert_called_with('hello-world', **kwargs)
     docker_mock.images.pull.assert_called_with('hello-world')
     assert container.output == docker.from_env().containers.run()
 
 
 def test_containers_run_commands(logger, docker_mock, container):
-    container.run(logger, 'one', 'two')
+    container.run(logger, {}, 'one', 'two')
     containers = docker_mock.containers.run
-    containers.assert_called_with('hello-world', command=())
+    containers.assert_called_with('hello-world', command=(), environment={})
 
 
 def test_containers_results(container):

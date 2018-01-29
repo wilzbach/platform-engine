@@ -17,10 +17,11 @@ class Containers:
             return self.aliases[name]
         return name
 
-    def run(self, logger, *args):
+    def run(self, logger, environment, *args):
         client = docker.from_env()
         client.images.pull(self.name)
-        self.output = client.containers.run(self.name, command=())
+        kwargs = {'command': (), 'environment': environment}
+        self.output = client.containers.run(self.name, **kwargs)
         logger.log('container-run', self.name)
 
     def result(self):
