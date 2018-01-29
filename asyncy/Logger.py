@@ -7,7 +7,12 @@ from .Config import Config
 class Logger:
 
     events = [
-        ('jwt-token', 'debug', 'Encoded token: {}')
+        ('container-run', 'debug', 'Container {} run'),
+        ('jwt-token', 'debug', 'Encoded token: {}'),
+        ('story-parse', 'debug', 'Parsed story {}'),
+        ('story-resolve', 'debug', 'Resolved {} to {}'),
+        ('task-end', 'debug', 'Previous task ended'),
+        ('task-start', 'debug', 'Start task for app {} with story {} id: {}'),
     ]
 
     def __init__(self):

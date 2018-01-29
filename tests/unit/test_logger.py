@@ -18,7 +18,13 @@ def test_logger_init(logger, config):
 
 
 def test_logger_events(logger):
-    assert logger.events[0] == ('jwt-token', 'debug', 'Encoded token: {}')
+    assert logger.events[0] == ('container-run', 'debug', 'Container {} run')
+    assert logger.events[1] == ('jwt-token', 'debug', 'Encoded token: {}')
+    assert logger.events[2] == ('story-parse', 'debug', 'Parsed story {}')
+    assert logger.events[3] == ('story-resolve', 'debug', 'Resolved {} to {}')
+    assert logger.events[4] == ('task-end', 'debug', 'Previous task ended')
+    message = 'Start task for app {} with story {} id: {}'
+    assert logger.events[5] == ('task-start', 'debug', message)
 
 
 def test_logger_register(mocker, logger):
