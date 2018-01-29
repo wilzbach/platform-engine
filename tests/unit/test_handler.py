@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from evenflow.Config import Config
-from evenflow.Containers import Containers
-from evenflow.Handler import Handler
-from evenflow.Lexicon import Lexicon
-from evenflow.models import Results, db
+from asyncy.Config import Config
+from asyncy.Containers import Containers
+from asyncy.Handler import Handler
+from asyncy.Lexicon import Lexicon
+from asyncy.models import Results, db
 
 from pytest import fixture
 

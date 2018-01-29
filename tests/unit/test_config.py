@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from evenflow.Config import Config
+from asyncy.Config import Config
 
 from pytest import fixture
 

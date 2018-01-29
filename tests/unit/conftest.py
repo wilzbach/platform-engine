@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import Applications, Users
+from asyncy.models import Applications, Users
 
 from pytest import fixture
 

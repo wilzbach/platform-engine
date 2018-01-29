@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import BaseModel
+from asyncy.models import BaseModel
 
 from peewee import Model
 

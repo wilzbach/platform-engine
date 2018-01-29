@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from evenflow.Github import Github
-from evenflow.Http import Http
-from evenflow.Jwt import Jwt
+from asyncy.Github import Github
+from asyncy.Http import Http
+from asyncy.Jwt import Jwt
 
 from pytest import fixture, mark
 

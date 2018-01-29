@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.Logger import Logger
+from asyncy.Logger import Logger
 
 from frustum import Frustum
 

@@ -2,7 +2,7 @@
 import os
 import time
 
-from evenflow.Jwt import Jwt
+from asyncy.Jwt import Jwt
 
 import jwt
 

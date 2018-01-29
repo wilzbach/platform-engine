@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import Applications, BaseModel, Stories
+from asyncy.models import Applications, BaseModel, Stories
 
 from peewee import CharField, ForeignKeyField
 

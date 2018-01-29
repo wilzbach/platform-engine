@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from evenflow.CeleryApp import CeleryApp
-from evenflow.CeleryTasks import app, logger, run
-from evenflow.Logger import Logger
-from evenflow.Tasks import Tasks
+from asyncy.CeleryApp import CeleryApp
+from asyncy.CeleryTasks import app, logger, run
+from asyncy.Logger import Logger
+from asyncy.Tasks import Tasks
 
 from pytest import fixture
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models.Database import Database
+from asyncy.models.Database import Database
 
 from peewee import PostgresqlDatabase
 

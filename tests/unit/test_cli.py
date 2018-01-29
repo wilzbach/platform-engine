@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from click.testing import CliRunner
 
-from evenflow.Cli import Cli
-from evenflow.Config import Config
-from evenflow.models import (Applications, ApplicationsStories, Repositories,
+from asyncy.Cli import Cli
+from asyncy.Config import Config
+from asyncy.models import (Applications, ApplicationsStories, Repositories,
                              Stories, Users, db)
 
 from pytest import fixture

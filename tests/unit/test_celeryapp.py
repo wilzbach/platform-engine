@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from celery import Celery
 
-from evenflow.CeleryApp import CeleryApp
-from evenflow.Config import Config
+from asyncy.CeleryApp import CeleryApp
+from asyncy.Config import Config
 
 
 def test_celeryapp(mocker):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from evenflow.Handler import Handler
-from evenflow.Tasks import Tasks
-from evenflow.models import Applications
+from asyncy.Handler import Handler
+from asyncy.Tasks import Tasks
+from asyncy.models import Applications
 
 from pytest import fixture, raises
 

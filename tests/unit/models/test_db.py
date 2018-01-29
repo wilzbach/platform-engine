@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.models import Database, db
+from asyncy.models import Database, db
 
 
 def test_db():

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from evenflow.Github import Github
-from evenflow.models import BaseModel, Repositories, Stories
+from asyncy.Github import Github
+from asyncy.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
 

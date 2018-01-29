@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from celery import Celery
 
-from evenflow.CeleryTasks import app, logger
+from asyncy.CeleryTasks import app, logger
 
 
 def test_celerytasks_app():

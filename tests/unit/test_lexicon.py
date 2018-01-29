@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.Lexicon import Lexicon
+from asyncy.Lexicon import Lexicon
 
 from pytest import fixture
 

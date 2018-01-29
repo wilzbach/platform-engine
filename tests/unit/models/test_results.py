@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 
-from evenflow.models import Results
+from asyncy.models import Results
 
 import pymongo
 

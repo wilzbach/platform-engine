@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.Http import Http
+from asyncy.Http import Http
 
 from pytest import fixture, mark
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from evenflow.Version import version
+from asyncy.Version import version
 
 
 def test_version():
