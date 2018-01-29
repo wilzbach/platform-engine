@@ -1,18 +1,17 @@
-Evenflow
+Asyncy
 #########
-
-I needed a name and I was listening to Pearl Jam :)
+The engine powering Asyncy
 
 
 Installing
 -----------
 
-You can install evenflow from pip::
+You can install asyncy from pip::
 
-    pip install evenflow
+    pip install asyncy
 
 
-After that, you might want to configure it. Evenflow loads variables from
+After that, you might want to configure it. Asyncy loads variables from
 the environment, so all you need to do is to export the options::
 
     export database=postgresql://postgres:postgres@localhost:5432/database
@@ -23,11 +22,11 @@ the environment, so all you need to do is to export the options::
 
 Starting the server::
 
-    celery worker -A evenflow.CeleryTasks
+    celery worker -A asyncy.CeleryTasks
 
 
 Processing stories::
 
-    from evenflow.CeleryTasks import run
+    from asyncy.CeleryTasks import run
 
     run.delay('app_id', 'story_name', story_id=None)
