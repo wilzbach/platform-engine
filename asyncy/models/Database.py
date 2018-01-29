@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from peewee import PostgresqlDatabase
-
 from playhouse import db_url
+from playhouse.postgres_ext import PostgresqlExtDatabase
 
 
-class Database(PostgresqlDatabase):
+class Database(PostgresqlExtDatabase):
 
     def from_url(self, database_url):
         db_dict = db_url.parse(database_url)
