@@ -33,6 +33,8 @@ class Stories(BaseModel):
     def line(self, line_number):
         return self.tree['script'][line_number]
 
-    def resolve(self, line_number):
+    def resolve(self, logger, line_number):
         args = self.line(line_number)['args']
-        return resolver.resolve_obj(self._initial_data, args)
+        item = resolver.resolve_obj(self._initial_data, args)
+        logger.log('story-resolve', args, item)
+        return item

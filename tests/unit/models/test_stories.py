@@ -61,11 +61,12 @@ def test_stories_line(story):
     assert story.line('1') == story.tree['script']['1']
 
 
-def test_stories_resolve(mocker, magic, story):
+def test_stories_resolve(mocker, logger, magic, story):
     mocker.patch.object(resolver, 'resolve_obj')
-    mocker.patch.object(Stories, 'line')
+    mocker.patch.object(Stories, 'line', return_value={'args': {}})
     story._initial_data = {}
-    result = story.resolve('1')
+    result = story.resolve(logger, '1')
     Stories.line.assert_called_with('1')
     resolver.resolve_obj.assert_called_with({}, Stories.line()['args'])
+    logger.log.assert_called_with('story-resolve', {}, resolver.resolve_obj())
     assert result == resolver.resolve_obj()
