@@ -14,6 +14,11 @@ def magic(mocker):
 
 
 @fixture
+def logger(magic):
+    return magic()
+
+
+@fixture
 def user():
     return Users('name', 'email', '@handle')
 

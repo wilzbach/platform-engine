@@ -13,14 +13,14 @@ def models(mocker, application):
 
 
 @fixture
-def handler_run(mocker):
+def handler(mocker):
     mocker.patch.object(Handler, 'run', return_value=0)
-
-
-def test_process_story(mocker, application, models, handler_run):
     mocker.patch.object(Handler, 'init_db')
     mocker.patch.object(Handler, 'build_story')
-    Tasks.process_story('app_id', 'story_name')
+
+
+def test_process_story(logger, application, models, handler):
+    Tasks.process_story(logger, 'app_id', 'story_name')
     Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
@@ -32,10 +32,15 @@ def test_process_story(mocker, application, models, handler_run):
     Handler.run.assert_called_with('1', story, context)
 
 
-def test_process_story_force_keyword(models, handler_run):
+def test_process_story_logger(logger, application, models, handler):
+    Tasks.process_story(logger, 'app_id', 'story_name')
+    logger.log.assert_called_with('task-start', 'app_id', 'story_name', None)
+
+
+def test_process_story_force_keyword(logger, models, handler):
     with raises(TypeError):
-        Tasks.process_story('app_id', 'story_name', 'story_id')
+        Tasks.process_story(logger, 'app_id', 'story_name', 'story_id')
 
 
-def test_process_story_with_id(models, handler_run):
-    Tasks.process_story('app_id', 'story_name', story_id='story_id')
+def test_process_story_with_id(logger, models, handler):
+    Tasks.process_story(logger, 'app_id', 'story_name', story_id='story_id')
