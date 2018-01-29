@@ -44,7 +44,7 @@ def test_handler_run(mocker, logger, application, story):
     Handler.run(logger, '1', story, context)
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
-    Containers.run.assert_called_with(*story.resolve())
+    Containers.run.assert_called_with(logger, *story.resolve())
     Handler.init_mongo.assert_called_with()
     Handler.init_mongo().save.assert_called_with(application.name, 'story',
                                                  Containers.result())
