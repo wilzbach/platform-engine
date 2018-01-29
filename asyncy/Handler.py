@@ -29,12 +29,12 @@ class Handler:
         story.build_tree()
 
     @staticmethod
-    def run(line_number, story, context):
+    def run(logger, line_number, story, context):
         """
         Run the story
         """
         line = story.line(line_number)
-        args = story.resolve(line_number)
+        args = story.resolve(logger, line_number)
 
         if line['method'] == 'if':
             return Lexicon.if_condition(line, args)

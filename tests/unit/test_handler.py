@@ -35,14 +35,14 @@ def test_build_story(mocker, config):
     assert story.build_tree.call_count == 1
 
 
-def test_handler_run(mocker, application, story):
+def test_handler_run(mocker, logger, application, story):
     mocker.patch.object(Containers, 'run')
     mocker.patch.object(Containers, 'result')
     mocker.patch.object(Containers, '__init__', return_value=None)
     mocker.patch.object(Handler, 'init_mongo')
     context = {'application': application, 'story': 'story'}
-    Handler.run('1', story, context)
-    story.resolve.assert_called_with('1')
+    Handler.run(logger, '1', story, context)
+    story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.run.assert_called_with(*story.resolve())
     Handler.init_mongo.assert_called_with()
@@ -50,8 +50,8 @@ def test_handler_run(mocker, application, story):
                                                  Containers.result())
 
 
-def test_handler_run_if(mocker, story):
+def test_handler_run_if(mocker, logger, story):
     mocker.patch.object(Lexicon, 'if_condition')
     mocker.patch.object(story, 'line', return_value={'method': 'if'})
-    result = Handler.run('1', story, {})
+    result = Handler.run(logger, '1', story, {})
     assert result == Lexicon.if_condition()
