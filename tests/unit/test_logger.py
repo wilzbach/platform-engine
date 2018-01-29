@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from asyncy.Config import Config
 from asyncy.Logger import Logger
 
 from frustum import Frustum
@@ -8,13 +9,20 @@ from pytest import fixture
 
 
 @fixture
-def logger(mocker):
+def config(mocker):
+    mocker.patch.object(Config, 'get')
+    return Config
+
+
+@fixture
+def logger(mocker, config):
     mocker.patch.object(Frustum, '__init__', return_value=None)
     return Logger()
 
 
 def test_logger_init(logger):
-    Frustum.__init__.assert_called_with(verbosity=1)
+    Config.get.assert_called_with('logger.verbosity')
+    Frustum.__init__.assert_called_with(verbosity=Config.get())
 
 
 def test_logger_start(mocker, logger):
