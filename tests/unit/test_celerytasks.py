@@ -19,9 +19,11 @@ def test_celerytasks_logger(mocker):
 
 def test_celerytasks_run(process_story):
     run('app_id', 'story_name')
-    process_story.assert_called_with('app_id', 'story_name', story_id=None)
+    args = (logger, 'app_id', 'story_name')
+    process_story.assert_called_with(*args, story_id=None)
 
 
 def test_celerytasks_run_with_story_id(process_story):
     run('app_id', 'story_name', story_id=1)
-    process_story.assert_called_with('app_id', 'story_name', story_id=1)
+    args = (logger, 'app_id', 'story_name')
+    process_story.assert_called_with(*args, story_id=1)

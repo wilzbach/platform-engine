@@ -12,4 +12,4 @@ app = CeleryApp.start()
 
 @app.task
 def run(app_id, story_name, story_id=None):
-    Tasks.process_story(app_id, story_name, story_id=story_id)
+    Tasks.process_story(logger, app_id, story_name, story_id=story_id)
