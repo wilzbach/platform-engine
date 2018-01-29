@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from celery import Celery
-
 from asyncy.CeleryTasks import app, logger
+
+from celery import Celery
 
 
 def test_celerytasks_app():

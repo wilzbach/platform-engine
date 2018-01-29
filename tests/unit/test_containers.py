@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import docker
-
 from asyncy.Containers import Containers
+
+import docker
 
 from pytest import fixture
 

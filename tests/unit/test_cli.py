@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from click.testing import CliRunner
-
 from asyncy.Cli import Cli
 from asyncy.Config import Config
 from asyncy.models import (Applications, ApplicationsStories, Repositories,
-                             Stories, Users, db)
+                           Stories, Users, db)
+
+from click.testing import CliRunner
 
 from pytest import fixture
 
