@@ -3,11 +3,13 @@ from asyncy.models import Applications, BaseModel, Stories
 
 from peewee import CharField, ForeignKeyField
 
+from playhouse.postgres_ext import JSONField
+
 
 def test_applications():
     assert isinstance(Applications.name, CharField)
     assert isinstance(Applications.user, ForeignKeyField)
-    assert isinstance(Applications.initial_data, CharField)
+    assert isinstance(Applications.initial_data, JSONField)
     assert Applications.initial_data.null is True
     assert issubclass(Applications, BaseModel)
 
