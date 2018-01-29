@@ -21,6 +21,20 @@ def test_containers(container):
     assert container.name == 'hello-world'
 
 
+def test_containers_aliases(container):
+    assert container.aliases['node'] == 'asyncy/asyncy-node'
+    assert container.aliases['python'] == 'asyncy/asyncy-python'
+
+
+def test_containers_alias(container):
+    container.aliases = {'simple': 'complex'}
+    assert container.alias('simple') == 'complex'
+
+
+def test_containers_alias_empty(container):
+    container.alias('empty') == 'empty'
+
+
 def test_containers_run(logger, docker_mock, container):
     container.run(logger)
     logger.log.assert_called_with('container-run', 'hello-world')
