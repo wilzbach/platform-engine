@@ -4,6 +4,7 @@ from peewee import CharField, ForeignKeyField
 from .Base import BaseModel
 from .Users import Users
 from ..Github import Github
+from ..Yaml import Yaml
 
 
 class Repositories(BaseModel):
@@ -18,3 +19,9 @@ class Repositories(BaseModel):
     def contents(self, filename, version):
         return self.github.get_contents(self.organization, self.name, filename,
                                         version=version)
+
+    def config(self):
+        contents = self.github.get_contents(self.organization, self.name,
+                                            'asyncy.yml')
+        if contents:
+            return Yaml.string(contents)
