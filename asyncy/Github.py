@@ -52,4 +52,5 @@ class Github:
         headers = self._headers(self.access_token)
         kwargs = {'params': {'ref': version}, 'headers': headers}
         response = Http.get(url, json=True, **kwargs)
-        return self.decode_base64(response['content'])
+        if 'content' in response:
+            return self.decode_base64(response['content'])
