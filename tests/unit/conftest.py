@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.Config import Config
-from asyncy.models import Applications, Users
+from asyncy.models import Applications, Repositories, Users
 
 from pytest import fixture
 
@@ -28,6 +28,11 @@ def application(user, magic):
     app = Applications(name='app', user=user)
     app.stories = magic()
     return app
+
+
+@fixture
+def repository(user):
+    return Repositories(name='project', organization='org', owner=user)
 
 
 @fixture
