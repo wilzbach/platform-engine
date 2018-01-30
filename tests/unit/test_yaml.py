@@ -22,8 +22,8 @@ def yaml_file(request, teardown):
 
 
 def test_yaml_load(yaml_file):
-    assert Yaml.load('file.yml') == {'asyncy': True, 'storyscript': 3}
+    assert Yaml.path('file.yml') == {'asyncy': True, 'storyscript': 3}
 
 
 def test_yaml_load_nofile():
-    assert Yaml.load('no.yml') is None
+    assert Yaml.path('no.yml') is None

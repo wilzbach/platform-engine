@@ -7,7 +7,7 @@ from yaml import Loader, load
 class Yaml:
 
     @staticmethod
-    def load(path):
+    def path(path):
         if os.path.isfile(path):
             with open(path, 'r') as f:
                 return load(f.read(), Loader=Loader)
