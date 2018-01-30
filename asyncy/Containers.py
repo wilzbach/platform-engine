@@ -13,6 +13,7 @@ class Containers:
         self.name = self.alias(name)
         self.client = docker.from_env()
         self.env = {}
+        self.volume = None
 
     def alias(self, name):
         """
@@ -43,6 +44,9 @@ class Containers:
         """
         self.client.images.pull(self.name)
         kwargs = {'command': (), 'environment': self.env}
+        if self.volume:
+            kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
+                                                    'mode': 'rw'}}
         self.output = self.client.containers.run(self.name, **kwargs)
         logger.log('container-run', self.name)
 

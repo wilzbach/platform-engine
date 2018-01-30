@@ -25,6 +25,7 @@ def test_containers(patch, client):
     assert container.client == docker.from_env()
     assert container.name == Containers.alias()
     assert container.env == {}
+    assert container.volume is None
 
 
 def test_containers_aliases(container):
@@ -65,10 +66,13 @@ def test_containers_environment(patch, story, application, container):
     assert container.env == {'one': 1, 'two': 0, 'three': 3}
 
 
-def test_containers_run(logger, client, container):
+def test_containers_run(magic, logger, client, container):
+    container.volume = magic(name='volume')
     container.run(logger, {})
     logger.log.assert_called_with('container-run', container.name)
-    kwargs = {'command': (), 'environment': {}}
+    kwargs = {'command': (), 'environment': {},
+              'volumes': {container.volume.name: {'bind': '/opt/v1',
+                                                  'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.name, **kwargs)
     client.images.pull.assert_called_with(container.name)
     assert container.output == client.containers.run()
