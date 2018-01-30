@@ -40,7 +40,8 @@ class Handler:
             return Lexicon.if_condition(line, args)
 
         container = Containers(line['container'])
-        container.run(logger, context['application'].get_environment(), *args)
+        container.environment(context['application'], story)
+        container.run(logger, *args)
         results = Handler.init_mongo()
         results.save(context['application'].name, context['story'],
                      container.result())
