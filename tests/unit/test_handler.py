@@ -38,6 +38,7 @@ def test_build_story(mocker, config):
 def test_handler_run(patch, logger, application, story):
     patch.object(Containers, 'run')
     patch.object(Containers, 'environment')
+    patch.object(Containers, 'make_volume')
     patch.object(Containers, 'result')
     patch.object(Containers, '__init__', return_value=None)
     patch.object(Handler, 'init_mongo')
@@ -46,6 +47,7 @@ def test_handler_run(patch, logger, application, story):
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.environment.assert_called_with(application, story)
+    Containers.make_volume.assert_called_with(story.name)
     Containers.run.assert_called_with(logger, *story.resolve())
     Handler.init_mongo.assert_called_with()
     Handler.init_mongo().save.assert_called_with(application.name, 'story',

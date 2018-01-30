@@ -41,6 +41,7 @@ class Handler:
 
         container = Containers(line['container'])
         container.environment(context['application'], story)
+        container.make_volume(story.name)
         container.run(logger, *args)
         results = Handler.init_mongo()
         results.save(context['application'].name, context['story'],
