@@ -27,6 +27,7 @@ class Stories(BaseModel):
         if config:
             if 'env' in config:
                 return config['env']
+        return {}
 
     def build_tree(self):
         story = self.get_contents()

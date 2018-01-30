@@ -48,7 +48,7 @@ def test_stories_environment(mocker, story):
 @mark.parametrize('env', [None, {}])
 def test_stories_environment_none(mocker, story, env):
     mocker.patch.object(Repositories, 'config', return_value=env)
-    assert story.environment() is None
+    assert story.environment() == {}
 
 
 def test_stories_build_tree(mocker, story):
