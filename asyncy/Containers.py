@@ -14,17 +14,26 @@ class Containers:
         self.env = {}
 
     def alias(self, name):
+        """
+        Converts a container alias to its real name.
+        """
         if name in self.aliases:
             return self.aliases[name]
         return name
 
     def environment(self, application, story):
+        """
+        Sets the environment from application and story.
+        """
         self.env = application.environment()
         story_environment = story.environment()
         for key, value in story_environment.items():
             self.env[key] = value
 
     def run(self, logger, *args):
+        """
+        Runs a docker image.
+        """
         client = docker.from_env()
         client.images.pull(self.name)
         kwargs = {'command': (), 'environment': self.env}
