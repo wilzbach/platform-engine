@@ -45,6 +45,9 @@ class Github:
         self.access_token = response['token']
 
     def get_contents(self, organization, repository, file, version=None):
+        """
+        Gets the content of a file from a repository
+        """
         url = self.make_url('contents', organization, repository, file)
         headers = self._headers(self.access_token)
         kwargs = {'params': {'ref': version}, 'headers': headers}
