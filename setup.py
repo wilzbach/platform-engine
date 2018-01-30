@@ -38,6 +38,7 @@ setup(
         'psycopg2>=2.7.3.2',
         'pyjwt>=1.5.3',
         'pymongo>=3.6.0',
+        'pyyaml>=3.12',
         'requests>=2.18.4',
         'storyscript>=0.0.3'
     ],
