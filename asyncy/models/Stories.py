@@ -22,6 +22,12 @@ class Stories(BaseModel):
     def data(self, initial_data):
         self._initial_data = initial_data
 
+    def environment(self):
+        config = self.repository.config()
+        if config:
+            if 'env' in config:
+                return config['env']
+
     def build_tree(self):
         story = self.get_contents()
         self.tree = Parser().parse(story).json()

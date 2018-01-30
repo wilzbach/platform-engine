@@ -3,7 +3,7 @@ from asyncy.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
 
-from pytest import fixture
+from pytest import fixture, mark
 
 from storyscript import resolver
 from storyscript.parser import Parser
@@ -38,6 +38,17 @@ def test_stories_get_contents(mocker, story):
 def test_stories_data(story):
     story.data({})
     assert story._initial_data == {}
+
+
+def test_stories_environment(mocker, story):
+    mocker.patch.object(Repositories, 'config', return_value={'env': 'env'})
+    assert story.environment() == 'env'
+
+
+@mark.parametrize('env', [None, {}])
+def test_stories_environment_none(mocker, story, env):
+    mocker.patch.object(Repositories, 'config', return_value=env)
+    assert story.environment() is None
 
 
 def test_stories_build_tree(mocker, story):
