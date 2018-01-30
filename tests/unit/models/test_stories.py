@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from asyncy.Github import Github
 from asyncy.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
@@ -11,9 +10,8 @@ from storyscript.parser import Parser
 
 
 @fixture
-def story(user):
-    repo = Repositories(name='project', organization='org', owner=user)
-    return Stories(filename='my.story', repository=repo)
+def story(repository):
+    return Stories(filename='my.story', repository=repository)
 
 
 def test_stories():
@@ -25,21 +23,16 @@ def test_stories():
 
 
 def test_stories_backend(mocker, story):
-    mocker.patch.object(Github, '__init__', return_value=None)
-    mocker.patch.object(Github, 'authenticate')
-    story.backend('app_id', 'pem_path', 'installation_id')
-    Github.__init__.assert_called_with('app_id', 'pem_path')
-    Github.authenticate.assert_called_with('installation_id')
-    assert isinstance(story.github, Github)
+    mocker.patch.object(Repositories, 'backend')
+    story.backend('app_id', 'pem_path', 'install_id')
+    Repositories.backend.assert_called_with('app_id', 'pem_path', 'install_id')
 
 
-def test_stories_get_contents(magic, story):
-    story.github = magic()
+def test_stories_get_contents(mocker, story):
+    mocker.patch.object(Repositories, 'contents')
     result = story.get_contents()
-    repository = story.repository
-    args = (repository.organization, repository.name, story.filename)
-    story.github.get_contents.assert_called_with(*args, version=story.version)
-    assert result == story.github.get_contents()
+    Repositories.contents.assert_called_with(story.filename, story.version)
+    assert result == Repositories.contents()
 
 
 def test_stories_data(story):

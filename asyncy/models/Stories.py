@@ -6,7 +6,6 @@ from storyscript.parser import Parser
 
 from .Base import BaseModel
 from .Repositories import Repositories
-from ..Github import Github
 
 
 class Stories(BaseModel):
@@ -15,13 +14,10 @@ class Stories(BaseModel):
     repository = ForeignKeyField(Repositories)
 
     def backend(self, app_identifier, pem_path, installation_id):
-        self.github = Github(app_identifier, pem_path)
-        self.github.authenticate(installation_id)
+        self.repository.backend(app_identifier, pem_path, installation_id)
 
     def get_contents(self):
-        args = (self.repository.organization, self.repository.name,
-                self.filename)
-        return self.github.get_contents(*args, version=self.version)
+        return self.repository.contents(self.filename, self.version)
 
     def data(self, initial_data):
         self._initial_data = initial_data
