@@ -3,7 +3,7 @@ from asyncy.Containers import Containers
 
 import docker
 
-from pytest import fixture
+from pytest import fixture, raises
 
 
 @fixture
@@ -41,6 +41,19 @@ def test_containers_alias():
 def test_containers_alias_empty():
     container = Containers('name')
     container.alias('empty') == 'empty'
+
+
+def test_containers_make_volume(container):
+    container.make_volume('volume')
+    container.client.volumes.get.assert_called_with('volume')
+    assert container.volume == container.client.volumes.get()
+
+
+def test_containers_make_volume_create(container):
+    container.client.volumes.get.side_effect = docker.errors.NotFound('')
+    container.make_volume('volume')
+    container.client.volumes.create.assert_called_with('volume')
+    assert container.volume == container.client.volumes.create()
 
 
 def test_containers_environment(patch, story, application, container):

@@ -22,6 +22,12 @@ class Containers:
             return self.aliases[name]
         return name
 
+    def make_volume(self, name):
+        try:
+            self.volume = self.client.volumes.get(name)
+        except docker.errors.NotFound:
+            self.volume = self.client.volumes.create(name)
+
     def environment(self, application, story):
         """
         Sets the environment from application and story.
