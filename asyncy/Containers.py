@@ -11,6 +11,7 @@ class Containers:
 
     def __init__(self, name):
         self.name = self.alias(name)
+        self.env = {}
 
     def alias(self, name):
         if name in self.aliases:
@@ -23,10 +24,10 @@ class Containers:
         for key, value in story_environment.items():
             self.env[key] = value
 
-    def run(self, logger, environment, *args):
+    def run(self, logger, *args):
         client = docker.from_env()
         client.images.pull(self.name)
-        kwargs = {'command': (), 'environment': environment}
+        kwargs = {'command': (), 'environment': self.env}
         self.output = client.containers.run(self.name, **kwargs)
         logger.log('container-run', self.name)
 

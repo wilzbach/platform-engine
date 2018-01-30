@@ -21,6 +21,7 @@ def docker_mock(mocker):
 def test_containers(container):
     Containers.alias.assert_called_with('hello-world')
     assert container.name == Containers.alias()
+    assert container.env == {}
 
 
 def test_containers_aliases(container):
@@ -57,7 +58,7 @@ def test_containers_run(logger, docker_mock, container):
 
 
 def test_containers_run_commands(logger, docker_mock, container):
-    container.run(logger, {}, 'one', 'two')
+    container.run(logger, 'one', 'two')
     containers = docker_mock.containers.run
     containers.assert_called_with('hello-world', command=(), environment={})
 
