@@ -23,14 +23,14 @@ def test_applications_get_story(application):
     assert story == application.stories.join().where().get().story
 
 
-def test_applications_get_environment(application):
+def test_applications_environment(application):
     application.initial_data = {'environment': {}}
-    environment = application.get_environment()
+    environment = application.environment()
     assert environment == application.initial_data['environment']
 
 
 @mark.parametrize('data', [{'options': {}}, None])
-def test_applications_get_environment_none(application, data):
+def test_applications_environment_none(application, data):
     application.initial_data = data
-    environment = application.get_environment()
+    environment = application.environment()
     assert environment == {}

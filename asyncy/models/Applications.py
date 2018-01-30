@@ -19,7 +19,7 @@ class Applications(BaseModel):
                                .where(Stories.filename == story_name).get()
         return appstory.story
 
-    def get_environment(self):
+    def environment(self):
         if self.initial_data:
             if 'environment' in self.initial_data:
                 return self.initial_data['environment']
