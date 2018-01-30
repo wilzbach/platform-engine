@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.Config import Config
-from asyncy.models import Applications, Repositories, Users
+from asyncy.models import Applications, Repositories, Stories, Users
 
 from pytest import fixture
 
@@ -11,6 +11,11 @@ def magic(mocker):
     Shorthand for mocker.MagicMock. It's magic!
     """
     return mocker.MagicMock
+
+
+@fixture
+def patch(mocker):
+    return mocker.patch
 
 
 @fixture
@@ -33,6 +38,11 @@ def application(user, magic):
 @fixture
 def repository(user):
     return Repositories(name='project', organization='org', owner=user)
+
+
+@fixture
+def story(repository):
+    return Stories(filename='test.story', repository=repository)
 
 
 @fixture

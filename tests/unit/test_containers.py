@@ -38,6 +38,15 @@ def test_containers_alias_empty(container):
     container.alias('empty') == 'empty'
 
 
+def test_containers_environment(patch, story, application, container):
+    patch.object(application, 'environment', return_value={'one': 1, 'two': 2})
+    patch.object(story, 'environment', return_value={'two': 0, 'three': 3})
+    container.environment(application, story)
+    application.environment.assert_called_with()
+    story.environment.assert_called_with()
+    assert container.env == {'one': 1, 'two': 0, 'three': 3}
+
+
 def test_containers_run(logger, docker_mock, container):
     container.run(logger, {})
     logger.log.assert_called_with('container-run', 'hello-world')

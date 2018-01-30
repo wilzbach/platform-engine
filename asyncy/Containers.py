@@ -17,6 +17,12 @@ class Containers:
             return self.aliases[name]
         return name
 
+    def environment(self, application, story):
+        self.env = application.environment()
+        story_environment = story.environment()
+        for key, value in story_environment.items():
+            self.env[key] = value
+
     def run(self, logger, environment, *args):
         client = docker.from_env()
         client.images.pull(self.name)
