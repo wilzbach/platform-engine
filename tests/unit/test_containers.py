@@ -7,19 +7,22 @@ from pytest import fixture
 
 
 @fixture
-def container(mocker):
-    mocker.patch.object(Containers, 'alias', return_value='hello-world')
-    return Containers('hello-world')
-
-
-@fixture
-def docker_mock(mocker):
-    mocker.patch.object(docker, 'from_env')
+def client(patch):
+    patch.object(docker, 'from_env')
     return docker.from_env()
 
 
-def test_containers(container):
+@fixture
+def container(patch, client):
+    patch.object(Containers, 'alias', return_value='name')
+    return Containers('hello-world')
+
+
+def test_containers(patch, client):
+    patch.object(Containers, 'alias')
+    container = Containers('hello-world')
     Containers.alias.assert_called_with('hello-world')
+    assert container.client == docker.from_env()
     assert container.name == Containers.alias()
     assert container.env == {}
 
@@ -35,7 +38,8 @@ def test_containers_alias():
     assert container.alias('simple') == 'complex'
 
 
-def test_containers_alias_empty(container):
+def test_containers_alias_empty():
+    container = Containers('name')
     container.alias('empty') == 'empty'
 
 
@@ -48,19 +52,19 @@ def test_containers_environment(patch, story, application, container):
     assert container.env == {'one': 1, 'two': 0, 'three': 3}
 
 
-def test_containers_run(logger, docker_mock, container):
+def test_containers_run(logger, client, container):
     container.run(logger, {})
-    logger.log.assert_called_with('container-run', 'hello-world')
+    logger.log.assert_called_with('container-run', container.name)
     kwargs = {'command': (), 'environment': {}}
-    docker_mock.containers.run.assert_called_with('hello-world', **kwargs)
-    docker_mock.images.pull.assert_called_with('hello-world')
-    assert container.output == docker.from_env().containers.run()
+    client.containers.run.assert_called_with(container.name, **kwargs)
+    client.images.pull.assert_called_with(container.name)
+    assert container.output == client.containers.run()
 
 
-def test_containers_run_commands(logger, docker_mock, container):
+def test_containers_run_commands(logger, client, container):
     container.run(logger, 'one', 'two')
-    containers = docker_mock.containers.run
-    containers.assert_called_with('hello-world', command=(), environment={})
+    containers = client.containers.run
+    containers.assert_called_with(container.name, command=(), environment={})
 
 
 def test_containers_results(container):

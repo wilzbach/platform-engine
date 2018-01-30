@@ -11,6 +11,7 @@ class Containers:
 
     def __init__(self, name):
         self.name = self.alias(name)
+        self.client = docker.from_env()
         self.env = {}
 
     def alias(self, name):
@@ -34,10 +35,9 @@ class Containers:
         """
         Runs a docker image.
         """
-        client = docker.from_env()
-        client.images.pull(self.name)
+        self.client.images.pull(self.name)
         kwargs = {'command': (), 'environment': self.env}
-        self.output = client.containers.run(self.name, **kwargs)
+        self.output = self.client.containers.run(self.name, **kwargs)
         logger.log('container-run', self.name)
 
     def result(self):
