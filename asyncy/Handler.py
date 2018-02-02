@@ -40,7 +40,7 @@ class Handler:
             return Lexicon.if_condition(line, args)
 
         container = Containers(line['container'])
-        container.environment(context['application'], story)
+        container.environment(story, context['application'])
         container.make_volume(story.filename)
         container.run(logger, *args)
         results = Handler.init_mongo()

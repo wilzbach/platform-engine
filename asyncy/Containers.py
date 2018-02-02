@@ -29,14 +29,15 @@ class Containers:
         except docker.errors.NotFound:
             self.volume = self.client.volumes.create(name)
 
-    def environment(self, application, story):
+    def environment(self, story, application):
         """
-        Sets the environment from application and story.
+        Sets the environment from story and application.
         """
-        self.env = application.environment()
-        story_environment = story.environment()
-        for key, value in story_environment.items():
-            self.env[key] = value
+        self.env = story.environment()
+        application_environment = application.environment()
+        for key, value in self.env.items():
+            if key in application_environment:
+                self.env[key] = application_environment[key]
 
     def run(self, logger, *args):
         """

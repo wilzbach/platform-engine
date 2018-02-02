@@ -58,12 +58,13 @@ def test_containers_make_volume_create(container):
 
 
 def test_containers_environment(patch, story, application, container):
-    patch.object(application, 'environment', return_value={'one': 1, 'two': 2})
-    patch.object(story, 'environment', return_value={'two': 0, 'three': 3})
-    container.environment(application, story)
-    application.environment.assert_called_with()
+    patch.object(story, 'environment', return_value={'one': 1, 'two': 2})
+    patch.object(application, 'environment', return_value={'one': 0,
+                                                           'three': 3})
+    container.environment(story, application)
     story.environment.assert_called_with()
-    assert container.env == {'one': 1, 'two': 0, 'three': 3}
+    application.environment.assert_called_with()
+    assert container.env == {'one': 0, 'two': 2}
 
 
 def test_containers_run(magic, logger, client, container):
