@@ -5,8 +5,8 @@ from peewee import CharField, ForeignKeyField
 
 from pytest import fixture, mark
 
-from storyscript import resolver
 from storyscript.parser import Parser
+from storyscript.resolver import Resolver
 
 
 @fixture
@@ -66,11 +66,11 @@ def test_stories_line(story):
 
 
 def test_stories_resolve(mocker, logger, magic, story):
-    mocker.patch.object(resolver, 'resolve_obj')
+    mocker.patch.object(Resolver, 'resolve')
     mocker.patch.object(Stories, 'line', return_value={'args': {}})
     story._initial_data = {}
     result = story.resolve(logger, '1')
     Stories.line.assert_called_with('1')
-    resolver.resolve_obj.assert_called_with({}, Stories.line()['args'])
-    logger.log.assert_called_with('story-resolve', {}, resolver.resolve_obj())
-    assert result == resolver.resolve_obj()
+    Resolver.resolve.assert_called_with(Stories.line()['args'], {})
+    logger.log.assert_called_with('story-resolve', {}, Resolver.resolve())
+    assert result == Resolver.resolve()

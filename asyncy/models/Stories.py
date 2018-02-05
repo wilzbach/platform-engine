@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from peewee import CharField, ForeignKeyField
 
-from storyscript import resolver
 from storyscript.parser import Parser
+from storyscript.resolver import Resolver
 
 from .Base import BaseModel
 from .Repositories import Repositories
@@ -38,6 +38,6 @@ class Stories(BaseModel):
 
     def resolve(self, logger, line_number):
         args = self.line(line_number)['args']
-        item = resolver.resolve_obj(self._initial_data, args)
+        item = Resolver.resolve(args, self._initial_data)
         logger.log('story-resolve', args, item)
         return item
