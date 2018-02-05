@@ -72,6 +72,7 @@ def test_containers_run(magic, logger, client, container):
     container.run(logger, 'command')
     logger.log.assert_called_with('container-run', container.name)
     kwargs = {'command': 'command', 'environment': {},
+              'cap_drop': 'all',
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.name, **kwargs)

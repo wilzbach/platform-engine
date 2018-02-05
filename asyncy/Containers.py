@@ -44,7 +44,8 @@ class Containers:
         Runs a docker image.
         """
         self.client.images.pull(self.name)
-        kwargs = {'command': command, 'environment': self.env}
+        kwargs = {'command': command, 'environment': self.env,
+                  'cap_drop': 'all'}
         if self.volume:
             kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
                                                     'mode': 'rw'}}
