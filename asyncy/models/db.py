@@ -2,4 +2,4 @@
 from .Database import Database
 
 
-db = Database(None)
+db = Database(None, register_hstore=True)
