@@ -79,13 +79,6 @@ def test_containers_run(magic, logger, client, container):
     assert container.output == client.containers.run()
 
 
-def test_containers_run_commands(logger, client, container):
-    container.run(logger, 'command')
-    containers = client.containers.run
-    containers.assert_called_with(container.name, command='command',
-                                  environment={})
-
-
 def test_containers_results(container):
     container.output = 'output'
     assert container.result() == 'output'
