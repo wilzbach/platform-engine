@@ -45,4 +45,4 @@ class Handler:
         container.run(logger, command)
         results = Handler.init_mongo()
         results.save(context['application'].name, context['story'],
-                     container.result())
+                     context['start'], container.result())
