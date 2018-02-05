@@ -26,11 +26,12 @@ def test_results(mongo, results):
 
 def test_results_save(mocker, mongo, results):
     mocker.patch.object(time, 'time', return_value=1)
-    result = results.save('application', 'story', 'data')
+    result = results.save('application', 'story', 'start', 'data')
     expected = {
         'application': 'application',
         'story': 'story',
         'data': 'data',
+        'started': 'start',
         'finished': time.time()
     }
     mongo().asyncy.main.insert_one.assert_called_with(expected)
