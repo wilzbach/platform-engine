@@ -25,5 +25,4 @@ def test_database_from_url(mocker, database):
     db_url.parse.assert_called_with('dburl')
     PostgresqlExtDatabase.init.assert_called_with('db', host='host',
                                                   port='port', user='user',
-                                                  password='password',
-                                                  register_hstore=True)
+                                                  password='password')
