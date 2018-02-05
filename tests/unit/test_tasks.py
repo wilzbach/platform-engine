@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 from asyncy.Handler import Handler
 from asyncy.Tasks import Tasks
 from asyncy.models import Applications
@@ -19,7 +21,8 @@ def handler(mocker):
     mocker.patch.object(Handler, 'build_story')
 
 
-def test_process_story(logger, application, models, handler):
+def test_process_story(patch, logger, application, models, handler):
+    patch.object(time, 'time')
     Tasks.process_story(logger, 'app_id', 'story_name')
     Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
@@ -28,7 +31,8 @@ def test_process_story(logger, application, models, handler):
     installation_id = application.user.installation_id
     story.data.assert_called_with(application.initial_data)
     Handler.build_story.assert_called_with(installation_id, story)
-    context = {'application': Applications.get(), 'story': 'story_name'}
+    context = {'application': Applications.get(), 'story': 'story_name',
+               'start': time.time()}
     Handler.run.assert_called_with(logger, '1', story, context)
 
 
