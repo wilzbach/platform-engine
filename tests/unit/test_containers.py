@@ -69,9 +69,9 @@ def test_containers_environment(patch, story, application, container):
 
 def test_containers_run(magic, logger, client, container):
     container.volume = magic(name='volume')
-    container.run(logger, {})
+    container.run(logger, 'command')
     logger.log.assert_called_with('container-run', container.name)
-    kwargs = {'command': (), 'environment': {},
+    kwargs = {'command': 'command', 'environment': {},
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.name, **kwargs)
@@ -80,9 +80,10 @@ def test_containers_run(magic, logger, client, container):
 
 
 def test_containers_run_commands(logger, client, container):
-    container.run(logger, 'one', 'two')
+    container.run(logger, 'command')
     containers = client.containers.run
-    containers.assert_called_with(container.name, command=(), environment={})
+    containers.assert_called_with(container.name, command='command',
+                                  environment={})
 
 
 def test_containers_results(container):
