@@ -34,15 +34,15 @@ class Handler:
         Run the story
         """
         line = story.line(line_number)
-        args = story.resolve(logger, line_number)
+        command = story.resolve(logger, line_number)
 
         if line['method'] == 'if':
-            return Lexicon.if_condition(line, args)
+            return Lexicon.if_condition(line, command)
 
         container = Containers(line['container'])
         container.environment(story, context['application'])
         container.make_volume(story.filename)
-        container.run(logger, *args)
+        container.run(logger, command)
         results = Handler.init_mongo()
         results.save(context['application'].name, context['story'],
                      container.result())

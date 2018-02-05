@@ -48,7 +48,7 @@ def test_handler_run(patch, logger, application, story):
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.environment.assert_called_with(story, application)
     Containers.make_volume.assert_called_with(story.filename)
-    Containers.run.assert_called_with(logger, *story.resolve())
+    Containers.run.assert_called_with(logger, story.resolve())
     Handler.init_mongo.assert_called_with()
     Handler.init_mongo().save.assert_called_with(application.name, 'story',
                                                  Containers.result())
