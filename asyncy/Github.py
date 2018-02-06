@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from base64 import b64decode
 
-from .Http import Http
-from .Jwt import Jwt
+from .utils import Http, Jwt
 
 
 class Github:

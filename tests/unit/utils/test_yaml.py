@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from asyncy.Yaml import Yaml
+from asyncy.utils import Yaml
 
 from pytest import fixture
 

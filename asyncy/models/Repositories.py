@@ -4,7 +4,7 @@ from peewee import CharField, ForeignKeyField
 from .Base import BaseModel
 from .Users import Users
 from ..Github import Github
-from ..Yaml import Yaml
+from ..utils import Yaml
 
 
 class Repositories(BaseModel):

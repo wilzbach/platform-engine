@@ -2,7 +2,7 @@
 import os
 import time
 
-from asyncy.Jwt import Jwt
+from asyncy.utils import Jwt
 
 import jwt
 

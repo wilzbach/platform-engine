@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from asyncy.Github import Github
-from asyncy.Yaml import Yaml
 from asyncy.models import BaseModel, Repositories
+from asyncy.utils import Yaml
 
 from peewee import CharField, ForeignKeyField
 

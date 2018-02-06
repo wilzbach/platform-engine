@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from asyncy.Http import Http
+from asyncy.utils import Http
 
 from pytest import fixture, mark
 

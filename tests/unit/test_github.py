@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.Github import Github
-from asyncy.Http import Http
-from asyncy.Jwt import Jwt
+from asyncy.utils import Http, Jwt
 
 from pytest import fixture, mark
 
