@@ -43,6 +43,4 @@ class Handler:
         container.environment(story, context['application'])
         container.make_volume(story.filename)
         container.run(logger, command)
-        results = Handler.init_mongo()
-        results.save(context['application'].name, context['story'],
-                     context['start'], container.result())
+        context['results'][line_number] = container.result()

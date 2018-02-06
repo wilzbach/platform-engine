@@ -35,23 +35,19 @@ def test_build_story(mocker, config):
     assert story.build_tree.call_count == 1
 
 
-def test_handler_run(patch, logger, application, story):
+def test_handler_run(patch, logger, application, story, context):
     patch.object(Containers, 'run')
     patch.object(Containers, 'environment')
     patch.object(Containers, 'make_volume')
     patch.object(Containers, 'result')
     patch.object(Containers, '__init__', return_value=None)
-    patch.object(Handler, 'init_mongo')
-    context = {'application': application, 'story': 'story', 'start': 0}
     Handler.run(logger, '1', story, context)
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.environment.assert_called_with(story, application)
     Containers.make_volume.assert_called_with(story.filename)
     Containers.run.assert_called_with(logger, story.resolve())
-    Handler.init_mongo.assert_called_with()
-    Handler.init_mongo().save.assert_called_with(application.name, 'story',
-                                                 0, Containers.result())
+    assert context['results']['1'] == Containers.result()
 
 
 def test_handler_run_if(mocker, logger, story):

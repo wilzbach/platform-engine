@@ -46,6 +46,12 @@ def story(repository):
 
 
 @fixture
+def context(application):
+    return {'application': application, 'story': 'story', 'start': 0,
+            'results': {}}
+
+
+@fixture
 def config(mocker):
     mocker.patch.object(Config, 'get')
     return Config
