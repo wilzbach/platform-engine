@@ -18,6 +18,6 @@ class Tasks:
 
         line_number = '1'
         context = {'application': app, 'story': story_name,
-                   'start': time.time()}
+                   'start': time.time(), 'results': {}}
         while line_number:
             line_number = Handler.run(logger, line_number, story, context)

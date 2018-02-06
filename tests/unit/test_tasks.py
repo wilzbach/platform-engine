@@ -32,7 +32,7 @@ def test_process_story(patch, logger, application, models, handler):
     story.data.assert_called_with(application.initial_data)
     Handler.build_story.assert_called_with(installation_id, story)
     context = {'application': Applications.get(), 'story': 'story_name',
-               'start': time.time()}
+               'start': time.time(), 'results': {}}
     Handler.run.assert_called_with(logger, '1', story, context)
 
 
