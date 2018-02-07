@@ -18,6 +18,10 @@ class Mongo:
         return DBRef(collection, item_id)
 
     def story(self, application_id, story_id):
+        """
+        Finds a story document with the given application and story id;
+        otherwise creates it.
+        """
         document = {'application': application_id, 'story': story_id}
         story = self.mongo.asyncy.stories.find_one(document)
         if story:
