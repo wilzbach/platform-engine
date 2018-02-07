@@ -65,3 +65,19 @@ def test_results_narration(patch, mongo, results):
     }
     mongo().asyncy.narrations.insert_one.assert_called_with(expected)
     assert result == mongo().asyncy.narrations.insert_one()
+
+
+def test_results_lines(patch, mongo, results):
+    patch.object(Results, 'ref', return_value=100)
+    lines = {'1': {'output': 'out', 'start': '1', 'end': '2'}}
+    result = results.lines({'_id': 1}, lines)
+    expected = {
+        'narration_id': 100,
+        'line': '1',
+        'output': 'out',
+        'start': '1',
+        'end': '2'
+    }
+    Results.ref.assert_called_with('narrations', 1)
+    mongo().asyncy.lines.insert_many.assert_called_with([expected])
+    assert result == mongo().asyncy.lines.insert_many()

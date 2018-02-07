@@ -45,3 +45,17 @@ class Results:
             'end': end
         }
         return self.mongo.asyncy.narrations.insert_one(document)
+
+    def lines(self, narration, lines):
+        narration_ref = self.ref('narrations', narration['_id'])
+        documents = []
+        for line, data in lines.items():
+            document = {
+                'narration_id': narration_ref,
+                'line': line,
+                'output': data['output'],
+                'start': data['start'],
+                'end': data['end']
+            }
+            documents.append(document)
+        return self.mongo.asyncy.lines.insert_many(documents)
