@@ -54,7 +54,8 @@ def test_handler_run(patch, logger, application, story, context):
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.make_volume.assert_called_with(story.filename)
-    Containers.run.assert_called_with(logger, story.resolve())
+    Containers.run.assert_called_with(logger, story.resolve(),
+                                      context['environment'])
     assert context['results']['1'] == Containers.result()
 
 

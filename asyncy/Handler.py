@@ -52,7 +52,6 @@ class Handler:
             return Lexicon.if_condition(line, command)
 
         container = Containers(line['container'])
-        container.environment(story, context['application'])
         container.make_volume(story.filename)
-        container.run(logger, command)
+        container.run(logger, command, context['environment'])
         context['results'][line_number] = container.result()

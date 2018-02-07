@@ -48,7 +48,7 @@ def story(repository):
 @fixture
 def context(application):
     return {'application': application, 'story': 'story', 'start': 0,
-            'results': {}}
+            'results': {}, 'environment': {}}
 
 
 @fixture
