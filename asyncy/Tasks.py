@@ -15,9 +15,11 @@ class Tasks:
         story = app.get_story(story_name)
         story.data(app.initial_data)
         Handler.build_story(app.user.installation_id, story)
+        environment = Handler.make_environment(story, app)
 
         line_number = '1'
         context = {'application': app, 'story': story_name,
-                   'start': time.time(), 'results': {}}
+                   'start': time.time(), 'results': {},
+                   'environment': environment}
         while line_number:
             line_number = Handler.run(logger, line_number, story, context)
