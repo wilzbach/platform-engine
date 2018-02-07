@@ -6,7 +6,7 @@ from bson import DBRef
 import pymongo
 
 
-class Results:
+class Mongo:
 
     def __init__(self, mongo_url):
         self.mongo = pymongo.MongoClient(mongo_url)
