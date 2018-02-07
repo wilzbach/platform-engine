@@ -18,3 +18,10 @@ class Results:
             'finished': time.time()
         }
         return self.mongo.asyncy.main.insert_one(document)
+
+    def story(self, application_id, story_id):
+        document = {
+            'application': application_id,
+            'story': story_id
+        }
+        return self.mongo.asyncy.stories.insert_one(document)

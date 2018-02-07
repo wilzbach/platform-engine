@@ -36,3 +36,10 @@ def test_results_save(mocker, mongo, results):
     }
     mongo().asyncy.main.insert_one.assert_called_with(expected)
     assert result == mongo().asyncy.main.insert_one()
+
+
+def test_results_story(mongo, results):
+    result = results.story(1, 2)
+    expected = {'application': 1, 'story': 2}
+    mongo().asyncy.stories.insert_one.assert_called_with(expected)
+    assert result == mongo().asyncy.stories.insert_one()
