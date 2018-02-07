@@ -35,16 +35,24 @@ def test_build_story(mocker, config):
     assert story.build_tree.call_count == 1
 
 
+def test_handler_make_environment(patch, story, application):
+    patch.object(story, 'environment', return_value={'one': 1, 'two': 2})
+    patch.object(application, 'environment', return_value={'one': 0,
+                                                           'three': 3})
+    environment = Handler.make_environment(story, application)
+    story.environment.assert_called_with()
+    application.environment.assert_called_with()
+    assert environment == {'one': 0, 'two': 2}
+
+
 def test_handler_run(patch, logger, application, story, context):
     patch.object(Containers, 'run')
-    patch.object(Containers, 'environment')
     patch.object(Containers, 'make_volume')
     patch.object(Containers, 'result')
     patch.object(Containers, '__init__', return_value=None)
     Handler.run(logger, '1', story, context)
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
-    Containers.environment.assert_called_with(story, application)
     Containers.make_volume.assert_called_with(story.filename)
     Containers.run.assert_called_with(logger, story.resolve())
     assert context['results']['1'] == Containers.result()

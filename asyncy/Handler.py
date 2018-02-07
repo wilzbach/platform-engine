@@ -29,6 +29,18 @@ class Handler:
         story.build_tree()
 
     @staticmethod
+    def make_environment(story, application):
+        """
+        Makes the environment from story and application.
+        """
+        environment = story.environment()
+        application_environment = application.environment()
+        for key, value in environment.items():
+            if key in application_environment:
+                environment[key] = application_environment[key]
+        return environment
+
+    @staticmethod
     def run(logger, line_number, story, context):
         """
         Run the story
