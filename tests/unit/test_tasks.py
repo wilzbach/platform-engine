@@ -46,6 +46,8 @@ def test_process_story(patch, logger, application, models, handler):
                                                       story.version,
                                                       time.time(),
                                                       time.time())
+    Handler.init_mongo().lines.assert_called_with(Handler.init_mongo().narration(),
+                                                {})
 
 
 def test_process_story_logger(logger, application, models, handler):

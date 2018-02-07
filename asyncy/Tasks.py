@@ -30,3 +30,4 @@ class Tasks:
         narration = mongo.narration(mongo_story, app.initial_data, environment,
                                     story.version, narration_start,
                                     time.time())
+        mongo.lines(narration, context['results'])
