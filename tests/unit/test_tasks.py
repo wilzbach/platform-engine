@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
+from datetime import datetime
 
 from asyncy.Handler import Handler
 from asyncy.Tasks import Tasks
@@ -33,12 +34,18 @@ def test_process_story(patch, logger, application, models, handler):
     installation_id = application.user.installation_id
     story.data.assert_called_with(application.initial_data)
     Handler.init_mongo.assert_called_with()
+    Handler.init_mongo().story.assert_called_with(application.id, story.id)
     Handler.build_story.assert_called_with(installation_id, story)
     Handler.make_environment.assert_called_with(story, application)
     context = {'application': Applications.get(), 'story': 'story_name',
-               'start': time.time(), 'results': {},
-               'environment': Handler.make_environment()}
+               'results': {}, 'environment': Handler.make_environment()}
     Handler.run.assert_called_with(logger, '1', story, context)
+    Handler.init_mongo().narration.assert_called_with(Handler.init_mongo().story(),
+                                                      application.initial_data,
+                                                      Handler.make_environment(),
+                                                      story.version,
+                                                      time.time(),
+                                                      time.time())
 
 
 def test_process_story_logger(logger, application, models, handler):

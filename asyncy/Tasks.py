@@ -18,10 +18,15 @@ class Tasks:
         environment = Handler.make_environment(story, app)
 
         mongo = Handler.init_mongo()
+        mongo_story = mongo.story(app.id, story.id)
+        narration_start = time.time()
 
         line_number = '1'
         context = {'application': app, 'story': story_name,
-                   'start': time.time(), 'results': {},
-                   'environment': environment}
+                   'results': {}, 'environment': environment}
         while line_number:
             line_number = Handler.run(logger, line_number, story, context)
+
+        narration = mongo.narration(mongo_story, app.initial_data, environment,
+                                    story.version, narration_start,
+                                    time.time())
