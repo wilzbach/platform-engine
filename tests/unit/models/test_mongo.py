@@ -33,7 +33,15 @@ def test_results_ref(mongo):
 def test_results_story(client, mongo):
     result = mongo.story(1, 2)
     expected = {'application': 1, 'story': 2}
-    client().asyncy.stories.insert_one.assert_called_with(expected)
+    client().asyncy.stories.find_one.assert_called_with(expected)
+    assert result == client().asyncy.stories.find_one()
+
+
+def test_results_story_new(client, mongo):
+    mongo.mongo.asyncy.stories.find_one.return_value = None
+    result = mongo.story(1, 2)
+    query = {'application': 1, 'story': 2}
+    client().asyncy.stories.insert_one.assert_called_with(query)
     assert result == client().asyncy.stories.insert_one()
 
 

@@ -18,10 +18,10 @@ class Mongo:
         return DBRef(collection, item_id)
 
     def story(self, application_id, story_id):
-        document = {
-            'application': application_id,
-            'story': story_id
-        }
+        document = {'application': application_id, 'story': story_id}
+        story = self.mongo.asyncy.stories.find_one(document)
+        if story:
+            return story
         return self.mongo.asyncy.stories.insert_one(document)
 
     def narration(self, story, initial_data, environment_data, version,
