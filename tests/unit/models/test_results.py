@@ -3,9 +3,9 @@ import time
 
 from asyncy.models import Results
 
-import pymongo
-
 from bson import DBRef
+
+import pymongo
 
 from pytest import fixture
 
@@ -49,3 +49,19 @@ def test_results_story(mongo, results):
     expected = {'application': 1, 'story': 2}
     mongo().asyncy.stories.insert_one.assert_called_with(expected)
     assert result == mongo().asyncy.stories.insert_one()
+
+
+def test_results_narration(patch, mongo, results):
+    patch.object(Results, 'ref')
+    result = results.narration({'_id': 1}, {}, {'env': 1}, 'master', '1', '2')
+    Results.ref.assert_called_with('stories', 1)
+    expected = {
+        'story_id': Results.ref(),
+        'initial_data': {},
+        'environment_data': {'env': 1},
+        'version': 'master',
+        'start': '1',
+        'end': '2'
+    }
+    mongo().asyncy.narrations.insert_one.assert_called_with(expected)
+    assert result == mongo().asyncy.narrations.insert_one()
