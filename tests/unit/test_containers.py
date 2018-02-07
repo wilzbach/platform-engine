@@ -57,19 +57,9 @@ def test_containers_make_volume_create(container):
     assert container.volume == container.client.volumes.create()
 
 
-def test_containers_environment(patch, story, application, container):
-    patch.object(story, 'environment', return_value={'one': 1, 'two': 2})
-    patch.object(application, 'environment', return_value={'one': 0,
-                                                           'three': 3})
-    container.environment(story, application)
-    story.environment.assert_called_with()
-    application.environment.assert_called_with()
-    assert container.env == {'one': 0, 'two': 2}
-
-
 def test_containers_run(magic, logger, client, container):
     container.volume = magic(name='volume')
-    container.run(logger, 'command')
+    container.run(logger, 'command', {})
     logger.log.assert_called_with('container-run', container.name)
     kwargs = {'command': 'command', 'environment': {},
               'cap_drop': 'all',

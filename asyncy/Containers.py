@@ -29,22 +29,12 @@ class Containers:
         except docker.errors.NotFound:
             self.volume = self.client.volumes.create(name)
 
-    def environment(self, story, application):
-        """
-        Sets the environment from story and application.
-        """
-        self.env = story.environment()
-        application_environment = application.environment()
-        for key, value in self.env.items():
-            if key in application_environment:
-                self.env[key] = application_environment[key]
-
-    def run(self, logger, command):
+    def run(self, logger, command, environment):
         """
         Runs a docker image.
         """
         self.client.images.pull(self.name)
-        kwargs = {'command': command, 'environment': self.env,
+        kwargs = {'command': command, 'environment': environment,
                   'cap_drop': 'all'}
         if self.volume:
             kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
