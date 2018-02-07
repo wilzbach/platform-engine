@@ -26,20 +26,6 @@ def test_results(mongo, results):
     assert results.mongo == pymongo.MongoClient()
 
 
-def test_results_save(mocker, mongo, results):
-    mocker.patch.object(time, 'time', return_value=1)
-    result = results.save('application', 'story', 'start', 'data')
-    expected = {
-        'application': 'application',
-        'story': 'story',
-        'data': 'data',
-        'started': 'start',
-        'finished': time.time()
-    }
-    mongo().asyncy.main.insert_one.assert_called_with(expected)
-    assert result == mongo().asyncy.main.insert_one()
-
-
 def test_results_ref(results):
     assert isinstance(results.ref('collection', 'id'), DBRef)
 
