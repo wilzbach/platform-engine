@@ -18,6 +18,7 @@ def models(mocker, application):
 def handler(patch):
     patch.object(Handler, 'run', return_value=0)
     patch.object(Handler, 'init_db')
+    patch.object(Handler, 'init_mongo')
     patch.object(Handler, 'build_story')
     patch.object(Handler, 'make_environment')
 
@@ -31,6 +32,7 @@ def test_process_story(patch, logger, application, models, handler):
     story = application.get_story()
     installation_id = application.user.installation_id
     story.data.assert_called_with(application.initial_data)
+    Handler.init_mongo.assert_called_with()
     Handler.build_story.assert_called_with(installation_id, story)
     Handler.make_environment.assert_called_with(story, application)
     context = {'application': Applications.get(), 'story': 'story_name',
