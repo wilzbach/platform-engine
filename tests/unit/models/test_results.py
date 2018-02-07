@@ -5,6 +5,8 @@ from asyncy.models import Results
 
 import pymongo
 
+from bson import DBRef
+
 from pytest import fixture
 
 
@@ -36,6 +38,10 @@ def test_results_save(mocker, mongo, results):
     }
     mongo().asyncy.main.insert_one.assert_called_with(expected)
     assert result == mongo().asyncy.main.insert_one()
+
+
+def test_results_ref(results):
+    assert isinstance(results.ref('collection', 'id'), DBRef)
 
 
 def test_results_story(mongo, results):

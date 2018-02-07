@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import time
 
+from bson import DBRef
+
 import pymongo
 
 
@@ -18,6 +20,12 @@ class Results:
             'finished': time.time()
         }
         return self.mongo.asyncy.main.insert_one(document)
+
+    def ref(self, collection, item_id):
+        """
+        Returns a reference object.
+        """
+        return DBRef(collection, item_id)
 
     def story(self, application_id, story_id):
         document = {
