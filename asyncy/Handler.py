@@ -54,4 +54,5 @@ class Handler:
         container = Containers(line['container'])
         container.make_volume(story.filename)
         container.run(logger, command, context['environment'])
-        context['results'][line_number] = container.result()
+        context['results'][line_number] = {'output': container.result(),
+                                           'start': 0, 'end': 0}
