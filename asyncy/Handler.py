@@ -2,7 +2,7 @@
 from .Config import Config
 from .Containers import Containers
 from .Lexicon import Lexicon
-from .models import Results, db
+from .models import Mongo, db
 
 
 class Handler:
@@ -16,7 +16,7 @@ class Handler:
 
     @staticmethod
     def init_mongo():
-        return Results(Config.get('mongo'))
+        return Mongo(Config.get('mongo'))
 
     @staticmethod
     def build_story(installation_id, story):

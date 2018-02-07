@@ -3,7 +3,7 @@ from asyncy.Config import Config
 from asyncy.Containers import Containers
 from asyncy.Handler import Handler
 from asyncy.Lexicon import Lexicon
-from asyncy.models import Results, db
+from asyncy.models import Mongo, db
 
 from pytest import fixture
 
@@ -20,12 +20,12 @@ def test_handler_init_db(mocker, config):
     db.from_url.assert_called_with(Config.get())
 
 
-def test_handler_init_mongo(mocker, config):
-    mocker.patch.object(Results, '__init__', return_value=None)
-    result = Handler.init_mongo()
+def test_handler_init_mongo(patch, config):
+    patch.object(Mongo, '__init__', return_value=None)
+    mongo = Handler.init_mongo()
     config.get.assert_called_with('mongo')
-    Results.__init__.assert_called_with(Config.get())
-    assert isinstance(result, Results)
+    Mongo.__init__.assert_called_with(Config.get())
+    assert isinstance(mongo, Mongo)
 
 
 def test_build_story(mocker, config):
