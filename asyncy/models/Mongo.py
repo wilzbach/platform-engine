@@ -41,7 +41,7 @@ class Mongo:
         return self.mongo.asyncy.narrations.insert_one(document)
 
     def lines(self, narration, lines):
-        narration_ref = self.ref('narrations', narration['_id'])
+        narration_ref = self.ref('narrations', narration.inserted_id)
         documents = []
         for line, data in lines.items():
             document = {

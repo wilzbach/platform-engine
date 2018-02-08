@@ -61,10 +61,10 @@ def test_results_narration(patch, client, mongo):
     assert result == client().asyncy.narrations.insert_one()
 
 
-def test_results_lines(patch, client, mongo):
+def test_results_lines(patch, magic, client, mongo):
     patch.object(Mongo, 'ref', return_value=100)
     lines = {'1': {'output': 'out', 'start': '1', 'end': '2'}}
-    result = mongo.lines({'_id': 1}, lines)
+    result = mongo.lines(magic(inserted_id=1), lines)
     expected = {
         'narration_id': 100,
         'line': '1',
