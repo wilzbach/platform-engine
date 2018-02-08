@@ -2,19 +2,37 @@
 import os
 
 
-class Config():
-
+class Config:
+    
     defaults = {
         'database': 'postgresql://postgres:postgres@localhost:5432/asyncy',
         'mongo': 'mongodb://localhost:27017/',
         'broker': 'amqp://:@localhost:5672/',
-        'logger.verbosity': 1,
-        'github.app_name': 'myapp',
-        'github.pem_path': 'github.pem',
-        'github.app_identifier': '123456789'
+        'logger': {
+            'verbosity': 1,
+        },
+        'github': {
+            'app_name': 'myapp',
+            'pem_path': 'github.pem',
+            'app_identifier': '123456789'
+        }
     }
 
-    @classmethod
-    def get(cls, option):
-        if option in cls.defaults:
-            return os.getenv(option, default=cls.defaults[option])
+    def __init__(self):
+        self.apply()
+
+    def apply(self):
+        """
+        Applies values, taking them from the environment or from the defaults
+        """
+        for key, value in self.defaults.items():
+            setattr(self, key, os.getenv(key, default=value))
+
+    def __getattribute__(self, name):
+        """
+        Gets an attribute or returns None
+        """
+        try:
+            return object.__getattribute__(self, name)
+        except AttributeError:
+            return None

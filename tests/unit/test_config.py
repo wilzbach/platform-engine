@@ -7,9 +7,13 @@ from pytest import fixture
 
 
 @fixture
+def init(patch):
+    patch.object(Config, '__init__', return_value=None)
+
+
+@fixture
 def config():
-    Config.defaults['value'] = 'potatoes'
-    return Config
+    return Config()
 
 
 def test_config():
@@ -18,18 +22,32 @@ def test_config():
     assert Config.defaults['database'] == database_url
     assert Config.defaults['mongo'] == 'mongodb://localhost:27017/'
     assert Config.defaults['broker'] == broker_url
-    assert Config.defaults['logger.verbosity'] == 1
-    assert Config.defaults['github.pem_path'] == 'github.pem'
-    assert Config.defaults['github.app_identifier'] == '123456789'
-    assert Config.defaults['github.app_name'] == 'myapp'
+    assert Config.defaults['logger']['verbosity'] == 1
+    assert Config.defaults['github']['pem_path'] == 'github.pem'
+    assert Config.defaults['github']['app_identifier'] == '123456789'
+    assert Config.defaults['github']['app_name'] == 'myapp'
 
 
-def test_config_get(mocker, config):
-    mocker.patch.object(os, 'getenv', return_value='myvalue')
-    result = config.get('value')
-    os.getenv.assert_called_with('value', default=config.defaults['value'])
-    assert result == 'myvalue'
+def test_config_init(patch):
+    patch.object(Config, 'apply')
+    Config()
+    Config.apply.assert_called_with()
 
 
-def test_config_get_invalid():
-    assert Config.get('strawberries') is None
+def test_config_apply(init):
+    config = Config()
+    config.defaults = {'one': 'value'}
+    config.apply()
+    assert config.one == 'value'
+
+
+def test_config_apply_from_env(patch, init):
+    patch.object(os, 'getenv', return_value='envvalue')
+    config = Config()
+    config.defaults = {'one': 'value'}
+    config.apply()
+    assert config.one == 'envvalue'
+
+
+def test_config_attribute_empty(config):
+    assert config.option is None
