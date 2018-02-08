@@ -14,7 +14,8 @@ class Cli:
 
     @main.command()
     def install():
-        db.from_url(Config.get('database'))
+        config = Config()
+        db.from_url(config.database)
         models = [Applications, ApplicationsStories, Repositories, Stories,
                   Users]
         db.create_tables(models, safe=True)
