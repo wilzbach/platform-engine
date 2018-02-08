@@ -53,5 +53,4 @@ def context(application):
 
 @fixture
 def config(mocker):
-    mocker.patch.object(Config, 'get')
-    return Config
+    return Config()
