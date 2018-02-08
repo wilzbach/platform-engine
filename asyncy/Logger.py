@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from frustum import Frustum
 
-from .Config import Config
-
 
 class Logger:
 
@@ -15,8 +13,8 @@ class Logger:
         ('task-start', 'debug', 'Start task for app {} with story {} id: {}'),
     ]
 
-    def __init__(self):
-        self.frustum = Frustum(verbosity=Config.get('logger.verbosity'))
+    def __init__(self, config):
+        self.frustum = Frustum(verbosity=config.logger['verbosity'])
 
     def register(self):
         for event in self.events:
