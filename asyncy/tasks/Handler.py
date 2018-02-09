@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from .Config import Config
-from .Containers import Containers
-from .Lexicon import Lexicon
-from .models import Mongo, db
+from ..Config import Config
+from ..Containers import Containers
+from ..Lexicon import Lexicon
+from ..models import Mongo, db
 
 
 class Handler:

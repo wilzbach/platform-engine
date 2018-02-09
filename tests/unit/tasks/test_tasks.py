@@ -2,9 +2,8 @@
 import time
 from datetime import datetime
 
-from asyncy.Handler import Handler
-from asyncy.Tasks import Tasks
 from asyncy.models import Applications
+from asyncy.tasks import Handler, Tasks
 
 from pytest import fixture, raises
 

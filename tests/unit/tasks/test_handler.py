@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from asyncy.Config import Config
 from asyncy.Containers import Containers
-from asyncy.Handler import Handler
 from asyncy.Lexicon import Lexicon
 from asyncy.models import Mongo, db
+from asyncy.tasks import Handler
 
 from pytest import fixture
 

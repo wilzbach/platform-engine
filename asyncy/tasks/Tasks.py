@@ -2,7 +2,7 @@
 import time
 
 from .Handler import Handler
-from .models import Applications, Stories
+from ..models import Applications, Stories
 
 
 class Tasks:
