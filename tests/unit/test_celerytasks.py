@@ -2,15 +2,15 @@
 from asyncy.CeleryApp import CeleryApp
 from asyncy.CeleryTasks import app, config, logger, process_story
 from asyncy.Logger import Logger
-from asyncy.tasks import Tasks
+from asyncy.tasks import Story
 
 from pytest import fixture
 
 
 @fixture
 def run(mocker):
-    mocker.patch.object(Tasks, 'run')
-    return Tasks.run
+    mocker.patch.object(Story, 'run')
+    return Story.run
 
 
 def test_celerytasks_logger(mocker):
