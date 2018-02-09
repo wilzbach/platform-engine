@@ -2,7 +2,7 @@
 from .CeleryApp import CeleryApp
 from .Config import Config
 from .Logger import Logger
-from .Tasks import Tasks
+from .tasks import Tasks
 
 
 config = Config()
