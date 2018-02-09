@@ -5,7 +5,7 @@ from .Handler import Handler
 from ..models import Applications, Stories
 
 
-class Tasks:
+class Story:
 
     @staticmethod
     def run(config, logger, app_id, story_name, *, story_id=None):
@@ -32,3 +32,21 @@ class Tasks:
                                     time.time())
         mongo.lines(narration, context['results'])
 
+    """
+    def run(logger, app, story, context):
+        while line_number:
+            line_number = Handler.run(logger, line_number, story, context)
+
+    def save(mongo, context):
+        mongo.narration()
+        mongo.lines()
+        mongo.story()
+
+    def prepare():
+        db.init()
+        app = Applications.get()
+        # ...
+        context = {}
+        story.build()
+        cls.run(logger, app, story, context)
+    """

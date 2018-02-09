@@ -1,5 +1,5 @@
 from .Handler import Handler
-from .Tasks import Tasks
+from .Story import Story
 
 
-__all__ = ['Handler', 'Tasks']
+__all__ = ['Handler', 'Story']

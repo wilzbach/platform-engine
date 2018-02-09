@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 
 from asyncy.models import Applications
-from asyncy.tasks import Handler, Tasks
+from asyncy.tasks import Handler, Story
 
 from pytest import fixture, raises
 
@@ -23,9 +23,9 @@ def handler(patch):
     patch.object(Handler, 'make_environment')
 
 
-def test_tasks_run(patch, config, logger, application, models, handler):
+def test_story_run(patch, config, logger, application, models, handler):
     patch.object(time, 'time')
-    Tasks.run(config, logger, 'app_id', 'story_name')
+    Story.run(config, logger, 'app_id', 'story_name')
     Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
@@ -49,15 +49,15 @@ def test_tasks_run(patch, config, logger, application, models, handler):
                                                   {})
 
 
-def test_process_story_logger(config, logger, application, models, handler):
-    Tasks.run(config, logger, 'app_id', 'story_name')
+def test_story_run_logger(config, logger, application, models, handler):
+    Story.run(config, logger, 'app_id', 'story_name')
     logger.log.assert_called_with('task-start', 'app_id', 'story_name', None)
 
 
 def test_tasks_run_force_keyword(config, logger, models, handler):
     with raises(TypeError):
-        Tasks.run(config, logger, 'app_id', 'story_name', 'story_id')
+        Story.run(config, logger, 'app_id', 'story_name', 'story_id')
 
 
-def test_tasks_run_with_id(config, logger, models, handler):
-    Tasks.run(config, logger, 'app_id', 'story_name', story_id='story_id')
+def test_story_run_with_id(config, logger, models, handler):
+    Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
