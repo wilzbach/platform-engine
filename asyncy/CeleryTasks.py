@@ -13,5 +13,5 @@ app = CeleryApp.start(config)
 
 
 @app.task
-def run(app_id, story_name, story_id=None):
-    Tasks.process_story(config, logger, app_id, story_name, story_id=story_id)
+def process_story(app_id, story_name, story_id=None):
+    Tasks.run(config, logger, app_id, story_name, story_id=story_id)

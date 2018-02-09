@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.CeleryApp import CeleryApp
-from asyncy.CeleryTasks import app, config, logger, run
+from asyncy.CeleryTasks import app, config, logger, process_story
 from asyncy.Logger import Logger
 from asyncy.tasks import Tasks
 
@@ -8,22 +8,22 @@ from pytest import fixture
 
 
 @fixture
-def process_story(mocker):
-    mocker.patch.object(Tasks, 'process_story')
-    return Tasks.process_story
+def run(mocker):
+    mocker.patch.object(Tasks, 'run')
+    return Tasks.run
 
 
 def test_celerytasks_logger(mocker):
     assert isinstance(logger, Logger)
 
 
-def test_celerytasks_run(process_story):
-    run('app_id', 'story_name')
+def test_celerytasks_run(run):
+    process_story('app_id', 'story_name')
     args = (config, logger, 'app_id', 'story_name')
-    process_story.assert_called_with(*args, story_id=None)
+    run.assert_called_with(*args, story_id=None)
 
 
-def test_celerytasks_run_with_story_id(process_story):
-    run('app_id', 'story_name', story_id=1)
+def test_celerytasks_run_with_story_id(run):
+    process_story('app_id', 'story_name', story_id=1)
     args = (config, logger, 'app_id', 'story_name')
-    process_story.assert_called_with(*args, story_id=1)
+    run.assert_called_with(*args, story_id=1)
