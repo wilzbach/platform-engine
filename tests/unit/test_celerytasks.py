@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.CeleryApp import CeleryApp
-from asyncy.CeleryTasks import app, logger, run
+from asyncy.CeleryTasks import app, config, logger, run
 from asyncy.Logger import Logger
 from asyncy.Tasks import Tasks
 
@@ -19,11 +19,11 @@ def test_celerytasks_logger(mocker):
 
 def test_celerytasks_run(process_story):
     run('app_id', 'story_name')
-    args = (logger, 'app_id', 'story_name')
+    args = (config, logger, 'app_id', 'story_name')
     process_story.assert_called_with(*args, story_id=None)
 
 
 def test_celerytasks_run_with_story_id(process_story):
     run('app_id', 'story_name', story_id=1)
-    args = (logger, 'app_id', 'story_name')
+    args = (config, logger, 'app_id', 'story_name')
     process_story.assert_called_with(*args, story_id=1)
