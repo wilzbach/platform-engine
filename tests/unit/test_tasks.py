@@ -24,9 +24,9 @@ def handler(patch):
     patch.object(Handler, 'make_environment')
 
 
-def test_process_story(patch, logger, application, models, handler):
+def test_process_story(patch, config, logger, application, models, handler):
     patch.object(time, 'time')
-    Tasks.process_story(logger, 'app_id', 'story_name')
+    Tasks.process_story(config, logger, 'app_id', 'story_name')
     Handler.init_db.assert_called_with()
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
@@ -50,15 +50,16 @@ def test_process_story(patch, logger, application, models, handler):
                                                 {})
 
 
-def test_process_story_logger(logger, application, models, handler):
-    Tasks.process_story(logger, 'app_id', 'story_name')
+def test_process_story_logger(config, logger, application, models, handler):
+    Tasks.process_story(config, logger, 'app_id', 'story_name')
     logger.log.assert_called_with('task-start', 'app_id', 'story_name', None)
 
 
-def test_process_story_force_keyword(logger, models, handler):
+def test_process_story_force_keyword(config, logger, models, handler):
     with raises(TypeError):
-        Tasks.process_story(logger, 'app_id', 'story_name', 'story_id')
+        Tasks.process_story(config, logger, 'app_id', 'story_name', 'story_id')
 
 
-def test_process_story_with_id(logger, models, handler):
-    Tasks.process_story(logger, 'app_id', 'story_name', story_id='story_id')
+def test_process_story_with_id(config, logger, models, handler):
+    Tasks.process_story(config, logger, 'app_id', 'story_name',
+                        story_id='story_id')

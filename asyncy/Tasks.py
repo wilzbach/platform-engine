@@ -8,7 +8,7 @@ from .models import Applications, Stories
 class Tasks:
 
     @staticmethod
-    def process_story(logger, app_id, story_name, *, story_id=None):
+    def process_story(config, logger, app_id, story_name, *, story_id=None):
         logger.log('task-start', app_id, story_name, story_id)
         Handler.init_db()
         app = Applications.get(Applications.id == app_id)
