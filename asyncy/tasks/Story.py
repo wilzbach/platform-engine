@@ -8,6 +8,15 @@ from ..models import Applications, Stories
 class Story:
 
     @staticmethod
+    def save(config, app, story, environment, context, start):
+        mongo = Handler.init_mongo(config.mongo)
+        mongo_story = mongo.story(app.id, story.id)
+        narration = mongo.narration(mongo_story, app.initial_data, environment,
+                                    story.version, start,
+                                    time.time())
+        mongo.lines(narration, context['results'])
+
+    @staticmethod
     def run(config, logger, app_id, story_name, *, story_id=None):
         logger.log('task-start', app_id, story_name, story_id)
         Handler.init_db(config.database)
@@ -33,22 +42,3 @@ class Story:
                                     story.version, narration_start,
                                     time.time())
         mongo.lines(narration, context['results'])
-
-    """
-    def run(logger, app, story, context):
-        while line_number:
-            line_number = Handler.run(logger, line_number, story, context)
-
-    def save(mongo, context):
-        mongo.narration()
-        mongo.lines()
-        mongo.story()
-
-    def prepare():
-        db.init()
-        app = Applications.get()
-        # ...
-        context = {}
-        story.build()
-        cls.run(logger, app, story, context)
-    """
