@@ -14,7 +14,9 @@ class Story:
         app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
         story.data(app.initial_data)
-        Handler.build_story(app.user.installation_id, story)
+        Handler.build_story(config.github['app_identifier'],
+                            config.github['pem_path'],
+                            app.user.installation_id, story)
         environment = Handler.make_environment(story, app)
 
         mongo = Handler.init_mongo(config.mongo)

@@ -34,7 +34,9 @@ def test_story_run(patch, config, logger, application, models, handler):
     story.data.assert_called_with(application.initial_data)
     Handler.init_mongo.assert_called_with(config.mongo)
     Handler.init_mongo().story.assert_called_with(application.id, story.id)
-    Handler.build_story.assert_called_with(installation_id, story)
+    Handler.build_story.assert_called_with(config.github['app_identifier'],
+                                           config.github['pem_path'],
+                                           installation_id, story)
     Handler.make_environment.assert_called_with(story, application)
     context = {'application': Applications.get(), 'story': 'story_name',
                'results': {}, 'environment': Handler.make_environment()}
@@ -61,5 +63,3 @@ def test_tasks_run_force_keyword(config, logger, models, handler):
 
 def test_story_run_with_id(config, logger, models, handler):
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
-
-
