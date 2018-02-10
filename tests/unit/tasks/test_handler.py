@@ -13,11 +13,10 @@ def story(magic):
     return magic()
 
 
-def test_handler_init_db(mocker, config):
-    mocker.patch.object(db, 'from_url')
-    Handler.init_db()
-    config.get.assert_called_with('database')
-    db.from_url.assert_called_with(Config.get())
+def test_handler_init_db(patch):
+    patch.object(db, 'from_url')
+    Handler.init_db('database_url')
+    db.from_url.assert_called_with('database_url')
 
 
 def test_handler_init_mongo(patch):

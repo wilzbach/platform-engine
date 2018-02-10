@@ -11,8 +11,8 @@ class Handler:
     """
 
     @staticmethod
-    def init_db():
-        db.from_url(Config.get('database'))
+    def init_db(database_url):
+        db.from_url(database_url)
 
     @staticmethod
     def init_mongo(mongo_url):
