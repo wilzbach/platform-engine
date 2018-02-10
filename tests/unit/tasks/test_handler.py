@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from asyncy.Config import Config
 from asyncy.Containers import Containers
 from asyncy.Lexicon import Lexicon
 from asyncy.models import Mongo, db
@@ -26,10 +25,10 @@ def test_handler_init_mongo(patch):
     assert isinstance(mongo, Mongo)
 
 
-def test_build_story(mocker, config):
-    story = mocker.MagicMock()
-    Handler.build_story('install_id', story)
-    story.backend.assert_called_with(Config.get(), Config.get(), 'install_id')
+def test_build_story(magic, config):
+    story = magic()
+    Handler.build_story('app_id', 'pem_path', 'install_id', story)
+    story.backend.assert_called_with('app_id', 'pem_path', 'install_id')
     assert story.build_tree.call_count == 1
 
 

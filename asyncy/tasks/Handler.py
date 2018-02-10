@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from ..Config import Config
 from ..Containers import Containers
 from ..Lexicon import Lexicon
 from ..models import Mongo, db
@@ -19,12 +18,10 @@ class Handler:
         return Mongo(mongo_url)
 
     @staticmethod
-    def build_story(installation_id, story):
+    def build_story(app_identifier, pem_path, installation_id, story):
         """
         Build a storytree, given a story
         """
-        app_identifier = Config.get('github.app_identifier')
-        pem_path = Config.get('github.pem_path')
         story.backend(app_identifier, pem_path, installation_id)
         story.build_tree()
 
