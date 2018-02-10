@@ -10,7 +10,7 @@ class Story:
     @staticmethod
     def run(config, logger, app_id, story_name, *, story_id=None):
         logger.log('task-start', app_id, story_name, story_id)
-        Handler.init_db()
+        Handler.init_db(config.database)
         app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
         story.data(app.initial_data)

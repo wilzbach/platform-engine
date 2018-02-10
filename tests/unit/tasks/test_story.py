@@ -26,7 +26,7 @@ def handler(patch):
 def test_story_run(patch, config, logger, application, models, handler):
     patch.object(time, 'time')
     Story.run(config, logger, 'app_id', 'story_name')
-    Handler.init_db.assert_called_with()
+    Handler.init_db.assert_called_with(config.database)
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
     story = application.get_story()
