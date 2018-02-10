@@ -17,7 +17,7 @@ class Story:
         Handler.build_story(app.user.installation_id, story)
         environment = Handler.make_environment(story, app)
 
-        mongo = Handler.init_mongo()
+        mongo = Handler.init_mongo(config.mongo)
         mongo_story = mongo.story(app.id, story.id)
         narration_start = time.time()
 
