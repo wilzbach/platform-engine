@@ -15,8 +15,8 @@ class Handler:
         db.from_url(Config.get('database'))
 
     @staticmethod
-    def init_mongo():
-        return Mongo(Config.get('mongo'))
+    def init_mongo(mongo_url):
+        return Mongo(mongo_url)
 
     @staticmethod
     def build_story(installation_id, story):

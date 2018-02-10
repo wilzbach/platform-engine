@@ -20,11 +20,10 @@ def test_handler_init_db(mocker, config):
     db.from_url.assert_called_with(Config.get())
 
 
-def test_handler_init_mongo(patch, config):
+def test_handler_init_mongo(patch):
     patch.object(Mongo, '__init__', return_value=None)
-    mongo = Handler.init_mongo()
-    config.get.assert_called_with('mongo')
-    Mongo.__init__.assert_called_with(Config.get())
+    mongo = Handler.init_mongo('mongo_url')
+    Mongo.__init__.assert_called_with('mongo_url')
     assert isinstance(mongo, Mongo)
 
 
