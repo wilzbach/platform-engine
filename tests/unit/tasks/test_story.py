@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import time
-from datetime import datetime
 
 from asyncy.models import Applications, db
 from asyncy.tasks import Handler, Story
@@ -19,16 +18,16 @@ def handler(patch):
     patch.object(Handler, 'make_environment')
 
 
-def test_story_save(patch, magic, config, application, story, context):
+def test_story_save(patch, magic, config, application, story):
     mongo = magic()
     patch.object(Handler, 'init_mongo', return_value=mongo)
     patch.object(time, 'time')
-    Story.save(config, application, story, {}, context, 1)
+    Story.save(config, application, story, {}, 1)
     Handler.init_mongo.assert_called_with(config.mongo)
     mongo.story.assert_called_with(application.id, story.id)
     mongo.narration.assert_called_with(mongo.story(), application.initial_data,
                                        {}, story.version, 1, time.time())
-    mongo.lines.assert_called_with(mongo.narration(), context['results'])
+    mongo.lines.assert_called_with(mongo.narration(), story.results)
 
 
 def test_story_execute(patch, logger, application, story, context):

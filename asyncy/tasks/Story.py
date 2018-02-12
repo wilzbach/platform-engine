@@ -8,13 +8,16 @@ from ..models import Applications, Stories, db
 class Story:
 
     @staticmethod
-    def save(config, app, story, environment, context, start):
+    def save(config, app, story, environment, start):
+        """
+        Saves the narration and the results for each line.
+        """
         mongo = Handler.init_mongo(config.mongo)
         mongo_story = mongo.story(app.id, story.id)
         narration = mongo.narration(mongo_story, app.initial_data, environment,
                                     story.version, start,
                                     time.time())
-        mongo.lines(narration, context['results'])
+        mongo.lines(narration, story.results)
 
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None):
