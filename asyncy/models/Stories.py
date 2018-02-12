@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 from peewee import CharField, ForeignKeyField
 
 from storyscript.parser import Parser
@@ -12,6 +14,7 @@ class Stories(BaseModel):
     filename = CharField()
     version = CharField(null=True)
     repository = ForeignKeyField(Repositories)
+    results = {}
 
     def backend(self, app_identifier, pem_path, installation_id):
         self.repository.backend(app_identifier, pem_path, installation_id)
@@ -49,3 +52,11 @@ class Stories(BaseModel):
         self.data(application.initial_data)
         self.backend(app_identifier, pem_path, application.installation_id())
         self.build_tree()
+
+    def start_line(self, line_number):
+        self.results[line_number] = {'start': time.time()}
+
+    def end_line(self, line_number, output):
+        dictionary = {'output': output, 'end': time.time(),
+                      'start': self.results[line_number]['start']}
+        self.results[line_number] = dictionary

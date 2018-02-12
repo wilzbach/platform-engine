@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 from asyncy.models import BaseModel, Repositories, Stories
 
 from peewee import CharField, ForeignKeyField
@@ -85,3 +87,17 @@ def test_stories_build(patch, application, story):
     Stories.backend.assert_called_with('123', 'path',
                                        application.installation_id())
     Stories.build_tree.assert_called_with()
+
+
+def test_stories_start_line(patch, story):
+    patch.object(time, 'time', return_value=0)
+    story.start_line('1')
+    assert story.results['1'] == {'start': time.time()}
+
+
+def test_stories_end_line(patch, story):
+    patch.object(time, 'time', return_value=0)
+    story.results = {'1': {'start': 'start'}}
+    story.end_line('1', 'output')
+    dictionary = {'start': 'start', 'output': 'output', 'end': time.time()}
+    assert story.results['1'] == dictionary
