@@ -50,9 +50,8 @@ def test_story_run(patch, config, logger, application, models, handler):
                                    config.github['app_identifier'],
                                    config.github['pem_path'])
     Handler.make_environment.assert_called_with(story, application)
-    context = {'application': Applications.get(), 'story': 'story_name',
-               'results': {}, 'environment': Handler.make_environment()}
-    Story.execute.assert_called_with(logger, application, story, context)
+    Story.execute.assert_called_with(logger, application, story,
+                                     Handler.make_environment())
     Story.save.assert_called_with(config, application, story,
                                   Handler.make_environment(), time.time())
 

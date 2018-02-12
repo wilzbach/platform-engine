@@ -29,9 +29,7 @@ class Story:
                     config.github['pem_path'])
         environment = Handler.make_environment(story, app)
         start = time.time()
-        context = {'application': app, 'story': story_name,
-                   'results': {}, 'environment': environment}
-        cls.execute(logger, app, story, context)
+        cls.execute(logger, app, story, environment)
         cls.save(config, app, story, environment, start)
 
     @staticmethod
