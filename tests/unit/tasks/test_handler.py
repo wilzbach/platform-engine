@@ -29,7 +29,7 @@ def test_handler_make_environment(patch, story, application):
     assert environment == {'one': 0, 'two': 2}
 
 
-def test_handler_run(patch, logger, application, story, context):
+def test_handler_run(patch, logger, application, story):
     patch.object(Containers, 'run')
     patch.object(Containers, 'make_volume')
     patch.object(Containers, 'result')

@@ -46,11 +46,5 @@ def story(repository):
 
 
 @fixture
-def context(application):
-    return {'application': application, 'story': 'story', 'results': {},
-            'environment': {}}
-
-
-@fixture
 def config(mocker):
     return Config()
