@@ -32,7 +32,7 @@ class Story:
         context = {'application': app, 'story': story_name,
                    'results': {}, 'environment': environment}
         cls.execute(logger, app, story, context)
-        cls.save(config, app, story, environment, context, start)
+        cls.save(config, app, story, environment, start)
 
     @staticmethod
     def execute(logger, app, story, context):

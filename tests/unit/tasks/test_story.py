@@ -54,8 +54,7 @@ def test_story_run(patch, config, logger, application, models, handler):
                'results': {}, 'environment': Handler.make_environment()}
     Story.execute.assert_called_with(logger, application, story, context)
     Story.save.assert_called_with(config, application, story,
-                                  Handler.make_environment(), context,
-                                  time.time())
+                                  Handler.make_environment(), time.time())
 
 
 def test_story_run_logger(patch, config, logger, application, models, handler):
