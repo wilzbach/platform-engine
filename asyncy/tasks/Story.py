@@ -42,3 +42,8 @@ class Story:
                                     story.version, narration_start,
                                     time.time())
         mongo.lines(narration, context['results'])
+
+    def execute(logger, app, story, context):
+        line_number = '1'
+        while line_number:
+            line_number = Handler.run(logger, line_number, story, context)
