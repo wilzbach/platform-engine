@@ -35,13 +35,13 @@ def test_handler_run(patch, logger, application, story, context):
     patch.object(Containers, 'result')
     patch.object(Containers, '__init__', return_value=None)
     Handler.run(logger, '1', story, context)
+    story.start_line.assert_called_with('1')
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.make_volume.assert_called_with(story.filename)
     Containers.run.assert_called_with(logger, story.resolve(),
                                       context['environment'])
-    assert context['results']['1'] == {'output': Containers.result(),
-                                       'start': 0, 'end': 0}
+    story.end_line.assert_called_with('1', Containers.result())
 
 
 def test_handler_run_if(mocker, logger, story):

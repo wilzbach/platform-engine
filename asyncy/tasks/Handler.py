@@ -30,6 +30,7 @@ class Handler:
         """
         Run the story
         """
+        story.start_line(line_number)
         line = story.line(line_number)
         command = story.resolve(logger, line_number)
 
@@ -39,5 +40,4 @@ class Handler:
         container = Containers(line['container'])
         container.make_volume(story.filename)
         container.run(logger, command, context['environment'])
-        context['results'][line_number] = {'output': container.result(),
-                                           'start': 0, 'end': 0}
+        story.end_line(line_number, container.result())
