@@ -2,7 +2,7 @@
 import time
 
 from .Handler import Handler
-from ..models import Applications, Stories
+from ..models import Applications, Stories, db
 
 
 class Story:
@@ -19,7 +19,7 @@ class Story:
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None):
         logger.log('task-start', app_id, story_name, story_id)
-        Handler.init_db(config.database)
+        db.from_url(config.database)
         app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
         story.build(app, config.github['app_identifier'],

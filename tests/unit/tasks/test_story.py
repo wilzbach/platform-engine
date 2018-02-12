@@ -2,7 +2,7 @@
 import time
 from datetime import datetime
 
-from asyncy.models import Applications
+from asyncy.models import Applications, db
 from asyncy.tasks import Handler, Story
 
 from pytest import fixture, raises
@@ -16,7 +16,6 @@ def models(mocker, application):
 
 @fixture
 def handler(patch):
-    patch.object(Handler, 'init_db')
     patch.object(Handler, 'make_environment')
 
 
@@ -42,8 +41,9 @@ def test_story_run(patch, config, logger, application, models, handler):
     patch.object(time, 'time')
     patch.object(Story, 'save')
     patch.object(Story, 'execute')
+    patch.object(db, 'from_url')
     Story.run(config, logger, 'app_id', 'story_name')
-    Handler.init_db.assert_called_with(config.database)
+    db.from_url.assert_called_with(config.database)
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
     story = application.get_story()
