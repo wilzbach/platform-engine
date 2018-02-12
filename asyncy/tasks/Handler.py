@@ -10,20 +10,8 @@ class Handler:
     """
 
     @staticmethod
-    def init_db(database_url):
-        db.from_url(database_url)
-
-    @staticmethod
     def init_mongo(mongo_url):
         return Mongo(mongo_url)
-
-    @staticmethod
-    def build_story(app_identifier, pem_path, installation_id, story):
-        """
-        Build a storytree, given a story
-        """
-        story.backend(app_identifier, pem_path, installation_id)
-        story.build_tree()
 
     @staticmethod
     def make_environment(story, application):

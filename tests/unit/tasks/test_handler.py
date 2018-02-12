@@ -12,24 +12,11 @@ def story(magic):
     return magic()
 
 
-def test_handler_init_db(patch):
-    patch.object(db, 'from_url')
-    Handler.init_db('database_url')
-    db.from_url.assert_called_with('database_url')
-
-
 def test_handler_init_mongo(patch):
     patch.object(Mongo, '__init__', return_value=None)
     mongo = Handler.init_mongo('mongo_url')
     Mongo.__init__.assert_called_with('mongo_url')
     assert isinstance(mongo, Mongo)
-
-
-def test_build_story(magic, config):
-    story = magic()
-    Handler.build_story('app_id', 'pem_path', 'install_id', story)
-    story.backend.assert_called_with('app_id', 'pem_path', 'install_id')
-    assert story.build_tree.call_count == 1
 
 
 def test_handler_make_environment(patch, story, application):
