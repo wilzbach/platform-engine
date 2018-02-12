@@ -16,8 +16,8 @@ class Story:
                                     time.time())
         mongo.lines(narration, context['results'])
 
-    @staticmethod
-    def run(config, logger, app_id, story_name, *, story_id=None):
+    @classmethod
+    def run(cls, config, logger, app_id, story_name, *, story_id=None):
         logger.log('task-start', app_id, story_name, story_id)
         Handler.init_db(config.database)
         app = Applications.get(Applications.id == app_id)
@@ -27,22 +27,15 @@ class Story:
                             config.github['pem_path'],
                             app.user.installation_id, story)
         environment = Handler.make_environment(story, app)
-
-        mongo = Handler.init_mongo(config.mongo)
-        mongo_story = mongo.story(app.id, story.id)
-        narration_start = time.time()
-
+        start = time.time()
         line_number = '1'
         context = {'application': app, 'story': story_name,
                    'results': {}, 'environment': environment}
         while line_number:
             line_number = Handler.run(logger, line_number, story, context)
+        cls.save(config, app, story, environment, context, start)
 
-        narration = mongo.narration(mongo_story, app.initial_data, environment,
-                                    story.version, narration_start,
-                                    time.time())
-        mongo.lines(narration, context['results'])
-
+    @staticmethod
     def execute(logger, app, story, context):
         line_number = '1'
         while line_number:
