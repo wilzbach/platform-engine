@@ -74,3 +74,14 @@ def test_stories_resolve(mocker, logger, magic, story):
     Resolver.resolve.assert_called_with(Stories.line()['args'], {})
     logger.log.assert_called_with('story-resolve', {}, Resolver.resolve())
     assert result == Resolver.resolve()
+
+
+def test_stories_build(patch, application, story):
+    patch.object(Stories, 'data')
+    patch.object(Stories, 'backend')
+    patch.object(Stories, 'build_tree')
+    story.build(application, '123', 'path')
+    Stories.data.assert_called_with(application.initial_data)
+    Stories.backend.assert_called_with('123', 'path',
+                                       application.installation_id())
+    Stories.build_tree.assert_called_with()

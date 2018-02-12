@@ -41,3 +41,11 @@ class Stories(BaseModel):
         item = Resolver.resolve(args, self._initial_data)
         logger.log('story-resolve', args, item)
         return item
+
+    def build(self, application, app_identifier, pem_path):
+        """
+        Does everything needed to have the story ready for execution.
+        """
+        self.data(application.initial_data)
+        self.backend(app_identifier, pem_path, application.installation_id())
+        self.build_tree()
