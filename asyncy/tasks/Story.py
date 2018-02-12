@@ -22,10 +22,8 @@ class Story:
         Handler.init_db(config.database)
         app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
-        story.data(app.initial_data)
-        Handler.build_story(config.github['app_identifier'],
-                            config.github['pem_path'],
-                            app.user.installation_id, story)
+        story.build(app, config.github['app_identifier'],
+                    config.github['pem_path'])
         environment = Handler.make_environment(story, app)
         start = time.time()
         context = {'application': app, 'story': story_name,

@@ -17,7 +17,6 @@ def models(mocker, application):
 @fixture
 def handler(patch):
     patch.object(Handler, 'init_db')
-    patch.object(Handler, 'build_story')
     patch.object(Handler, 'make_environment')
 
 
@@ -48,11 +47,9 @@ def test_story_run(patch, config, logger, application, models, handler):
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
     story = application.get_story()
-    installation_id = application.user.installation_id
-    story.data.assert_called_with(application.initial_data)
-    Handler.build_story.assert_called_with(config.github['app_identifier'],
-                                           config.github['pem_path'],
-                                           installation_id, story)
+    story.build.assert_called_with(application,
+                                   config.github['app_identifier'],
+                                   config.github['pem_path'])
     Handler.make_environment.assert_called_with(story, application)
     context = {'application': Applications.get(), 'story': 'story_name',
                'results': {}, 'environment': Handler.make_environment()}
