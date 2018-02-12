@@ -26,7 +26,7 @@ class Handler:
         return environment
 
     @staticmethod
-    def run(logger, line_number, story, context):
+    def run(logger, line_number, story, environment):
         """
         Run the story
         """
@@ -39,5 +39,5 @@ class Handler:
 
         container = Containers(line['container'])
         container.make_volume(story.filename)
-        container.run(logger, command, context['environment'])
+        container.run(logger, command, environment)
         story.end_line(line_number, container.result())

@@ -34,18 +34,17 @@ def test_handler_run(patch, logger, application, story, context):
     patch.object(Containers, 'make_volume')
     patch.object(Containers, 'result')
     patch.object(Containers, '__init__', return_value=None)
-    Handler.run(logger, '1', story, context)
+    Handler.run(logger, '1', story, 'environment')
     story.start_line.assert_called_with('1')
     story.resolve.assert_called_with(logger, '1')
     Containers.__init__.assert_called_with(story.line()['container'])
     Containers.make_volume.assert_called_with(story.filename)
-    Containers.run.assert_called_with(logger, story.resolve(),
-                                      context['environment'])
+    Containers.run.assert_called_with(logger, story.resolve(), 'environment')
     story.end_line.assert_called_with('1', Containers.result())
 
 
 def test_handler_run_if(mocker, logger, story):
     mocker.patch.object(Lexicon, 'if_condition')
     mocker.patch.object(story, 'line', return_value={'method': 'if'})
-    result = Handler.run(logger, '1', story, {})
+    result = Handler.run(logger, '1', story, 'environment')
     assert result == Lexicon.if_condition()
