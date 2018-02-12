@@ -28,11 +28,9 @@ class Story:
                             app.user.installation_id, story)
         environment = Handler.make_environment(story, app)
         start = time.time()
-        line_number = '1'
         context = {'application': app, 'story': story_name,
                    'results': {}, 'environment': environment}
-        while line_number:
-            line_number = Handler.run(logger, line_number, story, context)
+        cls.execute(logger, app, story, context)
         cls.save(config, app, story, environment, context, start)
 
     @staticmethod
