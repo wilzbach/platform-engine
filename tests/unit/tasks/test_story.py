@@ -30,10 +30,10 @@ def test_story_save(patch, magic, config, application, story):
     mongo.lines.assert_called_with(mongo.narration(), story.results)
 
 
-def test_story_execute(patch, logger, application, story, context):
+def test_story_execute(patch, logger, application, story):
     patch.object(Handler, 'run', return_value=0)
-    Story.execute(logger, application, story, context)
-    Handler.run.assert_called_with(logger, '1', story, context)
+    Story.execute(logger, application, story, 'environment')
+    Handler.run.assert_called_with(logger, '1', story, 'environment')
 
 
 def test_story_run(patch, config, logger, application, models, handler):

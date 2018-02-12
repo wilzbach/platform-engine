@@ -35,7 +35,7 @@ class Story:
         cls.save(config, app, story, environment, start)
 
     @staticmethod
-    def execute(logger, app, story, context):
+    def execute(logger, app, story, environment):
         line_number = '1'
         while line_number:
-            line_number = Handler.run(logger, line_number, story, context)
+            line_number = Handler.run(logger, line_number, story, environment)
