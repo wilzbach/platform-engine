@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..Containers import Containers
 from ..Lexicon import Lexicon
-from ..models import Mongo, db
+from ..models import Mongo
 
 
 class Handler:
