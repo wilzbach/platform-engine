@@ -34,3 +34,8 @@ def test_applications_environment_none(application, data):
     application.initial_data = data
     environment = application.environment()
     assert environment == {}
+
+
+def test_applications_installation_id(application):
+    application.user.installation_id = '123'
+    assert application.installation_id() == application.user.installation_id

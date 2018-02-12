@@ -24,3 +24,6 @@ class Applications(BaseModel):
             if 'environment' in self.initial_data:
                 return self.initial_data['environment']
         return {}
+
+    def installation_id(self):
+        return self.user.installation_id
