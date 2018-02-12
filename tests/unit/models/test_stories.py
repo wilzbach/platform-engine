@@ -22,14 +22,14 @@ def test_stories():
     assert issubclass(Stories, BaseModel)
 
 
-def test_stories_backend(mocker, story):
-    mocker.patch.object(Repositories, 'backend')
+def test_stories_backend(patch, story):
+    patch.object(Repositories, 'backend')
     story.backend('app_id', 'pem_path', 'install_id')
     Repositories.backend.assert_called_with('app_id', 'pem_path', 'install_id')
 
 
-def test_stories_get_contents(mocker, story):
-    mocker.patch.object(Repositories, 'contents')
+def test_stories_get_contents(patch, story):
+    patch.object(Repositories, 'contents')
     result = story.get_contents()
     Repositories.contents.assert_called_with(story.filename, story.version)
     assert result == Repositories.contents()
@@ -40,21 +40,21 @@ def test_stories_data(story):
     assert story._initial_data == {}
 
 
-def test_stories_environment(mocker, story):
-    mocker.patch.object(Repositories, 'config', return_value={'env': 'env'})
+def test_stories_environment(patch, story):
+    patch.object(Repositories, 'config', return_value={'env': 'env'})
     assert story.environment() == 'env'
 
 
 @mark.parametrize('env', [None, {}])
-def test_stories_environment_none(mocker, story, env):
-    mocker.patch.object(Repositories, 'config', return_value=env)
+def test_stories_environment_none(patch, story, env):
+    patch.object(Repositories, 'config', return_value=env)
     assert story.environment() == {}
 
 
-def test_stories_build_tree(mocker, story):
-    mocker.patch.object(Parser, '__init__', return_value=None)
-    mocker.patch.object(Parser, 'parse')
-    mocker.patch.object(Stories, 'get_contents')
+def test_stories_build_tree(patch, story):
+    patch.object(Parser, '__init__', return_value=None)
+    patch.object(Parser, 'parse')
+    patch.object(Stories, 'get_contents')
     story.build_tree()
     Stories.get_contents.assert_called_with()
     assert story.tree == Parser.parse().json()
@@ -65,9 +65,9 @@ def test_stories_line(story):
     assert story.line('1') == story.tree['script']['1']
 
 
-def test_stories_resolve(mocker, logger, magic, story):
-    mocker.patch.object(Resolver, 'resolve')
-    mocker.patch.object(Stories, 'line', return_value={'args': {}})
+def test_stories_resolve(patch, magic, logger, story):
+    patch.object(Resolver, 'resolve')
+    patch.object(Stories, 'line', return_value={'args': {}})
     story._initial_data = {}
     result = story.resolve(logger, '1')
     Stories.line.assert_called_with('1')
