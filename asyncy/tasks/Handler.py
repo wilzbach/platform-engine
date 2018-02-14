@@ -36,6 +36,8 @@ class Handler:
 
         if line['method'] == 'if':
             return Lexicon.if_condition(line, command)
+        elif line['method'] == 'next':
+            return Lexicon.next(command)
 
         container = Containers(line['container'])
         container.make_volume(story.filename)
