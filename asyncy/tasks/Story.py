@@ -19,6 +19,12 @@ class Story:
                                     time.time())
         mongo.lines(narration, story.results)
 
+    @staticmethod
+    def execute(config, logger, app, story, environment):
+        line_number = '1'
+        while line_number:
+            line_number = Handler.run(logger, line_number, story, environment)
+
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None):
         logger.log('task-start', app_id, story_name, story_id)
@@ -31,9 +37,3 @@ class Story:
         start = time.time()
         cls.execute(config, logger, app, story, environment)
         cls.save(config, app, story, environment, start)
-
-    @staticmethod
-    def execute(config, logger, app, story, environment):
-        line_number = '1'
-        while line_number:
-            line_number = Handler.run(logger, line_number, story, environment)
