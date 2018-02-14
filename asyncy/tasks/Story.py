@@ -31,14 +31,14 @@ class Story:
 
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None,
-            app=None):
+            app=None, parent_story=None):
         logger.log('task-start', app_id, story_name, story_id)
         db.from_url(config.database)
         if app is None:
             app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
         story.build(app, config.github['app_identifier'],
-                    config.github['pem_path'])
+                    config.github['pem_path'], parent=parent_story)
         environment = Handler.make_environment(story, app)
         start = time.time()
         cls.execute(config, logger, app, story, environment)
