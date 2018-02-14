@@ -45,13 +45,14 @@ class Stories(BaseModel):
         logger.log('story-resolve', args, item)
         return item
 
-    def build(self, application, app_identifier, pem_path):
+    def build(self, application, app_identifier, pem_path, parent=None):
         """
         Does everything needed to have the story ready for execution.
         """
         self.data(application.initial_data)
         self.backend(app_identifier, pem_path, application.installation_id())
         self.build_tree()
+        self.set_parent(parent)
 
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
