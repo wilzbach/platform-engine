@@ -14,3 +14,9 @@ class Lexicon:
         if args[0]:
             return line['exit']
         return line['enter']
+
+    @staticmethod
+    def next(command):
+        if command.endswith('.story'):
+            return command
+        return '{}.story'.format(command)

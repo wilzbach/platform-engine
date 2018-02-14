@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from asyncy.Lexicon import Lexicon
 
-from pytest import fixture
+from pytest import fixture, mark
 
 
 @fixture
@@ -23,3 +23,8 @@ def test_lexicon_unless(line):
 
 def test_lexicon_unless_false(line):
     assert Lexicon.unless_condition(line, [False]) == 'enter'
+
+
+@mark.parametrize('string', ['hello', 'hello.story'])
+def test_lexicon_next(string):
+    assert Lexicon.next(string) == 'hello.story'
