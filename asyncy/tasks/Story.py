@@ -30,10 +30,12 @@ class Story:
                                             line_number)
 
     @classmethod
-    def run(cls, config, logger, app_id, story_name, *, story_id=None):
+    def run(cls, config, logger, app_id, story_name, *, story_id=None,
+            app=None):
         logger.log('task-start', app_id, story_name, story_id)
         db.from_url(config.database)
-        app = Applications.get(Applications.id == app_id)
+        if app is None:
+            app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
         story.build(app, config.github['app_identifier'],
                     config.github['pem_path'])

@@ -81,3 +81,9 @@ def test_story_run_with_id(patch, config, logger, models, handler):
     patch.object(Story, 'save')
     patch.object(Story, 'execute')
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
+
+
+def test_story_run_with_app(patch, config, logger, application, handler):
+    patch.object(Story, 'save')
+    patch.object(Story, 'execute')
+    Story.run(config, logger, 'app_id', 'story_name', app=application)
