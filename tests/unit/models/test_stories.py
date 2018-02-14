@@ -78,6 +78,11 @@ def test_stories_resolve(patch, magic, logger, story):
     assert result == Resolver.resolve()
 
 
+def test_stories_set_parent(story):
+    story.set_parent('parent')
+    assert story.parent == 'parent'
+
+
 def test_stories_build(patch, application, story):
     patch.object(Stories, 'data')
     patch.object(Stories, 'backend')

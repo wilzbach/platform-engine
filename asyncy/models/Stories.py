@@ -45,6 +45,9 @@ class Stories(BaseModel):
         logger.log('story-resolve', args, item)
         return item
 
+    def set_parent(self, parent):
+        self.parent = parent
+
     def build(self, application, app_identifier, pem_path, parent=None):
         """
         Does everything needed to have the story ready for execution.
