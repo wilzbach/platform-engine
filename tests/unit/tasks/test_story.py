@@ -36,6 +36,13 @@ def test_story_execute(patch, config, logger, application, story):
     Handler.run.assert_called_with(logger, '1', story, 'environment')
 
 
+def test_story_execute_next(patch, config, logger, application, story):
+    patch.object(Handler, 'run', return_value='next.story')
+    patch.object(Story, 'run', return_value=None)
+    Story.execute(config, logger, application, story, 'environment')
+    Story.run.assert_called_with(config, logger, application.id, 'next.story')
+
+
 def test_story_run(patch, config, logger, application, models, handler):
     patch.object(time, 'time')
     patch.object(Story, 'save')
