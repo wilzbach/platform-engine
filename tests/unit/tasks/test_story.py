@@ -8,9 +8,9 @@ from pytest import fixture, raises
 
 
 @fixture
-def models(mocker, application):
-    mocker.patch.object(Applications, 'get_story')
-    mocker.patch.object(Applications, 'get', return_value=application)
+def models(patch, application):
+    patch.object(Applications, 'get_story')
+    patch.object(Applications, 'get', return_value=application)
 
 
 @fixture
