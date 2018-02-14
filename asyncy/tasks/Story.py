@@ -27,7 +27,8 @@ class Story:
             if line_number:
                 if line_number.endswith('.story'):
                     line_number = Story.run(config, logger, app.id,
-                                            line_number)
+                                            line_number, app=app,
+                                            parent_story=story)
 
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None,

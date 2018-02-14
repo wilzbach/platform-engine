@@ -40,7 +40,8 @@ def test_story_execute_next(patch, config, logger, application, story):
     patch.object(Handler, 'run', return_value='next.story')
     patch.object(Story, 'run', return_value=None)
     Story.execute(config, logger, application, story, 'environment')
-    Story.run.assert_called_with(config, logger, application.id, 'next.story')
+    Story.run.assert_called_with(config, logger, application.id, 'next.story',
+                                 app=application, parent_story=story)
 
 
 def test_story_run(patch, config, logger, application, models, handler):
