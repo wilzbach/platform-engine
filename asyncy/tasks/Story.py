@@ -29,11 +29,11 @@ class Story:
                     config.github['pem_path'])
         environment = Handler.make_environment(story, app)
         start = time.time()
-        cls.execute(logger, app, story, environment)
+        cls.execute(config, logger, app, story, environment)
         cls.save(config, app, story, environment, start)
 
     @staticmethod
-    def execute(logger, app, story, environment):
+    def execute(config, logger, app, story, environment):
         line_number = '1'
         while line_number:
             line_number = Handler.run(logger, line_number, story, environment)

@@ -30,9 +30,9 @@ def test_story_save(patch, magic, config, application, story):
     mongo.lines.assert_called_with(mongo.narration(), story.results)
 
 
-def test_story_execute(patch, logger, application, story):
-    patch.object(Handler, 'run', return_value=0)
-    Story.execute(logger, application, story, 'environment')
+def test_story_execute(patch, config, logger, application, story):
+    patch.object(Handler, 'run', return_value=None)
+    Story.execute(config, logger, application, story, 'environment')
     Handler.run.assert_called_with(logger, '1', story, 'environment')
 
 
@@ -50,7 +50,7 @@ def test_story_run(patch, config, logger, application, models, handler):
                                    config.github['app_identifier'],
                                    config.github['pem_path'])
     Handler.make_environment.assert_called_with(story, application)
-    Story.execute.assert_called_with(logger, application, story,
+    Story.execute.assert_called_with(config, logger, application, story,
                                      Handler.make_environment())
     Story.save.assert_called_with(config, application, story,
                                   Handler.make_environment(), time.time())
