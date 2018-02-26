@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from frustum import Frustum
+from celery.utils.log import get_task_logger
 
 
 class Logger:
@@ -10,6 +11,7 @@ class Logger:
         ('story-parse', 'debug', 'Parsed story {}'),
         ('story-resolve', 'debug', 'Resolved {} to {}'),
         ('task-end', 'debug', 'Previous task ended'),
+        ('task-received', 'debug', 'Received task for app {} with story {}'),
         ('task-start', 'debug', 'Start task for app {} with story {} id: {}'),
     ]
 
