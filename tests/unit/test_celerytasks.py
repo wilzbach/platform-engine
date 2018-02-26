@@ -8,22 +8,23 @@ from pytest import fixture
 
 
 @fixture
-def run(mocker):
-    mocker.patch.object(Story, 'run')
-    return Story.run
+def run(patch):
+    patch.object(Story, 'run')
 
 
-def test_celerytasks_logger(mocker):
+def test_celerytasks_logger():
     assert isinstance(logger, Logger)
 
 
-def test_celerytasks_run(run):
+def test_celerytasks_run(patch, run):
+    patch.object(logger, 'log')
     process_story('app_id', 'story_name')
     args = (config, logger, 'app_id', 'story_name')
-    run.assert_called_with(*args, story_id=None)
+    logger.log.assert_called_with('task-received', 'app_id', 'story_name')
+    Story.run.assert_called_with(*args, story_id=None)
 
 
 def test_celerytasks_run_with_story_id(run):
     process_story('app_id', 'story_name', story_id=1)
     args = (config, logger, 'app_id', 'story_name')
-    run.assert_called_with(*args, story_id=1)
+    Story.run.assert_called_with(*args, story_id=1)
