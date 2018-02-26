@@ -14,7 +14,9 @@ class Logger:
     ]
 
     def __init__(self, config):
-        self.frustum = Frustum(verbosity=config.logger['verbosity'])
+        verbosity = config.logger['verbosity']
+        name = config.logger['name']
+        self.frustum = Frustum(name=name, verbosity=verbosity)
 
     def register(self):
         for event in self.events:

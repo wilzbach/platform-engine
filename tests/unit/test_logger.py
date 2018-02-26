@@ -13,7 +13,9 @@ def logger(patch, config):
 
 
 def test_logger_init(logger, config):
-    Frustum.__init__.assert_called_with(verbosity=config.logger['verbosity'])
+    verbosity = config.logger['verbosity']
+    name = config.logger['name']
+    Frustum.__init__.assert_called_with(name=name, verbosity=verbosity)
 
 
 def test_logger_events(logger):
