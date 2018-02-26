@@ -41,6 +41,14 @@ def test_logger_register(patch, logger):
     Frustum.register_event.assert_called_with('event', 'level', 'message')
 
 
+def test_logger_start(patch, logger):
+    patch.object(Logger, 'register')
+    patch.object(Logger, 'set_others')
+    logger.start()
+    logger.register.assert_called_with()
+    logger.set_others.assert_called_with()
+
+
 def test_logger_log(patch, logger):
     patch.object(Frustum, 'log')
     logger.log('my-event')
