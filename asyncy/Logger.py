@@ -18,6 +18,12 @@ class Logger:
         name = config.logger['name']
         self.frustum = Frustum(name=name, verbosity=verbosity)
 
+    def set_others(self):
+        """
+        Sets third party loggers to an appropriate value
+        """
+        self.frustum.set_logger('amqp', 40)
+
     def register(self):
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
