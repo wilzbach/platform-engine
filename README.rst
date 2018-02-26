@@ -86,6 +86,7 @@ Configuration options
     export mongo=mongodb://localhost:27017/
     export broker=amqp://:@localhost:5672/
     export loggger.verbosity=1
+    export logger.name=asyncy
     export github.app_name=myapp
     export github.pem_path=github.pem
     export github.app_identifier=123456789
