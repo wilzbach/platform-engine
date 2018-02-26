@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from frustum import Frustum
-from celery.utils.log import get_task_logger
 
 
 class Logger:
