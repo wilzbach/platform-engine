@@ -22,6 +22,7 @@ def test_config():
     assert Config.defaults['database'] == database_url
     assert Config.defaults['mongo'] == 'mongodb://localhost:27017/'
     assert Config.defaults['broker'] == broker_url
+    assert Config.defaults['logger']['name'] == 'asyncy'
     assert Config.defaults['logger']['verbosity'] == 1
     assert Config.defaults['github']['pem_path'] == 'github.pem'
     assert Config.defaults['github']['app_identifier'] == '123456789'

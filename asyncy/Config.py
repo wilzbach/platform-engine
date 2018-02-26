@@ -9,6 +9,7 @@ class Config:
         'mongo': 'mongodb://localhost:27017/',
         'broker': 'amqp://:@localhost:5672/',
         'logger': {
+            'name': 'asyncy',
             'verbosity': 1,
         },
         'github': {
