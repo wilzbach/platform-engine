@@ -58,16 +58,16 @@ def test_containers_make_volume_create(container):
     assert container.volume == container.client.volumes.create()
 
 
-def test_containers_run(magic, logger, client, container):
+def test_containers_run(magic, client, container):
     container.volume = magic(name='volume')
-    container.run(logger, 'command', {})
+    container.run('command', {})
     kwargs = {'command': 'command', 'environment': {},
               'cap_drop': 'all',
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.name, **kwargs)
     client.images.pull.assert_called_with(container.name)
-    assert logger.log.call_count == 2
+    assert container.logger.log.call_count == 2
     assert container.output == client.containers.run()
 
 

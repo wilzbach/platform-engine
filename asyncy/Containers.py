@@ -30,7 +30,7 @@ class Containers:
         except docker.errors.NotFound:
             self.volume = self.client.volumes.create(name)
 
-    def run(self, logger, command, environment):
+    def run(self, command, environment):
         """
         Runs a docker image.
         """
@@ -40,9 +40,9 @@ class Containers:
         if self.volume:
             kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
                                                     'mode': 'rw'}}
-        logger.log('container-start', self.name)
+        self.logger.log('container-start', self.name)
         self.output = self.client.containers.run(self.name, **kwargs)
-        logger.log('container-end', self.name)
+        self.logger.log('container-end', self.name)
 
     def result(self):
         return self.output
