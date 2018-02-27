@@ -18,11 +18,12 @@ def handler(patch):
     patch.object(Handler, 'make_environment')
 
 
-def test_story_save(patch, magic, config, application, story):
+def test_story_save(patch, magic, config, logger, application, story):
     mongo = magic()
     patch.object(Handler, 'init_mongo', return_value=mongo)
     patch.object(time, 'time')
-    Story.save(config, application, story, {}, 1)
+    Story.save(config, logger, application, story, {}, 1)
+    logger.log.assert_called_with('story-save', story.filename, application.id)
     Handler.init_mongo.assert_called_with(config.mongo)
     mongo.story.assert_called_with(application.id, story.id)
     mongo.narration.assert_called_with(mongo.story(), application.initial_data,
@@ -60,7 +61,7 @@ def test_story_run(patch, config, logger, application, models, handler):
     Handler.make_environment.assert_called_with(story, application)
     Story.execute.assert_called_with(config, logger, application, story,
                                      Handler.make_environment())
-    Story.save.assert_called_with(config, application, story,
+    Story.save.assert_called_with(config, logger, application, story,
                                   Handler.make_environment(), time.time())
 
 
@@ -68,7 +69,7 @@ def test_story_run_logger(patch, config, logger, application, models, handler):
     patch.object(Story, 'save')
     patch.object(Story, 'execute')
     Story.run(config, logger, 'app_id', 'story_name')
-    logger.log.assert_called_with('task-start', 'app_id', 'story_name', None)
+    assert logger.log.call_count == 2
 
 
 def test_tasks_run_force_keyword(patch, config, logger, models, handler):

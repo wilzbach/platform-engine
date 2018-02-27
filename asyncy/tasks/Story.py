@@ -8,10 +8,11 @@ from ..models import Applications, Stories, db
 class Story:
 
     @staticmethod
-    def save(config, app, story, environment, start):
+    def save(config, logger, app, story, environment, start):
         """
         Saves the narration and the results for each line.
         """
+        logger.log('story-save', story.filename, app.id)
         mongo = Handler.init_mongo(config.mongo)
         mongo_story = mongo.story(app.id, story.id)
         narration = mongo.narration(mongo_story, app.initial_data, environment,
@@ -33,7 +34,7 @@ class Story:
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None,
             app=None, parent_story=None):
-        logger.log('task-start', app_id, story_name, story_id)
+        logger.log('story-start', story_name, app_id, story_id)
         db.from_url(config.database)
         if app is None:
             app = Applications.get(Applications.id == app_id)
@@ -43,4 +44,5 @@ class Story:
         environment = Handler.make_environment(story, app)
         start = time.time()
         cls.execute(config, logger, app, story, environment)
-        cls.save(config, app, story, environment, start)
+        cls.save(config, logger, app, story, environment, start)
+        logger.log('story-end', story_name, app_id, story_id)
