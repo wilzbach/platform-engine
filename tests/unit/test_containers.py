@@ -48,6 +48,7 @@ def test_containers_alias_empty(logger):
 def test_containers_make_volume(container):
     container.make_volume('volume')
     container.client.volumes.get.assert_called_with('volume')
+    container.logger.log.assert_called_with('container-volume', 'volume')
     assert container.volume == container.client.volumes.get()
 
 

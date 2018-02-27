@@ -29,6 +29,7 @@ class Containers:
             self.volume = self.client.volumes.get(name)
         except docker.errors.NotFound:
             self.volume = self.client.volumes.create(name)
+        self.logger.log('container-volume', name)
 
     def run(self, command, environment):
         """
