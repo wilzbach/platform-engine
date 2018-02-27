@@ -19,15 +19,29 @@ def test_logger_init(logger, config):
 
 
 def test_logger_events(logger):
-    assert logger.events[0] == ('container-run', 'debug', 'Container {} run')
-    assert logger.events[1] == ('jwt-token', 'debug', 'Encoded token: {}')
-    assert logger.events[2] == ('story-parse', 'debug', 'Parsed story {}')
-    assert logger.events[3] == ('story-resolve', 'debug', 'Resolved {} to {}')
-    assert logger.events[4] == ('task-end', 'debug', 'Previous task ended')
-    message = 'Received task for app {} with story {}'
-    assert logger.events[5] == ('task-received', 'debug', message)
-    message = 'Start task for app {} with story {} id: {}'
-    assert logger.events[6] == ('task-start', 'debug', message)
+    message = 'Container {} is running'
+    assert logger.events[0] == ('container-start', 'info', message)
+
+    message = 'Container {} has finished'
+    assert logger.events[1] == ('container-end', 'info', message)
+
+    message = 'Start processing story "{}" for app {} with id {}'
+    assert logger.events[2] == ('story-start', 'info', message)
+
+    message = 'Saved results of story "{}" for app {}'
+    assert logger.events[3] == ('story-save', 'info', message)
+
+    message = 'Finished processing story "{}" for app {} with id {}'
+    assert logger.events[4] == ('story-end', 'info', message)
+
+    message = 'Received task for app {} with story "{}"'
+    assert logger.events[5] == ('task-received', 'info', message)
+
+    assert logger.events[6] == ('jwt-token', 'debug', 'Encoded token: {}')
+    assert logger.events[7] == ('story-parse', 'debug', 'Parsed story {}')
+
+    message = 'Resolved "{}" to "{}"'
+    assert logger.events[8] == ('story-resolve', 'debug', message)
 
 
 def test_logger_start(patch, logger):

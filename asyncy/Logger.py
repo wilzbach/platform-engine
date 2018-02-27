@@ -5,13 +5,17 @@ from frustum import Frustum
 class Logger:
 
     events = [
-        ('container-run', 'debug', 'Container {} run'),
+        ('container-start', 'info', 'Container {} is running'),
+        ('container-end', 'info', 'Container {} has finished'),
+        ('story-start', 'info',
+         'Start processing story "{}" for app {} with id {}'),
+        ('story-save', 'info', 'Saved results of story "{}" for app {}'),
+        ('story-end', 'info',
+         'Finished processing story "{}" for app {} with id {}'),
+        ('task-received', 'info', 'Received task for app {} with story "{}"'),
         ('jwt-token', 'debug', 'Encoded token: {}'),
         ('story-parse', 'debug', 'Parsed story {}'),
-        ('story-resolve', 'debug', 'Resolved {} to {}'),
-        ('task-end', 'debug', 'Previous task ended'),
-        ('task-received', 'debug', 'Received task for app {} with story {}'),
-        ('task-start', 'debug', 'Start task for app {} with story {} id: {}'),
+        ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
     ]
 
     def __init__(self, config):
