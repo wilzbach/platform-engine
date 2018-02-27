@@ -18,12 +18,6 @@ def test_logger_init(logger, config):
     Frustum.__init__.assert_called_with(name=name, verbosity=verbosity)
 
 
-def test_logger_set_others(patch, logger):
-    patch.object(Frustum, 'set_logger')
-    logger.set_others()
-    Frustum.set_logger.assert_called_with('amqp', 40)
-
-
 def test_logger_events(logger):
     assert logger.events[0] == ('container-run', 'debug', 'Container {} run')
     assert logger.events[1] == ('jwt-token', 'debug', 'Encoded token: {}')
@@ -45,10 +39,8 @@ def test_logger_register(patch, logger):
 
 def test_logger_start(patch, logger):
     patch.object(Logger, 'register')
-    patch.object(Logger, 'set_others')
     logger.start()
     logger.register.assert_called_with()
-    logger.set_others.assert_called_with()
 
 
 def test_logger_log(patch, logger):
