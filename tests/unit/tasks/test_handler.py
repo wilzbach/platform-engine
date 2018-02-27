@@ -37,9 +37,9 @@ def test_handler_run(patch, logger, application, story):
     Handler.run(logger, '1', story, 'environment')
     story.start_line.assert_called_with('1')
     story.resolve.assert_called_with(logger, '1')
-    Containers.__init__.assert_called_with(story.line()['container'])
+    Containers.__init__.assert_called_with(story.line()['container'], logger)
     Containers.make_volume.assert_called_with(story.filename)
-    Containers.run.assert_called_with(logger, story.resolve(), 'environment')
+    Containers.run.assert_called_with(story.resolve(), 'environment')
     story.end_line.assert_called_with('1', Containers.result())
 
 

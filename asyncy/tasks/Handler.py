@@ -39,7 +39,7 @@ class Handler:
         elif line['method'] == 'next':
             return Lexicon.next(command)
 
-        container = Containers(line['container'])
+        container = Containers(line['container'], logger)
         container.make_volume(story.filename)
-        container.run(logger, command, environment)
+        container.run(command, environment)
         story.end_line(line_number, container.result())
