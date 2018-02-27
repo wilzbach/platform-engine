@@ -16,16 +16,14 @@ class Logger:
     ]
 
     def __init__(self, config):
-        verbosity = config.logger['verbosity']
+        level = config.logger['verbosity']
         name = config.logger['name']
-        self.frustum = Frustum(name=name, verbosity=verbosity)
-
-    def register(self):
-        for event in self.events:
-            self.frustum.register_event(event[0], event[1], event[2])
+        self.frustum = Frustum(name, level)
 
     def start(self):
-        self.register()
+        for event in self.events:
+            self.frustum.register_event(event[0], event[1], event[2])
+        self.frustum.start_logger()
 
     def log(self, event, *args):
         self.frustum.log(event, *args)

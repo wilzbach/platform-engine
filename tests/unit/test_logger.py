@@ -13,9 +13,9 @@ def logger(patch, config):
 
 
 def test_logger_init(logger, config):
-    verbosity = config.logger['verbosity']
+    level = config.logger['verbosity']
     name = config.logger['name']
-    Frustum.__init__.assert_called_with(name=name, verbosity=verbosity)
+    Frustum.__init__.assert_called_with(name, level)
 
 
 def test_logger_events(logger):
@@ -30,17 +30,13 @@ def test_logger_events(logger):
     assert logger.events[6] == ('task-start', 'debug', message)
 
 
-def test_logger_register(patch, logger):
-    patch.object(Frustum, 'register_event')
-    logger.events = [('event', 'level', 'message')]
-    logger.register()
-    Frustum.register_event.assert_called_with('event', 'level', 'message')
-
-
 def test_logger_start(patch, logger):
-    patch.object(Logger, 'register')
+    patch.object(Frustum, 'register_event')
+    patch.object(Frustum, 'start_logger')
+    logger.events = [('event', 'level', 'message')]
     logger.start()
-    logger.register.assert_called_with()
+    Frustum.register_event.assert_called_with('event', 'level', 'message')
+    Frustum.start_logger.assert_called_with()
 
 
 def test_logger_log(patch, logger):
