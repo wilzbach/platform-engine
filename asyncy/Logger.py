@@ -13,6 +13,7 @@ class Logger:
         ('story-end', 'info',
          'Finished processing story "{}" for app {} with id {}'),
         ('task-received', 'info', 'Received task for app {} with story "{}"'),
+        ('container-volume', 'debug', 'Created volume {}'),
         ('jwt-token', 'debug', 'Encoded token: {}'),
         ('story-parse', 'debug', 'Parsed story {}'),
         ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
