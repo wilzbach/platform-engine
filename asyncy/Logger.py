@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from frustum import Frustum
-from celery.utils.log import get_task_logger
 
 
 class Logger:
@@ -16,7 +15,7 @@ class Logger:
     ]
 
     def __init__(self, config):
-        level = config.logger['verbosity']
+        level = config.logger['level']
         name = config.logger['name']
         self.frustum = Frustum(name, level)
 

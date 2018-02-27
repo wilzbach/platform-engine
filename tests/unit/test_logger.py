@@ -13,7 +13,7 @@ def logger(patch, config):
 
 
 def test_logger_init(logger, config):
-    level = config.logger['verbosity']
+    level = config.logger['level']
     name = config.logger['name']
     Frustum.__init__.assert_called_with(name, level)
 
