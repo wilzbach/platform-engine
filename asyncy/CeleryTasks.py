@@ -7,7 +7,7 @@ from .tasks import Story
 
 config = Config()
 logger = Logger(config)
-logger.register()
+logger.start()
 
 app = CeleryApp.start(config)
 
