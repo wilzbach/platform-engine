@@ -13,19 +13,20 @@ def client(patch):
 
 
 @fixture
-def container(patch, client):
+def container(patch, logger, client):
     patch.object(Containers, 'alias', return_value='name')
-    return Containers('hello-world')
+    return Containers('hello-world', logger)
 
 
-def test_containers(patch, client):
+def test_containers(patch, logger, client):
     patch.object(Containers, 'alias')
-    container = Containers('hello-world')
+    container = Containers('hello-world', logger)
     Containers.alias.assert_called_with('hello-world')
     assert container.client == docker.from_env()
     assert container.name == Containers.alias()
     assert container.env == {}
     assert container.volume is None
+    assert container.logger == logger
 
 
 def test_containers_aliases(container):
@@ -33,14 +34,14 @@ def test_containers_aliases(container):
     assert container.aliases['python'] == 'asyncy/asyncy-python'
 
 
-def test_containers_alias():
-    container = Containers('name')
+def test_containers_alias(logger):
+    container = Containers('name', logger)
     container.aliases = {'simple': 'complex'}
     assert container.alias('simple') == 'complex'
 
 
-def test_containers_alias_empty():
-    container = Containers('name')
+def test_containers_alias_empty(logger):
+    container = Containers('name', logger)
     container.alias('empty') == 'empty'
 
 

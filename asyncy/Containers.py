@@ -9,11 +9,12 @@ class Containers:
         'python': 'asyncy/asyncy-python'
     }
 
-    def __init__(self, name):
+    def __init__(self, name, logger):
         self.name = self.alias(name)
         self.client = docker.from_env()
         self.env = {}
         self.volume = None
+        self.logger = logger
 
     def alias(self, name):
         """
