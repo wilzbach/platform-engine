@@ -10,7 +10,7 @@ class Config:
         'broker': 'amqp://:@localhost:5672/',
         'logger': {
             'name': 'asyncy',
-            'verbosity': 1,
+            'level': 'warning',
         },
         'github': {
             'app_name': 'myapp',
