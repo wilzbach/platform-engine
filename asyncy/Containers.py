@@ -39,8 +39,9 @@ class Containers:
         if self.volume:
             kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
                                                     'mode': 'rw'}}
+        logger.log('container-start', self.name)
         self.output = self.client.containers.run(self.name, **kwargs)
-        logger.log('container-run', self.name)
+        logger.log('container-end', self.name)
 
     def result(self):
         return self.output
