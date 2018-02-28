@@ -8,7 +8,6 @@ class Http:
     def _call(cls, method, url, json=False, **kwargs):
         request = getattr(requests, method)
         response = request(url, **kwargs)
-        response.raise_for_status()
         if json:
             return response.json()
         return response.text

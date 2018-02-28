@@ -17,7 +17,6 @@ def test_http_methods(requests_mocks, method):
     response = getattr(Http, method)('url')
     request_method = getattr(requests, method)
     request_method.assert_called_with('url')
-    assert request_method().raise_for_status.call_count == 1
     assert response == request_method().text
 
 
@@ -26,7 +25,6 @@ def test_http_methods_kwargs(requests_mocks, method):
     response = getattr(Http, method)('url', headers={})
     request_method = getattr(requests, method)
     request_method.assert_called_with('url', headers={})
-    assert request_method().raise_for_status.call_count == 1
     assert response == request_method().text
 
 
