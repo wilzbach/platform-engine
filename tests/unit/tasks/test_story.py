@@ -55,7 +55,7 @@ def test_story_run(patch, config, logger, application, models, handler):
     Applications.get.assert_called_with(True)
     application.get_story.assert_called_with('story_name')
     story = application.get_story()
-    story.build.assert_called_with(application,
+    story.build.assert_called_with(logger, application,
                                    config.github['app_identifier'],
                                    config.github['pem_path'], parent=None)
     Handler.make_environment.assert_called_with(story, application)
@@ -97,7 +97,7 @@ def test_story_run_with_parent_story(patch, config, logger, models,
     patch.object(Story, 'execute')
     Story.run(config, logger, 'app_id', 'story_name', parent_story='parent')
     github = config.github
-    Applications.get_story().build.assert_called_with(application,
+    Applications.get_story().build.assert_called_with(logger, application,
                                                       github['app_identifier'],
                                                       github['pem_path'],
                                                       parent='parent')

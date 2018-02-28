@@ -39,7 +39,7 @@ class Story:
         if app is None:
             app = Applications.get(Applications.id == app_id)
         story = app.get_story(story_name)
-        story.build(app, config.github['app_identifier'],
+        story.build(logger, app, config.github['app_identifier'],
                     config.github['pem_path'], parent=parent_story)
         environment = Handler.make_environment(story, app)
         start = time.time()
