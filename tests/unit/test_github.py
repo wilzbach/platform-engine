@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+from asyncy.Exceptions import GithubAuthError
 from asyncy.Github import Github
 from asyncy.utils import Http, Jwt
 
-from pytest import fixture, mark
+from pytest import fixture, mark, raises
 
 
 @fixture
@@ -44,15 +45,24 @@ def test_github_make_url(mocker, gh):
     assert result == 'test/argument'
 
 
-def test_authenticate(mocker, gh, headers):
-    mocker.patch.object(Http, 'post')
-    mocker.patch.object(Jwt, 'encode', return_value='token')
-    mocker.patch.object(Github, 'make_url')
+def test_github_authenticate(patch, gh, headers):
+    patch.object(Http, 'post', return_value={'token': 'token'})
+    patch.object(Jwt, 'encode', return_value='token')
+    patch.object(Github, 'make_url')
     gh.authenticate('installation_id')
     Jwt.encode.assert_called_with(gh.github_pem, 500, iss=gh.github_app)
     args = {'json': True, 'headers': headers}
     Http.post.assert_called_with(Github.make_url(), **args)
     assert gh.access_token == Http.post()['token']
+
+
+def test_github_authenticate_error(patch, logger, gh):
+    patch.object(Jwt, 'encode')
+    patch.object(Http, 'post', return_value={})
+    patch.object(Github, 'make_url')
+    with raises(GithubAuthError):
+        gh.authenticate('id')
+    logger.log.assert_called_with('github-autherr', gh.github_app, 'id')
 
 
 def test_decode_base64(gh):

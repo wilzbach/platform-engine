@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from base64 import b64decode
 
+from .Exceptions import GithubAuthError
 from .utils import Http, Jwt
 
 
@@ -42,6 +43,9 @@ class Github:
         url = self.make_url('installations', installation_id)
         headers = self._headers(token)
         response = Http.post(url, json=True, headers=headers)
+        if 'token' not in response:
+            self.logger.log('github-autherr', self.github_app, installation_id)
+            raise GithubAuthError(self.github_app, installation_id)
         self.access_token = response['token']
 
     def get_contents(self, organization, repository, file, version=None):
