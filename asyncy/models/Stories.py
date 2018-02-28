@@ -49,12 +49,12 @@ class Stories(BaseModel):
     def set_parent(self, parent):
         self.parent = parent
 
-    def build(self, application, app_identifier, pem_path, parent=None):
+    def build(self, logger, application, app_id, pem_path, parent=None):
         """
         Does everything needed to have the story ready for execution.
         """
         self.data(application.initial_data)
-        self.backend(app_identifier, pem_path, application.installation_id())
+        self.backend(logger, app_id, pem_path, application.installation_id())
         self.build_tree()
         self.set_parent(parent)
 

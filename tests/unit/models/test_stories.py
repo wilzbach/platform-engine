@@ -84,25 +84,25 @@ def test_stories_set_parent(story):
     assert story.parent == 'parent'
 
 
-def test_stories_build(patch, application, story):
+def test_stories_build(patch, logger, application, story):
     patch.object(Stories, 'data')
     patch.object(Stories, 'backend')
     patch.object(Stories, 'build_tree')
     patch.object(Stories, 'set_parent')
-    story.build(application, '123', 'path')
+    story.build(logger, application, '123', 'path')
     Stories.data.assert_called_with(application.initial_data)
-    Stories.backend.assert_called_with('123', 'path',
+    Stories.backend.assert_called_with(logger, '123', 'path',
                                        application.installation_id())
     Stories.build_tree.assert_called_with()
     Stories.set_parent.assert_called_with(None)
 
 
-def test_stories_build_parent(patch, application, story):
+def test_stories_build_parent(patch, logger, application, story):
     patch.object(Stories, 'data')
     patch.object(Stories, 'backend')
     patch.object(Stories, 'build_tree')
     patch.object(Stories, 'set_parent')
-    story.build(application, '123', 'path', parent='parent')
+    story.build(logger, application, '123', 'path', parent='parent')
     Stories.set_parent.assert_called_with('parent')
 
 
