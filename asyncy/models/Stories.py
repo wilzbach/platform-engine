@@ -16,8 +16,9 @@ class Stories(BaseModel):
     repository = ForeignKeyField(Repositories)
     results = {}
 
-    def backend(self, app_identifier, pem_path, installation_id):
-        self.repository.backend(app_identifier, pem_path, installation_id)
+    def backend(self, logger, app_identifier, pem_path, installation_id):
+        self.repository.backend(logger, app_identifier, pem_path,
+                                installation_id)
 
     def get_contents(self):
         return self.repository.contents(self.filename, self.version)

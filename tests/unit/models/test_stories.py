@@ -24,10 +24,11 @@ def test_stories():
     assert issubclass(Stories, BaseModel)
 
 
-def test_stories_backend(patch, story):
+def test_stories_backend(patch, logger, story):
     patch.object(Repositories, 'backend')
-    story.backend('app_id', 'pem_path', 'install_id')
-    Repositories.backend.assert_called_with('app_id', 'pem_path', 'install_id')
+    story.backend(logger, 'app_id', 'pem_path', 'install_id')
+    args = (logger, 'app_id', 'pem_path', 'install_id')
+    Repositories.backend.assert_called_with(*args)
 
 
 def test_stories_get_contents(patch, story):
