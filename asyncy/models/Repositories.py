@@ -12,8 +12,8 @@ class Repositories(BaseModel):
     organization = CharField()
     owner = ForeignKeyField(Users)
 
-    def backend(self, app_identifier, pem_path, installation_id):
-        self.github = Github(app_identifier, pem_path)
+    def backend(self, logger, app_identifier, pem_path, installation_id):
+        self.github = Github(logger, app_identifier, pem_path)
         self.github.authenticate(installation_id)
 
     def contents(self, filename, version):

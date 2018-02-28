@@ -13,11 +13,11 @@ def test_repositories():
     assert issubclass(Repositories, BaseModel)
 
 
-def test_repositores_backend(mocker, repository):
-    mocker.patch.object(Github, '__init__', return_value=None)
-    mocker.patch.object(Github, 'authenticate')
-    repository.backend('app_id', 'pem_path', 'installation_id')
-    Github.__init__.assert_called_with('app_id', 'pem_path')
+def test_repositores_backend(patch, logger, repository):
+    patch.object(Github, '__init__', return_value=None)
+    patch.object(Github, 'authenticate')
+    repository.backend(logger, 'app_id', 'pem_path', 'installation_id')
+    Github.__init__.assert_called_with(logger, 'app_id', 'pem_path')
     Github.authenticate.assert_called_with('installation_id')
     assert isinstance(repository.github, Github)
 
