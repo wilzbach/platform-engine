@@ -8,10 +8,11 @@ class Github:
 
     api_url = 'https://api.github.com'
 
-    def __init__(self, github_app, github_pem):
+    def __init__(self, logger, github_app, github_pem):
         self.github_pem = github_pem
         self.github_app = github_app
         self.access_token = None
+        self.logger = logger
 
     def url(self, page):
         pages = {

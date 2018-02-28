@@ -6,8 +6,8 @@ from pytest import fixture, mark
 
 
 @fixture
-def gh(user):
-    return Github('123456789', 'github.pem')
+def gh(logger, user):
+    return Github(logger, '123456789', 'github.pem')
 
 
 @fixture
@@ -16,11 +16,12 @@ def headers():
             'Accept': 'application/vnd.github.machine-man-preview+json'}
 
 
-def test_github(user, gh):
+def test_github_init(logger, user, gh):
     assert gh.api_url == 'https://api.github.com'
     assert gh.github_app == '123456789'
     assert gh.github_pem == 'github.pem'
     assert gh.access_token is None
+    assert gh.logger == logger
 
 
 @mark.parametrize('page, url', [
