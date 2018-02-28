@@ -5,6 +5,8 @@ from frustum import Frustum
 class Logger:
 
     events = [
+        ('github-autherr', 'error',
+         'Github authentication for app {} and installation {} failed'),
         ('container-start', 'info', 'Container {} is running'),
         ('container-end', 'info', 'Container {} has finished'),
         ('story-start', 'info',
