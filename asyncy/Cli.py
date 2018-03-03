@@ -45,3 +45,17 @@ class Cli:
         application = Applications(name=name, user=user)
         application.save()
         click.echo('Application created!')
+
+    @staticmethod
+    @main.command()
+    @click.argument('name')
+    @click.argument('organization')
+    @click.argument('username')
+    def add_repository(name, organization, username):
+        config = Config()
+        db.from_url(config.database)
+        user = Users.get(Users.name == username)
+        repository = Repositories(name=name, organization=organization,
+                                  owner=user)
+        repository.save()
+        click.echo('Repository created!')

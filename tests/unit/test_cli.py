@@ -47,3 +47,18 @@ def test_cli_add_application(patch, config, user, runner):
     assert Applications.save.call_count == 1
     assert result.exit_code == 0
     assert result.output == 'Application created!\n'
+
+
+def test_cli_add_repository(patch, config, user, runner):
+    patch.object(db, 'from_url')
+    patch.object(Users, 'get', return_value=user)
+    patch.object(Repositories, '__init__', return_value=None)
+    patch.object(Repositories, 'save')
+    result = runner.invoke(Cli.add_repository, ['name', 'org', 'user'])
+    db.from_url.assert_called_with(config.database)
+    Users.get.assert_called_with(True)
+    args = {'name': 'name', 'organization': 'org', 'owner': user}
+    Repositories.__init__.assert_called_with(**args)
+    assert Repositories.save.call_count == 1
+    assert result.exit_code == 0
+    assert result.output == 'Repository created!\n'
