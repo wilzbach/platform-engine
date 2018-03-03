@@ -20,6 +20,7 @@ class Cli:
                   Users]
         db.create_tables(models, safe=True)
 
+    @staticmethod
     @main.command()
     @click.argument('name')
     @click.argument('email')
@@ -32,3 +33,15 @@ class Cli:
                      installation_id=installation)
         user.save()
         click.echo('User created!')
+
+    @staticmethod
+    @main.command()
+    @click.argument('name')
+    @click.argument('username')
+    def add_application(name, username):
+        config = Config()
+        db.from_url(config.database)
+        user = Users.get(Users.name == username)
+        application = Applications(name=name, user=user)
+        application.save()
+        click.echo('Application created!')

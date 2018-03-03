@@ -34,3 +34,16 @@ def test_cli_adduser(patch, config, runner):
     assert Users.save.call_count == 1
     assert result.exit_code == 0
     assert result.output == 'User created!\n'
+
+
+def test_cli_add_application(patch, config, user, runner):
+    patch.object(db, 'from_url')
+    patch.object(Users, 'get', return_value=user)
+    patch.object(Applications, '__init__', return_value=None)
+    patch.object(Applications, 'save')
+    result = runner.invoke(Cli.add_application, ['name', 'username'])
+    Users.get.assert_called_with(True)
+    Applications.__init__.assert_called_with(name='name', user=user)
+    assert Applications.save.call_count == 1
+    assert result.exit_code == 0
+    assert result.output == 'Application created!\n'
