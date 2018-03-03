@@ -60,3 +60,17 @@ class Cli:
                                   owner=user)
         repository.save()
         click.echo('Repository created!')
+
+    @staticmethod
+    @main.command()
+    @click.argument('filename')
+    @click.argument('repository')
+    def add_story(filename, repository):
+        """
+        Registers a story in the database
+        """
+        Cli.init_db()
+        repo = Repositories.get(Repositories.name == repository)
+        story = Stories(filename=filename, repository=repo)
+        story.save()
+        click.echo('Story created!')

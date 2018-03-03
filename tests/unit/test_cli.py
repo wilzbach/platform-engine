@@ -56,7 +56,7 @@ def test_cli_add_application(patch, user, runner):
     assert result.output == 'Application created!\n'
 
 
-def test_cli_add_repository(patch, config, user, runner):
+def test_cli_add_repository(patch, user, runner):
     patch.object(Cli, 'init_db')
     patch.object(Users, 'get', return_value=user)
     patch.object(Repositories, '__init__', return_value=None)
@@ -69,3 +69,18 @@ def test_cli_add_repository(patch, config, user, runner):
     assert Repositories.save.call_count == 1
     assert result.exit_code == 0
     assert result.output == 'Repository created!\n'
+
+
+def test_cli_add_story(patch, repository, runner):
+    patch.object(Cli, 'init_db')
+    patch.object(Repositories, 'get', return_value=repository)
+    patch.object(Stories, '__init__', return_value=None)
+    patch.object(Stories, 'save')
+    result = runner.invoke(Cli.add_story, ['test.story', 'org/repo'])
+    assert Cli.init_db.call_count == 1
+    Repositories.get.assert_called_with(True)
+    args = {'filename': 'test.story', 'repository': repository}
+    Stories.__init__.assert_called_with(**args)
+    assert Stories.save.call_count == 1
+    assert result.exit_code == 0
+    assert result.output == 'Story created!\n'
