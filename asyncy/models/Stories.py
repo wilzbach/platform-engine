@@ -15,6 +15,7 @@ class Stories(BaseModel):
     version = CharField(null=True)
     repository = ForeignKeyField(Repositories)
     results = {}
+    parents = []
 
     def backend(self, logger, app_identifier, pem_path, installation_id):
         self.repository.backend(logger, app_identifier, pem_path,
@@ -47,7 +48,7 @@ class Stories(BaseModel):
         return item
 
     def set_parent(self, parent):
-        self.parent = parent
+        self.parents.append(parent)
 
     def build(self, logger, application, app_id, pem_path, parent=None):
         """
