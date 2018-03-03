@@ -30,17 +30,31 @@ def test_repositories_contents(magic, repository):
     assert result == repository.github.get_contents()
 
 
-def test_repositories_config(mocker, magic, repository):
-    mocker.patch.object(Yaml, 'string')
+def test_repositories_config(patch, magic, repository):
+    patch.object(Yaml, 'string', return_value={'globals': 'g', 'story': 's'})
     repository.github = magic()
-    result = repository.config()
+    result = repository.config('story')
     repository.github.get_contents.assert_called_with(repository.organization,
                                                       repository.name,
                                                       'asyncy.yml')
     Yaml.string.assert_called_with(repository.github.get_contents())
-    assert result == Yaml.string()
+    assert result == {'globals': 'g', 'story': 's'}
 
 
-def test_repositories_config_none(mocker, magic, repository):
+def test_repositories_config_no_globals(patch, magic, repository):
+    patch.object(Yaml, 'string', return_value={'story': 's'})
+    repository.github = magic()
+    result = repository.config('story')
+    assert result == {'story': 's'}
+
+
+def test_repositories_config_no_story(patch, magic, repository):
+    patch.object(Yaml, 'string', return_value={'globals': 'g'})
+    repository.github = magic()
+    result = repository.config('story')
+    assert result == {'globals': 'g'}
+
+
+def test_repositories_config_none(magic, repository):
     repository.github = magic(get_contents=magic(return_value=None))
-    assert repository.config() is None
+    assert repository.config('story') == {}

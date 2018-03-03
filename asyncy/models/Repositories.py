@@ -20,8 +20,15 @@ class Repositories(BaseModel):
         return self.github.get_contents(self.organization, self.name, filename,
                                         version=version)
 
-    def config(self):
+    def config(self, story_name):
+        config = {}
         contents = self.github.get_contents(self.organization, self.name,
                                             'asyncy.yml')
+
         if contents:
-            return Yaml.string(contents)
+            yaml = Yaml.string(contents)
+            if 'globals' in yaml:
+                config['globals'] = yaml['globals']
+            if story_name in yaml:
+                config[story_name] = yaml[story_name]
+        return config
