@@ -13,21 +13,27 @@ def runner():
     return CliRunner()
 
 
-def test_cli_install(patch, config, runner):
+def test_cli_init_db(patch, config):
     patch.object(db, 'from_url')
-    patch.object(db, 'create_tables')
-    runner.invoke(Cli.install)
+    Cli.init_db()
     db.from_url.assert_called_with(config.database)
+
+
+def test_cli_install(patch, runner):
+    patch.object(db, 'create_tables')
+    patch.object(Cli, 'init_db')
+    runner.invoke(Cli.install)
+    assert Cli.init_db.call_count == 1
     models = [Applications, ApplicationsStories, Repositories, Stories, Users]
     db.create_tables.assert_called_with(models, safe=True)
 
 
-def test_cli_adduser(patch, config, runner):
-    patch.object(db, 'from_url')
+def test_cli_adduser(patch, runner):
+    patch.object(Cli, 'init_db')
     patch.object(Users, '__init__', return_value=None)
     patch.object(Users, 'save')
     result = runner.invoke(Cli.add_user, ['test', 'email', 'handle', 'id'])
-    db.from_url.assert_called_with(config.database)
+    assert Cli.init_db.call_count == 1
     args = {'name': 'test', 'email': 'email', 'github_handle': 'handle',
             'installation_id': 'id'}
     Users.__init__.assert_called_with(**args)
@@ -36,12 +42,13 @@ def test_cli_adduser(patch, config, runner):
     assert result.output == 'User created!\n'
 
 
-def test_cli_add_application(patch, config, user, runner):
-    patch.object(db, 'from_url')
+def test_cli_add_application(patch, user, runner):
+    patch.object(Cli, 'init_db')
     patch.object(Users, 'get', return_value=user)
     patch.object(Applications, '__init__', return_value=None)
     patch.object(Applications, 'save')
     result = runner.invoke(Cli.add_application, ['name', 'username'])
+    assert Cli.init_db.call_count == 1
     Users.get.assert_called_with(True)
     Applications.__init__.assert_called_with(name='name', user=user)
     assert Applications.save.call_count == 1
@@ -50,12 +57,12 @@ def test_cli_add_application(patch, config, user, runner):
 
 
 def test_cli_add_repository(patch, config, user, runner):
-    patch.object(db, 'from_url')
+    patch.object(Cli, 'init_db')
     patch.object(Users, 'get', return_value=user)
     patch.object(Repositories, '__init__', return_value=None)
     patch.object(Repositories, 'save')
     result = runner.invoke(Cli.add_repository, ['name', 'org', 'user'])
-    db.from_url.assert_called_with(config.database)
+    assert Cli.init_db.call_count == 1
     Users.get.assert_called_with(True)
     args = {'name': 'name', 'organization': 'org', 'owner': user}
     Repositories.__init__.assert_called_with(**args)

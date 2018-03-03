@@ -8,14 +8,18 @@ from .models import (Applications, ApplicationsStories, Repositories, Stories,
 
 class Cli:
 
+    @staticmethod
+    def init_db():
+        config = Config()
+        db.from_url(config.database)
+
     @click.group()
     def main():
         pass
 
     @main.command()
     def install():
-        config = Config()
-        db.from_url(config.database)
+        Cli.init_db()
         models = [Applications, ApplicationsStories, Repositories, Stories,
                   Users]
         db.create_tables(models, safe=True)
@@ -27,8 +31,7 @@ class Cli:
     @click.argument('handle')
     @click.argument('installation')
     def add_user(name, email, handle, installation):
-        config = Config()
-        db.from_url(config.database)
+        Cli.init_db()
         user = Users(name=name, email=email, github_handle=handle,
                      installation_id=installation)
         user.save()
@@ -39,8 +42,7 @@ class Cli:
     @click.argument('name')
     @click.argument('username')
     def add_application(name, username):
-        config = Config()
-        db.from_url(config.database)
+        Cli.init_db()
         user = Users.get(Users.name == username)
         application = Applications(name=name, user=user)
         application.save()
@@ -52,8 +54,7 @@ class Cli:
     @click.argument('organization')
     @click.argument('username')
     def add_repository(name, organization, username):
-        config = Config()
-        db.from_url(config.database)
+        Cli.init_db()
         user = Users.get(Users.name == username)
         repository = Repositories(name=name, organization=organization,
                                   owner=user)
