@@ -19,6 +19,9 @@ class Cli:
 
     @main.command()
     def install():
+        """
+        Installs the engine creating the tables
+        """
         Cli.init_db()
         models = [Applications, ApplicationsStories, Repositories, Stories,
                   Users]
@@ -31,6 +34,9 @@ class Cli:
     @click.argument('handle')
     @click.argument('installation')
     def add_user(name, email, handle, installation):
+        """
+        Registers an user in the engine
+        """
         Cli.init_db()
         user = Users(name=name, email=email, github_handle=handle,
                      installation_id=installation)
@@ -42,6 +48,9 @@ class Cli:
     @click.argument('name')
     @click.argument('username')
     def add_application(name, username):
+        """
+        Adds an application to the engine
+        """
         Cli.init_db()
         user = Users.get(Users.name == username)
         application = Applications(name=name, user=user)
@@ -54,6 +63,9 @@ class Cli:
     @click.argument('organization')
     @click.argument('username')
     def add_repository(name, organization, username):
+        """
+        Register a repository in the engine
+        """
         Cli.init_db()
         user = Users.get(Users.name == username)
         repository = Repositories(name=name, organization=organization,
@@ -67,7 +79,7 @@ class Cli:
     @click.argument('repository')
     def add_story(filename, repository):
         """
-        Registers a story in the database
+        Registers a story in the engine
         """
         Cli.init_db()
         repo = Repositories.get(Repositories.name == repository)
