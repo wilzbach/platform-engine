@@ -19,3 +19,16 @@ class Cli:
         models = [Applications, ApplicationsStories, Repositories, Stories,
                   Users]
         db.create_tables(models, safe=True)
+
+    @main.command()
+    @click.argument('name')
+    @click.argument('email')
+    @click.argument('handle')
+    @click.argument('installation')
+    def add_user(name, email, handle, installation):
+        config = Config()
+        db.from_url(config.database)
+        user = Users(name=name, email=email, github_handle=handle,
+                     installation_id=installation)
+        user.save()
+        click.echo('User created!')

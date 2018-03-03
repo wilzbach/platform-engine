@@ -20,3 +20,17 @@ def test_cli_install(patch, config, runner):
     db.from_url.assert_called_with(config.database)
     models = [Applications, ApplicationsStories, Repositories, Stories, Users]
     db.create_tables.assert_called_with(models, safe=True)
+
+
+def test_cli_adduser(patch, config, runner):
+    patch.object(db, 'from_url')
+    patch.object(Users, '__init__', return_value=None)
+    patch.object(Users, 'save')
+    result = runner.invoke(Cli.add_user, ['test', 'email', 'handle', 'id'])
+    db.from_url.assert_called_with(config.database)
+    args = {'name': 'test', 'email': 'email', 'github_handle': 'handle',
+            'installation_id': 'id'}
+    Users.__init__.assert_called_with(**args)
+    assert Users.save.call_count == 1
+    assert result.exit_code == 0
+    assert result.output == 'User created!\n'
