@@ -15,7 +15,10 @@ class Stories(BaseModel):
     version = CharField(null=True)
     repository = ForeignKeyField(Repositories)
     results = {}
-    parents = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.parents = []
 
     def backend(self, logger, app_identifier, pem_path, installation_id):
         self.repository.backend(logger, app_identifier, pem_path,
@@ -47,8 +50,9 @@ class Stories(BaseModel):
         logger.log('story-resolve', args, item)
         return item
 
-    def set_parent(self, parent):
-        self.parents.append(parent)
+    def add_parent(self, parent):
+        if parent:
+            self.parents.append(parent)
 
     def build(self, logger, application, app_id, pem_path, parent=None):
         """
@@ -57,7 +61,7 @@ class Stories(BaseModel):
         self.data(application.initial_data)
         self.backend(logger, app_id, pem_path, application.installation_id())
         self.build_tree()
-        self.set_parent(parent)
+        self.add_parent(parent)
 
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}

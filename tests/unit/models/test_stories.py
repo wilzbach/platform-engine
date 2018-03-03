@@ -24,6 +24,10 @@ def test_stories():
     assert issubclass(Stories, BaseModel)
 
 
+def test_stories_init(story):
+    assert story.parents == []
+
+
 def test_stories_backend(patch, logger, story):
     patch.object(Repositories, 'backend')
     story.backend(logger, 'app_id', 'pem_path', 'install_id')
@@ -79,32 +83,36 @@ def test_stories_resolve(patch, magic, logger, story):
     assert result == Resolver.resolve()
 
 
-def test_stories_set_parents(story):
-    story.set_parent('grandparent')
-    story.set_parent('parent')
-    assert story.parents == ['grandparent', 'parent']
+def test_stories_add_parent(story):
+    story.add_parent('parent')
+    assert story.parents == ['parent']
+
+
+def test_stories_add_parent_none(story):
+    story.add_parent(None)
+    assert story.parents == []
 
 
 def test_stories_build(patch, logger, application, story):
     patch.object(Stories, 'data')
     patch.object(Stories, 'backend')
     patch.object(Stories, 'build_tree')
-    patch.object(Stories, 'set_parent')
+    patch.object(Stories, 'add_parent')
     story.build(logger, application, '123', 'path')
     Stories.data.assert_called_with(application.initial_data)
     Stories.backend.assert_called_with(logger, '123', 'path',
                                        application.installation_id())
     Stories.build_tree.assert_called_with()
-    Stories.set_parent.assert_called_with(None)
+    Stories.add_parent.assert_called_with(None)
 
 
 def test_stories_build_parent(patch, logger, application, story):
     patch.object(Stories, 'data')
     patch.object(Stories, 'backend')
     patch.object(Stories, 'build_tree')
-    patch.object(Stories, 'set_parent')
+    patch.object(Stories, 'add_parent')
     story.build(logger, application, '123', 'path', parent='parent')
-    Stories.set_parent.assert_called_with('parent')
+    Stories.add_parent.assert_called_with('parent')
 
 
 def test_stories_start_line(patch, story):
