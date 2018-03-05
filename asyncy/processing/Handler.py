@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..Containers import Containers
 from .Lexicon import Lexicon
+from ..Containers import Containers
 from ..models import Mongo
 
 
@@ -19,7 +19,7 @@ class Handler:
         Makes the environment from story and application.
         """
         environment = story.environment()
-        application_environment = application.environment()
+        application_environment = application.environment(story.filename)
         for key, value in environment.items():
             if key in application_environment:
                 environment[key] = application_environment[key]

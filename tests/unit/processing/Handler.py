@@ -24,7 +24,7 @@ def test_handler_make_environment(patch, story, application):
                                                            'three': 3})
     environment = Handler.make_environment(story, application)
     story.environment.assert_called_with()
-    application.environment.assert_called_with()
+    application.environment.assert_called_with(story.filename)
     assert environment == {'one': 0, 'two': 2}
 
 
