@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from asyncy.Lexicon import Lexicon
+from asyncy.processing import Lexicon
 
 from pytest import fixture, mark
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..Containers import Containers
-from ..Lexicon import Lexicon
+from .Lexicon import Lexicon
 from ..models import Mongo
 
 
