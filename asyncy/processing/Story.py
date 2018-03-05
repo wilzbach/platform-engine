@@ -41,7 +41,7 @@ class Story:
         story = app.get_story(story_name)
         story.build(logger, app, config.github_app_identifier,
                     config.github_pem_path, parent=parent_story)
-        environment = Handler.make_environment(story, app)
+        environment = Handler.make_environment(logger, story, app)
         start = time.time()
         cls.execute(config, logger, app, story, environment)
         cls.save(config, logger, app, story, environment, start)

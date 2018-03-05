@@ -58,7 +58,7 @@ def test_story_run(patch, config, logger, application, models, handler):
     story.build.assert_called_with(logger, application,
                                    config.github_app_identifier,
                                    config.github_pem_path, parent=None)
-    Handler.make_environment.assert_called_with(story, application)
+    Handler.make_environment.assert_called_with(logger, story, application)
     Story.execute.assert_called_with(config, logger, application, story,
                                      Handler.make_environment())
     Story.save.assert_called_with(config, logger, application, story,
