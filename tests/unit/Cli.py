@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from asyncy.CeleryTasks import process_story
 from asyncy.Cli import Cli
 from asyncy.models import (Applications, ApplicationsStories, Repositories,
                            Stories, Users, db)
@@ -84,3 +85,10 @@ def test_cli_add_story(patch, repository, runner):
     assert Stories.save.call_count == 1
     assert result.exit_code == 0
     assert result.output == 'Story created!\n'
+
+
+def test_cli_run(patch, runner):
+    patch.object(process_story, 'delay')
+    result = runner.invoke(Cli.run, ['story', 'app_id'])
+    process_story.delay.assert_called_with('app_id', 'story')
+    assert result.exit_code == 0

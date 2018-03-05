@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import click
 
+from .CeleryTasks import process_story
 from .Config import Config
 from .models import (Applications, ApplicationsStories, Repositories, Stories,
                      Users, db)
@@ -86,3 +87,11 @@ class Cli:
         story = Stories(filename=filename, repository=repo)
         story.save()
         click.echo('Story created!')
+
+
+    @staticmethod
+    @main.command()
+    @click.argument('story')
+    @click.argument('app_id')
+    def run(app_id, story):
+        process_story.delay(app_id, story)
