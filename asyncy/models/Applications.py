@@ -19,11 +19,17 @@ class Applications(BaseModel):
                                .where(Stories.filename == story_name).get()
         return appstory.story
 
-    def environment(self):
+    def environment(self, scope):
+        """
+        Gets the environment from the initial data
+        """
+        environment = {}
         if self.initial_data:
             if 'environment' in self.initial_data:
-                return self.initial_data['environment']
-        return {}
+                initial_environment = self.initial_data['environment']
+                if scope in initial_environment:
+                    environment[scope] = initial_environment[scope]
+        return environment
 
     def installation_id(self):
         return self.user.installation_id

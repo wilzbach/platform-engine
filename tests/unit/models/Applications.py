@@ -24,16 +24,18 @@ def test_applications_get_story(application):
 
 
 def test_applications_environment(application):
-    application.initial_data = {'environment': {}}
-    environment = application.environment()
-    assert environment == application.initial_data['environment']
+    application.initial_data = {'environment': {'yes': {}, 'no': {}}}
+    environment = application.environment('yes')
+    assert 'no' not in environment
+    assert environment['yes'] == {}
 
 
-@mark.parametrize('data', [{'options': {}}, None])
+@mark.parametrize('data', [
+    {'options': {}}, None, {'environment': {}}
+])
 def test_applications_environment_none(application, data):
     application.initial_data = data
-    environment = application.environment()
-    assert environment == {}
+    assert application.environment('yes') == {}
 
 
 def test_applications_installation_id(application):
