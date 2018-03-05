@@ -103,6 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# pytest
+.pytest_cache
 
 lextab.py
 parsetab.py
