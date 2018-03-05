@@ -15,8 +15,8 @@ if sys.argv[-1] == 'publish':
 readme = io.open('README.rst', 'r', encoding='utf-8').read()
 
 setup(
-    name='asyncy',
-    description='Asyncy server',
+    name='asyncy-platform-engine',
+    description='The engine of the Asyncy platform',
     long_description=readme,
     author='Asyncy',
     author_email='noreply@asyncy.com',
