@@ -8,15 +8,11 @@ class Config:
         'database': 'postgresql://postgres:postgres@localhost:5432/asyncy',
         'mongo': 'mongodb://localhost:27017/',
         'broker': 'amqp://:@localhost:5672/',
-        'logger': {
-            'name': 'asyncy',
-            'level': 'warning',
-        },
-        'github': {
-            'app_name': 'myapp',
-            'pem_path': 'github.pem',
-            'app_identifier': '123456789'
-        }
+        'logger_name': 'asyncy',
+        'logger_level': 'warning',
+        'github_app_name': 'myapp',
+        'github_pem_path': 'github.pem',
+        'github_app_identifier': '123456789'
     }
 
     def __init__(self):
