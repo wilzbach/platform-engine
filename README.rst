@@ -29,9 +29,9 @@ To install the engine you will need:
    contents. Generate a pem key, then export the application name, the path to
    the pem file and the application id::
 
-    export github.app_name=myapp
-    export github.pem_path=github.pem
-    export github.app_identifier=123456789
+    export github_app_name=myapp
+    export github_pem_path=github.pem
+    export github_app_identifier=123456789
 
 3. Install asyncy from pip::
 
@@ -85,8 +85,8 @@ Configuration options
     export database=postgresql://postgres:postgres@localhost:5432/database
     export mongo=mongodb://localhost:27017/
     export broker=amqp://:@localhost:5672/
-    export loggger.verbosity=1
-    export logger.name=asyncy
-    export github.app_name=myapp
-    export github.pem_path=github.pem
-    export github.app_identifier=123456789
+    export loggger_verbosity=1
+    export logger_name=asyncy
+    export github_app_name=myapp
+    export github_pem_path=github.pem
+    export github_app_identifier=123456789
