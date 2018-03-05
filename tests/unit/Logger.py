@@ -13,8 +13,8 @@ def logger(patch, config):
 
 
 def test_logger_init(logger, config):
-    level = config.logger['level']
-    name = config.logger['name']
+    name = config.logger_name
+    level = config.logger_level
     Frustum.__init__.assert_called_with(name, level)
 
 

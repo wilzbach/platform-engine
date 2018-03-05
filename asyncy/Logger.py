@@ -22,9 +22,7 @@ class Logger:
     ]
 
     def __init__(self, config):
-        level = config.logger['level']
-        name = config.logger['name']
-        self.frustum = Frustum(name, level)
+        self.frustum = Frustum(config.logger_name, config.logger_level)
 
     def start(self):
         for event in self.events:
