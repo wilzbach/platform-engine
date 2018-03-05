@@ -48,14 +48,10 @@ def test_stories_data(story):
 
 
 def test_stories_environment(patch, story):
-    patch.object(Repositories, 'config', return_value={'env': 'env'})
-    assert story.environment() == 'env'
-
-
-@mark.parametrize('env', [None, {}])
-def test_stories_environment_none(patch, story, env):
-    patch.object(Repositories, 'config', return_value=env)
-    assert story.environment() == {}
+    patch.object(Repositories, 'config')
+    result = story.environment()
+    Repositories.config.assert_called_with('my.story')
+    assert result == Repositories.config()
 
 
 def test_stories_build_tree(patch, story):

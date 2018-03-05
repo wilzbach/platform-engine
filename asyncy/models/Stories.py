@@ -31,11 +31,7 @@ class Stories(BaseModel):
         self._initial_data = initial_data
 
     def environment(self):
-        config = self.repository.config()
-        if config:
-            if 'env' in config:
-                return config['env']
-        return {}
+        return self.repository.config(self.filename)
 
     def build_tree(self):
         story = self.get_contents()
