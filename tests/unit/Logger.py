@@ -43,11 +43,14 @@ def test_logger_events(logger):
     message = 'Created volume {}'
     assert logger.events[7] == ('container-volume', 'debug', message)
 
-    assert logger.events[8] == ('jwt-token', 'debug', 'Encoded token: {}')
-    assert logger.events[9] == ('story-parse', 'debug', 'Parsed story {}')
+    message = 'Made environment "{}"'
+    assert logger.events[8] == ('container-environment', 'debug', message)
+
+    assert logger.events[9] == ('jwt-token', 'debug', 'Encoded token: {}')
+    assert logger.events[10] == ('story-parse', 'debug', 'Parsed story {}')
 
     message = 'Resolved "{}" to "{}"'
-    assert logger.events[10] == ('story-resolve', 'debug', message)
+    assert logger.events[11] == ('story-resolve', 'debug', message)
 
 
 def test_logger_start(patch, logger):

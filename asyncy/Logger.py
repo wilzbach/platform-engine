@@ -16,9 +16,10 @@ class Logger:
          'Finished processing story "{}" for app {} with id {}'),
         ('task-received', 'info', 'Received task for app {} with story "{}"'),
         ('container-volume', 'debug', 'Created volume {}'),
+        ('container-environment', 'debug', 'Made environment "{}"'),
         ('jwt-token', 'debug', 'Encoded token: {}'),
         ('story-parse', 'debug', 'Parsed story {}'),
-        ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
+        ('story-resolve', 'debug', 'Resolved "{}" to "{}"')
     ]
 
     def __init__(self, config):
