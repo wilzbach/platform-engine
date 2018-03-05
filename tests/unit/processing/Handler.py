@@ -2,7 +2,7 @@
 from asyncy.Containers import Containers
 from asyncy.Lexicon import Lexicon
 from asyncy.models import Mongo
-from asyncy.tasks import Handler
+from asyncy.processing import Handler
 
 from pytest import fixture
 

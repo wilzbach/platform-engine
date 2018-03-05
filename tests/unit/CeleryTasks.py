@@ -2,7 +2,7 @@
 from asyncy.CeleryApp import CeleryApp
 from asyncy.CeleryTasks import app, config, logger, process_story
 from asyncy.Logger import Logger
-from asyncy.tasks import Story
+from asyncy.processing import Story
 
 from pytest import fixture
 

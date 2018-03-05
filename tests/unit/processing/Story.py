@@ -2,7 +2,7 @@
 import time
 
 from asyncy.models import Applications, db
-from asyncy.tasks import Handler, Story
+from asyncy.processing import Handler, Story
 
 from pytest import fixture, raises
 

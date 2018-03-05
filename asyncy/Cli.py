@@ -88,7 +88,6 @@ class Cli:
         story.save()
         click.echo('Story created!')
 
-
     @staticmethod
     @main.command()
     @click.argument('story')
