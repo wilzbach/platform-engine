@@ -47,6 +47,7 @@ def test_handler_run_if(mocker, logger, story):
     mocker.patch.object(Lexicon, 'if_condition')
     mocker.patch.object(story, 'line', return_value={'method': 'if'})
     result = Handler.run(logger, '1', story, 'environment')
+    Lexicon.if_condition.assert_called_with(logger, story, story.line())
     assert result == Lexicon.if_condition()
 
 

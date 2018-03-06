@@ -36,7 +36,7 @@ class Handler:
         command = story.resolve(logger, line_number)
 
         if line['method'] == 'if':
-            return Lexicon.if_condition(line, command)
+            return Lexicon.if_condition(logger, story, line)
         elif line['method'] == 'next':
             return Lexicon.next(command)
 
