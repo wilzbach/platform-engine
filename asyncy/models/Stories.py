@@ -27,8 +27,8 @@ class Stories(BaseModel):
     def get_contents(self):
         return self.repository.contents(self.filename, self.version)
 
-    def data(self, initial_data):
-        self._initial_data = initial_data
+    def set_data(self, initial_data):
+        self.data = initial_data
 
     def environment(self):
         return self.repository.config(self.filename)
@@ -54,7 +54,7 @@ class Stories(BaseModel):
         """
         Does everything needed to have the story ready for execution.
         """
-        self.data(application.initial_data)
+        self.set_data(application.initial_data)
         self.backend(logger, app_id, pem_path, application.installation_id())
         self.build_tree()
         self.add_parent(parent)

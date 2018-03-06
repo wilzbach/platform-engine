@@ -43,8 +43,8 @@ def test_stories_get_contents(patch, story):
 
 
 def test_stories_data(story):
-    story.data({})
-    assert story._initial_data == {}
+    story.set_data({})
+    assert story.data == {}
 
 
 def test_stories_environment(patch, story):
@@ -90,12 +90,12 @@ def test_stories_add_parent_none(story):
 
 
 def test_stories_build(patch, logger, application, story):
-    patch.object(Stories, 'data')
+    patch.object(Stories, 'set_data')
     patch.object(Stories, 'backend')
     patch.object(Stories, 'build_tree')
     patch.object(Stories, 'add_parent')
     story.build(logger, application, '123', 'path')
-    Stories.data.assert_called_with(application.initial_data)
+    Stories.set_data.assert_called_with(application.initial_data)
     Stories.backend.assert_called_with(logger, '123', 'path',
                                        application.installation_id())
     Stories.build_tree.assert_called_with()
@@ -103,7 +103,7 @@ def test_stories_build(patch, logger, application, story):
 
 
 def test_stories_build_parent(patch, logger, application, story):
-    patch.object(Stories, 'data')
+    patch.object(Stories, 'set_data')
     patch.object(Stories, 'backend')
     patch.object(Stories, 'build_tree')
     patch.object(Stories, 'add_parent')
