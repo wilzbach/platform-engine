@@ -24,8 +24,20 @@ def init_patching(mocker):
 
 
 @fixture
-def patch(mocker, init_patching):
+def patch_many(mocker):
+    """
+    Makes patching many attributes of the same object simpler
+    """
+    def patch_many(item, attributes):
+        for attribute in attributes:
+            mocker.patch.object(item, attribute)
+    return patch_many
+
+
+@fixture
+def patch(mocker, init_patching, patch_many):
     mocker.patch.init = init_patching
+    mocker.patch.many = patch_many
     return mocker.patch
 
 
