@@ -25,7 +25,8 @@ class Lexicon:
         return line['enter']
 
     @staticmethod
-    def next(command):
-        if command.endswith('.story'):
-            return command
-        return '{}.story'.format(command)
+    def next(logger, story, line):
+        result = story.resolve(logger, line['ln'])
+        if result.endswith('.story'):
+            return result
+        return '{}.story'.format(result)
