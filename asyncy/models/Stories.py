@@ -42,7 +42,7 @@ class Stories(BaseModel):
 
     def resolve(self, logger, line_number):
         args = self.line(line_number)['args']
-        item = Resolver.resolve(args, self._initial_data)
+        item = Resolver.resolve(args, self.data)
         logger.log('story-resolve', args, item)
         return item
 

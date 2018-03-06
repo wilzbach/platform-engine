@@ -71,7 +71,7 @@ def test_stories_line(story):
 def test_stories_resolve(patch, magic, logger, story):
     patch.object(Resolver, 'resolve')
     patch.object(Stories, 'line', return_value={'args': {}})
-    story._initial_data = {}
+    story.data = {}
     result = story.resolve(logger, '1')
     Stories.line.assert_called_with('1')
     Resolver.resolve.assert_called_with(Stories.line()['args'], {})
