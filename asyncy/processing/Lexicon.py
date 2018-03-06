@@ -1,10 +1,22 @@
 # -*- coding: utf-8 -*-
+from ..Containers import Containers
 
 
 class Lexicon:
     """
     Lexicon of possible line actions and their implementation
     """
+
+    @staticmethod
+    def run(logger, story, line, environment):
+        """
+        Runs a container with the resolution values as commands
+        """
+        command = story.resolve(logger, line['ln'])
+        container = Containers(line['container'], logger)
+        container.make_volume(story.filename)
+        container.run(command, environment)
+        story.end_line(line['ln'], container.result())
 
     @staticmethod
     def if_condition(logger, story, line):
