@@ -55,5 +55,5 @@ def test_handler_run_next(patch, logger, story):
     patch.object(Lexicon, 'next')
     patch.object(story, 'line', return_value={'method': 'next'})
     result = Handler.run(logger, '1', story, 'environment')
-    Lexicon.next.assert_called_with(story.resolve())
+    Lexicon.next.assert_called_with(logger, story, story.line())
     assert result == Lexicon.next()
