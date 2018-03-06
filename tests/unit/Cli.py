@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.CeleryTasks import process_story
 from asyncy.Cli import Cli
-from asyncy.models import (Applications, ApplicationsStories, Repositories,
-                           Stories, Users, db)
 
 from click.testing import CliRunner
 

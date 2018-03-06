@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 
-from asyncy.models import Mongo
+from asyncy.Mongo import Mongo
 
 from bson import DBRef
 

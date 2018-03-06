@@ -3,8 +3,6 @@ import click
 
 from .CeleryTasks import process_story
 from .Config import Config
-from .models import (Applications, ApplicationsStories, Repositories, Stories,
-                     Users, db)
 
 
 class Cli:

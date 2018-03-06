@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from asyncy.models import Mongo
+from asyncy.Mongo import Mongo
 from asyncy.processing import Handler, Lexicon
 
 from pytest import fixture

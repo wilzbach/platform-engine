@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .Lexicon import Lexicon
-from ..models import Mongo
+from ..Mongo import Mongo
 
 
 class Handler:

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from asyncy.Config import Config
-from asyncy.models import Applications, Repositories, Stories, Users
 
 from pytest import fixture
 
@@ -44,28 +43,6 @@ def patch(mocker, init_patching, patch_many):
 @fixture
 def logger(magic):
     return magic()
-
-
-@fixture
-def user():
-    return Users('name', 'email', '@handle')
-
-
-@fixture
-def application(user, magic):
-    app = Applications(name='app', user=user)
-    app.stories = magic()
-    return app
-
-
-@fixture
-def repository(user):
-    return Repositories(name='project', organization='org', owner=user)
-
-
-@fixture
-def story(repository):
-    return Stories(filename='test.story', repository=repository)
 
 
 @fixture

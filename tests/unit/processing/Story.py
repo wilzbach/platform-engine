@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
 
-from asyncy.models import Applications, db
 from asyncy.processing import Handler, Story
 
 from pytest import fixture, raises
