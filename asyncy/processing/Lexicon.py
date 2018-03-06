@@ -2,6 +2,9 @@
 
 
 class Lexicon:
+    """
+    Lexicon of possible line actions and their implementation
+    """
 
     @staticmethod
     def if_condition(line, args):
