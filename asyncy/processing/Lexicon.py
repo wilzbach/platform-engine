@@ -7,8 +7,13 @@ class Lexicon:
     """
 
     @staticmethod
-    def if_condition(line, args):
-        if args[0]:
+    def if_condition(logger, story, line):
+        """
+        Evaluates the resolution value to decide wheter to enter
+        inside an if-block.
+        """
+        result = story.resolve(logger, line['ln'])
+        if result[0]:
             return line['enter']
         return line['exit']
 

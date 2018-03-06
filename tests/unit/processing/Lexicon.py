@@ -6,15 +6,19 @@ from pytest import fixture, mark
 
 @fixture
 def line():
-    return {'enter': 'enter', 'exit': 'exit'}
+    return {'enter': '2', 'exit': '25', 'ln': '1'}
 
 
-def test_lexicon_if(line):
-    assert Lexicon.if_condition(line, [True]) == 'enter'
+def test_lexicon_if(patch, logger, story, line):
+    patch.object(story, 'resolve')
+    result = Lexicon.if_condition(logger, story, line)
+    story.resolve.assert_called_with(logger, line['ln'])
+    assert result == line['enter']
 
 
-def test_lexicon_if_false(line):
-    assert Lexicon.if_condition(line, [False]) == 'exit'
+def test_lexicon_if_false(patch, logger, story, line):
+    patch.object(story, 'resolve', return_value=[False])
+    assert Lexicon.if_condition(logger, story, line) == line['exit']
 
 
 def test_lexicon_unless(line):
