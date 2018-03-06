@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from .Lexicon import Lexicon
-from ..Containers import Containers
 from ..models import Mongo
 
 
@@ -33,14 +32,10 @@ class Handler:
         """
         story.start_line(line_number)
         line = story.line(line_number)
-        command = story.resolve(logger, line_number)
 
         if line['method'] == 'if':
             return Lexicon.if_condition(logger, story, line)
         elif line['method'] == 'next':
             return Lexicon.next(logger, story, line)
-
-        container = Containers(line['container'], logger)
-        container.make_volume(story.filename)
-        container.run(command, environment)
-        story.end_line(line_number, container.result())
+        elif line['method'] == 'run':
+            Lexicon.run(logger, story, line, environment)

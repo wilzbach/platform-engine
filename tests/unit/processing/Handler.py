@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from asyncy.Containers import Containers
 from asyncy.models import Mongo
 from asyncy.processing import Handler, Lexicon
 
@@ -30,17 +29,11 @@ def test_handler_make_environment(patch, logger, story, application):
 
 
 def test_handler_run(patch, logger, application, story):
-    patch.object(Containers, 'run')
-    patch.object(Containers, 'make_volume')
-    patch.object(Containers, 'result')
-    patch.object(Containers, '__init__', return_value=None)
+    patch.object(story, 'line', return_value={'method': 'run'})
+    patch.object(Lexicon, 'run')
     Handler.run(logger, '1', story, 'environment')
     story.start_line.assert_called_with('1')
-    story.resolve.assert_called_with(logger, '1')
-    Containers.__init__.assert_called_with(story.line()['container'], logger)
-    Containers.make_volume.assert_called_with(story.filename)
-    Containers.run.assert_called_with(story.resolve(), 'environment')
-    story.end_line.assert_called_with('1', Containers.result())
+    Lexicon.run.assert_called_with(logger, story, story.line(), 'environment')
 
 
 def test_handler_run_if(mocker, logger, story):
