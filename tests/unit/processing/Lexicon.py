@@ -21,12 +21,16 @@ def test_lexicon_if_false(patch, logger, story, line):
     assert Lexicon.if_condition(logger, story, line) == line['exit']
 
 
-def test_lexicon_unless(line):
-    assert Lexicon.unless_condition(line, [True]) == 'exit'
+def test_lexicon_unless(patch, logger, story, line):
+    patch.object(story, 'resolve')
+    result = Lexicon.unless_condition(logger, story, line)
+    story.resolve.assert_called_with(logger, line['ln'])
+    assert result == line['exit']
 
 
-def test_lexicon_unless_false(line):
-    assert Lexicon.unless_condition(line, [False]) == 'enter'
+def test_lexicon_unless_false(patch, logger, story, line):
+    patch.object(story, 'resolve', return_value=[False])
+    assert Lexicon.unless_condition(logger, story, line) == line['enter']
 
 
 @mark.parametrize('string', ['hello', 'hello.story'])

@@ -18,8 +18,9 @@ class Lexicon:
         return line['exit']
 
     @staticmethod
-    def unless_condition(line, args):
-        if args[0]:
+    def unless_condition(logger, story, line):
+        result = story.resolve(logger, line['ln'])
+        if result[0]:
             return line['exit']
         return line['enter']
 
