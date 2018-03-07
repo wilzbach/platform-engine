@@ -52,5 +52,5 @@ def config(mocker):
 
 
 @fixture
-def story(logger):
-    return Stories(logger, 1, 'hello.story')
+def story(config, logger):
+    return Stories(config, logger, 1, 'hello.story')

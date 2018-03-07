@@ -7,9 +7,10 @@ from asyncy.utils import Http
 from storyscript.resolver import Resolver
 
 
-def test_stories_init(logger, story):
+def test_stories_init(config, logger, story):
     assert story.app_id == 1
     assert story.name == 'hello.story'
+    assert story.config == config
     assert story.logger == logger
     assert story.results == {}
 
