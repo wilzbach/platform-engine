@@ -18,3 +18,4 @@ def test_stories_get(patch, story):
     assert story.environment == Http.get()['environment']
     assert story.containers == Http.get()['containers']
     assert story.repository == Http.get()['repository']
+    assert story.version == Http.get()['version']

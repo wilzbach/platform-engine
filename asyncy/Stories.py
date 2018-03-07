@@ -16,3 +16,4 @@ class Stories:
         self.environment = story['environment']
         self.containers = story['containers']
         self.repository = story['repository']
+        self.version = story['version']
