@@ -8,8 +8,8 @@ from ..Stories import Stories
 class Story:
 
     @staticmethod
-    def story(logger, app_id, story_name):
-        return Stories(logger, app_id, story_name)
+    def story(config, logger, app_id, story_name):
+        return Stories(config, logger, app_id, story_name)
 
     @staticmethod
     def save(config, logger, story, start):
@@ -40,7 +40,7 @@ class Story:
     def run(cls, config, logger, app_id, story_name, *, story_id=None):
         logger.log('story-start', story_name, app_id, story_id)
         start = time.time()
-        story = cls.story(logger, app_id, story_name)
+        story = cls.story(config, logger, app_id, story_name)
         story.get()
         cls.execute(config, logger, story)
         cls.save(config, logger, story, start)

@@ -7,10 +7,10 @@ from asyncy.processing import Handler, Story
 from pytest import fixture, raises
 
 
-def test_story_story(patch, logger):
+def test_story_story(patch, config, logger):
     patch.init(Stories)
-    story = Story.story(logger, 'app_id', 'story_name')
-    Stories.__init__.assert_called_with(logger, 'app_id', 'story_name')
+    story = Story.story(config, logger, 'app_id', 'story_name')
+    Stories.__init__.assert_called_with(config, logger, 'app_id', 'story_name')
     assert isinstance(story, Stories)
 
 
@@ -45,7 +45,7 @@ def test_story_run(patch, config, logger):
     patch.object(time, 'time')
     patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name')
-    Story.story.assert_called_with(logger, 'app_id', 'story_name')
+    Story.story.assert_called_with(config, logger, 'app_id', 'story_name')
     Story.story().get.assert_called_with()
     Story.execute.assert_called_with(config, logger, Story.story())
     Story.save.assert_called_with(config, logger, Story.story(), time.time())
