@@ -19,3 +19,9 @@ def test_stories_get(patch, story):
     assert story.containers == Http.get()['containers']
     assert story.repository == Http.get()['repository']
     assert story.version == Http.get()['version']
+
+
+def test_stories_line(magic, story):
+    story.tree = magic()
+    line = story.line('1')
+    assert line == story.tree['script']['1']

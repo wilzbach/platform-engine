@@ -17,3 +17,6 @@ class Stories:
         self.containers = story['containers']
         self.repository = story['repository']
         self.version = story['version']
+
+    def line(self, line_number):
+        return self.tree['script'][line_number]
