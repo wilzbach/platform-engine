@@ -2,9 +2,14 @@
 import time
 
 from .Handler import Handler
+from ..Stories import Stories
 
 
 class Story:
+
+    @staticmethod
+    def story(logger, app_id, story_name):
+        return Stories(logger, app_id, story_name)
 
     @staticmethod
     def save(config, logger, app, story, environment, start):

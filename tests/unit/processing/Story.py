@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 
+from asyncy.Stories import Stories
 from asyncy.processing import Handler, Story
 
 from pytest import fixture, raises
@@ -15,6 +16,13 @@ def models(patch, application):
 @fixture
 def handler(patch):
     patch.object(Handler, 'make_environment')
+
+
+def test_story_story(patch, logger):
+    patch.init(Stories)
+    story = Story.story(logger, 'app_id', 'story_name')
+    Stories.__init__.assert_called_with(logger, 'app_id', 'story_name')
+    assert isinstance(story, Stories)
 
 
 def test_story_save(patch, magic, config, logger, application, story):
