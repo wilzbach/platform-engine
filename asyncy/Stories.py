@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 from storyscript.resolver import Resolver
 
 from .utils import Http
@@ -10,6 +12,7 @@ class Stories:
         self.app_id = app_id
         self.name = story_name
         self.logger = logger
+        self.results = {}
 
     def get(self):
         url = 'http://api/apps/{}/stories/{}'.format(self.app_id, self.name)
@@ -31,3 +34,6 @@ class Stories:
         result = Resolver.resolve(line['args'], self.environment)
         self.logger.log('story-resolve', line['args'], result)
         return result
+
+    def start_line(self, line_number):
+        self.results[line_number] = {'start': time.time()}

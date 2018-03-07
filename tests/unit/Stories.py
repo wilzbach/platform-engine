@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 from asyncy.Stories import Stories
 from asyncy.utils import Http
 
@@ -9,6 +11,7 @@ def test_stories_init(logger, story):
     assert story.app_id == 1
     assert story.name == 'hello.story'
     assert story.logger == logger
+    assert story.results == {}
 
 
 def test_stories_get(patch, story):
@@ -40,3 +43,9 @@ def test_stories_resolve(patch, logger, story):
     logger.log.assert_called_with('story-resolve', Stories.line()['args'],
                                   Resolver.resolve())
     assert result == Resolver.resolve()
+
+
+def test_stories_start_line(patch, story):
+    patch.object(time, 'time')
+    story.start_line('1')
+    assert story.results['1'] == {'start': time.time()}
