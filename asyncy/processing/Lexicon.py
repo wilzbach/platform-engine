@@ -8,14 +8,14 @@ class Lexicon:
     """
 
     @staticmethod
-    def run(logger, story, line, environment):
+    def run(logger, story, line):
         """
         Runs a container with the resolution values as commands
         """
         command = story.resolve(logger, line['ln'])
         container = Containers(line['container'], logger)
-        container.make_volume(story.filename)
-        container.run(command, environment)
+        container.make_volume(story.name)
+        container.run(command, story.environment)
         story.end_line(line['ln'], container.result())
 
     @staticmethod

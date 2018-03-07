@@ -17,16 +17,11 @@ def config():
 
 
 def test_config():
-    database_url = 'postgresql://postgres:postgres@postgres:5432/asyncy'
     broker_url = 'amqp://rabbitmq:@rabbitmq:5672/'
-    assert Config.defaults['database'] == database_url
     assert Config.defaults['mongo'] == 'mongodb://mongo:27017/'
     assert Config.defaults['broker'] == broker_url
     assert Config.defaults['logger_name'] == 'asyncy'
     assert Config.defaults['logger_level'] == 'warning'
-    assert Config.defaults['github_pem_path'] == 'github.pem'
-    assert Config.defaults['github_app_identifier'] == '123456789'
-    assert Config.defaults['github_app_name'] == 'myapp'
 
 
 def test_config_init(patch):

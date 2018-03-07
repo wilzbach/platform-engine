@@ -2,47 +2,46 @@
 import time
 
 from .Handler import Handler
-from ..models import Applications, Stories, db
+from ..Stories import Stories
 
 
 class Story:
 
     @staticmethod
-    def save(config, logger, app, story, environment, start):
+    def story(logger, app_id, story_name):
+        return Stories(logger, app_id, story_name)
+
+    @staticmethod
+    def save(config, logger, story, start):
         """
         Saves the narration and the results for each line.
         """
-        logger.log('story-save', story.filename, app.id)
+        logger.log('story-save', story.name, story.app_id)
         mongo = Handler.init_mongo(config.mongo)
-        mongo_story = mongo.story(app.id, story.id)
-        narration = mongo.narration(mongo_story, app.initial_data, environment,
-                                    story.version, start,
+        mongo_story = mongo.story(story.name, story.app_id)
+        narration = mongo.narration(mongo_story, story, story.version, start,
                                     time.time())
         mongo.lines(narration, story.results)
 
     @staticmethod
-    def execute(config, logger, app, story, environment):
+    def execute(config, logger, story):
+        """
+        Executes each line in the story
+        """
         line_number = '1'
         while line_number:
-            line_number = Handler.run(logger, line_number, story, environment)
+            line_number = Handler.run(logger, line_number, story)
             if line_number:
                 if line_number.endswith('.story'):
-                    line_number = Story.run(config, logger, app.id,
-                                            line_number, app=app,
-                                            parent_story=story)
+                    line_number = Story.run(config, logger, story.app_id,
+                                            line_number)
 
     @classmethod
-    def run(cls, config, logger, app_id, story_name, *, story_id=None,
-            app=None, parent_story=None):
+    def run(cls, config, logger, app_id, story_name, *, story_id=None):
         logger.log('story-start', story_name, app_id, story_id)
-        db.from_url(config.database)
-        if app is None:
-            app = Applications.get(Applications.id == app_id)
-        story = app.get_story(story_name)
-        story.build(logger, app, config.github_app_identifier,
-                    config.github_pem_path, parent=parent_story)
-        environment = Handler.make_environment(logger, story, app)
         start = time.time()
-        cls.execute(config, logger, app, story, environment)
-        cls.save(config, logger, app, story, environment, start)
+        story = cls.story(logger, app_id, story_name)
+        story.get()
+        cls.execute(config, logger, story)
+        cls.save(config, logger, story, start)
         logger.log('story-end', story_name, app_id, story_id)

@@ -5,14 +5,10 @@ import os
 class Config:
 
     defaults = {
-        'database': 'postgresql://postgres:postgres@postgres:5432/asyncy',
         'mongo': 'mongodb://mongo:27017/',
         'broker': 'amqp://rabbitmq:@rabbitmq:5672/',
         'logger_name': 'asyncy',
-        'logger_level': 'warning',
-        'github_app_name': 'myapp',
-        'github_pem_path': 'github.pem',
-        'github_app_identifier': '123456789'
+        'logger_level': 'warning'
     }
 
     def __init__(self):

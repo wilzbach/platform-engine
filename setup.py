@@ -34,11 +34,7 @@ setup(
         'cryptography>=2.1.4',
         'docker>=2.7.0',
         'frustum>=0.0.1',
-        'peewee>=2.10.2',
-        'psycopg2>=2.7.3.2',
-        'pyjwt>=1.5.3',
         'pymongo>=3.6.0',
-        'pyyaml>=3.12',
         'requests>=2.18.4',
         'storyscript>=0.0.3'
     ],
