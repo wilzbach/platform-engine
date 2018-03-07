@@ -2,13 +2,6 @@
 from asyncy.Stories import Stories
 from asyncy.utils import Http
 
-from pytest import fixture
-
-
-@fixture
-def story(logger):
-    return Stories(logger, 1, 'hello.story')
-
 
 def test_stories_init(logger, story):
     assert story.app_id == 1

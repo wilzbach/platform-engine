@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from asyncy.Config import Config
+from asyncy.Stories import Stories
 
 from pytest import fixture
 
@@ -48,3 +49,8 @@ def logger(magic):
 @fixture
 def config(mocker):
     return Config()
+
+
+@fixture
+def story(logger):
+    return Stories(logger, 1, 'hello.story')
