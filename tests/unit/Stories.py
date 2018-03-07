@@ -17,7 +17,7 @@ def test_stories_init(logger, story):
 def test_stories_get(patch, story):
     patch.object(Http, 'get')
     story.get()
-    url = 'http://api/apps/1/stories/hello.story'
+    url = 'http://api-private/apps/1/stories/hello.story'
     Http.get.assert_called_with(url, json=True)
     assert story.tree == Http.get()['tree']
     assert story.environment == Http.get()['environment']
