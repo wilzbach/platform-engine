@@ -38,18 +38,17 @@ def test_story_save(patch, magic, config, logger, application, story):
     mongo.lines.assert_called_with(mongo.narration(), story.results)
 
 
-def test_story_execute(patch, config, logger, application, story):
+def test_story_execute(patch, config, logger, story):
     patch.object(Handler, 'run', return_value=None)
-    Story.execute(config, logger, application, story, 'environment')
-    Handler.run.assert_called_with(logger, '1', story, 'environment')
+    Story.execute(config, logger, story)
+    Handler.run.assert_called_with(logger, '1', story)
 
 
-def test_story_execute_next(patch, config, logger, application, story):
+def test_story_execute_next(patch, config, logger, story):
     patch.object(Handler, 'run', return_value='next.story')
     patch.object(Story, 'run', return_value=None)
-    Story.execute(config, logger, application, story, 'environment')
-    Story.run.assert_called_with(config, logger, application.id, 'next.story',
-                                 app=application, parent_story=story)
+    Story.execute(config, logger, story)
+    Story.run.assert_called_with(config, logger, story.app_id, 'next.story')
 
 
 def test_story_run(patch, config, logger):

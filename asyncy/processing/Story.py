@@ -25,15 +25,17 @@ class Story:
         mongo.lines(narration, story.results)
 
     @staticmethod
-    def execute(config, logger, app, story, environment):
+    def execute(config, logger, story):
+        """
+        Executes each line in the story
+        """
         line_number = '1'
         while line_number:
-            line_number = Handler.run(logger, line_number, story, environment)
+            line_number = Handler.run(logger, line_number, story)
             if line_number:
                 if line_number.endswith('.story'):
-                    line_number = Story.run(config, logger, app.id,
-                                            line_number, app=app,
-                                            parent_story=story)
+                    line_number = Story.run(config, logger, story.app_id,
+                                            line_number)
 
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None):
