@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from storyscript.resolver import Resolver
+
 from .utils import Http
 
 
@@ -20,3 +22,12 @@ class Stories:
 
     def line(self, line_number):
         return self.tree['script'][line_number]
+
+    def resolve(self, line_number):
+        """
+        Resolves line arguments to their real value
+        """
+        line = self.line(line_number)
+        result = Resolver.resolve(line['args'], self.environment)
+        self.logger.log('story-resolve', line['args'], result)
+        return result

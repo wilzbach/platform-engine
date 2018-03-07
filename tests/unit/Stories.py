@@ -2,6 +2,8 @@
 from asyncy.Stories import Stories
 from asyncy.utils import Http
 
+from storyscript.resolver import Resolver
+
 
 def test_stories_init(logger, story):
     assert story.app_id == 1
@@ -25,3 +27,16 @@ def test_stories_line(magic, story):
     story.tree = magic()
     line = story.line('1')
     assert line == story.tree['script']['1']
+
+
+def test_stories_resolve(patch, logger, story):
+    patch.object(Stories, 'line')
+    patch.object(Resolver, 'resolve')
+    story.environment = 'environment'
+    result = story.resolve('1')
+    Stories.line.assert_called_with('1')
+    Resolver.resolve.assert_called_with(Stories.line()['args'],
+                                        story.environment)
+    logger.log.assert_called_with('story-resolve', Stories.line()['args'],
+                                  Resolver.resolve())
+    assert result == Resolver.resolve()
