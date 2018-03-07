@@ -13,19 +13,6 @@ class Handler:
         return Mongo(mongo_url)
 
     @staticmethod
-    def make_environment(logger, story, application):
-        """
-        Makes the environment from story and application.
-        """
-        environment = story.environment()
-        application_environment = application.environment(story.filename)
-        for key, value in environment.items():
-            if key in application_environment:
-                environment[key] = application_environment[key]
-        logger.log('container-environment', environment)
-        return environment
-
-    @staticmethod
     def run(logger, line_number, story, environment):
         """
         Run the story

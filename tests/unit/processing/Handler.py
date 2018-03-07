@@ -17,17 +17,6 @@ def test_handler_init_mongo(patch):
     assert isinstance(mongo, Mongo)
 
 
-def test_handler_make_environment(patch, logger, story, application):
-    patch.object(story, 'environment', return_value={'one': 1, 'two': 2})
-    patch.object(application, 'environment', return_value={'one': 0,
-                                                           'three': 3})
-    environment = Handler.make_environment(logger, story, application)
-    story.environment.assert_called_with()
-    application.environment.assert_called_with(story.filename)
-    logger.log.assert_called_with('container-environment', environment)
-    assert environment == {'one': 0, 'two': 2}
-
-
 def test_handler_run(patch, logger, application, story):
     patch.object(story, 'line', return_value={'method': 'run'})
     patch.object(Lexicon, 'run')
