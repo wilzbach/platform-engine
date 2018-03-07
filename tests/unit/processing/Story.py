@@ -80,19 +80,3 @@ def test_story_run_with_id(patch, config, logger, story):
     patch.object(Stories, 'get')
     patch.many(Story, ['save', 'execute'])
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
-
-
-def test_story_run_with_app(patch, config, logger, application, handler):
-    patch.object(Story, 'save')
-    patch.object(Story, 'execute')
-    Story.run(config, logger, 'app_id', 'story_name', app=application)
-
-
-def test_story_run_with_parent_story(patch, config, logger, models,
-                                     application, handler):
-    patch.object(Story, 'save')
-    patch.object(Story, 'execute')
-    Story.run(config, logger, 'app_id', 'story_name', parent_story='parent')
-    args = (logger, application, config.github_app_identifier,
-            config.github_pem_path)
-    Applications.get_story().build.assert_called_with(*args, parent='parent')
