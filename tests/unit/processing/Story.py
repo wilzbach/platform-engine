@@ -52,43 +52,33 @@ def test_story_execute_next(patch, config, logger, application, story):
                                  app=application, parent_story=story)
 
 
-def test_story_run(patch, config, logger, application, models, handler):
+def test_story_run(patch, config, logger):
     patch.object(time, 'time')
-    patch.object(Story, 'save')
-    patch.object(Story, 'execute')
-    patch.object(db, 'from_url')
+    patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name')
-    db.from_url.assert_called_with(config.database)
-    Applications.get.assert_called_with(True)
-    application.get_story.assert_called_with('story_name')
-    story = application.get_story()
-    story.build.assert_called_with(logger, application,
-                                   config.github_app_identifier,
-                                   config.github_pem_path, parent=None)
-    Handler.make_environment.assert_called_with(logger, story, application)
-    Story.execute.assert_called_with(config, logger, application, story,
-                                     Handler.make_environment())
-    Story.save.assert_called_with(config, logger, application, story,
-                                  Handler.make_environment(), time.time())
+    Story.story.assert_called_with(logger, 'app_id', 'story_name')
+    Story.story().get.assert_called_with()
+    Story.execute.assert_called_with(config, logger, Story.story())
+    Story.save.assert_called_with(config, logger, Story.story(), time.time())
 
 
-def test_story_run_logger(patch, config, logger, application, models, handler):
-    patch.object(Story, 'save')
-    patch.object(Story, 'execute')
+def test_story_run_logger(patch, config, logger, story):
+    patch.object(Stories, 'get')
+    patch.many(Story, ['save', 'execute'])
     Story.run(config, logger, 'app_id', 'story_name')
     assert logger.log.call_count == 2
 
 
-def test_tasks_run_force_keyword(patch, config, logger, models, handler):
-    patch.object(Story, 'save')
-    patch.object(Story, 'execute')
+def test_tasks_run_force_keyword(patch, config, logger, story):
+    patch.object(Stories, 'get')
+    patch.many(Story, ['save', 'execute'])
     with raises(TypeError):
         Story.run(config, logger, 'app_id', 'story_name', 'story_id')
 
 
-def test_story_run_with_id(patch, config, logger, models, handler):
-    patch.object(Story, 'save')
-    patch.object(Story, 'execute')
+def test_story_run_with_id(patch, config, logger, story):
+    patch.object(Stories, 'get')
+    patch.many(Story, ['save', 'execute'])
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
 
 
