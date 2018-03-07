@@ -12,15 +12,14 @@ class Story:
         return Stories(logger, app_id, story_name)
 
     @staticmethod
-    def save(config, logger, app, story, environment, start):
+    def save(config, logger, story, start):
         """
         Saves the narration and the results for each line.
         """
-        logger.log('story-save', story.filename, app.id)
+        logger.log('story-save', story.name, story.app_id)
         mongo = Handler.init_mongo(config.mongo)
-        mongo_story = mongo.story(app.id, story.id)
-        narration = mongo.narration(mongo_story, app.initial_data, environment,
-                                    story.version, start,
+        mongo_story = mongo.story(story.name, story.app_id)
+        narration = mongo.narration(mongo_story, story, story.version, start,
                                     time.time())
         mongo.lines(narration, story.results)
 

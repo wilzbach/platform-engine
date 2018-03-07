@@ -7,17 +7,6 @@ from asyncy.processing import Handler, Story
 from pytest import fixture, raises
 
 
-@fixture
-def models(patch, application):
-    patch.object(Applications, 'get_story')
-    patch.object(Applications, 'get', return_value=application)
-
-
-@fixture
-def handler(patch):
-    patch.object(Handler, 'make_environment')
-
-
 def test_story_story(patch, logger):
     patch.init(Stories)
     story = Story.story(logger, 'app_id', 'story_name')
@@ -25,16 +14,17 @@ def test_story_story(patch, logger):
     assert isinstance(story, Stories)
 
 
-def test_story_save(patch, magic, config, logger, application, story):
+def test_story_save(patch, magic, config, logger, story):
+    story.version = 'version'
     mongo = magic()
     patch.object(Handler, 'init_mongo', return_value=mongo)
     patch.object(time, 'time')
-    Story.save(config, logger, application, story, {}, 1)
-    logger.log.assert_called_with('story-save', story.filename, application.id)
+    Story.save(config, logger, story, 1)
+    logger.log.assert_called_with('story-save', story.name, story.app_id)
     Handler.init_mongo.assert_called_with(config.mongo)
-    mongo.story.assert_called_with(application.id, story.id)
-    mongo.narration.assert_called_with(mongo.story(), application.initial_data,
-                                       {}, story.version, 1, time.time())
+    mongo.story.assert_called_with(story.name, story.app_id)
+    mongo.narration.assert_called_with(mongo.story(), story, story.version, 1,
+                                       time.time())
     mongo.lines.assert_called_with(mongo.narration(), story.results)
 
 
@@ -61,21 +51,18 @@ def test_story_run(patch, config, logger):
     Story.save.assert_called_with(config, logger, Story.story(), time.time())
 
 
-def test_story_run_logger(patch, config, logger, story):
-    patch.object(Stories, 'get')
-    patch.many(Story, ['save', 'execute'])
+def test_story_run_logger(patch, config, logger):
+    patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name')
     assert logger.log.call_count == 2
 
 
-def test_tasks_run_force_keyword(patch, config, logger, story):
-    patch.object(Stories, 'get')
-    patch.many(Story, ['save', 'execute'])
+def test_tasks_run_force_keyword(patch, config, logger):
+    patch.many(Story, ['execute', 'save', 'story'])
     with raises(TypeError):
         Story.run(config, logger, 'app_id', 'story_name', 'story_id')
 
 
-def test_story_run_with_id(patch, config, logger, story):
-    patch.object(Stories, 'get')
-    patch.many(Story, ['save', 'execute'])
+def test_story_run_with_id(patch, config, logger):
+    patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
