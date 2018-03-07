@@ -49,3 +49,12 @@ def test_stories_start_line(patch, story):
     patch.object(time, 'time')
     story.start_line('1')
     assert story.results['1'] == {'start': time.time()}
+
+
+def test_stories_end_line(patch, story):
+    patch.object(time, 'time')
+    story.results = {'1': {'start': 'start'}}
+    story.end_line('1', 'output')
+    assert story.results['1']['output'] == 'output'
+    assert story.results['1']['end'] == time.time()
+    assert story.results['1']['start'] == 'start'
