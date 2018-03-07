@@ -8,15 +8,16 @@ from .utils import Http
 
 class Stories:
 
-    def __init__(self, logger, app_id, story_name):
+    def __init__(self, config, logger, app_id, story_name):
         self.app_id = app_id
         self.name = story_name
+        self.config = config
         self.logger = logger
         self.results = {}
 
     def get(self):
-        url_template = 'http://api-private/apps/{}/stories/{}'
-        url = url_template.format(self.app_id, self.name)
+        url_template = 'http://{}/apps/{}/stories/{}'
+        url = url_template.format(self.config.api_url, self.app_id, self.name)
         story = Http.get(url, json=True)
         self.tree = story['tree']
         self.environment = story['environment']
