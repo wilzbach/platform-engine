@@ -20,11 +20,12 @@ def test_lexicon_run(patch, logger, story, line):
     patch.object(story, 'end_line')
     patch.init(Containers)
     patch.many(Containers, ['run', 'result', 'make_volume'])
-    Lexicon.run(logger, story, line, 'environment')
+    story.environment = 'environment'
+    Lexicon.run(logger, story, line)
     story.resolve.assert_called_with(logger, line['ln'])
     Containers.__init__.assert_called_with(line['container'], logger)
-    Containers.make_volume.assert_called_with(story.filename)
-    Containers.run.assert_called_with(story.resolve(), 'environment')
+    Containers.make_volume.assert_called_with(story.name)
+    Containers.run.assert_called_with(story.resolve(), story.environment)
     story.end_line.assert_called_with(line['ln'], Containers.result())
 
 
