@@ -14,13 +14,13 @@ def magic(mocker):
 
 
 @fixture
-def init_patching(mocker):
+def patch_init(mocker):
     """
     Makes patching a class' constructor slightly easier
     """
-    def init_patching(item):
+    def patch_init(item):
         mocker.patch.object(item, '__init__', return_value=None)
-    return init_patching
+    return patch_init
 
 
 @fixture
@@ -35,8 +35,8 @@ def patch_many(mocker):
 
 
 @fixture
-def patch(mocker, init_patching, patch_many):
-    mocker.patch.init = init_patching
+def patch(mocker, patch_init, patch_many):
+    mocker.patch.init = patch_init
     mocker.patch.many = patch_many
     return mocker.patch
 
