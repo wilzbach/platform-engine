@@ -5,7 +5,7 @@ import os
 class Config:
 
     defaults = {
-        'mongo': 'mongodb://mongo:27017/',
+        'mongo': 'mongodb://mongodb:27017/',
         'broker': 'amqp://rabbitmq:@rabbitmq:5672/',
         'api_url': 'api-private:8080',
         'logger_name': 'asyncy',
