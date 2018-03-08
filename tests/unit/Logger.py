@@ -18,62 +18,44 @@ def test_logger_init(logger, config):
     Frustum.__init__.assert_called_with(name, level)
 
 
-def test_logger_events_github_autherr(logger):
-    message = 'Github authentication for app {} and installation {} failed'
-    assert logger.events[0] == ('github-autherr', 'error', message)
-
-
 def test_logger_events_container_start(logger):
     message = 'Container {} is running'
-    assert logger.events[1] == ('container-start', 'info', message)
+    assert logger.events[0] == ('container-start', 'info', message)
 
 
 def test_logger_events_container_end(logger):
     message = 'Container {} has finished'
-    assert logger.events[2] == ('container-end', 'info', message)
+    assert logger.events[1] == ('container-end', 'info', message)
 
 
 def test_logger_events_story_start(logger):
     message = 'Start processing story "{}" for app {} with id {}'
-    assert logger.events[3] == ('story-start', 'info', message)
+    assert logger.events[2] == ('story-start', 'info', message)
 
 
 def test_logger_events_story_save(logger):
     message = 'Saved results of story "{}" for app {}'
-    assert logger.events[4] == ('story-save', 'info', message)
+    assert logger.events[3] == ('story-save', 'info', message)
 
 
 def test_logger_events_story_end(logger):
     message = 'Finished processing story "{}" for app {} with id {}'
-    assert logger.events[5] == ('story-end', 'info', message)
+    assert logger.events[4] == ('story-end', 'info', message)
 
 
 def test_logger_events_task_received(logger):
     message = 'Received task for app {} with story "{}"'
-    assert logger.events[6] == ('task-received', 'info', message)
+    assert logger.events[5] == ('task-received', 'info', message)
 
 
 def test_logger_events_container_volume(logger):
     message = 'Created volume {}'
-    assert logger.events[7] == ('container-volume', 'debug', message)
-
-
-def test_logger_events_container_environment(logger):
-    message = 'Made environment "{}"'
-    assert logger.events[8] == ('container-environment', 'debug', message)
-
-
-def test_logger_events_jwt_token(logger):
-    assert logger.events[9] == ('jwt-token', 'debug', 'Encoded token: {}')
-
-
-def test_logger_events_story_parse(logger):
-    assert logger.events[10] == ('story-parse', 'debug', 'Parsed story {}')
+    assert logger.events[6] == ('container-volume', 'debug', message)
 
 
 def test_logger_events_story_resolve(logger):
     message = 'Resolved "{}" to "{}"'
-    assert logger.events[11] == ('story-resolve', 'debug', message)
+    assert logger.events[7] == ('story-resolve', 'debug', message)
 
 
 def test_logger_start(patch, logger):
