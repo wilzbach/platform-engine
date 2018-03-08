@@ -36,7 +36,7 @@ setup(
         'frustum>=0.0.1',
         'pymongo>=3.6.0',
         'requests>=2.18.4',
-        'storyscript>=0.0.3'
+        'storyscript>=0.0.7'
     ],
     classifiers=[
         'Environment :: Console',
