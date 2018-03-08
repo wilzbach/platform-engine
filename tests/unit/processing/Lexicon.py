@@ -22,7 +22,7 @@ def test_lexicon_run(patch, logger, story, line):
     patch.many(Containers, ['run', 'result', 'make_volume'])
     story.environment = 'environment'
     Lexicon.run(logger, story, line)
-    story.resolve.assert_called_with(logger, line['ln'])
+    story.resolve.assert_called_with(line['ln'])
     Containers.__init__.assert_called_with(line['container'], logger)
     Containers.make_volume.assert_called_with(story.name)
     Containers.run.assert_called_with(story.resolve(), story.environment)
@@ -31,7 +31,7 @@ def test_lexicon_run(patch, logger, story, line):
 
 def test_lexicon_if(logger, story, line):
     result = Lexicon.if_condition(logger, story, line)
-    story.resolve.assert_called_with(logger, line['ln'])
+    story.resolve.assert_called_with(line['ln'])
     assert result == line['enter']
 
 
@@ -42,7 +42,7 @@ def test_lexicon_if_false(logger, story, line):
 
 def test_lexicon_unless(logger, story, line):
     result = Lexicon.unless_condition(logger, story, line)
-    story.resolve.assert_called_with(logger, line['ln'])
+    story.resolve.assert_called_with(line['ln'])
     assert result == line['exit']
 
 
@@ -55,5 +55,5 @@ def test_lexicon_unless_false(logger, story, line):
 def test_lexicon_next(logger, story, line, string):
     story.resolve.return_value = string
     result = Lexicon.next(logger, story, line)
-    story.resolve.assert_called_with(logger, line['ln'])
+    story.resolve.assert_called_with(line['ln'])
     assert result == 'hello.story'
