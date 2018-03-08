@@ -15,10 +15,10 @@ def test_stories_init(config, logger, story):
     assert story.results == {}
 
 
-def test_stories_get(patch, story):
+def test_stories_get(patch, config, story):
     patch.object(Http, 'get')
     story.get()
-    url = 'http://api-private/apps/1/stories/hello.story'
+    url = 'http://{}/apps/1/stories/hello.story'.format(config.api_url)
     Http.get.assert_called_with(url, json=True)
     assert story.tree == Http.get()['tree']
     assert story.environment == Http.get()['environment']
