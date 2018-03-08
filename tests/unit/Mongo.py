@@ -45,14 +45,14 @@ def test_results_story_new(client, mongo):
     assert result == client().asyncy.stories.insert_one()
 
 
-def test_results_narration(patch, client, mongo):
+def test_results_narration(patch, story, client, mongo):
     patch.object(Mongo, 'ref')
-    result = mongo.narration({'_id': 1}, {}, {'env': 1}, 'master', '1', '2')
+    story.environment = 'environment'
+    result = mongo.narration(1, story, 'master', '1', '2')
     Mongo.ref.assert_called_with('stories', 1)
     expected = {
         'story_id': Mongo.ref(),
-        'initial_data': {},
-        'environment_data': {'env': 1},
+        'environment_data': story.environment,
         'version': 'master',
         'start': '1',
         'end': '2'

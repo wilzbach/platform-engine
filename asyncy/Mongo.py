@@ -28,12 +28,14 @@ class Mongo:
             return story
         return self.mongo.asyncy.stories.insert_one(document)
 
-    def narration(self, story, initial_data, environment_data, version,
-                  start, end):
+    def narration(self, mongo_story_id, story, version, start, end):
+        """
+        Saves the single run of a story and helpful data like environment and
+        containers.
+        """
         document = {
-            'story_id': self.ref('stories', story['_id']),
-            'initial_data': initial_data,
-            'environment_data': environment_data,
+            'story_id': self.ref('stories', mongo_story_id),
+            'environment_data': story.environment,
             'version': version,
             'start': start,
             'end': end
