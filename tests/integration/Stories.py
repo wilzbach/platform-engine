@@ -60,23 +60,24 @@ def test_stories_resolve_simple(story):
     assert story.resolve('1') == 'echo hello'
 
 
-def test_stories_resolve_replacement(story):
+def test_stories_resolve_replacement(patch, magic, story, api_response):
     """
     Ensures a replacement resolve can be performed
     """
-    story_text = 'alpine echo "{{name}}"'
-    story.environment = {'name': 'asyncy'}
-    story.tree = Parser().parse(story_text).json()
-    assert story.resolve('1') == 'echo asyncy'
+    response = magic(json=magic(return_value=api_response))
+    patch.object(requests, 'get', return_value=response)
+    story.get()
+    assert story.resolve('1') == 'echo Hi, I am Asyncy!'
 
 
-def test_stories_resolve_replace_value_error(story):
+def test_stories_resolve_replace_error(patch, magic, story, api_response):
     """
     Ensures a ValueError is raised when the environment does not provide enough
     data
     """
-    story_text = 'alpine echo "{{name}}"'
+    response = magic(json=magic(return_value=api_response))
+    patch.object(requests, 'get', return_value=response)
+    story.get()
     story.environment = {}
-    story.tree = Parser().parse(story_text).json()
     with raises(ValueError):
         story.resolve('1')
