@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+import json
+
 from asyncy.Config import Config
 from asyncy.Logger import Logger
 from asyncy.Stories import Stories
 
 from pytest import fixture, raises
+
+import requests
 
 from storyscript.parser import Parser
 
@@ -23,6 +27,27 @@ def logger(config):
 @fixture
 def story(config, logger):
     return Stories(config, logger, 1, 'hello.story')
+
+
+@fixture
+def api_response():
+    response = None
+    with open('tests/integration/hello.story.json', 'r') as f:
+        response = json.load(f)
+    return response
+
+
+def test_stories_get(patch, magic, story, api_response):
+    # NOTE(vesuvium): there's no simple way to run an http server and
+    # have it return a specific response within testing, so requests is mocked
+    response = magic(json=magic(return_value=api_response))
+    patch.object(requests, 'get', return_value=response)
+    story.get()
+    assert story.tree is not None
+    assert story.environment == {'name': 'Asyncy'}
+    assert story.containers == {}
+    assert story.repository == {'url': 'https://github.com/asyncy/stories.git'}
+    assert story.version is None
 
 
 def test_stories_resolve_simple(story):
