@@ -6,7 +6,7 @@ class Config:
 
     defaults = {
         'mongo': 'mongodb://mongodb:27017/',
-        'broker': 'amqp://rabbitmq:@rabbitmq:5672/',
+        'broker': 'amqp://rabbitmq:rabbitmq@rabbitmq:5672//',
         'api_url': 'api-private:8080',
         'logger_name': 'asyncy',
         'logger_level': 'warning'
