@@ -28,7 +28,7 @@ def api_response():
     """
     def api_response(request_name):
         response = None
-        mock_file = 'tests/integration/{}'.format(request_name)
+        mock_file = 'tests/integration/requests/{}'.format(request_name)
         with open(mock_file, 'r') as f:
             response = json.load(f)
         return response
