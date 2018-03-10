@@ -13,9 +13,8 @@ def story(config, logger):
     return Stories(config, logger, 1, 'hello.story')
 
 
-def test_stories_get(patch, magic, story, api_response):
-    response = magic(json=magic(return_value=api_response))
-    patch.object(requests, 'get', return_value=response)
+def test_stories_get(patch, magic, story, patch_request):
+    patch_request('hello.story.json')
     story.get()
     assert story.tree is not None
     assert story.environment == {'name': 'Asyncy'}
@@ -38,7 +37,7 @@ def test_stories_resolve_replacement(patch, magic, story, api_response):
     """
     Ensures a replacement resolve can be performed
     """
-    response = magic(json=magic(return_value=api_response))
+    response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
     assert story.resolve('1') == 'echo Hi, I am Asyncy!'
@@ -49,7 +48,7 @@ def test_stories_resolve_replace_error(patch, magic, story, api_response):
     Ensures a ValueError is raised when the environment does not provide enough
     data
     """
-    response = magic(json=magic(return_value=api_response))
+    response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
     story.environment = {}
