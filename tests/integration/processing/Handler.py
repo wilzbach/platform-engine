@@ -8,3 +8,10 @@ def test_handler_run_run(logger, config, patch_request):
     story = Stories(config, logger, 1, 'hello.story')
     story.get()
     Handler.run(logger, '1', story)
+
+
+def test_handler_run_set(logger, config, patch_request):
+    patch_request('colours.story.json')
+    story = Stories(config, logger, 1, 'colours.story')
+    story.get()
+    Handler.run(logger, '1', story)

@@ -1,0 +1,31 @@
+{
+  "filename": "colours.story",
+  "tree": {
+    "version": "0.0.7",
+    "script": {
+      "1": {
+        "method": "run",
+        "ln": "1",
+        "output": null,
+        "container": "colours",
+        "args": [
+          "are",
+          {
+            "$OBJECT": "string",
+            "string": "blue"
+          }
+        ],
+        "enter": null,
+        "exit": null
+      }
+    }
+  },
+  "environment": {
+    "name": "Asyncy"
+  },
+  "containers": {},
+  "repository": {
+    "url": "https://github.com/asyncy/stories.git"
+  },
+  "version": null
+}
