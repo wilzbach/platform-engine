@@ -26,6 +26,13 @@ def test_handler_run_run(patch, logger, story):
     Lexicon.run.assert_called_with(logger, story, story.line())
 
 
+def test_handler_run_set(patch, logger, story):
+    patch.object(Lexicon, 'set')
+    patch.object(story, 'line', return_value={'method': 'set'})
+    Handler.run(logger, '1', story)
+    Lexicon.set.assert_called_with(logger, story, story.line())
+
+
 def test_handler_run_if(patch, logger, story):
     patch.object(Lexicon, 'if_condition')
     patch.object(story, 'line', return_value={'method': 'if'})
