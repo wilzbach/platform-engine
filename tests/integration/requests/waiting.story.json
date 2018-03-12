@@ -1,0 +1,68 @@
+{
+  "filename": "app.story",
+  "tree": {
+    "version": "0.0.7",
+    "script": {
+      "1": {
+        "method": "set",
+        "ln": "1",
+        "output": null,
+        "container": null,
+        "args": [
+          {
+            "$OBJECT": "path",
+            "paths": [
+              "delay"
+            ]
+          },
+          {
+            "$OBJECT": "string",
+            "string": "5 seconds"
+          }
+        ],
+        "enter": null,
+        "exit": null
+      },
+      "2": {
+        "method": "wait",
+        "ln": "2",
+        "output": null,
+        "container": null,
+        "args": [
+          {
+            "$OBJECT": "path",
+            "paths": [
+              "delay"
+            ]
+          }
+        ],
+        "enter": null,
+        "exit": null
+      },
+      "3": {
+        "method": "run",
+        "ln": "3",
+        "output": null,
+        "container": "alpine",
+        "args": [
+          "echo",
+          {
+            "$OBJECT": "string",
+            "string": "Hi, I am Asyncy!"
+          }
+        ],
+        "enter": null,
+        "exit": null,
+        "parent": "2"
+      }
+    }
+  },
+  "environment": {
+    "name": "Asyncy"
+  },
+  "containers": {},
+  "repository": {
+    "url": "https://github.com/asyncy/stories.git"
+  },
+  "version": null
+}
