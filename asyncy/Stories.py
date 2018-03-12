@@ -46,13 +46,12 @@ class Stories:
             next_line = sorted_lines[next_line_index]
             return self.tree['script'][str(next_line)]
 
-    def resolve(self, line_number):
+    def resolve(self, args):
         """
         Resolves line arguments to their real value
         """
-        line = self.line(line_number)
-        result = Resolver.resolve(line['args'], self.environment)
-        self.logger.log('story-resolve', line['args'], result)
+        result = Resolver.resolve(args, self.environment)
+        self.logger.log('story-resolve', args, result)
         return result
 
     def start_line(self, line_number):

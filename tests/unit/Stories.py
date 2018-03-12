@@ -59,15 +59,11 @@ def test_stories_next_line_none(patch, story):
 
 
 def test_stories_resolve(patch, logger, story):
-    patch.object(Stories, 'line')
     patch.object(Resolver, 'resolve')
     story.environment = 'environment'
-    result = story.resolve('1')
-    Stories.line.assert_called_with('1')
-    Resolver.resolve.assert_called_with(Stories.line()['args'],
-                                        story.environment)
-    logger.log.assert_called_with('story-resolve', Stories.line()['args'],
-                                  Resolver.resolve())
+    result = story.resolve('args')
+    Resolver.resolve.assert_called_with('args', story.environment)
+    logger.log.assert_called_with('story-resolve', 'args', Resolver.resolve())
     assert result == Resolver.resolve()
 
 
