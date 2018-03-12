@@ -29,6 +29,17 @@ def test_lexicon_run(patch, logger, story, line):
     story.end_line.assert_called_with(line['ln'], Containers.result())
 
 
+def test_lexicon_set(patch, logger, story):
+    patch.object(story, 'next_line')
+    story.environment = {}
+    line = {'ln': '1', 'args': ['path', 'values']}
+    result = Lexicon.set(logger, story, line)
+    story.resolve.assert_called_with(line['args'][1])
+    story.next_line.assert_called_with('1')
+    assert story.environment['path'] == story.resolve()
+    assert result == story.next_line()
+
+
 def test_lexicon_if(logger, story, line):
     result = Lexicon.if_condition(logger, story, line)
     story.resolve.assert_called_with(line['ln'])

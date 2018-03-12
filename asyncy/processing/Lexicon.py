@@ -19,6 +19,12 @@ class Lexicon:
         story.end_line(line['ln'], container.result())
 
     @staticmethod
+    def set(logger, story, line):
+        value = story.resolve(line['args'][1])
+        story.environment[line['args'][0]] = value
+        return story.next_line(line['ln'])
+
+    @staticmethod
     def if_condition(logger, story, line):
         """
         Evaluates the resolution value to decide wheter to enter
