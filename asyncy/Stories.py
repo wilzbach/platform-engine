@@ -28,6 +28,13 @@ class Stories:
     def line(self, line_number):
         return self.tree['script'][line_number]
 
+    def last_line(self):
+        """
+        Returns the last line number of the tree
+        """
+        sorted_lines = sorted(self.tree['script'].keys(), key=lambda x: int(x))
+        return sorted_lines[-1]
+
     def resolve(self, line_number):
         """
         Resolves line arguments to their real value
