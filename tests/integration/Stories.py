@@ -30,7 +30,7 @@ def test_stories_resolve_simple(story):
     story_text = 'alpine echo "hello"'
     story.environment = {}
     story.tree = Parser().parse(story_text).json()
-    assert story.resolve('1') == 'echo hello'
+    assert story.resolve(story.line('1')['args']) == 'echo hello'
 
 
 def test_stories_resolve_replacement(patch, magic, story, api_response):
@@ -40,7 +40,7 @@ def test_stories_resolve_replacement(patch, magic, story, api_response):
     response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
-    assert story.resolve('1') == 'echo Hi, I am Asyncy!'
+    assert story.resolve(story.line('1')['args']) == 'echo Hi, I am Asyncy!'
 
 
 def test_stories_resolve_replace_error(patch, magic, story, api_response):
@@ -53,4 +53,4 @@ def test_stories_resolve_replace_error(patch, magic, story, api_response):
     story.get()
     story.environment = {}
     with raises(ValueError):
-        story.resolve('1')
+        story.resolve(story.line('1')['args'])
