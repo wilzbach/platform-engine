@@ -35,6 +35,12 @@ class Stories:
         sorted_lines = sorted(self.tree['script'].keys(), key=lambda x: int(x))
         return sorted_lines[-1]
 
+    def sorted_lines(self):
+        """
+        Returns sorted line numbers
+        """
+        return sorted(self.tree['script'].keys(), key=lambda x: int(x))
+
     def next_line(self, line_number):
         """
         Finds the next line from the current one.

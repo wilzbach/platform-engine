@@ -38,6 +38,11 @@ def test_stories_last_line(magic, story):
     assert story.last_line() == '21'
 
 
+def test_stories_sorted_lines(magic, story):
+    story.tree = {'script': {'1': {}, '2': {}, '21': {}, '3': {}}}
+    assert story.sorted_lines() == ['1', '2', '3', '21']
+
+
 def test_stories_next_line(magic, story):
     story.tree = {'script': {'1': {'ln': '1'}, '2': {'ln': '2'}}}
     assert story.next_line('1') == story.tree['script']['2']
