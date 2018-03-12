@@ -4,15 +4,43 @@
     "version": "0.0.7",
     "script": {
       "1": {
-        "method": "run",
+        "method": "set",
         "ln": "1",
         "output": null,
-        "container": "colours",
+        "container": null,
         "args": [
-          "are",
+          {
+            "$OBJECT": "path",
+            "paths": [
+              "colours"
+            ]
+          },
           {
             "$OBJECT": "string",
-            "string": "blue"
+            "string": "red"
+          }
+        ],
+        "enter": null,
+        "exit": null
+      },
+      "2": {
+        "method": "run",
+        "ln": "2",
+        "output": null,
+        "container": "alpine",
+        "args": [
+          "echo",
+          {
+            "$OBJECT": "string",
+            "values": [
+              {
+                "$OBJECT": "path",
+                "paths": [
+                  "colours"
+                ]
+              }
+            ],
+            "string": "I like {}"
           }
         ],
         "enter": null,
