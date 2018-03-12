@@ -47,10 +47,11 @@ class Stories:
         Storyscript does not always provide the next line explicitly, which
         is instead necessary in some cases.
         """
-        next_number = int(line_number) + 1
-        next_line = str(next_number)
-        if next_line in self.tree['script']:
-            return self.tree['script'][next_line]
+        sorted_lines = self.sorted_lines()
+        next_line_index = sorted_lines.index(line_number) + 1
+        if next_line_index < len(sorted_lines):
+            next_line = sorted_lines[next_line_index]
+            return self.tree['script'][str(next_line)]
 
     def resolve(self, line_number):
         """

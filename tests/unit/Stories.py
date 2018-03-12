@@ -43,12 +43,22 @@ def test_stories_sorted_lines(magic, story):
     assert story.sorted_lines() == ['1', '2', '3', '21']
 
 
-def test_stories_next_line(magic, story):
+def test_stories_next_line(patch, story):
+    patch.object(Stories, 'sorted_lines', return_value=['1', '2'])
     story.tree = {'script': {'1': {'ln': '1'}, '2': {'ln': '2'}}}
-    assert story.next_line('1') == story.tree['script']['2']
+    result = story.next_line('1')
+    assert Stories.sorted_lines.call_count == 1
+    assert result == story.tree['script']['2']
 
 
-def test_stories_next_line_none(magic, story):
+def test_stories_next_line_jump(patch, story):
+    patch.object(Stories, 'sorted_lines', return_value=['1', '3'])
+    story.tree = {'script': {'1': {'ln': '1'}, '3': {'ln': '3'}}}
+    assert story.next_line('1') == story.tree['script']['3']
+
+
+def test_stories_next_line_none(patch, story):
+    patch.object(Stories, 'sorted_lines', return_value=['1'])
     story.tree = {'script': {'1': {'ln': '1'}}}
     assert story.next_line('1') is None
 
