@@ -21,7 +21,7 @@ class Lexicon:
     @staticmethod
     def set(logger, story, line):
         value = story.resolve(line['args'][1])
-        story.environment[line['args'][0]] = value
+        story.environment[line['args'][0]['paths'][0]] = value
         return story.next_line(line['ln'])
 
     @staticmethod
