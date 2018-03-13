@@ -53,9 +53,14 @@ def test_logger_events_container_volume(logger):
     assert logger.events[6] == ('container-volume', 'debug', message)
 
 
+def test_logger_events_lexicon_wait(logger):
+    message = 'Processing line {} with "wait" method'
+    assert logger.events[7] == ('lexicon-wait', 'debug', message)
+
+
 def test_logger_events_story_resolve(logger):
     message = 'Resolved "{}" to "{}"'
-    assert logger.events[7] == ('story-resolve', 'debug', message)
+    assert logger.events[8] == ('story-resolve', 'debug', message)
 
 
 def test_logger_start(patch, logger):

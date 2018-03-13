@@ -14,6 +14,7 @@ class Logger:
          'Finished processing story "{}" for app {} with id {}'),
         ('task-received', 'info', 'Received task for app {} with story "{}"'),
         ('container-volume', 'debug', 'Created volume {}'),
+        ('lexicon-wait', 'debug', 'Processing line {} with "wait" method'),
         ('story-resolve', 'debug', 'Resolved "{}" to "{}"')
     ]
 
