@@ -2,6 +2,8 @@
 from asyncy.Containers import Containers
 from asyncy.processing import Lexicon
 
+from celery import current_app
+
 from pytest import fixture, mark
 
 
@@ -69,3 +71,14 @@ def test_lexicon_next(logger, story, line, string):
     result = Lexicon.next(logger, story, line)
     story.resolve.assert_called_with(line['args'])
     assert result == 'hello.story'
+
+
+def test_lexicon_wait(patch, logger, story, line):
+    patch.object(current_app, 'send_task')
+    result = Lexicon.wait(logger, story, line)
+    story.resolve.assert_called_with(line['args'])
+    task_name = 'asyncy.CeleryTasks.process_story'
+    current_app.send_task.assert_called_with(task_name,
+                                             args=[story.name, story.app_id],
+                                             countdown=story.resolve())
+    assert result == line['enter']

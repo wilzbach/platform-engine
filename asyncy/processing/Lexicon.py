@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from celery import current_app
+
 from ..Containers import Containers
 
 
@@ -48,3 +50,11 @@ class Lexicon:
         if result.endswith('.story'):
             return result
         return '{}.story'.format(result)
+
+    @staticmethod
+    def wait(logger, story, line):
+        waiting_time = story.resolve(line['args'])
+        current_app.send_task('asyncy.CeleryTasks.process_story',
+                              args=[story.name, story.app_id],
+                              countdown=waiting_time)
+        return line['enter']
