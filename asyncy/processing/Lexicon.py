@@ -55,6 +55,7 @@ class Lexicon:
 
     @staticmethod
     def wait(logger, story, line):
+        logger.log('lexicon-wait', line)
         waiting_time = story.resolve(line['args'])
         eta = dateparser.parse('in {}'.format(waiting_time))
         current_app.send_task('asyncy.CeleryTasks.process_story',

@@ -81,6 +81,7 @@ def test_lexicon_wait(patch, logger, story, line):
     patch.object(dateparser, 'parse')
     result = Lexicon.wait(logger, story, line)
     story.resolve.assert_called_with(line['args'])
+    logger.log.assert_called_with('lexicon-wait', line)
     dateparser.parse.assert_called_with('in {}'.format(story.resolve()))
     task_name = 'asyncy.CeleryTasks.process_story'
     current_app.send_task.assert_called_with(task_name,
