@@ -31,6 +31,7 @@ def test_story_save(patch, magic, config, logger, story):
 def test_story_execute(patch, config, logger, story):
     patch.object(Handler, 'run', return_value=None)
     Story.execute(config, logger, story)
+    logger.log.assert_called_with('story-execution', None)
     Handler.run.assert_called_with(logger, '1', story)
 
 

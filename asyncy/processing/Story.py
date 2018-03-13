@@ -31,6 +31,7 @@ class Story:
         line_number = '1'
         while line_number:
             line_number = Handler.run(logger, line_number, story)
+            logger.log('story-execution', line_number)
             if line_number:
                 if line_number.endswith('.story'):
                     line_number = Story.run(config, logger, story.app_id,
