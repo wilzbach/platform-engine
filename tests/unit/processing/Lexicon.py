@@ -76,6 +76,7 @@ def test_lexicon_next(logger, story, line, string):
 
 
 def test_lexicon_wait(patch, logger, story, line):
+    patch.object(story, 'next_line')
     patch.object(current_app, 'send_task')
     patch.object(dateparser, 'parse')
     result = Lexicon.wait(logger, story, line)
@@ -85,4 +86,5 @@ def test_lexicon_wait(patch, logger, story, line):
     current_app.send_task.assert_called_with(task_name,
                                              args=[story.name, story.app_id],
                                              eta=dateparser.parse())
-    assert result == line['enter']
+    story.next_line.assert_called_with(line['exit'])
+    assert result == story.next_line()

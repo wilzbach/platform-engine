@@ -59,4 +59,4 @@ class Lexicon:
         eta = dateparser.parse('in {}'.format(waiting_time))
         current_app.send_task('asyncy.CeleryTasks.process_story',
                               args=[story.name, story.app_id], eta=eta)
-        return line['enter']
+        return story.next_line(line['exit'])
