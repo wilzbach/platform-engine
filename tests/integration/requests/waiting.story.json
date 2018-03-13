@@ -37,7 +37,7 @@
           }
         ],
         "enter": "3",
-        "exit": null
+        "exit": "3"
       },
       "3": {
         "method": "run",
