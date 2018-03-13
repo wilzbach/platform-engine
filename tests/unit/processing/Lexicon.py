@@ -88,4 +88,4 @@ def test_lexicon_wait(patch, logger, story, line):
                                              args=[story.name, story.app_id],
                                              eta=dateparser.parse())
     story.next_line.assert_called_with(line['exit'])
-    assert result == story.next_line()
+    assert result == story.next_line()['ln']
