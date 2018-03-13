@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from celery import current_app
 
+import dateparser
+
 from ..Containers import Containers
 
 
@@ -54,7 +56,7 @@ class Lexicon:
     @staticmethod
     def wait(logger, story, line):
         waiting_time = story.resolve(line['args'])
+        eta = dateparser.parse('in {}'.format(waiting_time))
         current_app.send_task('asyncy.CeleryTasks.process_story',
-                              args=[story.name, story.app_id],
-                              countdown=waiting_time)
+                              args=[story.name, story.app_id], eta=eta)
         return line['enter']

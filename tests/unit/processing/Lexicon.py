@@ -4,6 +4,8 @@ from asyncy.processing import Lexicon
 
 from celery import current_app
 
+import dateparser
+
 from pytest import fixture, mark
 
 
@@ -75,10 +77,12 @@ def test_lexicon_next(logger, story, line, string):
 
 def test_lexicon_wait(patch, logger, story, line):
     patch.object(current_app, 'send_task')
+    patch.object(dateparser, 'parse')
     result = Lexicon.wait(logger, story, line)
     story.resolve.assert_called_with(line['args'])
+    dateparser.parse.assert_called_with('in {}'.format(story.resolve()))
     task_name = 'asyncy.CeleryTasks.process_story'
     current_app.send_task.assert_called_with(task_name,
                                              args=[story.name, story.app_id],
-                                             countdown=story.resolve())
+                                             eta=dateparser.parse())
     assert result == line['enter']
