@@ -58,9 +58,14 @@ def test_logger_events_lexicon_wait(logger):
     assert logger.events[7] == ('lexicon-wait', 'debug', message)
 
 
+def test_logger_events_story_execute(logger):
+    message = 'Received line "{}" from handler'
+    assert logger.events[8] == ('story-execution', 'debug', message)
+
+
 def test_logger_events_story_resolve(logger):
     message = 'Resolved "{}" to "{}"'
-    assert logger.events[8] == ('story-resolve', 'debug', message)
+    assert logger.events[9] == ('story-resolve', 'debug', message)
 
 
 def test_logger_start(patch, logger):
