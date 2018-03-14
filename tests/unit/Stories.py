@@ -68,7 +68,7 @@ def test_stories_next_line_none(patch, story):
 
 def test_stories_child_block(patch, story):
     story.tree = {'script': {
-        '1': {'ln': '1', 'enter': '2', 'exit': 2, 'parent': None},
+        '1': {'ln': '1', 'enter': '2', 'exit': 2},
         '2': {'ln': '2', 'parent': '1'},
         '3': {'ln': '3', 'parent': '1'},
     }}

@@ -61,8 +61,9 @@ class Stories:
         """
         dictionary = {}
         for key, value in self.tree['script'].items():
-            if value['parent'] == parent_line:
-                dictionary[key] = value
+            if 'parent' in value:
+                if value['parent'] == parent_line:
+                    dictionary[key] = value
         self.tree['script'] = dictionary
 
     def resolve(self, args):
