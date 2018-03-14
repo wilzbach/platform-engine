@@ -77,7 +77,7 @@ class Stories:
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
 
-    def end_line(self, line_number, output):
+    def end_line(self, line_number, output=None):
         start = self.results[line_number]['start']
         dictionary = {'output': output, 'end': time.time(), 'start': start}
         self.results[line_number] = dictionary
