@@ -30,13 +30,16 @@ def test_story_save(patch, magic, config, logger, story):
 
 def test_story_execute(patch, config, logger, story):
     patch.object(Handler, 'run', return_value=None)
+    patch.object(Stories, 'first_line')
     Story.execute(config, logger, story)
+    assert Stories.first_line.call_count == 1
     logger.log.assert_called_with('story-execution', None)
-    Handler.run.assert_called_with(logger, '1', story)
+    Handler.run.assert_called_with(logger, Stories.first_line(), story)
 
 
 def test_story_execute_next(patch, config, logger, story):
     patch.object(Handler, 'run', return_value='next.story')
+    patch.object(Stories, 'first_line')
     patch.object(Story, 'run', return_value=None)
     Story.execute(config, logger, story)
     Story.run.assert_called_with(config, logger, story.app_id, 'next.story')

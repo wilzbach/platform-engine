@@ -28,7 +28,7 @@ class Story:
         """
         Executes each line in the story
         """
-        line_number = '1'
+        line_number = story.first_line()
         while line_number:
             line_number = Handler.run(logger, line_number, story)
             logger.log('story-execution', line_number)
