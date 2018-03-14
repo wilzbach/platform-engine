@@ -20,7 +20,7 @@ setup(
     long_description=readme,
     author='Asyncy',
     author_email='noreply@asyncy.com',
-    version='0.0.1',
+    version='0.0.2',
     packages=find_packages(),
     tests_require=[
         'pytest',
