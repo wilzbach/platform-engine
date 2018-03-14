@@ -67,3 +67,9 @@ def test_tasks_run_force_keyword(patch, config, logger):
 def test_story_run_with_id(patch, config, logger):
     patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
+
+
+def test_story_run_block(patch, config, logger):
+    patch.many(Story, ['execute', 'save', 'story'])
+    Story.run(config, logger, 'app_id', 'story_name', block='parent_line')
+    Story.story().child_block.assert_called_with('parent_line')
