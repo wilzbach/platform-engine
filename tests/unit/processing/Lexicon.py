@@ -42,7 +42,7 @@ def test_lexicon_set(patch, logger, story):
     story.resolve.assert_called_with(line['args'][1])
     story.next_line.assert_called_with('1')
     assert story.environment['name'] == story.resolve()
-    assert result == story.next_line()
+    assert result == story.next_line()['ln']
 
 
 def test_lexicon_if(logger, story, line):
