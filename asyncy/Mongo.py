@@ -49,9 +49,11 @@ class Mongo:
             document = {
                 'narration_id': narration_ref,
                 'line': line,
-                'output': data['output'],
-                'start': data['start'],
-                'end': data['end']
+                'start': data['start']
             }
+            if 'output' in data:
+                document['output'] = data['output']
+            if 'end' in data:
+                document['end'] = data['end']
             documents.append(document)
         return self.mongo.asyncy.lines.insert_many(documents)
