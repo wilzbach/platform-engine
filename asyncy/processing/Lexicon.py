@@ -64,5 +64,6 @@ class Lexicon:
                               args=[story.app_id, story.name], kwargs=kwargs,
                               eta=eta)
         next_line = story.next_line(line['exit'])
+        story.end_line(line['ln'])
         if next_line:
             return next_line['ln']

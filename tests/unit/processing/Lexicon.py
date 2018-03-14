@@ -17,12 +17,11 @@ def line():
 
 @fixture
 def story(patch, story):
-    patch.object(story, 'resolve')
+    patch.many(story, ['resolve', 'end_line'])
     return story
 
 
 def test_lexicon_run(patch, logger, story, line):
-    patch.object(story, 'end_line')
     patch.init(Containers)
     patch.many(Containers, ['run', 'result', 'make_volume'])
     story.environment = 'environment'
@@ -35,7 +34,7 @@ def test_lexicon_run(patch, logger, story, line):
 
 
 def test_lexicon_set(patch, logger, story):
-    patch.many(story, ['next_line', 'end_line'])
+    patch.object(story, 'next_line')
     story.environment = {}
     line = {'ln': '1', 'args': [{'paths': ['name']}, 'values']}
     result = Lexicon.set(logger, story, line)
@@ -92,4 +91,5 @@ def test_lexicon_wait(patch, logger, story, line):
                                              kwargs=kwargs,
                                              eta=dateparser.parse())
     story.next_line.assert_called_with(line['exit'])
+    story.end_line.assert_called_with(line['ln'])
     assert result == story.next_line()['ln']
