@@ -35,12 +35,13 @@ def test_lexicon_run(patch, logger, story, line):
 
 
 def test_lexicon_set(patch, logger, story):
-    patch.object(story, 'next_line')
+    patch.many(story, ['next_line', 'end_line'])
     story.environment = {}
     line = {'ln': '1', 'args': [{'paths': ['name']}, 'values']}
     result = Lexicon.set(logger, story, line)
     story.resolve.assert_called_with(line['args'][1])
     story.next_line.assert_called_with('1')
+    story.end_line.assert_called_with(line['ln'])
     assert story.environment['name'] == story.resolve()
     assert result == story.next_line()['ln']
 
