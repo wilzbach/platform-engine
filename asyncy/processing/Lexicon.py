@@ -58,8 +58,10 @@ class Lexicon:
         logger.log('lexicon-wait', line)
         waiting_time = story.resolve(line['args'])
         eta = dateparser.parse('in {}'.format(waiting_time))
+        kwargs = {'block': line['ln'], 'environment': story.environment}
         current_app.send_task('asyncy.CeleryTasks.process_story',
-                              args=[story.name, story.app_id], eta=eta)
+                              args=[story.app_id, story.name], kwargs=kwargs,
+                              eta=eta)
         next_line = story.next_line(line['exit'])
         if next_line:
             return next_line['ln']
