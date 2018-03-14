@@ -32,8 +32,15 @@ def test_celerytasks_run_with_story_id(run):
     Story.run.assert_called_with(*args, **kwargs)
 
 
-def test_celerytasks_run_resume(run):
-    process_story('app_id', 'story_name', resume_from='line', environment={})
+def test_celerytasks_run_resume_from(run):
+    process_story('app_id', 'story_name', resume_from='line')
     args = (config, logger, 'app_id', 'story_name')
-    kwargs = {'story_id': None, 'resume_from': 'line', 'environment': {}}
+    kwargs = {'story_id': None, 'resume_from': 'line', 'environment': None}
+    Story.run.assert_called_with(*args, **kwargs)
+
+
+def test_celerytasks_run_environment(run):
+    process_story('app_id', 'story_name', environment={})
+    args = (config, logger, 'app_id', 'story_name')
+    kwargs = {'story_id': None, 'resume_from': None, 'environment': {}}
     Story.run.assert_called_with(*args, **kwargs)
