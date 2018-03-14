@@ -34,6 +34,13 @@ class Stories:
         """
         return sorted(self.tree['script'].keys(), key=lambda x: int(x))
 
+    def first_line(self):
+        """
+        Finds the first line of a story. The tree can start at lines other
+        than '1' so the first line is not obvious.
+        """
+        return self.sorted_lines()[0]
+
     def next_line(self, line_number):
         """
         Finds the next line from the current one.

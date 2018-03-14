@@ -38,6 +38,14 @@ def test_stories_sorted_lines(magic, story):
     assert story.sorted_lines() == ['1', '2', '3', '21']
 
 
+def test_stories_first_line(patch, story):
+    patch.object(Stories, 'sorted_lines', return_value=['16', '23'])
+    story.tree = {'script': {'23': {'ln': '23'}, '16': {'ln': '16'}}}
+    result = story.first_line()
+    assert Stories.sorted_lines.call_count == 1
+    assert result == '16'
+
+
 def test_stories_next_line(patch, story):
     patch.object(Stories, 'sorted_lines', return_value=['1', '2'])
     story.tree = {'script': {'1': {'ln': '1'}, '2': {'ln': '2'}}}
