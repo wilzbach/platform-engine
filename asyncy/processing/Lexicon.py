@@ -20,7 +20,7 @@ class Lexicon:
         container = Containers(line['container'], logger)
         container.make_volume(story.name)
         container.run(command, story.environment)
-        story.end_line(line['ln'], container.result())
+        story.end_line(line['ln'], output=container.result())
 
     @staticmethod
     def set(logger, story, line):

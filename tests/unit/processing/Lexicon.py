@@ -31,7 +31,7 @@ def test_lexicon_run(patch, logger, story, line):
     Containers.__init__.assert_called_with(line['container'], logger)
     Containers.make_volume.assert_called_with(story.name)
     Containers.run.assert_called_with(story.resolve(), story.environment)
-    story.end_line.assert_called_with(line['ln'], Containers.result())
+    story.end_line.assert_called_with(line['ln'], output=Containers.result())
 
 
 def test_lexicon_set(patch, logger, story):
