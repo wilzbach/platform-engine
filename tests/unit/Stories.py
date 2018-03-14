@@ -58,6 +58,17 @@ def test_stories_next_line_none(patch, story):
     assert story.next_line('1') is None
 
 
+def test_stories_child_block(patch, story):
+    story.tree = {'script': {
+        '1': {'ln': '1', 'enter': '2', 'exit': 2, 'parent': None},
+        '2': {'ln': '2', 'parent': '1'},
+        '3': {'ln': '3', 'parent': '1'},
+    }}
+    story.child_block('1')
+    assert story.tree == {'script': {'2': {'ln': '2', 'parent': '1'},
+                                     '3': {'ln': '3', 'parent': '1'}}}
+
+
 def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.environment = 'environment'

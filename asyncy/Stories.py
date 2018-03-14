@@ -46,6 +46,18 @@ class Stories:
             next_line = sorted_lines[next_line_index]
             return self.tree['script'][str(next_line)]
 
+    def child_block(self, parent_line):
+        """
+        Slices the story to a single block with the same parent. Used when
+        running a single block of the story, for example when the story is
+        being resumed.
+        """
+        dictionary = {}
+        for key, value in self.tree['script'].items():
+            if value['parent'] == parent_line:
+                dictionary[key] = value
+        self.tree['script'] = dictionary
+
     def resolve(self, args):
         """
         Resolves line arguments to their real value
