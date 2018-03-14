@@ -39,13 +39,15 @@ class Story:
 
     @classmethod
     def run(cls, config, logger, app_id, story_name, *, story_id=None,
-            block=None):
+            block=None, environment=None):
         logger.log('story-start', story_name, app_id, story_id)
         start = time.time()
         story = cls.story(config, logger, app_id, story_name)
         story.get()
         if block:
             story.child_block(block)
+        if environment:
+            story.environment = environment
         cls.execute(config, logger, story)
         cls.save(config, logger, story, start)
         logger.log('story-end', story_name, app_id, story_id)

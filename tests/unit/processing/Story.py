@@ -73,3 +73,9 @@ def test_story_run_block(patch, config, logger):
     patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name', block='parent_line')
     Story.story().child_block.assert_called_with('parent_line')
+
+
+def test_story_run_environment(patch, config, logger):
+    patch.many(Story, ['execute', 'save', 'story'])
+    Story.run(config, logger, 'app_id', 'story_name', environment='env')
+    assert Story.story().environment == 'env'
