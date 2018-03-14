@@ -6,4 +6,5 @@ class CeleryApp:
 
     @staticmethod
     def start(config):
+        print('version 141719')
         return Celery('asyncy', broker=config.broker)
