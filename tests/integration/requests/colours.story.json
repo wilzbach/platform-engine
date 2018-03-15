@@ -1,7 +1,7 @@
 {
   "filename": "colours.story",
   "tree": {
-    "version": "0.0.7",
+    "version": "0.0.8",
     "script": {
       "1": {
         "method": "set",
@@ -29,7 +29,12 @@
         "output": null,
         "container": "alpine",
         "args": [
-          "echo",
+          {
+            "$OBJECT": "path",
+            "paths": [
+              "echo"
+            ]
+          },
           {
             "$OBJECT": "string",
             "values": [
