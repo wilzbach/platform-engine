@@ -27,9 +27,9 @@ class Containers:
             self.volume = self.client.volumes.create(name)
         self.logger.log('container-volume', name)
 
-    def run(self, command, environment):
+    def summon(self, command, environment):
         """
-        Runs a docker image.
+        Summons the docker container to do his job.
         """
         self.client.images.pull(self.name)
         kwargs = {'command': command, 'environment': environment,
@@ -43,3 +43,10 @@ class Containers:
 
     def result(self):
         return self.output
+
+    @staticmethod
+    def run(logger, story, name, command):
+        container = Containers(logger, story.containers, name)
+        container.make_volume(story.name)
+        container.summon(command, story.environment)
+        return container.result()

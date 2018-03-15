@@ -55,9 +55,9 @@ def test_containers_make_volume_create(container):
     assert container.volume == container.client.volumes.create()
 
 
-def test_containers_run(magic, client, container):
+def test_containers_summon(magic, client, container):
     container.volume = magic(name='volume')
-    container.run('command', {})
+    container.summon('command', {})
     kwargs = {'command': 'command', 'environment': {},
               'cap_drop': 'all',
               'volumes': {container.volume.name: {'bind': '/opt/v1',
@@ -71,3 +71,15 @@ def test_containers_run(magic, client, container):
 def test_containers_results(container):
     container.output = 'output'
     assert container.result() == 'output'
+
+
+def test_containers_run(patch, logger, story):
+    patch.init(Containers)
+    patch.many(Containers, ['make_volume', 'summon', 'result'])
+    story.containers = {}
+    story.environment = {}
+    result = Containers.run(logger, story, 'name', 'command')
+    Containers.__init__.assert_called_with(logger, story.containers, 'name')
+    Containers.make_volume.assert_called_with(story.name)
+    Containers.summon.assert_called_with('command', story.environment)
+    assert result == Containers.result()
