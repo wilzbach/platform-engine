@@ -4,14 +4,9 @@ import docker
 
 class Containers:
 
-    aliases = {
-        'node': 'asyncy/asyncy-node',
-        'python': 'asyncy/asyncy-python'
-    }
-
     def __init__(self, logger, containers, name):
-        self.name = self.alias(name)
         self.containers = containers
+        self.name = self.alias(name)
         self.client = docker.from_env()
         self.env = {}
         self.volume = None
@@ -21,8 +16,8 @@ class Containers:
         """
         Converts a container alias to its real name.
         """
-        if name in self.aliases:
-            return self.aliases[name]
+        if name in self.containers:
+            return self.containers[name]['real_name']
         return name
 
     def make_volume(self, name):

@@ -30,14 +30,9 @@ def test_containers_init(patch, logger, client):
     assert container.logger == logger
 
 
-def test_containers_aliases(container):
-    assert container.aliases['node'] == 'asyncy/asyncy-node'
-    assert container.aliases['python'] == 'asyncy/asyncy-python'
-
-
 def test_containers_alias(logger):
     container = Containers(logger, 'containers', 'name')
-    container.aliases = {'simple': 'complex'}
+    container.containers = {'simple': {'real_name': 'complex'}}
     assert container.alias('simple') == 'complex'
 
 
