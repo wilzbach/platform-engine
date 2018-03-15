@@ -17,10 +17,8 @@ class Lexicon:
         Runs a container with the resolution values as commands
         """
         command = story.resolve(line['args'])
-        container = Containers(logger, story.containers, line['container'])
-        container.make_volume(story.name)
-        container.run(command, story.environment)
-        story.end_line(line['ln'], output=container.result())
+        output = Containers.run(logger, story, line['container'], command)
+        story.end_line(line['ln'], output=output)
 
     @staticmethod
     def set(logger, story, line):
