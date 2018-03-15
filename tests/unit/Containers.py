@@ -15,15 +15,16 @@ def client(patch):
 @fixture
 def container(patch, logger, client):
     patch.object(Containers, 'alias', return_value='name')
-    return Containers('hello-world', logger)
+    return Containers(logger, 'containers', 'hello-world')
 
 
-def test_containers(patch, logger, client):
+def test_containers_init(patch, logger, client):
     patch.object(Containers, 'alias')
-    container = Containers('hello-world', logger)
+    container = Containers(logger, 'containers', 'hello-world')
     Containers.alias.assert_called_with('hello-world')
     assert container.client == docker.from_env()
     assert container.name == Containers.alias()
+    assert container.containers == 'containers'
     assert container.env == {}
     assert container.volume is None
     assert container.logger == logger
@@ -35,13 +36,13 @@ def test_containers_aliases(container):
 
 
 def test_containers_alias(logger):
-    container = Containers('name', logger)
+    container = Containers(logger, 'containers', 'name')
     container.aliases = {'simple': 'complex'}
     assert container.alias('simple') == 'complex'
 
 
 def test_containers_alias_empty(logger):
-    container = Containers('name', logger)
+    container = Containers(logger, 'containers', 'name')
     container.alias('empty') == 'empty'
 
 

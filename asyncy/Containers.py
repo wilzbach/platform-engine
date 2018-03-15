@@ -9,8 +9,9 @@ class Containers:
         'python': 'asyncy/asyncy-python'
     }
 
-    def __init__(self, name, logger):
+    def __init__(self, logger, containers, name):
         self.name = self.alias(name)
+        self.containers = containers
         self.client = docker.from_env()
         self.env = {}
         self.volume = None
