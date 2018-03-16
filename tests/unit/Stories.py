@@ -100,6 +100,25 @@ def test_stories_resolve(patch, logger, story):
     assert result == Resolver.resolve()
 
 
+def test_stories_resolve_command(patch, logger, story):
+    patch.many(Stories, ['is_command', 'resolve'])
+    line = {'container': 'container', 'args': ['command', 'arg']}
+    result = story.resolve_command(line)
+    Stories.is_command.assert_called_with('container', 'command')
+    Stories.resolve.assert_called_with(['arg'])
+    assert Stories.resolve.call_count == 2
+    assert result == '{} {}'.format(story.resolve(), story.resolve())
+
+
+def test_stories_resolve_command_none(patch, logger, story):
+    patch.many(Stories, ['is_command', 'resolve'])
+    Stories.is_command.return_value = None
+    line = {'container': 'container', 'args': ['command', 'arg']}
+    result = story.resolve_command(line)
+    Stories.resolve.assert_called_with(['command', 'arg'])
+    assert result == story.resolve()
+
+
 def test_stories_start_line(patch, story):
     patch.object(time, 'time')
     story.start_line('1')

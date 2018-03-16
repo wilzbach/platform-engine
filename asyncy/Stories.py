@@ -83,6 +83,17 @@ class Stories:
         self.logger.log('story-resolve', args, result)
         return result
 
+    def resolve_command(self, line):
+        """
+        Resolves arguments for a container line to produce a command
+        that can be passed to docker
+        """
+        if self.is_command(line['container'], line['args'][0]):
+            command = self.resolve(line['args'][0])
+            args = self.resolve(line['args'][1:])
+            return '{} {}'.format(command, args)
+        return self.resolve(line['args'])
+
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
 
