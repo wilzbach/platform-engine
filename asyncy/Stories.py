@@ -94,6 +94,12 @@ class Stories:
             string.append(self.argument_format_type(argument_type))
         return ' '.join(string)
 
+    def command_arguments_list(self, arguments):
+        results = []
+        for argument in arguments:
+            results.append(self.resolve(argument))
+        return results
+
     def resolve_command(self, line):
         """
         Resolves arguments for a container line to produce a command

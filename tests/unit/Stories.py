@@ -116,6 +116,13 @@ def test_stories_command_arguments_string(patch, story):
     assert result == '{}'
 
 
+def test_command_arguments_list(patch, story):
+    patch.object(Stories, 'resolve', return_value='something')
+    result = story.command_arguments_list([{'string': 'string'}])
+    Stories.resolve.assert_called_with({'string': 'string'})
+    assert result == ['something']
+
+
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'resolve'])
     line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}
