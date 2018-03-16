@@ -18,7 +18,8 @@ def test_stories_get(patch, magic, story, patch_request):
     story.get()
     assert story.tree is not None
     assert story.environment == {'name': 'Asyncy'}
-    assert story.containers == {}
+    assert story.containers['alpine']['real_name'] == 'alpine'
+    assert 'echo' in story.containers['alpine']['commands']
     assert story.repository == {'url': 'https://github.com/asyncy/stories.git'}
     assert story.version is None
 
@@ -29,8 +30,9 @@ def test_stories_resolve_simple(story):
     """
     story_text = 'alpine echo "hello"'
     story.environment = {}
+    story.containers = {'alpine': {'commands': {'echo': {}}}}
     story.tree = Parser().parse(story_text).json()
-    assert story.resolve(story.line('1')['args']) == 'echo hello'
+    assert story.resolve_command(story.line('1')) == 'echo hello'
 
 
 def test_stories_resolve_replacement(patch, magic, story, api_response):
@@ -40,7 +42,7 @@ def test_stories_resolve_replacement(patch, magic, story, api_response):
     response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
-    assert story.resolve(story.line('1')['args']) == 'echo Hi, I am Asyncy!'
+    assert story.resolve(story.line('1')['args'][1]) == 'Hi, I am Asyncy!'
 
 
 def test_stories_resolve_replace_error(patch, magic, story, api_response):
