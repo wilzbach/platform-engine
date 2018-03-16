@@ -43,7 +43,9 @@
               "echo": {
                   "help": "Echoes stuff",
                   "args": {
-                      "string": "string"
+                      "string": {
+                          "type": "string"
+                      }
                   }
               }
           }
