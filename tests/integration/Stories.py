@@ -30,9 +30,11 @@ def test_stories_resolve_simple(story):
     """
     story_text = 'alpine echo "hello"'
     story.environment = {}
-    story.containers = {'alpine': {'commands': {'echo': {}}}}
+    story.containers = {'alpine': {'commands': {
+        'echo': {'args': {'message': {'type': 'string'}}}
+    }}}
     story.tree = Parser().parse(story_text).json()
-    assert story.resolve_command(story.line('1')) == 'echo hello'
+    assert story.resolve_command(story.line('1')) == 'echo "hello"'
 
 
 def test_stories_resolve_replacement(patch, magic, story, api_response):
