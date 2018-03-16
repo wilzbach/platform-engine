@@ -17,16 +17,16 @@ def line():
 
 @fixture
 def story(patch, story):
-    patch.many(story, ['resolve', 'end_line'])
+    patch.many(story, ['end_line', 'resolve', 'resolve_command'])
     return story
 
 
 def test_lexicon_run(patch, logger, story, line):
     patch.object(Containers, 'run')
     Lexicon.run(logger, story, line)
-    story.resolve.assert_called_with(line['args'])
+    story.resolve_command.assert_called_with(line)
     Containers.run.assert_called_with(logger, story, line['container'],
-                                      story.resolve())
+                                      story.resolve_command())
     story.end_line.assert_called_with(line['ln'], output=Containers.run())
 
 

@@ -16,7 +16,7 @@ class Lexicon:
         """
         Runs a container with the resolution values as commands
         """
-        command = story.resolve(line['args'])
+        command = story.resolve_command(line)
         output = Containers.run(logger, story, line['container'], command)
         story.end_line(line['ln'], output=output)
 
