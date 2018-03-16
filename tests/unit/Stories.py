@@ -100,6 +100,14 @@ def test_stories_resolve(patch, logger, story):
     assert result == Resolver.resolve()
 
 
+def test_stories_argument_format_type(story):
+    assert story.argument_format_type('anything') == '{}'
+
+
+def test_stories_argument_format_type_string(story):
+    assert story.argument_format_type('string') == '"{}"'
+
+
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'resolve'])
     line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}

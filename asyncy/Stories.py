@@ -83,6 +83,11 @@ class Stories:
         self.logger.log('story-resolve', args, result)
         return result
 
+    def argument_format_type(self, argument_type):
+        if argument_type == 'string':
+            return '"{}"'
+        return '{}'
+
     def resolve_command(self, line):
         """
         Resolves arguments for a container line to produce a command
