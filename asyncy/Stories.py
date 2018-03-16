@@ -89,7 +89,7 @@ class Stories:
         that can be passed to docker
         """
         if self.is_command(line['container'], line['args'][0]):
-            command = self.resolve(line['args'][0])
+            command = line['args'][0]['paths'][0]
             args = self.resolve(line['args'][1:])
             return '{} {}'.format(command, args)
         return self.resolve(line['args'])

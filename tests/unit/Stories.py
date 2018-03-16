@@ -102,12 +102,11 @@ def test_stories_resolve(patch, logger, story):
 
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'resolve'])
-    line = {'container': 'container', 'args': ['command', 'arg']}
+    line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}
     result = story.resolve_command(line)
-    Stories.is_command.assert_called_with('container', 'command')
+    Stories.is_command.assert_called_with('container', {'paths': ['command']})
     Stories.resolve.assert_called_with(['arg'])
-    assert Stories.resolve.call_count == 2
-    assert result == '{} {}'.format(story.resolve(), story.resolve())
+    assert result == '{} {}'.format('command', story.resolve())
 
 
 def test_stories_resolve_command_none(patch, logger, story):
