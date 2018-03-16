@@ -107,8 +107,10 @@ class Stories:
         """
         if self.is_command(line['container'], line['args'][0]):
             command = line['args'][0]['paths'][0]
-            args = self.resolve(line['args'][1:])
-            return '{} {}'.format(command, args)
+            arguments_string = self.command_arguments_string(command)
+            arguments_list = self.command_arguments_list(line['args'][1:])
+            string = '{} {}'.format(command, arguments_string)
+            return string.format(*arguments_list)
         return self.resolve(line['args'])
 
     def start_line(self, line_number):

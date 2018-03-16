@@ -124,12 +124,14 @@ def test_command_arguments_list(patch, story):
 
 
 def test_stories_resolve_command(patch, logger, story):
-    patch.many(Stories, ['is_command', 'resolve'])
+    patch.many(Stories, ['is_command', 'command_arguments_list',
+                         'command_arguments_string'])
+    Stories.command_arguments_string.return_value = '{}'
+    Stories.command_arguments_list.return_value = ['argument']
     line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}
     result = story.resolve_command(line)
     Stories.is_command.assert_called_with('container', {'paths': ['command']})
-    Stories.resolve.assert_called_with(['arg'])
-    assert result == '{} {}'.format('command', story.resolve())
+    assert result == 'command argument'
 
 
 def test_stories_resolve_command_none(patch, logger, story):
