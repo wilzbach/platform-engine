@@ -36,7 +36,19 @@
   "environment": {
     "name": "Asyncy"
   },
-  "containers": {},
+  "containers": {
+      "alpine": {
+          "real_name": "alpine",
+          "commands": {
+              "echo": {
+                  "help": "Echoes stuff",
+                  "args": {
+                      "string": "string"
+                  }
+              }
+          }
+      }
+  },
   "repository": {
     "url": "https://github.com/asyncy/stories.git"
   },
