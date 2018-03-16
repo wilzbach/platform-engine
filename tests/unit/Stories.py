@@ -77,6 +77,12 @@ def test_stories_child_block(patch, story):
                                      '3': {'ln': '3', 'parent': '1'}}}
 
 
+def test_stories_is_command(patch, logger, story):
+    story.containers = {'container': {'commands': {'command': {}}}}
+    result = story.is_command('container', 'command')
+    assert result
+
+
 def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.environment = 'environment'

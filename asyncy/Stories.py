@@ -66,6 +66,10 @@ class Stories:
                     dictionary[key] = value
         self.tree['script'] = dictionary
 
+    def is_command(self, container, argument):
+        if argument in self.containers[container]['commands']:
+            return True
+
     def resolve(self, args):
         """
         Resolves line arguments to their real value
