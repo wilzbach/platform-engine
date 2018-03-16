@@ -108,6 +108,14 @@ def test_stories_argument_format_type_string(story):
     assert story.argument_format_type('string') == '"{}"'
 
 
+def test_stories_command_arguments_string(patch, story):
+    patch.object(Stories, 'argument_format_type', return_value='{}')
+    story.containers = {'command': {'args': {'argument': 'anything'}}}
+    result = story.command_arguments_string('command')
+    Stories.argument_format_type.assert_called_with('anything')
+    assert result == '{}'
+
+
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'resolve'])
     line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}

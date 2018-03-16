@@ -88,6 +88,12 @@ class Stories:
             return '"{}"'
         return '{}'
 
+    def command_arguments_string(self, command):
+        string = []
+        for name, argument_type in self.containers[command]['args'].items():
+            string.append(self.argument_format_type(argument_type))
+        return ' '.join(string)
+
     def resolve_command(self, line):
         """
         Resolves arguments for a container line to produce a command
