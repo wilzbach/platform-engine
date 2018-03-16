@@ -79,8 +79,16 @@ def test_stories_child_block(patch, story):
 
 def test_stories_is_command(patch, logger, story):
     story.containers = {'container': {'commands': {'command': {}}}}
-    result = story.is_command('container', 'command')
+    argument = {'$OBJECT': 'path', 'paths': ['command']}
+    result = story.is_command('container', argument)
     assert result
+
+
+def test_stories_is_command_none(patch, logger, story):
+    story.containers = {'container': {'commands': {'command': {}}}}
+    argument = {'$OBJECT': 'string'}
+    result = story.is_command('container', argument)
+    assert result is None
 
 
 def test_stories_resolve(patch, logger, story):

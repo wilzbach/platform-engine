@@ -67,8 +67,13 @@ class Stories:
         self.tree['script'] = dictionary
 
     def is_command(self, container, argument):
-        if argument in self.containers[container]['commands']:
-            return True
+        """
+        Checks whether argument is a command for the given container
+        """
+        if argument['$OBJECT'] == 'path':
+            path = argument['paths'][0]
+            if path in self.containers[container]['commands']:
+                return True
 
     def resolve(self, args):
         """
