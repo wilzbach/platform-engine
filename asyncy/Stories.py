@@ -90,9 +90,9 @@ class Stories:
 
     def command_arguments_string(self, container, command):
         string = []
-        items = self.containers[container]['commands'][command]['args'].items()
-        for name, argument_type in items:
-            string.append(self.argument_format_type(argument_type))
+        commands = self.containers[container]['commands']
+        for argument in commands[command]['arguments']:
+            string.append(self.argument_format_type(argument['type']))
         return ' '.join(string)
 
     def command_arguments_list(self, arguments):

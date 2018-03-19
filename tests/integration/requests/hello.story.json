@@ -42,9 +42,9 @@
           "commands": {
               "echo": {
                   "help": "Echoes stuff",
-                  "args": {
-                      "string": "string"
-                  }
+                  "arguments": [
+                      {"type": "string"}
+                  ]
               }
           }
       }
