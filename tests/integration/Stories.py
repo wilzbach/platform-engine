@@ -18,7 +18,7 @@ def test_stories_get(patch, magic, story, patch_request):
     story.get()
     assert story.tree is not None
     assert story.environment == {'name': 'Asyncy'}
-    assert story.containers['alpine']['real_name'] == 'alpine'
+    assert 'pull_url' in story.containers['alpine']
     assert 'echo' in story.containers['alpine']['commands']
     assert story.repository == {'url': 'https://github.com/asyncy/stories.git'}
     assert story.version is None
