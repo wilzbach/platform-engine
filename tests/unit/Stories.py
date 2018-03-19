@@ -110,8 +110,10 @@ def test_stories_argument_format_type_string(story):
 
 def test_stories_command_arguments_string(patch, story):
     patch.object(Stories, 'argument_format_type', return_value='{}')
-    story.containers = {'command': {'args': {'argument': 'anything'}}}
-    result = story.command_arguments_string('command')
+    story.containers = {'container': {'commands': {
+        'command': {'args': {'argument': 'anything'}}}
+    }}
+    result = story.command_arguments_string('container', 'command')
     Stories.argument_format_type.assert_called_with('anything')
     assert result == '{}'
 

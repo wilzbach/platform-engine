@@ -88,9 +88,10 @@ class Stories:
             return '"{}"'
         return '{}'
 
-    def command_arguments_string(self, command):
+    def command_arguments_string(self, container, command):
         string = []
-        for name, argument_type in self.containers[command]['args'].items():
+        items = self.containers[container]['commands'][command]['args'].items()
+        for name, argument_type in items:
             string.append(self.argument_format_type(argument_type))
         return ' '.join(string)
 
@@ -107,7 +108,8 @@ class Stories:
         """
         if self.is_command(line['container'], line['args'][0]):
             command = line['args'][0]['paths'][0]
-            arguments_string = self.command_arguments_string(command)
+            arguments_string = self.command_arguments_string(line['container'],
+                                                             command)
             arguments_list = self.command_arguments_list(line['args'][1:])
             string = '{} {}'.format(command, arguments_string)
             return string.format(*arguments_list)
