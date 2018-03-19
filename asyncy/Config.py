@@ -9,7 +9,8 @@ class Config:
         'broker': 'amqp://rabbitmq:rabbitmq@rabbitmq:5672//',
         'api_url': 'api-private:8080',
         'logger_name': 'asyncy',
-        'logger_level': 'warning'
+        'logger_level': 'warning',
+        'logdna_ingestion_key': 'ingestion_key'
     }
 
     def __init__(self):
