@@ -41,6 +41,17 @@ def test_containers_alias_empty(logger):
     container.alias('empty') == 'empty'
 
 
+def test_containers_image(container):
+    container.image('image')
+    container.client.images.get.assert_called_with('image')
+
+
+def test_containers_image_pull(container):
+    container.client.images.get.side_effect = docker.errors.ImageNotFound('')
+    container.image('image')
+    container.client.images.pull.assert_called_with('image')
+
+
 def test_containers_make_volume(container):
     container.make_volume('volume')
     container.client.volumes.get.assert_called_with('volume')

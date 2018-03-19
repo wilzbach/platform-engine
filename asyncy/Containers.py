@@ -20,6 +20,15 @@ class Containers:
             return self.containers[name]['pull_url']
         return name
 
+    def image(self, name):
+        """
+        Pull an image if it does not exist locally
+        """
+        try:
+            self.client.images.get(name)
+        except docker.errors.ImageNotFound:
+            self.client.images.pull(name)
+
     def make_volume(self, name):
         try:
             self.volume = self.client.volumes.get(name)
