@@ -32,8 +32,8 @@ def test_containers_init(patch, logger, client):
 
 def test_containers_alias(logger):
     container = Containers(logger, 'containers', 'name')
-    container.containers = {'simple': {'real_name': 'complex'}}
-    assert container.alias('simple') == 'complex'
+    container.containers = {'simple': {'pull_url': 'hub.docker.container'}}
+    assert container.alias('simple') == 'hub.docker.container'
 
 
 def test_containers_alias_empty(logger):

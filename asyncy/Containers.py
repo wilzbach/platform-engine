@@ -14,10 +14,10 @@ class Containers:
 
     def alias(self, name):
         """
-        Converts a container alias to its real name.
+        Converts a container alias to its real pull location
         """
         if name in self.containers:
-            return self.containers[name]['real_name']
+            return self.containers[name]['pull_url']
         return name
 
     def make_volume(self, name):
