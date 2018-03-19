@@ -56,7 +56,19 @@
   "environment": {
     "name": "Asyncy"
   },
-  "containers": {},
+  "containers": {
+      "alpine": {
+          "pull_url": "registry.hub.docker.com/library/alpine",
+          "commands": {
+              "echo": {
+                  "help": "Echoes stuff",
+                  "args": {
+                      "string": "string"
+                  }
+              }
+          }
+      }
+  },
   "repository": {
     "url": "https://github.com/asyncy/stories.git"
   },
