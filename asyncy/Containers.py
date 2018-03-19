@@ -40,7 +40,7 @@ class Containers:
         """
         Summons the docker container to do his job.
         """
-        self.client.images.pull(self.name)
+        self.image(self.name)
         kwargs = {'command': command, 'environment': environment,
                   'cap_drop': 'all'}
         if self.volume:
