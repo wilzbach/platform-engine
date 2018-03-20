@@ -88,10 +88,11 @@ def test_containers_results(container):
 def test_containers_run(patch, logger, story):
     patch.init(Containers)
     patch.many(Containers, ['make_volume', 'summon', 'result'])
+    patch.object(story, 'get_environment')
     story.containers = {}
-    story.environment = {}
     result = Containers.run(logger, story, 'name', 'command')
     Containers.__init__.assert_called_with(logger, story.containers, 'name')
     Containers.make_volume.assert_called_with(story.name)
-    Containers.summon.assert_called_with('command', story.environment)
+    story.get_environment.assert_called_with('name')
+    Containers.summon.assert_called_with('command', story.get_environment())
     assert result == Containers.result()

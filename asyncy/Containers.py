@@ -57,5 +57,5 @@ class Containers:
     def run(logger, story, name, command):
         container = Containers(logger, story.containers, name)
         container.make_volume(story.name)
-        container.summon(command, story.environment)
+        container.summon(command, story.get_environment(name))
         return container.result()
