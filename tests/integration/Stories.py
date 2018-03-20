@@ -17,7 +17,7 @@ def test_stories_get(patch, magic, story, patch_request):
     patch_request('hello.story.json')
     story.get()
     assert story.tree is not None
-    assert story.environment == {'name': 'Asyncy'}
+    assert story.context == {'name': 'Asyncy'}
     assert 'pull_url' in story.containers['alpine']
     assert 'echo' in story.containers['alpine']['commands']
     assert story.repository == {'url': 'https://github.com/asyncy/stories.git'}
@@ -29,7 +29,7 @@ def test_stories_resolve_simple(story):
     Ensures a simple resolve can be performed
     """
     story_text = 'alpine echo "hello"'
-    story.environment = {}
+    story.context = {}
     story.containers = {'alpine': {'commands': {
         'echo': {'arguments': [{'type': 'string'}]}
     }}}
@@ -55,6 +55,6 @@ def test_stories_resolve_replace_error(patch, magic, story, api_response):
     response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
-    story.environment = {}
+    story.context = {}
     with raises(ValueError):
         story.resolve(story.line('1')['args'])

@@ -80,7 +80,7 @@ class Stories:
         """
         Resolves line arguments to their real value
         """
-        result = Resolver.resolve(args, self.environment)
+        result = Resolver.resolve(args, self.context)
         self.logger.log('story-resolve', args, result)
         return result
 

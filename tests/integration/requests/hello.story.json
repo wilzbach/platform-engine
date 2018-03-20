@@ -33,9 +33,10 @@
       }
     }
   },
-  "environment": {
+  "context": {
     "name": "Asyncy"
   },
+  "environment": {},
   "containers": {
       "alpine": {
           "pull_url": "registry.hub.docker.com/library/alpine",

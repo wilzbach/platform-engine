@@ -94,9 +94,9 @@ def test_stories_is_command_none(patch, logger, story):
 
 def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
-    story.environment = 'environment'
+    story.context = 'context'
     result = story.resolve('args')
-    Resolver.resolve.assert_called_with('args', story.environment)
+    Resolver.resolve.assert_called_with('args', story.context)
     logger.log.assert_called_with('story-resolve', 'args', Resolver.resolve())
     assert result == Resolver.resolve()
 
