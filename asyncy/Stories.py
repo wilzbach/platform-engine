@@ -21,6 +21,7 @@ class Stories:
         story = Http.get(url, json=True)
         self.tree = story['tree']
         self.environment = story['environment']
+        self.context = story['context']
         self.containers = story['containers']
         self.repository = story['repository']
         self.version = story['version']

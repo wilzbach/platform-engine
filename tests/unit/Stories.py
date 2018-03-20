@@ -21,6 +21,7 @@ def test_stories_get(patch, config, story):
     url = 'http://{}/apps/1/stories/hello.story'.format(config.api_url)
     Http.get.assert_called_with(url, json=True)
     assert story.tree == Http.get()['tree']
+    assert story.context == Http.get()['context']
     assert story.environment == Http.get()['environment']
     assert story.containers == Http.get()['containers']
     assert story.repository == Http.get()['repository']
