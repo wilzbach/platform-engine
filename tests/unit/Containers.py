@@ -41,14 +41,14 @@ def test_containers_alias_empty(logger):
     container.alias('empty') == 'empty'
 
 
-def test_containers_image(container):
-    container.image('image')
+def test_containers_get_image(container):
+    container.get_image('image')
     container.client.images.get.assert_called_with('image')
 
 
-def test_containers_image_pull(container):
+def test_containers_get_image_pull(container):
     container.client.images.get.side_effect = docker.errors.ImageNotFound('')
-    container.image('image')
+    container.get_image('image')
     container.client.images.pull.assert_called_with('image')
 
 
@@ -67,7 +67,7 @@ def test_containers_make_volume_create(container):
 
 
 def test_containers_summon(patch, magic, client, container):
-    patch.object(Containers, 'image')
+    patch.object(Containers, 'get_image')
     container.volume = magic(name='volume')
     container.summon('command', {})
     kwargs = {'auto_remove': True, 'command': 'command', 'environment': {},
@@ -75,7 +75,7 @@ def test_containers_summon(patch, magic, client, container):
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.name, **kwargs)
-    Containers.image.assert_called_with(container.name)
+    Containers.get_image.assert_called_with(container.name)
     assert container.logger.log.call_count == 2
     assert container.output == client.containers.run()
 

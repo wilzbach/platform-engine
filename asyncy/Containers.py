@@ -20,7 +20,7 @@ class Containers:
             return self.containers[name]['pull_url']
         return name
 
-    def image(self, name):
+    def get_image(self, name):
         """
         Pull an image if it does not exist locally
         """
@@ -40,7 +40,7 @@ class Containers:
         """
         Summons the docker container to do his job.
         """
-        self.image(self.name)
+        self.get_image(self.name)
         kwargs = {'command': command, 'environment': environment,
                   'cap_drop': 'all', 'auto_remove': True}
         if self.volume:
