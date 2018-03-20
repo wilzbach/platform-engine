@@ -6,7 +6,8 @@ class Containers:
 
     def __init__(self, logger, containers, name):
         self.containers = containers
-        self.name = self.alias(name)
+        self.name = name
+        self.image = self.alias(name)
         self.client = docker.from_env()
         self.env = {}
         self.volume = None
@@ -20,14 +21,14 @@ class Containers:
             return self.containers[name]['pull_url']
         return name
 
-    def get_image(self, name):
+    def get_image(self):
         """
-        Pull an image if it does not exist locally
+        Pull the image if it does not exist locally
         """
         try:
-            self.client.images.get(name)
+            self.client.images.get(self.image)
         except docker.errors.ImageNotFound:
-            self.client.images.pull(name)
+            self.client.images.pull(self.image)
 
     def make_volume(self, name):
         try:
@@ -40,7 +41,7 @@ class Containers:
         """
         Summons the docker container to do his job.
         """
-        self.get_image(self.name)
+        self.get_image()
         kwargs = {'command': command, 'environment': environment,
                   'cap_drop': 'all', 'auto_remove': True}
         if self.volume:

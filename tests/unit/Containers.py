@@ -23,7 +23,8 @@ def test_containers_init(patch, logger, client):
     container = Containers(logger, 'containers', 'hello-world')
     Containers.alias.assert_called_with('hello-world')
     assert container.client == docker.from_env()
-    assert container.name == Containers.alias()
+    assert container.name == 'hello-world'
+    assert container.image == Containers.alias()
     assert container.containers == 'containers'
     assert container.env == {}
     assert container.volume is None
@@ -42,13 +43,15 @@ def test_containers_alias_empty(logger):
 
 
 def test_containers_get_image(container):
-    container.get_image('image')
+    container.image = 'image'
+    container.get_image()
     container.client.images.get.assert_called_with('image')
 
 
 def test_containers_get_image_pull(container):
+    container.image = 'image'
     container.client.images.get.side_effect = docker.errors.ImageNotFound('')
-    container.get_image('image')
+    container.get_image()
     container.client.images.pull.assert_called_with('image')
 
 
@@ -75,7 +78,7 @@ def test_containers_summon(patch, magic, client, container):
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.name, **kwargs)
-    Containers.get_image.assert_called_with(container.name)
+    assert Containers.get_image.call_count == 1
     assert container.logger.log.call_count == 2
     assert container.output == client.containers.run()
 
