@@ -70,7 +70,7 @@ def test_containers_summon(patch, magic, client, container):
     patch.object(Containers, 'image')
     container.volume = magic(name='volume')
     container.summon('command', {})
-    kwargs = {'command': 'command', 'environment': {},
+    kwargs = {'auto_remove': True, 'command': 'command', 'environment': {},
               'cap_drop': 'all',
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}

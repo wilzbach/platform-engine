@@ -42,7 +42,7 @@ class Containers:
         """
         self.image(self.name)
         kwargs = {'command': command, 'environment': environment,
-                  'cap_drop': 'all'}
+                  'cap_drop': 'all', 'auto_remove': True}
         if self.volume:
             kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
                                                     'mode': 'rw'}}
