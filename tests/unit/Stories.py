@@ -165,3 +165,13 @@ def test_stories_end_line_output(patch, story):
     story.results = {'1': {'start': 'start'}}
     story.end_line('1', output='output')
     assert story.results['1']['output'] == 'output'
+
+
+def test_stories_get_environment(story):
+    story.environment = {'container': {}}
+    assert story.get_environment('container') == {}
+
+
+def test_stories_get_environment_none(story):
+    story.environment = {'container': 'dict'}
+    assert story.get_environment('else') == {}

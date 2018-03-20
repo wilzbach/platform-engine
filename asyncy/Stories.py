@@ -122,3 +122,11 @@ class Stories:
         start = self.results[line_number]['start']
         dictionary = {'output': output, 'end': time.time(), 'start': start}
         self.results[line_number] = dictionary
+
+    def get_environment(self, scope):
+        """
+        Returns a scoped part of the environment
+        """
+        if scope in self.environment:
+            return self.environment[scope]
+        return {}
