@@ -115,12 +115,13 @@ def test_logger_adapter(patch, magic, logger):
 
 def test_logger_start(patch, logger):
     patch.many(Frustum, ['register_event', 'start_logger'])
-    patch.object(logger, 'add_logdna')
+    patch.many(logger, ['add_logdna', 'adapter'])
     logger.events = [('event', 'level', 'message')]
     logger.start()
     Frustum.register_event.assert_called_with('event', 'level', 'message')
     Frustum.start_logger.assert_called_with()
     assert logger.add_logdna.call_count == 1
+    assert logger.frustum.logger == logger.adapter()
 
 
 def test_logger_log(patch, logger):
