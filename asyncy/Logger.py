@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from frustum import Frustum
 
+from logdna import LogDNAHandler
+
 
 class Logger:
 
@@ -21,6 +23,9 @@ class Logger:
 
     def __init__(self, config):
         self.frustum = Frustum(config.logger_name, config.logger_level)
+
+    def logdna_handler(self, key, options):
+        return LogDNAHandler(key, options)
 
     def start(self):
         for event in self.events:

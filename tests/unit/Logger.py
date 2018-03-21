@@ -3,6 +3,8 @@ from asyncy.Logger import Logger
 
 from frustum import Frustum
 
+from logdna import LogDNAHandler
+
 from pytest import fixture
 
 
@@ -66,6 +68,13 @@ def test_logger_events_story_execute(logger):
 def test_logger_events_story_resolve(logger):
     message = 'Resolved "{}" to "{}"'
     assert logger.events[9] == ('story-resolve', 'debug', message)
+
+
+def test_logger_logdna_handler(patch, logger):
+    patch.init(LogDNAHandler)
+    result = logger.logdna_handler('key', {})
+    LogDNAHandler.__init__.assert_called_with('key', {})
+    assert isinstance(result, LogDNAHandler)
 
 
 def test_logger_start(patch, logger):
