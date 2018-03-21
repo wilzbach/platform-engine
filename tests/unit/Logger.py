@@ -102,9 +102,10 @@ def test_logger_add_logdna(patch, magic, logger):
 def test_logger_adapter(patch, magic, logger):
     patch.init(Adapter)
     logger.frustum = magic()
-    adapter = logger.adapter()
+    adapter = logger.adapter(1, 'name.story')
     assert isinstance(adapter, Adapter)
-    Adapter.__init__.assert_called_with(logger.frustum.logger, {})
+    extra = {'app': 1, 'story': 'name.story'}
+    Adapter.__init__.assert_called_with(logger.frustum.logger, extra)
 
 
 def test_logger_start(patch, logger):
