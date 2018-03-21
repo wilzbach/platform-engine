@@ -10,7 +10,7 @@ from pytest import fixture
 
 @fixture
 def logger(patch, config):
-    patch.object(Frustum, '__init__', return_value=None)
+    patch.init(Frustum)
     return Logger(config)
 
 
@@ -88,12 +88,13 @@ def test_logger_add_logdna(patch, magic, logger):
 
 
 def test_logger_start(patch, logger):
-    patch.object(Frustum, 'register_event')
-    patch.object(Frustum, 'start_logger')
+    patch.many(Frustum, ['register_event', 'start_logger'])
+    patch.object(logger, 'add_logdna')
     logger.events = [('event', 'level', 'message')]
     logger.start()
     Frustum.register_event.assert_called_with('event', 'level', 'message')
     Frustum.start_logger.assert_called_with()
+    assert logger.add_logdna.call_count == 1
 
 
 def test_logger_log(patch, logger):

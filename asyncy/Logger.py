@@ -37,6 +37,7 @@ class Logger:
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
         self.frustum.start_logger()
+        self.add_logdna()
 
     def log(self, event, *args):
         self.frustum.log(event, *args)
