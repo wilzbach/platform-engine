@@ -17,10 +17,11 @@ def test_celerytasks_logger():
 
 
 def test_celerytasks_run(patch, run):
-    patch.object(logger, 'log')
-    process_story('app_id', 'story_name')
-    logger.log.assert_called_with('task-received', 'app_id', 'story_name')
-    args = (config, logger, 'app_id', 'story_name')
+    patch.many(logger, ['adapt', 'log'])
+    process_story('app_id', 'name.story')
+    logger.adapt.assert_called_with('app_id', 'name.story')
+    logger.log.assert_called_with('task-received', 'app_id', 'name.story')
+    args = (config, logger, 'app_id', 'name.story')
     kwargs = {'story_id': None, 'block': None, 'environment': None}
     Story.run.assert_called_with(*args, **kwargs)
 
