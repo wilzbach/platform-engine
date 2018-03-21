@@ -10,7 +10,7 @@ class Config:
         'api_url': 'api-private:8080',
         'logger_name': 'asyncy',
         'logger_level': 'warning',
-        'logdna_ingestion_key': 'ingestion_key'
+        'logdna_key': 'ingestion_key'
     }
 
     def __init__(self):
