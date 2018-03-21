@@ -94,7 +94,8 @@ def test_logger_add_logdna(patch, magic, logger):
     patch.object(Logger, 'logdna_handler')
     logger.frustum = magic()
     logger.add_logdna()
-    Logger.logdna_handler.assert_called_with(logger.logdna_key, {})
+    options = {'app': 'asyncy_engine'}
+    Logger.logdna_handler.assert_called_with(logger.logdna_key, options)
     handler = Logger.logdna_handler()
     logger.frustum.logger.addHandler.assert_called_with(handler)
 

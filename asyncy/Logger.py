@@ -40,7 +40,7 @@ class Logger:
         return LogDNAHandler(key, options)
 
     def add_logdna(self):
-        options = {}
+        options = {'app': 'asyncy_engine'}
         handler = self.logdna_handler(self.logdna_key, options)
         self.frustum.logger.addHandler(handler)
 
