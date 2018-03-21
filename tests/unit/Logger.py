@@ -18,6 +18,7 @@ def test_logger_init(logger, config):
     name = config.logger_name
     level = config.logger_level
     Frustum.__init__.assert_called_with(name, level)
+    assert logger.logdna_key == config.logdna_key
 
 
 def test_logger_events_container_start(logger):
