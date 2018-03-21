@@ -118,6 +118,13 @@ def test_logger_start(patch, logger):
     assert logger.add_logdna.call_count == 1
 
 
+def test_logger_adapt(patch, logger):
+    patch.object(Logger, 'adapter')
+    logger.adapt(1, 'name.story')
+    Logger.adapter.assert_called_with(1, 'name.story')
+    assert logger.frustum.logger == Logger.adapter()
+
+
 def test_logger_log(patch, logger):
     patch.object(Frustum, 'log')
     logger.log('my-event')
