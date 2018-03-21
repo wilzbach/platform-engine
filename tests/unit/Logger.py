@@ -105,6 +105,14 @@ def test_logger_add_logdna(patch, magic, logger):
     logger.frustum.logger.addHandler.assert_called_with(handler)
 
 
+def test_logger_adapter(patch, magic, logger):
+    patch.init(Adapter)
+    logger.frustum = magic()
+    adapter = logger.adapter()
+    assert isinstance(adapter, Adapter)
+    Adapter.__init__.assert_called_with(logger.frustum.logger, {})
+
+
 def test_logger_start(patch, logger):
     patch.many(Frustum, ['register_event', 'start_logger'])
     patch.object(logger, 'add_logdna')

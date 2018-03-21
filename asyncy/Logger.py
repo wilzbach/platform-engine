@@ -44,6 +44,9 @@ class Logger:
         handler = self.logdna_handler(self.logdna_key, options)
         self.frustum.logger.addHandler(handler)
 
+    def adapter(self):
+        return Adapter(self.frustum.logger, {})
+
     def start(self):
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
