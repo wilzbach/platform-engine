@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
+from logging import LoggerAdapter
+
 from frustum import Frustum
 
 from logdna import LogDNAHandler
+
+
+class Adapter(LoggerAdapter):
+
+    def process(self, message, kwargs):
+        app = kwargs.pop('app', 0)
+        story = kwargs.pop('story', 'unknown')
+        result = '{}::{} {}'.format(app, story, message)
+        return result, kwargs
 
 
 class Logger:

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.Logger import Logger
+from logging import LoggerAdapter
+
+from asyncy.Logger import Adapter, Logger
 
 from frustum import Frustum
 
@@ -12,6 +14,22 @@ from pytest import fixture
 def logger(patch, config):
     patch.init(Frustum)
     return Logger(config)
+
+
+def test_adapter():
+    assert issubclass(Adapter, LoggerAdapter)
+
+
+def test_adapter_process():
+    adapter = Adapter('logger', {})
+    result = adapter.process('message', {})
+    assert result == ('0::unknown message', {})
+
+
+def test_adapter_process_kwargs():
+    adapter = Adapter('logger', {})
+    result = adapter.process('message', {'story': 'test.story', 'app': 1})
+    assert result == ('1::test.story message', {})
 
 
 def test_logger_init(logger, config):
