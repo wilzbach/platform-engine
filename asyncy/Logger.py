@@ -9,8 +9,8 @@ from logdna import LogDNAHandler
 class Adapter(LoggerAdapter):
 
     def process(self, message, kwargs):
-        app = kwargs.pop('app', 0)
-        story = kwargs.pop('story', 'unknown')
+        app = self.extra['app']
+        story = self.extra['story']
         result = '{}::{} {}'.format(app, story, message)
         return result, kwargs
 

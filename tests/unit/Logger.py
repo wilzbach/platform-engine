@@ -21,14 +21,8 @@ def test_adapter():
 
 
 def test_adapter_process():
-    adapter = Adapter('logger', {})
+    adapter = Adapter('logger', {'story': 'test.story', 'app': 1})
     result = adapter.process('message', {})
-    assert result == ('0::unknown message', {})
-
-
-def test_adapter_process_kwargs():
-    adapter = Adapter('logger', {})
-    result = adapter.process('message', {'story': 'test.story', 'app': 1})
     assert result == ('1::test.story message', {})
 
 
