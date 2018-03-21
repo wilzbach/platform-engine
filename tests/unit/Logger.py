@@ -78,6 +78,15 @@ def test_logger_logdna_handler(patch, logger):
     assert isinstance(result, LogDNAHandler)
 
 
+def test_logger_add_logdna(patch, magic, logger):
+    patch.object(Logger, 'logdna_handler')
+    logger.frustum = magic()
+    logger.add_logdna()
+    Logger.logdna_handler.assert_called_with(logger.logdna_key, {})
+    handler = Logger.logdna_handler()
+    logger.frustum.logger.addHandler.assert_called_with(handler)
+
+
 def test_logger_start(patch, logger):
     patch.object(Frustum, 'register_event')
     patch.object(Frustum, 'start_logger')

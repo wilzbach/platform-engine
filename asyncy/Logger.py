@@ -28,6 +28,11 @@ class Logger:
     def logdna_handler(self, key, options):
         return LogDNAHandler(key, options)
 
+    def add_logdna(self):
+        options = {}
+        handler = self.logdna_handler(self.logdna_key, options)
+        self.frustum.logger.addHandler(handler)
+
     def start(self):
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
