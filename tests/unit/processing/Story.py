@@ -82,3 +82,9 @@ def test_story_run_environment(patch, config, logger):
     patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name', environment='env')
     assert Story.story().environment == 'env'
+
+
+def test_story_run_context(patch, config, logger):
+    patch.many(Story, ['execute', 'save', 'story'])
+    Story.run(config, logger, 'app_id', 'story_name', context='context')
+    assert Story.story().context == 'context'
