@@ -176,3 +176,23 @@ def test_stories_get_environment(story):
 def test_stories_get_environment_none(story):
     story.environment = {'container': 'dict'}
     assert story.get_environment('else') == {}
+
+
+def test_stories_prepare(story):
+    story.prepare(None, None, None)
+
+
+def test_stories_prepare_environment(story):
+    story.prepare('environment', None, None)
+    assert story.environment == 'environment'
+
+
+def test_stories_prepare_context(story):
+    story.prepare(None, 'context', None)
+    assert story.context == 'context'
+
+
+def test_stories_prepare_block(patch, story):
+    patch.object(Stories, 'child_block')
+    story.prepare(None, None, 'block')
+    Stories.child_block.assert_called_with('block')
