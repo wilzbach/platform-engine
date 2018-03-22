@@ -44,12 +44,7 @@ class Story:
         start = time.time()
         story = cls.story(config, logger, app_id, story_name)
         story.get()
-        if block:
-            story.child_block(block)
-        if environment:
-            story.environment = environment
-        if context:
-            story.context = context
+        story.prepare(environment, context, block)
         cls.execute(config, logger, story)
         cls.save(config, logger, story, start)
         logger.log('story-end', story_name, app_id, story_id)

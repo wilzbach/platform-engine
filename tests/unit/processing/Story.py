@@ -51,6 +51,7 @@ def test_story_run(patch, config, logger):
     Story.run(config, logger, 'app_id', 'story_name')
     Story.story.assert_called_with(config, logger, 'app_id', 'story_name')
     Story.story().get.assert_called_with()
+    Story.story().prepare.assert_called_with(None, None, None)
     Story.execute.assert_called_with(config, logger, Story.story())
     Story.save.assert_called_with(config, logger, Story.story(), time.time())
 
@@ -72,19 +73,8 @@ def test_story_run_with_id(patch, config, logger):
     Story.run(config, logger, 'app_id', 'story_name', story_id='story_id')
 
 
-def test_story_run_block(patch, config, logger):
+def test_story_run_prepare(patch, config, logger):
     patch.many(Story, ['execute', 'save', 'story'])
-    Story.run(config, logger, 'app_id', 'story_name', block='parent_line')
-    Story.story().child_block.assert_called_with('parent_line')
-
-
-def test_story_run_environment(patch, config, logger):
-    patch.many(Story, ['execute', 'save', 'story'])
-    Story.run(config, logger, 'app_id', 'story_name', environment='env')
-    assert Story.story().environment == 'env'
-
-
-def test_story_run_context(patch, config, logger):
-    patch.many(Story, ['execute', 'save', 'story'])
-    Story.run(config, logger, 'app_id', 'story_name', context='context')
-    assert Story.story().context == 'context'
+    kwargs = {'block': 'block', 'environment': 'env', 'context': 'context'}
+    Story.run(config, logger, 'app_id', 'story_name', **kwargs)
+    Story.story().prepare.assert_called_with('env', 'context', 'block')
