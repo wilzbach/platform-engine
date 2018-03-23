@@ -77,7 +77,7 @@ def test_containers_summon(patch, magic, client, container):
               'cap_drop': 'all',
               'volumes': {container.volume.name: {'bind': '/opt/v1',
                                                   'mode': 'rw'}}}
-    client.containers.run.assert_called_with(container.name, **kwargs)
+    client.containers.run.assert_called_with(container.image, **kwargs)
     assert Containers.get_image.call_count == 1
     assert container.logger.log.call_count == 2
     assert container.output == client.containers.run()

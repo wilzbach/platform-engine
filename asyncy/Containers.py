@@ -48,7 +48,7 @@ class Containers:
             kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
                                                     'mode': 'rw'}}
         self.logger.log('container-start', self.name)
-        self.output = self.client.containers.run(self.name, **kwargs)
+        self.output = self.client.containers.run(self.image, **kwargs)
         self.logger.log('container-end', self.name)
 
     def result(self):
