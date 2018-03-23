@@ -43,7 +43,7 @@
           "commands": {
               "echo": {
                   "help": "Echoes stuff",
-                  "arguments": [
+                  "args": [
                       {"type": "string"}
                   ]
               }
