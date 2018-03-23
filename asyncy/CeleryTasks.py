@@ -14,8 +14,8 @@ app = CeleryApp.start(config)
 
 @app.task
 def process_story(app_id, story_name, story_id=None, block=None,
-                  environment=None):
+                  environment=None, context=None):
     logger.adapt(app_id, story_name)
     logger.log('task-received', app_id, story_name)
     Story.run(config, logger, app_id, story_name, story_id=story_id,
-              block=block, environment=environment)
+              block=block, environment=environment, context=context)
