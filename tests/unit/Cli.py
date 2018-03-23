@@ -16,7 +16,7 @@ def runner():
 
 @fixture
 def kwargs():
-    return {'block': None, 'context': None}
+    return {'block': None, 'context': None, 'environment': None}
 
 
 def test_cli_run(patch, runner, kwargs):
@@ -39,7 +39,18 @@ def test_cli_run_context(patch, runner, kwargs):
     patch.object(process_story, 'delay')
     kwargs['context'] = ujson.loads()
     result = runner.invoke(Cli.run, ['story', 'app_id', '--context',
-                                     '{"varible": "value"}'])
-    ujson.loads.assert_called_with('{"varible": "value"}')
+                                     '{"variable": "value"}'])
+    ujson.loads.assert_called_with('{"variable": "value"}')
+    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+    assert result.exit_code == 0
+
+
+def test_cli_run_environment(patch, runner, kwargs):
+    patch.object(ujson, 'loads')
+    patch.object(process_story, 'delay')
+    kwargs['environment'] = ujson.loads()
+    result = runner.invoke(Cli.run, ['story', 'app_id', '--environment',
+                                     '{"variable": "value"}'])
+    ujson.loads.assert_called_with('{"variable": "value"}')
     process_story.delay.assert_called_with('app_id', 'story', **kwargs)
     assert result.exit_code == 0

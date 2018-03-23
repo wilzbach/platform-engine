@@ -18,7 +18,11 @@ class Cli:
     @click.argument('app_id')
     @click.option('--block', help='Processes the block after this line')
     @click.option('--context', help='Context data to start the story with')
-    def run(app_id, story, block, context):
+    @click.option('--environment', help='Specify story environment')
+    def run(app_id, story, block, context, environment):
         if context:
             context = ujson.loads(context)
-        process_story.delay(app_id, story, block=block, context=context)
+        if environment:
+            environment = ujson.loads(environment)
+        process_story.delay(app_id, story, block=block, context=context,
+                            environment=environment)
