@@ -16,7 +16,7 @@ def runner():
 
 @fixture
 def kwargs():
-    return {'block': None, 'context': None, 'environment': None}
+    return {'block': None, 'context': None, 'environment': None, 'start': None}
 
 
 def test_cli_run(patch, runner, kwargs):
@@ -30,6 +30,14 @@ def test_cli_run_block(patch, runner, kwargs):
     patch.object(process_story, 'delay')
     kwargs['block'] = 'line'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--block', 'line'])
+    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+    assert result.exit_code == 0
+
+
+def test_cli_run_start(patch, runner, kwargs):
+    patch.object(process_story, 'delay')
+    kwargs['start'] = 'line'
+    result = runner.invoke(Cli.run, ['story', 'app_id', '--start', 'line'])
     process_story.delay.assert_called_with('app_id', 'story', **kwargs)
     assert result.exit_code == 0
 
