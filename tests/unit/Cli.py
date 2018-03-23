@@ -15,5 +15,12 @@ def runner():
 def test_cli_run(patch, runner):
     patch.object(process_story, 'delay')
     result = runner.invoke(Cli.run, ['story', 'app_id'])
-    process_story.delay.assert_called_with('app_id', 'story')
+    process_story.delay.assert_called_with('app_id', 'story', block=None)
+    assert result.exit_code == 0
+
+
+def test_cli_run_block(patch, runner):
+    patch.object(process_story, 'delay')
+    result = runner.invoke(Cli.run, ['story', 'app_id', '--block', 'line'])
+    process_story.delay.assert_called_with('app_id', 'story', block='line')
     assert result.exit_code == 0

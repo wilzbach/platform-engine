@@ -14,5 +14,6 @@ class Cli:
     @main.command()
     @click.argument('story')
     @click.argument('app_id')
-    def run(app_id, story):
-        process_story.delay(app_id, story)
+    @click.option('--block', help='Processes the block after this line')
+    def run(app_id, story, block):
+        process_story.delay(app_id, story, block=block)
