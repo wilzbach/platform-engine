@@ -17,6 +17,13 @@ def test_handler_run_set(logger, config, patch_request):
     Handler.run(logger, '1', story)
 
 
+def test_handler_run_for(logger, config, patch_request):
+    patch_request('attendees.story.json')
+    story = Stories(config, logger, 1, 'attendees.story')
+    story.get()
+    Handler.run(logger, '1', story)
+
+
 def test_handler_run_wait(logger, config, patch_request):
     patch_request('waiting.story.json')
     story = Stories(config, logger, 1, 'waiting.story')

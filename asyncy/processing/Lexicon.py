@@ -46,6 +46,22 @@ class Lexicon:
         return line['enter']
 
     @staticmethod
+    def for_loop(logger, story, line):
+        """
+        Evaluates a for loop
+        """
+        list_name = line['args'][1]['paths'][0]
+        item_name = line['args'][0]
+        for item in story.context[list_name]:
+            story.context[item_name] = item
+            kwargs = {'environment': story.environment,
+                      'context': story.context, 'block': line['ln']}
+            current_app.send_task('asyncy.CeleryTasks.process_story',
+                                  args=[story.app_id, story.name],
+                                  kwargs=kwargs, delay=0)
+        return line['exit']
+
+    @staticmethod
     def next(logger, story, line):
         result = story.resolve(line['args'])
         if result.endswith('.story'):

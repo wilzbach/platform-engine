@@ -64,6 +64,21 @@ def test_lexicon_unless_false(logger, story, line):
     assert Lexicon.unless_condition(logger, story, line) == line['enter']
 
 
+def test_lexicon_for_loop(patch, logger, story, line):
+    patch.object(current_app, 'send_task')
+    line['args'] = ['element', {'paths': ['elements']}]
+    story.context = {'elements': ['one']}
+    story.environment = {}
+    result = Lexicon.for_loop(logger, story, line)
+    task_name = 'asyncy.CeleryTasks.process_story'
+    args = [story.app_id, story.name]
+    kwargs = {'environment': story.environment, 'context': story.context,
+              'block': line['ln']}
+    current_app.send_task.assert_called_with(task_name, args=args,
+                                             kwargs=kwargs, delay=0)
+    assert result == line['exit']
+
+
 @mark.parametrize('string', ['hello', 'hello.story'])
 def test_lexicon_next(logger, story, line, string):
     story.resolve.return_value = string
