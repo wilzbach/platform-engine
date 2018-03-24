@@ -14,8 +14,8 @@ def run(patch):
 
 @fixture
 def kwargs():
-    return {'story_id': None, 'block': None, 'environment': None,
-            'context': None}
+    return {'story_id': None, 'block': None, 'start': None,
+            'environment': None, 'context': None}
 
 
 def test_celerytasks_logger():
@@ -42,6 +42,13 @@ def test_celerytasks_run_block(run, kwargs):
     process_story('app_id', 'story_name', block='parent_line')
     args = (config, logger, 'app_id', 'story_name')
     kwargs['block'] = 'parent_line'
+    Story.run.assert_called_with(*args, **kwargs)
+
+
+def test_celerytasks_run_start(run, kwargs):
+    process_story('app_id', 'story_name', start='start_line')
+    args = (config, logger, 'app_id', 'story_name')
+    kwargs['start'] = 'start_line'
     Story.run.assert_called_with(*args, **kwargs)
 
 
