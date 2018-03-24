@@ -132,10 +132,15 @@ class Stories:
             return self.environment[scope]
         return {}
 
-    def prepare(self, environment, context, block):
+    def start_from(self):
+        pass
+
+    def prepare(self, environment, context, start, block):
         if environment:
             self.environment = environment
         if context:
             self.context = context
+        if start:
+            self.start_from(start)
         if block:
             self.child_block(block)

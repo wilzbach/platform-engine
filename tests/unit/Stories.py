@@ -179,20 +179,26 @@ def test_stories_get_environment_none(story):
 
 
 def test_stories_prepare(story):
-    story.prepare(None, None, None)
+    story.prepare(None, None, None, None)
 
 
 def test_stories_prepare_environment(story):
-    story.prepare('environment', None, None)
+    story.prepare('environment', None, None, None)
     assert story.environment == 'environment'
 
 
 def test_stories_prepare_context(story):
-    story.prepare(None, 'context', None)
+    story.prepare(None, 'context', None, None)
     assert story.context == 'context'
+
+
+def test_stories_prepare_start(patch, story):
+    patch.object(Stories, 'start_from')
+    story.prepare(None, None, 'start', None)
+    Stories.start_from.assert_called_with('start')
 
 
 def test_stories_prepare_block(patch, story):
     patch.object(Stories, 'child_block')
-    story.prepare(None, None, 'block')
+    story.prepare(None, None, None, 'block')
     Stories.child_block.assert_called_with('block')
