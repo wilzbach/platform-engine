@@ -54,6 +54,18 @@ class Stories:
             next_line = sorted_lines[next_line_index]
             return self.tree['script'][str(next_line)]
 
+    def start_from(self, line):
+        """
+        Slices the story from the given line onwards.
+        """
+        sorted_lines = self.sorted_lines()
+        i = sorted_lines.index(line)
+        allowed_lines = sorted_lines[i:]
+        dictionary = {}
+        for line_number in allowed_lines:
+            dictionary[line_number] = self.tree['script'][line_number]
+        self.tree['script'] = dictionary
+
     def child_block(self, parent_line):
         """
         Slices the story to a single block with the same parent. Used when
@@ -131,9 +143,6 @@ class Stories:
         if scope in self.environment:
             return self.environment[scope]
         return {}
-
-    def start_from(self):
-        pass
 
     def prepare(self, environment, context, start, block):
         if environment:
