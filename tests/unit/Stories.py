@@ -173,12 +173,16 @@ def test_stories_resolve_command_log(patch, logger, story):
 
 
 def test_stories_resolve_command_none(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list'])
+    patch.many(Stories, ['is_command', 'command_arguments_list',
+                         'container_arguments_string'])
     Stories.is_command.return_value = None
     line = {'container': 'container', 'args': ['command', 'arg']}
     result = story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
-    assert result == ' '.join(story.command_arguments_list())
+    Stories.container_arguments_string.assert_called_with(line['args'])
+    arguments = Stories.command_arguments_list()
+    Stories.container_arguments_string().format.assert_called_with(*arguments)
+    assert result == Stories.container_arguments_string().format()
 
 
 def test_stories_start_line(patch, story):

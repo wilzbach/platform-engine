@@ -122,6 +122,15 @@ class Stories:
             results.append(self._resolve_or_literal(argument))
         return results
 
+    def container_arguments_string(self, arguments):
+        string = []
+        for argument in arguments:
+            if type(argument) is dict:
+                string.append(self.argument_format_type(argument['$OBJECT']))
+            else:
+                string.append('{}')
+        return ' '.join(string)
+
     def resolve_command(self, line):
         """
         Resolves arguments for a container line to produce a command
@@ -138,7 +147,9 @@ class Stories:
             arguments_list = self.command_arguments_list(line['args'][1:])
             string = '{} {}'.format(command, arguments_string)
             return string.format(*arguments_list)
-        return ' '.join(self.command_arguments_list(line['args']))
+        arguments_string = self.container_arguments_string(line['args'])
+        arguments_list = self.command_arguments_list(line['args'])
+        return arguments_string.format(*arguments_list)
 
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
