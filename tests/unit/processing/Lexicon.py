@@ -17,28 +17,31 @@ def line():
 
 @fixture
 def story(patch, story):
-    patch.many(story, ['end_line', 'resolve', 'resolve_command'])
+    patch.many(story, ['end_line', 'resolve', 'resolve_command', 'next_line'])
     return story
 
 
 def test_lexicon_run(patch, logger, story, line):
     patch.object(Containers, 'run')
-    Lexicon.run(logger, story, line)
+    result = Lexicon.run(logger, story, line)
     story.resolve_command.assert_called_with(line)
     Containers.run.assert_called_with(logger, story, line['container'],
                                       story.resolve_command())
     story.end_line.assert_called_with(line['ln'], output=Containers.run())
+    story.next_line.assert_called_with(line['ln'])
+    assert result == story.next_line()['ln']
 
 
 def test_lexicon_run_log(patch, logger, story, line):
     story.resolve_command.return_value = 'log'
-    Lexicon.run(logger, story, line)
+    result = Lexicon.run(logger, story, line)
     story.resolve_command.assert_called_with(line)
     story.end_line.assert_called_with(line['ln'])
+    story.next_line.assert_called_with(line['ln'])
+    assert result == story.next_line()['ln']
 
 
 def test_lexicon_set(patch, logger, story):
-    patch.object(story, 'next_line')
     story.context = {}
     line = {'ln': '1', 'args': [{'paths': ['name']}, 'values']}
     result = Lexicon.set(logger, story, line)
@@ -95,7 +98,6 @@ def test_lexicon_next(logger, story, line, string):
 
 
 def test_lexicon_wait(patch, logger, story, line):
-    patch.object(story, 'next_line')
     patch.object(current_app, 'send_task')
     patch.object(dateparser, 'parse')
     story.environment = {}
