@@ -24,7 +24,7 @@ def test_stories_get(patch, magic, story, patch_request):
     assert story.version is None
 
 
-def test_stories_resolve_simple(story):
+def test_stories_resolve_command(story):
     """
     Ensures a simple resolve can be performed
     """
@@ -35,6 +35,14 @@ def test_stories_resolve_simple(story):
     }}}
     story.tree = Parser().parse(story_text).json()
     assert story.resolve_command(story.line('1')) == 'echo "hello"'
+
+
+def test_stories_resolve_command_no_commands(story):
+    story_text = 'alpine echo "hello"'
+    story.context = {}
+    story.containers = {'alpine': {'commands': {}}}
+    story.tree = Parser().parse(story_text).json()
+    assert story.resolve_command(story.line('1')) == 'echo hello'
 
 
 def test_stories_resolve_replacement(patch, magic, story, api_response):

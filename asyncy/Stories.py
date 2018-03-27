@@ -132,7 +132,7 @@ class Stories:
             arguments_list = self.command_arguments_list(line['args'][1:])
             string = '{} {}'.format(command, arguments_string)
             return string.format(*arguments_list)
-        return self.resolve(line['args'])
+        return ' '.join(self.command_arguments_list(line['args']))
 
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
