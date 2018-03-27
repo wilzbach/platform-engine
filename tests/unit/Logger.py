@@ -68,19 +68,24 @@ def test_logger_events_container_volume(logger):
     assert logger.events[6] == ('container-volume', 'debug', message)
 
 
+def test_logger_events_lexicon_if(logger):
+    message = 'Processing line {} with "if" method against context {}'
+    assert logger.events[7] == ('lexicon-if', 'debug', message)
+
+
 def test_logger_events_lexicon_wait(logger):
     message = 'Processing line {} with "wait" method'
-    assert logger.events[7] == ('lexicon-wait', 'debug', message)
+    assert logger.events[8] == ('lexicon-wait', 'debug', message)
 
 
 def test_logger_events_story_execute(logger):
     message = 'Received line "{}" from handler'
-    assert logger.events[8] == ('story-execution', 'debug', message)
+    assert logger.events[9] == ('story-execution', 'debug', message)
 
 
 def test_logger_events_story_resolve(logger):
     message = 'Resolved "{}" to "{}"'
-    assert logger.events[9] == ('story-resolve', 'debug', message)
+    assert logger.events[10] == ('story-resolve', 'debug', message)
 
 
 def test_logger_logdna_handler(patch, logger):
