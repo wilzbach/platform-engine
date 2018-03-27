@@ -30,6 +30,13 @@ def test_lexicon_run(patch, logger, story, line):
     story.end_line.assert_called_with(line['ln'], output=Containers.run())
 
 
+def test_lexicon_run_log(patch, logger, story, line):
+    story.resolve_command.return_value = 'log'
+    Lexicon.run(logger, story, line)
+    story.resolve_command.assert_called_with(line)
+    story.end_line.assert_called_with(line['ln'])
+
+
 def test_lexicon_set(patch, logger, story):
     patch.object(story, 'next_line')
     story.context = {}
