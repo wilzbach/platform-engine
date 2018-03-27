@@ -125,6 +125,10 @@ class Stories:
         Resolves arguments for a container line to produce a command
         that can be passed to docker
         """
+        if line['container'] == 'log':
+            args = self.command_arguments_list(line['args'])
+            self.logger.log(args[0], args[1])
+            return 'log'
         if self.is_command(line['container'], line['args'][0]):
             command = line['args'][0]['paths'][0]
             arguments_string = self.command_arguments_string(line['container'],

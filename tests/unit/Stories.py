@@ -156,6 +156,17 @@ def test_stories_resolve_command(patch, logger, story):
     assert result == 'command argument'
 
 
+def test_stories_resolve_command_log(patch, logger, story):
+    patch.many(Stories, ['is_command', 'command_arguments_list'])
+    Stories.command_arguments_list.return_value = ['level', 'message']
+    line = {'container': 'log',
+            'args': [{'paths': ['level']}, {'string': 'message'}]}
+    result = story.resolve_command(line)
+    Stories.command_arguments_list.assert_called_with(line['args'])
+    story.logger.log.assert_called_with('level', 'message')
+    assert result == 'log'
+
+
 def test_stories_resolve_command_none(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.is_command.return_value = None
