@@ -135,6 +135,16 @@ def test_command_arguments_list(patch, story):
     assert result == ['something']
 
 
+def test_command_arguments_list_none(patch, story):
+    """
+    Ensures that when an argument resolves to None it is used literally
+    """
+    patch.object(Stories, 'resolve', return_value='literal')
+    result = story.command_arguments_list([{'paths': ['literal']}])
+    Stories.resolve.assert_called_with({'paths': ['literal']})
+    assert result == ['literal']
+
+
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list',
                          'command_arguments_string'])

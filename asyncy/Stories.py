@@ -108,10 +108,16 @@ class Stories:
             string.append(self.argument_format_type(argument['type']))
         return ' '.join(string)
 
+    def _resolve_or_literal(self, argument):
+        resolved = self.resolve(argument)
+        if resolved:
+            return resolved
+        return argument['paths'][0]
+
     def command_arguments_list(self, arguments):
         results = []
         for argument in arguments:
-            results.append(self.resolve(argument))
+            results.append(self._resolve_or_literal(argument))
         return results
 
     def resolve_command(self, line):
