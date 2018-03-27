@@ -19,10 +19,15 @@ class Lexicon:
         command = story.resolve_command(line)
         if command == 'log':
             story.end_line(line['ln'])
-            return story.next_line(line['ln'])['ln']
+            next_line = story.next_line(line['ln'])
+            if next_line:
+                return next_line['ln']
+            return None
         output = Containers.run(logger, story, line['container'], command)
         story.end_line(line['ln'], output=output)
-        return story.next_line(line['ln'])['ln']
+        next_line = story.next_line(line['ln'])
+        if next_line:
+            return next_line['ln']
 
     @staticmethod
     def set(logger, story, line):

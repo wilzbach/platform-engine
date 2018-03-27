@@ -32,6 +32,13 @@ def test_lexicon_run(patch, logger, story, line):
     assert result == story.next_line()['ln']
 
 
+def test_lexicon_run_none(patch, logger, story, line):
+    story.next_line.return_value = None
+    patch.object(Containers, 'run')
+    result = Lexicon.run(logger, story, line)
+    assert result is None
+
+
 def test_lexicon_run_log(patch, logger, story, line):
     story.resolve_command.return_value = 'log'
     result = Lexicon.run(logger, story, line)
@@ -39,6 +46,13 @@ def test_lexicon_run_log(patch, logger, story, line):
     story.end_line.assert_called_with(line['ln'])
     story.next_line.assert_called_with(line['ln'])
     assert result == story.next_line()['ln']
+
+
+def test_lexicon_run_log_none(patch, logger, story, line):
+    story.resolve_command.return_value = 'log'
+    story.next_line.return_value = None
+    result = Lexicon.run(logger, story, line)
+    assert result is None
 
 
 def test_lexicon_set(patch, logger, story):
