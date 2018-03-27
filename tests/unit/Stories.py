@@ -94,6 +94,11 @@ def test_stories_is_command(patch, logger, story):
     assert result
 
 
+def test_stories_is_command_no_object(patch, logger, story):
+    result = story.is_command('container', 'string')
+    assert result is None
+
+
 def test_stories_is_command_none(patch, logger, story):
     story.containers = {'container': {'commands': {'command': {}}}}
     argument = {'$OBJECT': 'string'}

@@ -83,6 +83,8 @@ class Stories:
         """
         Checks whether argument is a command for the given container
         """
+        if type(argument) is str:
+            return None
         if argument['$OBJECT'] == 'path':
             path = argument['paths'][0]
             if path in self.containers[container]['commands']:
