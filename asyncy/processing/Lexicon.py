@@ -42,6 +42,7 @@ class Lexicon:
         Evaluates the resolution value to decide wheter to enter
         inside an if-block.
         """
+        logger.log('lexicon-if', line, story.context)
         result = story.resolve(line['args'])
         if result[0]:
             return line['enter']

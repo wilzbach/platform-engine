@@ -67,12 +67,15 @@ def test_lexicon_set(patch, logger, story):
 
 
 def test_lexicon_if(logger, story, line):
+    story.context = {}
     result = Lexicon.if_condition(logger, story, line)
+    logger.log.assert_called_with('lexicon-if', line, story.context)
     story.resolve.assert_called_with(line['args'])
     assert result == line['enter']
 
 
 def test_lexicon_if_false(logger, story, line):
+    story.context = {}
     story.resolve.return_value = [False]
     assert Lexicon.if_condition(logger, story, line) == line['exit']
 
