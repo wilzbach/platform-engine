@@ -182,9 +182,11 @@ class Stories:
 
         if output:
             try:
+                # try to load it as json
                 output = loads(output)
             except:
-                pass
+                # strip the string of tabs, spaces, newlines
+                output = output.strip()
 
         dictionary = {'output': output, 'end': time.time(), 'start': start}
         self.results[line_number] = dictionary

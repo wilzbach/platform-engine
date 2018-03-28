@@ -206,6 +206,13 @@ def test_stories_end_line_output_as_dict(patch, story):
     assert story.results['1']['output'] == {'key': 'value'}
 
 
+def test_stories_end_line_output_as_sting(patch, story):
+    patch.object(time, 'time')
+    story.results = {'1': {'start': 'start'}}
+    story.end_line('1', output='   foobar\n\t')
+    assert story.results['1']['output'] == 'foobar'
+
+
 def test_stories_end_line_output_as_bytes(patch, story):
     patch.object(time, 'time')
     story.results = {'1': {'start': 'start'}}
