@@ -100,8 +100,12 @@ def test_lexicon_unless_false(logger, story, line):
 
 def test_lexicon_for_loop(patch, logger, story, line):
     patch.object(current_app, 'send_task')
-    line['args'] = ['element', {'paths': ['elements']}]
+    line['args'] = [
+        {'$OBJECT': 'path', 'paths': ['element']},
+        {'$OBJECT': 'path', 'paths': ['elements']}
+    ]
     story.context = {'elements': ['one']}
+    story.resolve.return_value = ['one']
     story.environment = {}
     result = Lexicon.for_loop(logger, story, line)
     task_name = 'asyncy.CeleryTasks.process_story'

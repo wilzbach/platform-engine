@@ -3,6 +3,7 @@ from celery import current_app
 
 import dateparser
 
+from ..utils import Dict
 from ..Containers import Containers
 
 
@@ -60,10 +61,10 @@ class Lexicon:
         """
         Evaluates a for loop
         """
-        list_name = line['args'][1]['paths'][0]
-        item_name = line['args'][0]
-        for item in story.context[list_name]:
-            story.context[item_name] = item
+        _list = story.resolve(line['args'][1], encode=False)
+        output = line['args'][0]['paths']
+        for item in _list:
+            Dict.set(story.context, output, item)
             kwargs = {'environment': story.environment,
                       'context': story.context, 'block': line['ln']}
             current_app.send_task('asyncy.CeleryTasks.process_story',
