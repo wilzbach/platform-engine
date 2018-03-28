@@ -152,7 +152,7 @@ class Stories:
                     lvl = arguments.pop(0)
                 message = ', '.join(arguments)
 
-            self.logger.frustum.logger.log(lvl, message)
+            self.logger.log_raw(lvl, message)
             return 'log'
 
         if self.is_command(line['container'], line['args'][0]):

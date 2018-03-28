@@ -137,6 +137,12 @@ def test_logger_log(patch, logger):
     Frustum.log.assert_called_with('my-event')
 
 
+def test_logger_log_raw(patch, logger):
+    patch.object(logger, 'frustum')
+    logger.log_raw('info', 'my-event')
+    logger.frustum.logger.info.assert_called_with('my-event')
+
+
 def test_logger_log_args(patch, logger):
     patch.object(Frustum, 'log')
     logger.log('my-event', 'extra', 'args')

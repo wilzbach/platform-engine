@@ -60,3 +60,6 @@ class Logger:
 
     def log(self, event, *args):
         self.frustum.log(event, *args)
+
+    def log_raw(self, lvl, message):
+        getattr(self.frustum.logger, lvl)(message)

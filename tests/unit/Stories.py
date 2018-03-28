@@ -151,7 +151,7 @@ def test_stories_resolve_command_log(patch, logger, story):
                      {'$OBJECT': 'string', 'string': 'message'}]}
     result = story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
-    story.logger.frustum.logger.log.assert_called_with('info', 'message')
+    story.logger.log_raw.assert_called_with('info', 'message')
     assert result == 'log'
 
 
@@ -163,7 +163,7 @@ def test_stories_resolve_command_log_single_arg(patch, logger, story):
                      {'$OBJECT': 'string', 'string': 'part2'}]}
     result = story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
-    story.logger.frustum.logger.log.assert_called_with('info', 'part1, part2')
+    story.logger.log_raw.assert_called_with('info', 'part1, part2')
     assert result == 'log'
 
 
