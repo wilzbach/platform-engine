@@ -31,7 +31,9 @@ class Logger:
          'Processing line {} with "if" method against context {}'),
         ('lexicon-wait', 'debug', 'Processing line {} with "wait" method'),
         ('story-execution', 'debug', 'Received line "{}" from handler'),
-        ('story-resolve', 'debug', 'Resolved "{}" to "{}"')
+        ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
+        ('lexicon-unless', 'debug',
+         'Processing line {} with "unless" method against context {}'),
     ]
 
     def __init__(self, config):

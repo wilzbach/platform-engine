@@ -12,7 +12,7 @@ from pytest import fixture, mark
 @fixture
 def line():
     return {'enter': '2', 'exit': '25', 'ln': '1', 'container': 'alpine',
-            'args': 'args'}
+            'args': ['args']}
 
 
 @fixture
@@ -74,7 +74,7 @@ def test_lexicon_if(logger, story, line):
     story.context = {}
     result = Lexicon.if_condition(logger, story, line)
     logger.log.assert_called_with('lexicon-if', line, story.context)
-    story.resolve.assert_called_with(line['args'], encode=False)
+    story.resolve.assert_called_with(line['args'][0], encode=False)
     assert result == line['enter']
 
 
@@ -85,13 +85,16 @@ def test_lexicon_if_false(logger, story, line):
 
 
 def test_lexicon_unless(logger, story, line):
+    story.context = {}
     result = Lexicon.unless_condition(logger, story, line)
-    story.resolve.assert_called_with(line['args'])
+    logger.log.assert_called_with('lexicon-unless', line, story.context)
+    story.resolve.assert_called_with(line['args'][0], encode=False)
     assert result == line['exit']
 
 
 def test_lexicon_unless_false(logger, story, line):
-    story.resolve.return_value = [False]
+    story.context = {}
+    story.resolve.return_value = False
     assert Lexicon.unless_condition(logger, story, line) == line['enter']
 
 
@@ -114,7 +117,7 @@ def test_lexicon_for_loop(patch, logger, story, line):
 def test_lexicon_next(logger, story, line, string):
     story.resolve.return_value = string
     result = Lexicon.next(logger, story, line)
-    story.resolve.assert_called_with(line['args'])
+    story.resolve.assert_called_with(line['args'][0])
     assert result == 'hello.story'
 
 
@@ -123,7 +126,7 @@ def test_lexicon_wait(patch, logger, story, line):
     patch.object(dateparser, 'parse')
     story.environment = {}
     result = Lexicon.wait(logger, story, line)
-    story.resolve.assert_called_with(line['args'])
+    story.resolve.assert_called_with(line['args'][0])
     logger.log.assert_called_with('lexicon-wait', line)
     dateparser.parse.assert_called_with('in {}'.format(story.resolve()))
     task_name = 'asyncy.CeleryTasks.process_story'

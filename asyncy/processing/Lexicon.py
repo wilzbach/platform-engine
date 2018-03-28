@@ -42,15 +42,16 @@ class Lexicon:
         inside an if-block.
         """
         logger.log('lexicon-if', line, story.context)
-        result = story.resolve(line['args'], encode=False)
+        result = story.resolve(line['args'][0], encode=False)
         if result:
             return line['enter']
         return line['exit']
 
     @staticmethod
     def unless_condition(logger, story, line):
-        result = story.resolve(line['args'])
-        if result[0]:
+        logger.log('lexicon-unless', line, story.context)
+        result = story.resolve(line['args'][0], encode=False)
+        if result:
             return line['exit']
         return line['enter']
 
@@ -72,7 +73,7 @@ class Lexicon:
 
     @staticmethod
     def next(logger, story, line):
-        result = story.resolve(line['args'])
+        result = story.resolve(line['args'][0])
         if result.endswith('.story'):
             return result
         return '{}.story'.format(result)
@@ -80,7 +81,7 @@ class Lexicon:
     @staticmethod
     def wait(logger, story, line):
         logger.log('lexicon-wait', line)
-        waiting_time = story.resolve(line['args'])
+        waiting_time = story.resolve(line['args'][0])
         eta = dateparser.parse('in {}'.format(waiting_time))
         kwargs = {'block': line['ln'], 'environment': story.environment}
         current_app.send_task('asyncy.CeleryTasks.process_story',

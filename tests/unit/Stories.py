@@ -4,9 +4,9 @@ import time
 from asyncy.Stories import Stories
 from asyncy.utils import Http
 
-from storyscript.resolver import Resolver
-
 from pytest import fixture, mark
+
+from storyscript.resolver import Resolver
 
 
 def test_stories_init(config, logger, story):
@@ -222,7 +222,7 @@ def test_stories_end_line_output_as_bytes(patch, story):
     (1, "'1'"),
     ({'foo': 'bar'}, "'{\"foo\": \"bar\"}'"),
     (['foobar'], "'[\"foobar\"]'"),
-    ])
+])
 def test_stories_encode(story, input, output):
     assert story.encode(input) == output
 

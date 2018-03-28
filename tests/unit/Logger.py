@@ -88,6 +88,11 @@ def test_logger_events_story_resolve(logger):
     assert logger.events[10] == ('story-resolve', 'debug', message)
 
 
+def test_logger_events_story_unless(logger):
+    message = 'Processing line {} with "unless" method against context {}'
+    assert logger.events[11] == ('lexicon-unless', 'debug', message)
+
+
 def test_logger_logdna_handler(patch, logger):
     patch.init(LogDNAHandler)
     result = logger.logdna_handler('key', {})
