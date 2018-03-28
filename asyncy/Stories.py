@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
-from json import dumps
+from json import dumps, loads
 
 from storyscript.resolver import Resolver
 
@@ -157,6 +157,16 @@ class Stories:
 
     def end_line(self, line_number, output=None, assign=None):
         start = self.results[line_number]['start']
+
+        if type(output) is bytes:
+            output = output.decode('utf-8')
+
+        if output:
+            try:
+                output = loads(output)
+            except:
+                pass
+
         dictionary = {'output': output, 'end': time.time(), 'start': start}
         self.results[line_number] = dictionary
 

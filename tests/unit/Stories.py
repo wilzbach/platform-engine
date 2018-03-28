@@ -184,6 +184,20 @@ def test_stories_end_line_output(patch, story):
     assert story.results['1']['output'] == 'output'
 
 
+def test_stories_end_line_output_as_dict(patch, story):
+    patch.object(time, 'time')
+    story.results = {'1': {'start': 'start'}}
+    story.end_line('1', output='{"key":"value"}')
+    assert story.results['1']['output'] == {'key': 'value'}
+
+
+def test_stories_end_line_output_as_bytes(patch, story):
+    patch.object(time, 'time')
+    story.results = {'1': {'start': 'start'}}
+    story.end_line('1', output=b'output')
+    assert story.results['1']['output'] == 'output'
+
+
 def test_stories_get_environment(story):
     story.environment = {'container': {}}
     assert story.get_environment('container') == {}
