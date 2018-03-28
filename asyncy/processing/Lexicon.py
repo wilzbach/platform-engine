@@ -24,7 +24,7 @@ class Lexicon:
                 return next_line['ln']
             return None
         output = Containers.run(logger, story, line['container'], command)
-        story.end_line(line['ln'], output=output)
+        story.end_line(line['ln'], output=output, assign=line.get('output'))
         next_line = story.next_line(line['ln'])
         if next_line:
             return next_line['ln']
@@ -32,8 +32,7 @@ class Lexicon:
     @staticmethod
     def set(logger, story, line):
         value = story.resolve(line['args'][1])
-        story.context[line['args'][0]['paths'][0]] = value
-        story.end_line(line['ln'])
+        story.end_line(line['ln'], output=value, assign=line['args'][0])
         return story.next_line(line['ln'])['ln']
 
     @staticmethod
