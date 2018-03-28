@@ -143,7 +143,7 @@ class Stories:
             args = line['args']
             if len(args) == 1:
                 lvl = 'info'
-                self.resolve(args[0])
+                message = self.resolve(args[0])
             else:
                 arguments = self.command_arguments_list(args)
                 if arguments[0] not in ('info', 'warn', 'error', 'debug'):
@@ -152,7 +152,7 @@ class Stories:
                     lvl = arguments.pop(0)
                 message = ', '.join(arguments)
 
-            self.logger.log(lvl, message)
+            self.logger.frustum.logger.log(lvl, message)
             return 'log'
 
         if self.is_command(line['container'], line['args'][0]):
