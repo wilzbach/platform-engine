@@ -62,9 +62,9 @@ class Lexicon:
         Evaluates a for loop
         """
         _list = story.resolve(line['args'][1], encode=False)
-        output = line['args'][0]['paths']
+        output = line['args'][0]
         for item in _list:
-            Dict.set(story.context, output, item)
+            story.context[output] = item
             kwargs = {'environment': story.environment,
                       'context': story.context, 'block': line['ln']}
             current_app.send_task('asyncy.CeleryTasks.process_story',

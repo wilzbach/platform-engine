@@ -101,7 +101,7 @@ def test_lexicon_unless_false(logger, story, line):
 def test_lexicon_for_loop(patch, logger, story, line):
     patch.object(current_app, 'send_task')
     line['args'] = [
-        {'$OBJECT': 'path', 'paths': ['element']},
+        'element',
         {'$OBJECT': 'path', 'paths': ['elements']}
     ]
     story.context = {'elements': ['one']}
