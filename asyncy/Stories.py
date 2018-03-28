@@ -140,8 +140,19 @@ class Stories:
         that can be passed to docker
         """
         if line['container'] == 'log':
-            args = self.command_arguments_list(line['args'])
-            self.logger.log(args[0], args[1])
+            args = line['args']
+            if len(args) == 1:
+                lvl = 'info'
+                self.resolve(args[0])
+            else:
+                arguments = self.command_arguments_list(args)
+                if arguments[0] not in ('info', 'warn', 'error', 'debug'):
+                    lvl = 'info'
+                else:
+                    lvl = arguments.pop(0)
+                message = ', '.join(arguments)
+
+            self.logger.log(lvl, message)
             return 'log'
 
         if self.is_command(line['container'], line['args'][0]):

@@ -145,12 +145,25 @@ def test_stories_resolve_command(patch, logger, story):
 
 def test_stories_resolve_command_log(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
-    Stories.command_arguments_list.return_value = ['level', 'message']
+    Stories.command_arguments_list.return_value = ['info', 'message']
     line = {'container': 'log',
-            'args': [{'paths': ['level']}, {'string': 'message'}]}
+            'args': [{'$OBJECT': 'path', 'paths': ['info']},
+                     {'$OBJECT': 'string', 'string': 'message'}]}
     result = story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
-    story.logger.log.assert_called_with('level', 'message')
+    story.logger.log.assert_called_with('info', 'message')
+    assert result == 'log'
+
+
+def test_stories_resolve_command_log_single_arg(patch, logger, story):
+    patch.many(Stories, ['is_command', 'command_arguments_list'])
+    Stories.command_arguments_list.return_value = ['part1', 'part2']
+    line = {'container': 'log',
+            'args': [{'$OBJECT': 'string', 'string': 'part1'},
+                     {'$OBJECT': 'string', 'string': 'part2'}]}
+    result = story.resolve_command(line)
+    Stories.command_arguments_list.assert_called_with(line['args'])
+    story.logger.log.assert_called_with('info', 'part1, part2')
     assert result == 'log'
 
 
