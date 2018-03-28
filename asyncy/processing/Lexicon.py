@@ -42,8 +42,8 @@ class Lexicon:
         inside an if-block.
         """
         logger.log('lexicon-if', line, story.context)
-        result = story.resolve(line['args'])
-        if result[0]:
+        result = story.resolve(line['args'], encode=False)
+        if result:
             return line['enter']
         return line['exit']
 

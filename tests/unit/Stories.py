@@ -6,6 +6,8 @@ from asyncy.utils import Http
 
 from storyscript.resolver import Resolver
 
+from pytest import fixture, mark
+
 
 def test_stories_init(config, logger, story):
     assert story.app_id == 1
@@ -119,7 +121,7 @@ def test_command_arguments_list(patch, story):
     patch.object(Stories, 'resolve', return_value='something')
     obj = {'$OBJECT': 'string', 'string': 'string'}
     result = story.command_arguments_list([obj])
-    Stories.resolve.assert_called_with(obj)
+    Stories.resolve.assert_called_with(obj, encode=True)
     assert result == ['something']
 
 
@@ -127,7 +129,7 @@ def test_command_arguments_list_none(patch, story):
     """
     Ensures that when an argument resolves to None it is used literally
     """
-    patch.object(Stories, 'resolve', return_value='literal')
+    patch.object(Stories, 'resolve', return_value=None)
     obj = {'$OBJECT': 'path', 'paths': ['literal']}
     result = story.command_arguments_list([obj])
     Stories.resolve.assert_called_with(obj)
@@ -209,6 +211,20 @@ def test_stories_end_line_output_as_bytes(patch, story):
     story.results = {'1': {'start': 'start'}}
     story.end_line('1', output=b'output')
     assert story.results['1']['output'] == 'output'
+
+
+@mark.parametrize('input,output', [
+    (None, 'null'),
+    (False, 'false'),
+    (True, 'true'),
+    ('string', "'string'"),
+    ("st'ring", "'st\'ring'"),
+    (1, "'1'"),
+    ({'foo': 'bar'}, "'{\"foo\": \"bar\"}'"),
+    (['foobar'], "'[\"foobar\"]'"),
+    ])
+def test_stories_encode(story, input, output):
+    assert story.encode(input) == output
 
 
 def test_stories_get_environment(story):

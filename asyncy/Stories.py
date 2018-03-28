@@ -94,23 +94,30 @@ class Stories:
                 if path in self.containers[container]['commands']:
                     return True
 
-    def resolve(self, args):
+    def resolve(self, args, encode=False):
         """
         Resolves line arguments to their real value
         """
-        if isinstance(args, (str, int, float)):
-            # This argument is a flag or number: "-f", "--flag", 1
+        if isinstance(args, (str, int, float, bool)):
             self.logger.log('story-resolve', args, args)
-            return str(args)
+            return args
+
         result = Resolver.resolve(args, self.context)
         self.logger.log('story-resolve', args, result)
+        # encode and escape then format for shell
+        if encode:
+            return self.encode(result)
+        else:
+            return result
 
-        # encode the data
-        if result is None or isinstance(result, (list, dict)):
-            result = dumps(result)
-
-        # escape it for shell
-        return "'%s'" % result.replace("'", "\'")
+    def encode(self, arg):
+        if arg is None or isinstance(arg, bool):
+            return dumps(arg)
+        elif isinstance(arg, (list, dict)):
+            arg = dumps(arg)
+        else:
+            arg = str(arg)
+        return "'%s'" % arg.replace("'", "\'")
 
     def command_arguments_list(self, arguments):
         results = []
@@ -123,14 +130,15 @@ class Stories:
                 arg['$OBJECT'] == 'path' and
                 len(arg['paths']) == 1
             ):
-                res = self.resolve(arg)
-                if res == "'null'":
+                res = self.resolve(arguments.pop(0))
+                if res is None:
                     results.append(arg['paths'][0])
-                    arguments.pop(0)
+                else:
+                    results.append(self.encode(res))
 
         if arguments:
             for argument in arguments:
-                results.append(self.resolve(argument))
+                results.append(self.resolve(argument, encode=True))
 
         return results
 

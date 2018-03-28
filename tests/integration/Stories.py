@@ -61,4 +61,12 @@ def test_stories_resolve_replacement(patch, magic, story, api_response):
     response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
-    assert story.resolve(story.line('1')['args'][1]) == "'Hi, I am Asyncy!'"
+    assert story.resolve(
+        story.line('1')['args'][1],
+        encode=False
+    ) == 'Hi, I am Asyncy!'
+
+    assert story.resolve(
+        story.line('1')['args'][1],
+        encode=True
+    ) == "'Hi, I am Asyncy!'"
