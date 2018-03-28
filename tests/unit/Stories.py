@@ -112,9 +112,16 @@ def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.context = 'context'
     result = story.resolve('args')
-    assert not Resolver.resolve.called
     logger.log.assert_called_with('story-resolve', 'args', 'args')
     assert result == 'args'
+
+
+def test_stories_resolve_file(patch, story):
+    # patch for $OBJECT=file
+    patch.object(Resolver, 'resolve', return_value='/file.path')
+    story.context = 'context'
+    result = story.resolve({'$OBJECT': 'file', 'string': '/file.path'})
+    assert result == '/tmp/cache/file.path'
 
 
 def test_command_arguments_list(patch, story):

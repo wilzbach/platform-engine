@@ -45,7 +45,7 @@ class Containers:
         kwargs = {'command': command, 'environment': environment,
                   'cap_drop': 'all', 'auto_remove': True}
         if self.volume:
-            kwargs['volumes'] = {self.volume.name: {'bind': '/opt/v1',
+            kwargs['volumes'] = {self.volume.name: {'bind': '/tmp/cache',
                                                     'mode': 'rw'}}
         self.logger.log('container-start', self.name)
         self.output = self.client.containers.run(self.image, **kwargs)

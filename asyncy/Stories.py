@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import time
 from json import dumps, loads
 
@@ -94,16 +95,26 @@ class Stories:
                 if path in self.containers[container]['commands']:
                     return True
 
-    def resolve(self, args, encode=False):
+    def resolve(self, arg, encode=False):
         """
-        Resolves line arguments to their real value
+        Resolves line argument to their real value
         """
-        if isinstance(args, (str, int, float, bool)):
-            self.logger.log('story-resolve', args, args)
-            return args
+        if isinstance(arg, (str, int, float, bool)):
+            self.logger.log('story-resolve', arg, arg)
+            return arg
 
-        result = Resolver.resolve(args, self.context)
-        self.logger.log('story-resolve', args, result)
+        # patch for $OBJECT=file
+        is_file = (isinstance(arg, dict) and arg['$OBJECT'] == 'file')
+        # end patch
+
+        result = Resolver.resolve(arg, self.context)
+
+        # patch for $OBJECT=file
+        if is_file:
+            result = os.path.join('/tmp/cache', result.lstrip('/'))
+        # end patch
+
+        self.logger.log('story-resolve', arg, result)
         # encode and escape then format for shell
         if encode:
             return self.encode(result)

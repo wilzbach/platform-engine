@@ -75,7 +75,7 @@ def test_containers_summon(patch, magic, client, container):
     container.summon('command', {})
     kwargs = {'auto_remove': True, 'command': 'command', 'environment': {},
               'cap_drop': 'all',
-              'volumes': {container.volume.name: {'bind': '/opt/v1',
+              'volumes': {container.volume.name: {'bind': '/tmp/cache',
                                                   'mode': 'rw'}}}
     client.containers.run.assert_called_with(container.image, **kwargs)
     assert Containers.get_image.call_count == 1
