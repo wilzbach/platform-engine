@@ -214,11 +214,23 @@ class Stories:
             return self.environment[scope]
         return {}
 
+    def _reduce_environment(self):
+        """
+        Removes container configuration
+        """
+        return dict((
+            (key, value)
+            for (key, value) in self.environment.items()
+            if not isinstance(value, dict)
+        ))
+
     def prepare(self, environment, context, start, block):
         if environment:
             self.environment = environment
-        if context:
-            self.context = context
+
+        self.context = context or {}
+        self.context['env'] = self._reduce_environment()
+
         if start:
             self.start_from(start)
         if block:
