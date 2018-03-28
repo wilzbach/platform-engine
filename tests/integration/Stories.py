@@ -34,7 +34,7 @@ def test_stories_resolve_command(story):
         'echo': {'args': [{'type': 'string'}]}
     }}}
     story.tree = Parser().parse(story_text).json()
-    assert story.resolve_command(story.line('1')) == 'echo "hello"'
+    assert story.resolve_command(story.line('1')) == "echo 'hello'"
 
 
 def test_stories_resolve_command_no_commands_nested_string(story):
@@ -43,7 +43,7 @@ def test_stories_resolve_command_no_commands_nested_string(story):
     story.containers = {'python': {'pull_url': 'asyncy/asyncy-python',
                         'commands': {}}}
     story.tree = Parser().parse(story_text).json()
-    assert story.resolve_command(story.line('1')) == '-c "print(\'hello\')"'
+    assert story.resolve_command(story.line('1')) == "-c 'print(\'hello\')'"
 
 
 def test_stories_resolve_command_no_commands(story):
@@ -51,7 +51,7 @@ def test_stories_resolve_command_no_commands(story):
     story.context = {}
     story.containers = {'alpine': {'commands': {}}}
     story.tree = Parser().parse(story_text).json()
-    assert story.resolve_command(story.line('1')) == 'echo "hello"'
+    assert story.resolve_command(story.line('1')) == "echo 'hello'"
 
 
 def test_stories_resolve_replacement(patch, magic, story, api_response):
@@ -61,4 +61,4 @@ def test_stories_resolve_replacement(patch, magic, story, api_response):
     response = magic(json=magic(return_value=api_response('hello.story.json')))
     patch.object(requests, 'get', return_value=response)
     story.get()
-    assert story.resolve(story.line('1')['args'][1]) == 'Hi, I am Asyncy!'
+    assert story.resolve(story.line('1')['args'][1]) == "'Hi, I am Asyncy!'"
