@@ -80,7 +80,7 @@ def test_results_lines(patch, magic, client, mongo):
 def test_results_lines_no_output(patch, magic, client, mongo):
     patch.object(Mongo, 'ref', return_value=100)
     lines = {'1': {'start': '1', 'end': '2'}}
-    result = mongo.lines(magic(inserted_id=1), lines)
+    mongo.lines(magic(inserted_id=1), lines)
     expected = {
         'narration_id': 100,
         'line': '1',

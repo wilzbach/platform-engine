@@ -110,33 +110,16 @@ def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.context = 'context'
     result = story.resolve('args')
-    Resolver.resolve.assert_called_with('args', story.context)
-    logger.log.assert_called_with('story-resolve', 'args', Resolver.resolve())
-    assert result == Resolver.resolve()
-
-
-def test_stories_argument_format_type(story):
-    assert story.argument_format_type('anything') == '{}'
-
-
-def test_stories_argument_format_type_string(story):
-    assert story.argument_format_type('string') == '"{}"'
-
-
-def test_stories_command_arguments_string(patch, story):
-    patch.object(Stories, 'argument_format_type', return_value='{}')
-    story.containers = {'container': {'commands': {
-        'echo': {'args': [{'type': 'anything'}]}}
-    }}
-    result = story.command_arguments_string('container', 'echo')
-    Stories.argument_format_type.assert_called_with('anything')
-    assert result == '{}'
+    assert not Resolver.resolve.called
+    logger.log.assert_called_with('story-resolve', 'args', 'args')
+    assert result == 'args'
 
 
 def test_command_arguments_list(patch, story):
     patch.object(Stories, 'resolve', return_value='something')
-    result = story.command_arguments_list([{'string': 'string'}])
-    Stories.resolve.assert_called_with({'string': 'string'})
+    obj = {'$OBJECT': 'string', 'string': 'string'}
+    result = story.command_arguments_list([obj])
+    Stories.resolve.assert_called_with(obj)
     assert result == ['something']
 
 
@@ -145,15 +128,14 @@ def test_command_arguments_list_none(patch, story):
     Ensures that when an argument resolves to None it is used literally
     """
     patch.object(Stories, 'resolve', return_value='literal')
-    result = story.command_arguments_list([{'paths': ['literal']}])
-    Stories.resolve.assert_called_with({'paths': ['literal']})
+    obj = {'$OBJECT': 'path', 'paths': ['literal']}
+    result = story.command_arguments_list([obj])
+    Stories.resolve.assert_called_with(obj)
     assert result == ['literal']
 
 
 def test_stories_resolve_command(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list',
-                         'command_arguments_string'])
-    Stories.command_arguments_string.return_value = '{}'
+    patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.command_arguments_list.return_value = ['argument']
     line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}
     result = story.resolve_command(line)
@@ -173,16 +155,11 @@ def test_stories_resolve_command_log(patch, logger, story):
 
 
 def test_stories_resolve_command_none(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list',
-                         'container_arguments_string'])
+    patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.is_command.return_value = None
     line = {'container': 'container', 'args': ['command', 'arg']}
-    result = story.resolve_command(line)
+    story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
-    Stories.container_arguments_string.assert_called_with(line['args'])
-    arguments = Stories.command_arguments_list()
-    Stories.container_arguments_string().format.assert_called_with(*arguments)
-    assert result == Stories.container_arguments_string().format()
 
 
 def test_stories_start_line(patch, story):

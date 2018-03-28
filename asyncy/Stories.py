@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
+from json import dumps
 
 from storyscript.resolver import Resolver
 
@@ -85,51 +86,52 @@ class Stories:
         """
         if type(argument) is str:
             return None
+
         if argument['$OBJECT'] == 'path':
-            path = argument['paths'][0]
-            if path in self.containers[container]['commands']:
-                return True
+            if len(argument['paths']) == 1:
+                path = argument['paths'][0]
+                if path in self.containers[container]['commands']:
+                    return True
 
     def resolve(self, args):
         """
         Resolves line arguments to their real value
         """
+        if isinstance(args, (str, int, float)):
+            # This argument is a flag or number: "-f", "--flag", 1
+            self.logger.log('story-resolve', args, args)
+            return str(args)
         result = Resolver.resolve(args, self.context)
         self.logger.log('story-resolve', args, result)
-        return result
 
-    def argument_format_type(self, argument_type):
-        if argument_type == 'string':
-            return '"{}"'
-        return '{}'
+        # encode the data
+        if result is None or isinstance(result, (list, dict)):
+            result = dumps(result)
 
-    def command_arguments_string(self, container, command):
-        string = []
-        commands = self.containers[container]['commands']
-        for argument in commands[command]['args']:
-            string.append(self.argument_format_type(argument['type']))
-        return ' '.join(string)
-
-    def _resolve_or_literal(self, argument):
-        resolved = self.resolve(argument)
-        if resolved:
-            return resolved
-        return argument['paths'][0]
+        # escape it for shell
+        return "'%s'" % result.replace("'", "\'")
 
     def command_arguments_list(self, arguments):
         results = []
-        for argument in arguments:
-            results.append(self._resolve_or_literal(argument))
-        return results
 
-    def container_arguments_string(self, arguments):
-        string = []
-        for argument in arguments:
-            if type(argument) is dict:
-                string.append(self.argument_format_type(argument['$OBJECT']))
-            else:
-                string.append('{}')
-        return ' '.join(string)
+        if arguments:
+            arg = arguments[0]
+            # if first path is undefined assume command
+            if (
+                isinstance(arg, dict) and
+                arg['$OBJECT'] == 'path' and
+                len(arg['paths']) == 1
+            ):
+                res = self.resolve(arg)
+                if res == "'null'":
+                    results.append(arg['paths'][0])
+                    arguments.pop(0)
+
+        if arguments:
+            for argument in arguments:
+                results.append(self.resolve(argument))
+
+        return results
 
     def resolve_command(self, line):
         """
@@ -140,16 +142,14 @@ class Stories:
             args = self.command_arguments_list(line['args'])
             self.logger.log(args[0], args[1])
             return 'log'
+
         if self.is_command(line['container'], line['args'][0]):
             command = line['args'][0]['paths'][0]
-            arguments_string = self.command_arguments_string(line['container'],
-                                                             command)
             arguments_list = self.command_arguments_list(line['args'][1:])
-            string = '{} {}'.format(command, arguments_string)
-            return string.format(*arguments_list)
-        arguments_string = self.container_arguments_string(line['args'])
-        arguments_list = self.command_arguments_list(line['args'])
-        return arguments_string.format(*arguments_list)
+            arguments_list.insert(0, command)
+            return ' '.join(arguments_list)
+
+        return ' '.join(self.command_arguments_list(line['args']))
 
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}

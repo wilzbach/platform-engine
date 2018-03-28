@@ -38,7 +38,8 @@ def test_story_execute(patch, config, logger, story):
 
 
 def test_story_execute_next(patch, config, logger, story):
-    patch.object(Handler, 'run', return_value='next.story')
+    patch.object(Handler, 'run',
+                 return_value='next.story')
     patch.object(Stories, 'first_line')
     patch.object(Story, 'run', return_value=None)
     Story.execute(config, logger, story)
