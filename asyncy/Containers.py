@@ -48,7 +48,13 @@ class Containers:
             kwargs['volumes'] = {self.volume.name: {'bind': '/tmp/cache',
                                                     'mode': 'rw'}}
         self.logger.log('container-start', self.name)
-        self.output = self.client.containers.run(self.image, **kwargs)
+        try:
+            self.output = self.client.containers.run(self.image, **kwargs)
+        except docker.errors.NotFound:
+            # retry the container
+            self.logger.log_raw('error', 'Error finding container, trying again.')
+            self.output = self.client.containers.run(self.image, **kwargs)
+
         self.logger.log('container-end', self.name)
 
     def result(self):
