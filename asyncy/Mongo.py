@@ -47,6 +47,8 @@ class Mongo:
             return None
 
     def lines(self, narration, lines):
+        if narration is None:
+            return None
         narration_ref = self.ref('narrations', narration.inserted_id)
         documents = []
         for line, data in lines.items():

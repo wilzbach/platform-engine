@@ -85,6 +85,10 @@ def test_results_lines(patch, magic, client, mongo):
     assert result == client().asyncy.lines.insert_many()
 
 
+def test_results_lines_no_narration(client, mongo):
+    assert mongo.lines(None, 'lines') is None
+
+
 def test_results_lines_no_output(patch, magic, client, mongo):
     patch.object(Mongo, 'ref', return_value=100)
     lines = {'1': {'start': '1', 'end': '2'}}
