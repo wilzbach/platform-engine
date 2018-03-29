@@ -2,6 +2,7 @@
 import time
 
 from bson import DBRef
+from bson.errors import InvalidDocument
 
 import pymongo
 
@@ -40,7 +41,10 @@ class Mongo:
             'start': start,
             'end': end
         }
-        return self.mongo.asyncy.narrations.insert_one(document)
+        try:
+            return self.mongo.asyncy.narrations.insert_one(document)
+        except InvalidDocument:
+            return None
 
     def lines(self, narration, lines):
         narration_ref = self.ref('narrations', narration.inserted_id)

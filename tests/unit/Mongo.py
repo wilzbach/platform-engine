@@ -4,6 +4,7 @@ import time
 from asyncy.Mongo import Mongo
 
 from bson import DBRef
+from bson.errors import InvalidDocument
 
 import pymongo
 
@@ -59,6 +60,13 @@ def test_results_narration(patch, story, client, mongo):
     }
     client().asyncy.narrations.insert_one.assert_called_with(expected)
     assert result == client().asyncy.narrations.insert_one()
+
+
+def test_results_narration_invalid(patch, story, client, mongo):
+    patch.object(Mongo, 'ref')
+    client().asyncy.narrations.insert_one.side_effect = InvalidDocument
+    story.environment = 'environment'
+    assert mongo.narration(1, story, 'master', '1', '2') is None
 
 
 def test_results_lines(patch, magic, client, mongo):
