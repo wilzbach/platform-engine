@@ -11,7 +11,8 @@ class Adapter(LoggerAdapter):
     def process(self, message, kwargs):
         app = self.extra['app']
         story = self.extra['story']
-        result = '{}::{} {}'.format(app, story, message)
+        shards = message.split('=>')
+        result = '{}::{} => {}'.format(app, story, shards[-1].strip())
         return result, kwargs
 
 

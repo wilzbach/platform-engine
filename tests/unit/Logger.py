@@ -23,7 +23,13 @@ def test_adapter():
 def test_adapter_process():
     adapter = Adapter('logger', {'story': 'test.story', 'app': 1})
     result = adapter.process('message', {})
-    assert result == ('1::test.story message', {})
+    assert result == ('1::test.story => message', {})
+
+
+def test_adapter_process_reset():
+    adapter = Adapter('logger', {'story': 'test.story', 'app': 1})
+    result = adapter.process('1::old.story => message', {})
+    assert result == ('1::test.story => message', {})
 
 
 def test_logger_init(logger, config):
