@@ -104,7 +104,10 @@ class Stories:
             return arg
 
         # patch for $OBJECT=file
-        is_file = (isinstance(arg, dict) and arg['$OBJECT'] == 'file')
+        is_file = (
+            isinstance(arg, dict) and
+            (arg['$OBJECT'] == 'file' or arg.get('type') == 'file')
+        )
         # end patch
 
         result = Resolver.resolve(arg, self.context)
