@@ -48,4 +48,11 @@ To run the engine in a testing environment:
     - ``export api_url=localhost``
 2. Start celery with ``celery worker -A asyncy.CeleryTasks -E ``
 3. Start a mock http server that answers to GET requests against http://localhost/apps/:app_id/stories/:story_name with a mock, but valid JSON story document
-4. Run ``asyncy run story_name app_id`` to run the story
+4. Run ``asyncy server`` to start the engine
+5. Run ``asyncy-cli run story_name app_id`` to run the story
+
+Generating gRPC python code from the proto files
+------------------------------------------
+
+To generate the python code from the proto files, run the following:
+``python -m grpc_tools.protoc -Iprotos --python_out=. --grpc_python_out=. protos/asyncy/rpc/http_proxy.proto``

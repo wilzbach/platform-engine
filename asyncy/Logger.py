@@ -33,6 +33,9 @@ class Logger:
         ('lexicon-wait', 'debug', 'Processing line {} with "wait" method'),
         ('story-execution', 'debug', 'Received line "{}" from handler'),
         ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
+        ('rpc-request-run-story', 'debug', 'Received run request for story {} from app {} via RPC'),
+        ('service-init', 'info', 'Starting Asyncy version {}'),
+        ('rpc-init', 'info', 'RPC server bound to port {}'),
         ('lexicon-unless', 'debug',
          'Processing line {} with "unless" method against context {}'),
     ]
