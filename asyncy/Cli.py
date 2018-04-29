@@ -44,6 +44,6 @@ class Cli:
         channel = grpc.insecure_channel(host + ':' + port)
         stub = http_proxy_pb2_grpc.HttpProxyStub(channel)
         req = http_proxy_pb2.Request(story_name=story, app_id=app_id, block=block,
-                                     start=start, context=context, environment=environment)
+                                     start=start, json_context=context, json_environment=environment)
         res = stub.RunStory(req)
         print(res.status_line)

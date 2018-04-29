@@ -28,10 +28,10 @@ class Service(HttpProxyServicer):
         environment = {}
         context = {}
 
-        if ujson.loads(request.json_environment) is not None:
+        if request.json_environment is not None and request.json_environment is not "":
             environment = ujson.loads(request.json_environment)
 
-        if ujson.loads(request.json_context) is not None:
+        if request.json_context is not None and request.json_context is not "":
             context = ujson.loads(request.json_context)
 
         Story.run(config, logger, app_id=request.app_id, story_name=request.story_name,
