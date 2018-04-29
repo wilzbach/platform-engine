@@ -20,6 +20,10 @@ message Request {
     string method = 5; // POST/GET/etc
     string hostname = 6;
     string app_id = 7;
+    string json_context = 8;
+    string json_environment = 9;
+    string block = 10;
+    string start = 11;
 }
 
 message Header {

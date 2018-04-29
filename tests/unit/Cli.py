@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from asyncy.CeleryTasks import process_story
-from asyncy.Cli import Cli
+from unittest.mock import Mock
 
+import grpc
 from click.testing import CliRunner
-
 from pytest import fixture
 
-import ujson
+from asyncy.Cli import Cli
+from asyncy.rpc import http_proxy_pb2_grpc, http_proxy_pb2
 
 
 @fixture
@@ -19,46 +19,67 @@ def kwargs():
     return {'block': None, 'context': None, 'environment': None, 'start': None}
 
 
-def test_cli_run(patch, runner, kwargs):
-    patch.object(process_story, 'delay')
-    result = runner.invoke(Cli.run, ['story', 'app_id'])
-    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+@fixture
+def run_story_stub(patch):
+    patch.object(grpc, "insecure_channel")
+    patch.init(http_proxy_pb2_grpc.HttpProxyStub)
+    stub = http_proxy_pb2_grpc.HttpProxyStub(channel=None)
+    mock = Mock()
+    type(stub).RunStory = mock.method()
+    patch.object(http_proxy_pb2_grpc.HttpProxyStub, '__init__', return_value=None)
+    patch.object(http_proxy_pb2.Request, "__init__", return_value=None)
+
+    return stub
+
+
+def test_cli_run(patch, runner, kwargs, run_story_stub):
+    result = runner.invoke(Cli.run, ["story_name", "app_id"])
+    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story_name",
+                                                       environment=None, context=None,
+                                                       block=None, start=None)
+    run_story_stub.RunStory.assert_called_once()
     assert result.exit_code == 0
 
 
-def test_cli_run_block(patch, runner, kwargs):
-    patch.object(process_story, 'delay')
+def test_cli_run_host(patch, runner, kwargs, run_story_stub):
+    result = runner.invoke(Cli.run, ["--host", "myapp.com", "story_name", "app_id"])
+    grpc.insecure_channel.assert_called_with("myapp.com:32781")
+    assert result.exit_code == 0
+
+
+def test_cli_run_port(patch, runner, kwargs, run_story_stub):
+    result = runner.invoke(Cli.run, ["--port", "1234", "story_name", "app_id"])
+    grpc.insecure_channel.assert_called_with("localhost:1234")
+    assert result.exit_code == 0
+
+
+def test_cli_run_block(patch, runner, kwargs, run_story_stub):
     kwargs['block'] = 'line'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--block', 'line'])
-    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+
+    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story", **kwargs)
     assert result.exit_code == 0
 
 
-def test_cli_run_start(patch, runner, kwargs):
-    patch.object(process_story, 'delay')
+def test_cli_run_start(patch, runner, kwargs, run_story_stub):
     kwargs['start'] = 'line'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--start', 'line'])
-    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+
+    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story", **kwargs)
     assert result.exit_code == 0
 
 
-def test_cli_run_context(patch, runner, kwargs):
-    patch.object(ujson, 'loads')
-    patch.object(process_story, 'delay')
-    kwargs['context'] = ujson.loads()
+def test_cli_run_context(patch, runner, kwargs, run_story_stub):
+    kwargs['context'] = '{"variable": "value"}'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--context',
                                      '{"variable": "value"}'])
-    ujson.loads.assert_called_with('{"variable": "value"}')
-    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story", **kwargs)
     assert result.exit_code == 0
 
 
-def test_cli_run_environment(patch, runner, kwargs):
-    patch.object(ujson, 'loads')
-    patch.object(process_story, 'delay')
-    kwargs['environment'] = ujson.loads()
+def test_cli_run_environment(patch, runner, kwargs, run_story_stub):
+    kwargs['environment'] = '{"variable": "value"}'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--environment',
                                      '{"variable": "value"}'])
-    ujson.loads.assert_called_with('{"variable": "value"}')
-    process_story.delay.assert_called_with('app_id', 'story', **kwargs)
+    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story", **kwargs)
     assert result.exit_code == 0

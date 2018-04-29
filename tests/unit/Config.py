@@ -17,9 +17,7 @@ def config():
 
 
 def test_config():
-    broker_url = 'amqp://rabbitmq:rabbitmq@rabbitmq:5672//'
     assert Config.defaults['mongo'] == 'mongodb://mongodb:27017/'
-    assert Config.defaults['broker'] == broker_url
     assert Config.defaults['api_url'] == 'api-private:8080'
     assert Config.defaults['logger_name'] == 'asyncy'
     assert Config.defaults['logger_level'] == 'warning'

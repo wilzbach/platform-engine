@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from logging import LoggerAdapter
 
-from asyncy.Logger import Adapter, Logger
-
 from frustum import Frustum
-
 from logdna import LogDNAHandler
-
 from pytest import fixture
+
+from asyncy.Logger import Adapter, Logger
 
 
 @fixture
@@ -97,6 +95,26 @@ def test_logger_events_story_resolve(logger):
 def test_logger_events_story_unless(logger):
     message = 'Processing line {} with "unless" method against context {}'
     assert logger.events[11] == ('lexicon-unless', 'debug', message)
+
+
+def test_logger_events_story_wait_err(logger):
+    message = 'Starting Asyncy version {}'
+    assert logger.events[12] == ('service-init', 'info', message)
+
+
+def test_logger_events_rpc_init(logger):
+    message = 'RPC server bound to port {}'
+    assert logger.events[13] == ('rpc-init', 'info', message)
+
+
+def test_logger_events_rpc_run_story(logger):
+    message = 'Received run request for story {} from app {} via RPC'
+    assert logger.events[14] == ('rpc-request-run-story', 'debug', message)
+
+
+def test_logger_events_story_wait_err(logger):
+    message = 'Cannot process line {} with "wait" method (unsupported)!'
+    assert logger.events[15] == ('lexicon-wait-err', 'error', message)
 
 
 def test_logger_logdna_handler(patch, logger):

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-from celery import current_app
 
-import dateparser
-
-from ..utils import Dict
 from ..Containers import Containers
 
 
@@ -65,11 +61,7 @@ class Lexicon:
         output = line['args'][0]
         for item in _list:
             story.context[output] = item
-            kwargs = {'environment': story.environment,
-                      'context': story.context, 'block': line['ln']}
-            current_app.send_task('asyncy.CeleryTasks.process_story',
-                                  args=[story.app_id, story.name],
-                                  kwargs=kwargs, delay=0)
+            Lexicon.run(logger, story, line['ln'])
         return line['exit']
 
     @staticmethod
@@ -81,14 +73,15 @@ class Lexicon:
 
     @staticmethod
     def wait(logger, story, line):
-        logger.log('lexicon-wait', line)
-        waiting_time = story.resolve(line['args'][0])
-        eta = dateparser.parse('in {}'.format(waiting_time))
-        kwargs = {'block': line['ln'], 'environment': story.environment}
-        current_app.send_task('asyncy.CeleryTasks.process_story',
-                              args=[story.app_id, story.name], kwargs=kwargs,
-                              eta=eta)
-        next_line = story.next_line(line['exit'])
-        story.end_line(line['ln'])
-        if next_line:
-            return next_line['ln']
+        logger.log('lexicon-wait-err', line)
+        raise NotImplementedError
+        # waiting_time = story.resolve(line['args'][0])
+        # eta = dateparser.parse('in {}'.format(waiting_time))
+        # kwargs = {'block': line['ln'], 'environment': story.environment}
+        # current_app.send_task('asyncy.CeleryTasks.process_story',
+        #                       args=[story.app_id, story.name], kwargs=kwargs,
+        #                       eta=eta)
+        # next_line = story.next_line(line['exit'])
+        # story.end_line(line['ln'])
+        # if next_line:
+        #     return next_line['ln']

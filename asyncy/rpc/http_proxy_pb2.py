@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='asyncy/rpc/http_proxy.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x1b\x61syncy/rpc/http_proxy.proto\"W\n\x08Response\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x13\n\x0bstatus_line\x18\x02 \x01(\t\x12\x0c\n\x04\x62ody\x18\x03 \x01(\x0c\x12\x18\n\x07headers\x18\x04 \x03(\x0b\x32\x07.Header\"\x85\x01\n\x07Request\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x12\n\nstory_name\x18\x02 \x01(\t\x12\x18\n\x07headers\x18\x03 \x03(\x0b\x32\x07.Header\x12\x0c\n\x04\x62ody\x18\x04 \x01(\x0c\x12\x0e\n\x06method\x18\x05 \x01(\t\x12\x10\n\x08hostname\x18\x06 \x01(\t\x12\x0e\n\x06\x61pp_id\x18\x07 \x01(\t\"$\n\x06Header\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t2.\n\tHttpProxy\x12!\n\x08RunStory\x12\x08.Request\x1a\t.Response\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x1b\x61syncy/rpc/http_proxy.proto\"W\n\x08Response\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x13\n\x0bstatus_line\x18\x02 \x01(\t\x12\x0c\n\x04\x62ody\x18\x03 \x01(\x0c\x12\x18\n\x07headers\x18\x04 \x03(\x0b\x32\x07.Header\"\xd3\x01\n\x07Request\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x12\n\nstory_name\x18\x02 \x01(\t\x12\x18\n\x07headers\x18\x03 \x03(\x0b\x32\x07.Header\x12\x0c\n\x04\x62ody\x18\x04 \x01(\x0c\x12\x0e\n\x06method\x18\x05 \x01(\t\x12\x10\n\x08hostname\x18\x06 \x01(\t\x12\x0e\n\x06\x61pp_id\x18\x07 \x01(\t\x12\x14\n\x0cjson_context\x18\x08 \x01(\t\x12\x18\n\x10json_environment\x18\t \x01(\t\x12\r\n\x05\x62lock\x18\n \x01(\t\x12\r\n\x05start\x18\x0b \x01(\t\"$\n\x06Header\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t2.\n\tHttpProxy\x12!\n\x08RunStory\x12\x08.Request\x1a\t.Response\"\x00\x62\x06proto3')
 )
 
 
@@ -133,6 +133,34 @@ _REQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='json_context', full_name='Request.json_context', index=7,
+      number=8, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='json_environment', full_name='Request.json_environment', index=8,
+      number=9, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='block', full_name='Request.block', index=9,
+      number=10, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='start', full_name='Request.start', index=10,
+      number=11, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -146,7 +174,7 @@ _REQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=121,
-  serialized_end=254,
+  serialized_end=332,
 )
 
 
@@ -183,8 +211,8 @@ _HEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=256,
-  serialized_end=292,
+  serialized_start=334,
+  serialized_end=370,
 )
 
 _RESPONSE.fields_by_name['headers'].message_type = _HEADER
@@ -223,8 +251,8 @@ _HTTPPROXY = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=294,
-  serialized_end=340,
+  serialized_start=372,
+  serialized_end=418,
   methods=[
   _descriptor.MethodDescriptor(
     name='RunStory',

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import pytest
+
 from asyncy.Containers import Containers
 from asyncy.processing import Lexicon
-
-from celery import current_app
 
 import dateparser
 
@@ -99,7 +99,7 @@ def test_lexicon_unless_false(logger, story, line):
 
 
 def test_lexicon_for_loop(patch, logger, story, line):
-    patch.object(current_app, 'send_task')
+    patch.object(Lexicon, 'run')
     line['args'] = [
         'element',
         {'$OBJECT': 'path', 'paths': ['elements']}
@@ -108,12 +108,7 @@ def test_lexicon_for_loop(patch, logger, story, line):
     story.resolve.return_value = ['one']
     story.environment = {}
     result = Lexicon.for_loop(logger, story, line)
-    task_name = 'asyncy.CeleryTasks.process_story'
-    args = [story.app_id, story.name]
-    kwargs = {'environment': story.environment, 'context': story.context,
-              'block': line['ln']}
-    current_app.send_task.assert_called_with(task_name, args=args,
-                                             kwargs=kwargs, delay=0)
+    Lexicon.run.assert_called_with(logger, story, line['ln'])
     assert result == line['exit']
 
 
@@ -126,19 +121,21 @@ def test_lexicon_next(logger, story, line, string):
 
 
 def test_lexicon_wait(patch, logger, story, line):
-    patch.object(current_app, 'send_task')
-    patch.object(dateparser, 'parse')
-    story.environment = {}
-    result = Lexicon.wait(logger, story, line)
-    story.resolve.assert_called_with(line['args'][0])
-    logger.log.assert_called_with('lexicon-wait', line)
-    dateparser.parse.assert_called_with('in {}'.format(story.resolve()))
-    task_name = 'asyncy.CeleryTasks.process_story'
-    args = [story.app_id, story.name]
-    kwargs = {'block': '1', 'environment': story.environment}
-    current_app.send_task.assert_called_with(task_name, args=args,
-                                             kwargs=kwargs,
-                                             eta=dateparser.parse())
-    story.next_line.assert_called_with(line['exit'])
-    story.end_line.assert_called_with(line['ln'])
-    assert result == story.next_line()['ln']
+    with pytest.raises(NotImplementedError):
+        Lexicon.wait(logger, story, line)
+    # patch.object(current_app, 'send_task')
+    # patch.object(dateparser, 'parse')
+    # story.environment = {}
+    # result = Lexicon.wait(logger, story, line)
+    # story.resolve.assert_called_with(line['args'][0])
+    # logger.log.assert_called_with('lexicon-wait', line)
+    # dateparser.parse.assert_called_with('in {}'.format(story.resolve()))
+    # task_name = 'asyncy.CeleryTasks.process_story'
+    # args = [story.app_id, story.name]
+    # kwargs = {'block': '1', 'environment': story.environment}
+    # current_app.send_task.assert_called_with(task_name, args=args,
+    #                                          kwargs=kwargs,
+    #                                          eta=dateparser.parse())
+    # story.next_line.assert_called_with(line['exit'])
+    # story.end_line.assert_called_with(line['ln'])
+    # assert result == story.next_line()['ln']

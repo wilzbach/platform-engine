@@ -29,8 +29,8 @@ setup(
     ],
     setup_requires=['pytest-runner'],
     install_requires=[
+        'grpcio>=1.11.0',
         'grpcio-tools>=1.11.0',
-        'celery>=4.1.0',
         'click>=6.7',
         'cryptography>=2.1.4',
         'dateparser>=0.7.0',
