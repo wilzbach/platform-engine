@@ -16,7 +16,7 @@ def runner():
 
 @fixture
 def kwargs():
-    return {'block': None, 'context': None, 'environment': None, 'start': None}
+    return {'block': None, 'json_context': None, 'json_environment': None, 'start': None}
 
 
 @fixture
@@ -34,9 +34,7 @@ def run_story_stub(patch):
 
 def test_cli_run(patch, runner, kwargs, run_story_stub):
     result = runner.invoke(Cli.run, ["story_name", "app_id"])
-    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story_name",
-                                                       environment=None, context=None,
-                                                       block=None, start=None)
+    http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story_name", **kwargs)
     run_story_stub.RunStory.assert_called_once()
     assert result.exit_code == 0
 
@@ -70,7 +68,7 @@ def test_cli_run_start(patch, runner, kwargs, run_story_stub):
 
 
 def test_cli_run_context(patch, runner, kwargs, run_story_stub):
-    kwargs['context'] = '{"variable": "value"}'
+    kwargs['json_context'] = '{"variable": "value"}'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--context',
                                      '{"variable": "value"}'])
     http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story", **kwargs)
@@ -78,7 +76,7 @@ def test_cli_run_context(patch, runner, kwargs, run_story_stub):
 
 
 def test_cli_run_environment(patch, runner, kwargs, run_story_stub):
-    kwargs['environment'] = '{"variable": "value"}'
+    kwargs['json_environment'] = '{"variable": "value"}'
     result = runner.invoke(Cli.run, ['story', 'app_id', '--environment',
                                      '{"variable": "value"}'])
     http_proxy_pb2.Request.__init__.assert_called_with(app_id="app_id", story_name="story", **kwargs)
