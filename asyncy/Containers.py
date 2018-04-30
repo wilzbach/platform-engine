@@ -52,7 +52,8 @@ class Containers:
             self.output = self.client.containers.run(self.image, **kwargs)
         except docker.errors.NotFound:
             # retry the container
-            self.logger.log_raw('error', 'Error finding container, trying again.')
+            self.logger.log_raw('error',
+                                'Error finding container, trying again.')
             self.output = self.client.containers.run(self.image, **kwargs)
 
         self.logger.log('container-end', self.name)

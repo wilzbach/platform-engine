@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from logging import LoggerAdapter
 
-from frustum import Frustum
-from logdna import LogDNAHandler
-from pytest import fixture
-
 from asyncy.Logger import Adapter, Logger
+
+from frustum import Frustum
+
+from logdna import LogDNAHandler
+
+from pytest import fixture
 
 
 @fixture
@@ -97,7 +99,7 @@ def test_logger_events_story_unless(logger):
     assert logger.events[11] == ('lexicon-unless', 'debug', message)
 
 
-def test_logger_events_story_wait_err(logger):
+def test_logger_events_service_init(logger):
     message = 'Starting Asyncy version {}'
     assert logger.events[12] == ('service-init', 'info', message)
 

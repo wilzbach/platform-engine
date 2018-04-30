@@ -50,7 +50,7 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        asyncy-cli=asyncy.Cli:Cli.main
-        asyncy=asyncy.Service:Service.main
+        asyncy-engine=asyncy.Cli:Cli.main
+        asyncy-server=asyncy.Service:Service.main
     """
 )

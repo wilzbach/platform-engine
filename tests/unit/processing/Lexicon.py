@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-import pytest
-
 from asyncy.Containers import Containers
 from asyncy.processing import Lexicon
 
-import dateparser
-
+import pytest
 from pytest import fixture, mark
 
 
