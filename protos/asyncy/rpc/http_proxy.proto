@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+service HttpProxy {
+    rpc RunStory (Request) returns (Response) {
+    }
+}
+
+message Response {
+    int32 status = 1;
+    string status_line = 2;
+    bytes body = 3;
+    repeated Header headers = 4;
+}
+
+message Request {
+    string path = 1;
+    string story_name = 2;
+    repeated Header headers = 3;
+    bytes body = 4;
+    string method = 5; // POST/GET/etc
+    string hostname = 6;
+    string app_id = 7;
+    string json_context = 8;
+    string json_environment = 9;
+    string block = 10;
+    string start = 11;
+}
+
+message Header {
+    string key = 1;
+    string value = 2;
+}
