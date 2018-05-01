@@ -17,11 +17,6 @@ class Story:
         Saves the narration and the results for each line.
         """
         logger.log('story-save', story.name, story.app_id)
-        mongo = Handler.init_mongo(config.mongo)
-        mongo_story = mongo.story(story.name, story.app_id)
-        narration = mongo.narration(mongo_story, story, story.version, start,
-                                    time.time())
-        mongo.lines(narration, story.results)
 
     @staticmethod
     def execute(config, logger, story):
@@ -46,5 +41,4 @@ class Story:
         story.get()
         story.prepare(environment, context, start, block)
         cls.execute(config, logger, story)
-        cls.save(config, logger, story, start_time)
         logger.log('story-end', story_name, app_id, story_id)

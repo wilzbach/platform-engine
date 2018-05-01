@@ -37,7 +37,6 @@ setup(
         'docker>=2.7.0',
         'frustum>=0.0.1',
         'logdna>=1.2.5',
-        'pymongo>=3.6.0',
         'requests>=2.18.4',
         'storyscript>=0.0.7',
         'ujson>=1.35'

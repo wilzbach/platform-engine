@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 from .Lexicon import Lexicon
-from ..Mongo import Mongo
 
 
 class Handler:
     """
     Handles various task-related things.
     """
-
-    @staticmethod
-    def init_mongo(mongo_url):
-        return Mongo(mongo_url)
 
     @staticmethod
     def run(logger, line_number, story):

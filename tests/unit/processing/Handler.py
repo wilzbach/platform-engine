@@ -1,15 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.Mongo import Mongo
 from asyncy.processing import Handler, Lexicon
 
 from pytest import fixture
-
-
-def test_handler_init_mongo(patch):
-    patch.object(Mongo, '__init__', return_value=None)
-    mongo = Handler.init_mongo('mongo_url')
-    Mongo.__init__.assert_called_with('mongo_url')
-    assert isinstance(mongo, Mongo)
 
 
 def test_handler_run(patch, logger, story):

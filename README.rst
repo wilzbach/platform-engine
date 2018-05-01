@@ -10,9 +10,6 @@ Installing
 See https://github.com/asyncy/stack-compose to install in production.
 
 
-For testing, you will need MongoDB. Then you can install with::
-
-
     python setup.py install
 
 
@@ -31,7 +28,6 @@ Configuration options
 The engine loads its configuration options from the environment. Defaults are
 provided::
 
-    export mongo=mongodb://mongodb:27017/
     export api_url=api-private:8080
     export logger_name=asyncy
     export loggger_level=warning
@@ -42,7 +38,6 @@ To run the engine in a testing environment:
 
 1. Install the engine in a virtualenv
 2. Set testing environment variables:
-    - ``export mongo=mongodb://localhost:27017/``
     - ``export api_url=localhost``
 3. Start a mock http server that answers to GET requests against http://localhost/apps/app_id/stories/story_name with a mock, but valid JSON story document
 4. Run ``asyncy server`` to start the engine

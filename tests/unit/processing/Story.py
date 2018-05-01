@@ -16,16 +16,9 @@ def test_story_story(patch, config, logger):
 
 def test_story_save(patch, magic, config, logger, story):
     story.version = 'version'
-    mongo = magic()
-    patch.object(Handler, 'init_mongo', return_value=mongo)
     patch.object(time, 'time')
     Story.save(config, logger, story, 1)
     logger.log.assert_called_with('story-save', story.name, story.app_id)
-    Handler.init_mongo.assert_called_with(config.mongo)
-    mongo.story.assert_called_with(story.name, story.app_id)
-    mongo.narration.assert_called_with(mongo.story(), story, story.version, 1,
-                                       time.time())
-    mongo.lines.assert_called_with(mongo.narration(), story.results)
 
 
 def test_story_execute(patch, config, logger, story):
