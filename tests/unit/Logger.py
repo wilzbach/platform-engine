@@ -5,8 +5,6 @@ from asyncy.Logger import Adapter, Logger
 
 from frustum import Frustum
 
-from logdna import LogDNAHandler
-
 from pytest import fixture
 
 
@@ -36,7 +34,6 @@ def test_logger_init(logger, config):
     name = config.logger_name
     level = config.logger_level
     Frustum.__init__.assert_called_with(name, level)
-    assert logger.logdna_key == config.logdna_key
 
 
 def test_logger_events_container_start(logger):
@@ -119,23 +116,6 @@ def test_logger_events_story_wait_err(logger):
     assert logger.events[15] == ('lexicon-wait-err', 'error', message)
 
 
-def test_logger_logdna_handler(patch, logger):
-    patch.init(LogDNAHandler)
-    result = logger.logdna_handler('key', {})
-    LogDNAHandler.__init__.assert_called_with('key', {})
-    assert isinstance(result, LogDNAHandler)
-
-
-def test_logger_add_logdna(patch, magic, logger):
-    patch.object(Logger, 'logdna_handler')
-    logger.frustum = magic()
-    logger.add_logdna()
-    options = {'app': 'asyncy_engine'}
-    Logger.logdna_handler.assert_called_with(logger.logdna_key, options)
-    handler = Logger.logdna_handler()
-    logger.frustum.logger.addHandler.assert_called_with(handler)
-
-
 def test_logger_adapter(patch, magic, logger):
     patch.init(Adapter)
     logger.frustum = magic()
@@ -147,12 +127,10 @@ def test_logger_adapter(patch, magic, logger):
 
 def test_logger_start(patch, logger):
     patch.many(Frustum, ['register_event', 'start_logger'])
-    patch.object(logger, 'add_logdna')
     logger.events = [('event', 'level', 'message')]
     logger.start()
     Frustum.register_event.assert_called_with('event', 'level', 'message')
     Frustum.start_logger.assert_called_with()
-    assert logger.add_logdna.call_count == 1
 
 
 def test_logger_adapt(patch, logger):

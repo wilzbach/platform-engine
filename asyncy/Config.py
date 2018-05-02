@@ -7,8 +7,7 @@ class Config:
     defaults = {
         'api_url': 'api-private:8080',
         'logger_name': 'asyncy',
-        'logger_level': 'warning',
-        'logdna_key': 'ingestion_key'
+        'logger_level': 'warning'
     }
 
     def __init__(self):
