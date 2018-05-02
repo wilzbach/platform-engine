@@ -6,7 +6,6 @@ from json import JSONDecodeError, dumps, loads
 from storyscript.resolver import Resolver
 
 from .utils import Dict
-from .utils import Http
 
 
 class Stories:
@@ -23,17 +22,6 @@ class Stories:
         self.containers = None
         self.repository = None
         self.version = None
-
-    def get(self):
-        url_template = 'http://{}/apps/{}/stories/{}'
-        url = url_template.format(self.config.api_url, self.app_id, self.name)
-        story = Http.get(url, json=True)
-        self.tree = story['tree']
-        self.environment = story['environment']
-        self.context = story['context']
-        self.containers = story['containers']
-        self.repository = story['repository']
-        self.version = story['version']
 
     def line(self, line_number):
         return self.tree['script'][line_number]

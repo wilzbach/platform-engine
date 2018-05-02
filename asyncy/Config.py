@@ -5,7 +5,6 @@ import os
 class Config:
 
     defaults = {
-        'api_url': 'api-private:8080',
         'logger_name': 'asyncy',
         'logger_level': 'warning'
     }

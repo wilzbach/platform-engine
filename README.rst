@@ -28,7 +28,6 @@ Configuration options
 The engine loads its configuration options from the environment. Defaults are
 provided::
 
-    export api_url=api-private:8080
     export logger_name=asyncy
     export loggger_level=warning
 

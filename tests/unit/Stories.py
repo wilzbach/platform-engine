@@ -2,7 +2,6 @@
 import time
 
 from asyncy.Stories import Stories
-from asyncy.utils import Http
 
 from pytest import fixture, mark
 
@@ -15,19 +14,6 @@ def test_stories_init(config, logger, story):
     assert story.config == config
     assert story.logger == logger
     assert story.results == {}
-
-
-def test_stories_get(patch, config, story):
-    patch.object(Http, 'get')
-    story.get()
-    url = 'http://{}/apps/1/stories/hello.story'.format(config.api_url)
-    Http.get.assert_called_with(url, json=True)
-    assert story.tree == Http.get()['tree']
-    assert story.context == Http.get()['context']
-    assert story.environment == Http.get()['environment']
-    assert story.containers == Http.get()['containers']
-    assert story.repository == Http.get()['repository']
-    assert story.version == Http.get()['version']
 
 
 def test_stories_line(magic, story):

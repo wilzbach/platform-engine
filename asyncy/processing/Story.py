@@ -38,7 +38,6 @@ class Story:
         logger.log('story-start', story_name, app_id, story_id)
         start_time = time.time()
         story = cls.story(config, logger, app_id, story_name)
-        story.get()
         story.prepare(environment, context, start, block)
         cls.execute(config, logger, story)
         cls.save(config, logger, story, start_time)

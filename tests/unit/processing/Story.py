@@ -44,7 +44,6 @@ def test_story_run(patch, config, logger):
     patch.many(Story, ['execute', 'save', 'story'])
     Story.run(config, logger, 'app_id', 'story_name')
     Story.story.assert_called_with(config, logger, 'app_id', 'story_name')
-    Story.story().get.assert_called_with()
     Story.story().prepare.assert_called_with(None, None, None, None)
     Story.execute.assert_called_with(config, logger, Story.story())
     Story.save.assert_called_with(config, logger, Story.story(), time.time())
