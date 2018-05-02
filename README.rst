@@ -17,7 +17,7 @@ Running a story
 ----------------
 You can run a story from cli with::
 
-    asyncy run hello.story 1
+    asyncy-engine run hello.story
 
 This will request a story to the API, from /apps/1/stories/hello.story and
 run it.
@@ -37,11 +37,8 @@ Testing
 To run the engine in a testing environment:
 
 1. Install the engine in a virtualenv
-2. Set testing environment variables:
-    - ``export api_url=localhost``
-3. Start a mock http server that answers to GET requests against http://localhost/apps/app_id/stories/story_name with a mock, but valid JSON story document
-4. Run ``asyncy server`` to start the engine
-5. Run ``asyncy-cli run story_name app_id`` to run the story
+2. Run ``asyncy-server start`` to start the engine
+3. Run ``asyncy-engine run story_name`` to run the story
 
 Generating gRPC python code from the proto files
 ------------------------------------------
