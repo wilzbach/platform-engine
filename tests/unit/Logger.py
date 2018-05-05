@@ -37,12 +37,12 @@ def test_logger_init(logger, config):
 
 
 def test_logger_events_container_start(logger):
-    message = 'Container {} is running'
+    message = 'Container {} is executing'
     assert logger.events[0] == ('container-start', 'info', message)
 
 
 def test_logger_events_container_end(logger):
-    message = 'Container {} has finished'
+    message = 'Container {} has finished executing'
     assert logger.events[1] == ('container-end', 'info', message)
 
 

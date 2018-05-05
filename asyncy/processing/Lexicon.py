@@ -20,7 +20,7 @@ class Lexicon:
             if next_line:
                 return next_line['ln']
             return None
-        output = Containers.run(logger, story, line['container'], command)
+        output = Containers.exec(logger, story, line['container'], command)
         story.end_line(line['ln'], output=output, assign=line.get('output'))
         next_line = story.next_line(line['ln'])
         if next_line:

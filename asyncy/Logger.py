@@ -16,8 +16,8 @@ class Adapter(LoggerAdapter):
 
 class Logger:
     events = [
-        ('container-start', 'info', 'Container {} is running'),
-        ('container-end', 'info', 'Container {} has finished'),
+        ('container-start', 'info', 'Container {} is executing'),
+        ('container-end', 'info', 'Container {} has finished executing'),
         ('story-start', 'info',
          'Start processing story "{}" for app {} with id {}'),
         ('story-save', 'info', 'Saved results of story "{}" for app {}'),
