@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import time
-from json import dumps, loads
+from json import JSONDecodeError, dumps, loads
 
 from storyscript.resolver import Resolver
 
@@ -204,7 +204,7 @@ class Stories:
             try:
                 # try to load it as json
                 output = loads(output)
-            except:
+            except JSONDecodeError:
                 # strip the string of tabs, spaces, newlines
                 output = output.strip()
 
