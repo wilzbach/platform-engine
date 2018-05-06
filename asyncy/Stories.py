@@ -17,6 +17,12 @@ class Stories:
         self.config = config
         self.logger = logger
         self.results = {}
+        self.tree = None
+        self.environment = None
+        self.context = None
+        self.containers = None
+        self.repository = None
+        self.version = None
 
     def get(self):
         url_template = 'http://{}/apps/{}/stories/{}'
@@ -221,17 +227,23 @@ class Stories:
         """
         Removes container configuration
         """
+        environment = self.environment or {}
         return dict((
             (key, value)
-            for (key, value) in self.environment.items()
+            for (key, value) in environment.items()
             if not isinstance(value, dict)
         ))
 
     def prepare(self, environment, context, start, block):
-        if environment:
-            self.environment = environment
+        if environment is None:
+            environment = {}
 
-        self.context = context or {}
+        self.environment = environment
+
+        if context is None:
+            context = {}
+
+        self.context = context
         self.context['env'] = self._reduce_environment()
 
         if start:

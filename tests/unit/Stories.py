@@ -263,13 +263,15 @@ def test_stories_prepare(story):
 
 
 def test_stories_prepare_environment(story):
-    story.prepare('environment', None, None, None)
-    assert story.environment == 'environment'
+    env = {}
+    story.prepare(env, None, None, None)
+    assert story.environment is env
 
 
 def test_stories_prepare_context(story):
-    story.prepare(None, 'context', None, None)
-    assert story.context == 'context'
+    context = {}
+    story.prepare(None, context, None, None)
+    assert story.context is context
 
 
 def test_stories_prepare_start(patch, story):
