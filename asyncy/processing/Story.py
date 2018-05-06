@@ -41,4 +41,5 @@ class Story:
         story.get()
         story.prepare(environment, context, start, block)
         cls.execute(config, logger, story)
+        cls.save(config, logger, story, start_time)
         logger.log('story-end', story_name, app_id, story_id)

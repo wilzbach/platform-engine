@@ -1,69 +1,54 @@
 # -*- coding: utf-8 -*-
 import docker
 
+from .Exceptions import DockerContainerNotFoundError, DockerError
+
+MAX_RETRIES = 3
+
 
 class Containers:
+    # Caches the container name (key) to the Container instance from docker.
+    container_cache = {}
 
-    def __init__(self, logger, containers, name):
-        self.containers = containers
-        self.name = name
-        self.image = self.alias(name)
-        self.client = docker.from_env()
-        self.env = {}
-        self.volume = None
-        self.logger = logger
+    client = docker.from_env()
 
-    def alias(self, name):
+    @classmethod
+    def exec(cls, logger, story, name, command):
         """
-        Converts a container alias to its real pull location
+        Executes a command in the given container.
+
+        Returns:
+        Output of the process.
+
+        Raises:
+        asyncy.Exceptions.DockerContainerNotFoundError:
+            When the container is not found.
+        asyncy.Exceptions.DockerError:
+            If the execution failed for an unknown reason.
         """
-        if name in self.containers:
-            return self.containers[name]['pull_url']
-        return name
+        logger.log('container-start', name)
+        environment = story.get_environment(name)
+        tries = 0
+        while tries < MAX_RETRIES:
+            tries = tries + 1
+            container = Containers.container_cache.get(name)
+            try:
+                if container is None:
+                    container = cls.client.containers.get(container_id=name)
+                    if container is None:
+                        raise DockerContainerNotFoundError(
+                            'Container not found')
+                    Containers.container_cache[name] = container
 
-    def get_image(self):
-        """
-        Pull the image if it does not exist locally
-        """
-        try:
-            self.client.images.get(self.image)
-        except docker.errors.ImageNotFound:
-            self.client.images.pull(self.image)
+                result = container.exec_run(command, environment=environment)
+                logger.log('container-end', name)
+                return result[1]  # container.exec_run returns a tuple.
+            except docker.errors.DockerException:
+                logger.log_raw('error',
+                               'Error finding container, trying again.')
+                # Remove the container from container_cache.
+                Containers.container_cache[name] = None
 
-    def make_volume(self, name):
-        try:
-            self.volume = self.client.volumes.get(name)
-        except docker.errors.NotFound:
-            self.volume = self.client.volumes.create(name)
-        self.logger.log('container-volume', name)
-
-    def summon(self, command, environment):
-        """
-        Summons the docker container to do his job.
-        """
-        self.get_image()
-        kwargs = {'command': command, 'environment': environment,
-                  'cap_drop': 'all', 'auto_remove': True}
-        if self.volume:
-            kwargs['volumes'] = {self.volume.name: {'bind': '/tmp/cache',
-                                                    'mode': 'rw'}}
-        self.logger.log('container-start', self.name)
-        try:
-            self.output = self.client.containers.run(self.image, **kwargs)
-        except docker.errors.NotFound:
-            # retry the container
-            self.logger.log_raw('error',
-                                'Error finding container, trying again.')
-            self.output = self.client.containers.run(self.image, **kwargs)
-
-        self.logger.log('container-end', self.name)
-
-    def result(self):
-        return self.output
-
-    @staticmethod
-    def run(logger, story, name, command):
-        container = Containers(logger, story.containers, name)
-        container.make_volume(story.name)
-        container.summon(command, story.get_environment(name))
-        return container.result()
+        logger.log_raw('error',
+                       'Execution failed after all retries.')
+        raise DockerError('Execution failed')

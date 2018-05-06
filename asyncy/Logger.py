@@ -3,8 +3,6 @@ from logging import LoggerAdapter
 
 from frustum import Frustum
 
-from logdna import LogDNAHandler
-
 
 class Adapter(LoggerAdapter):
 
@@ -18,8 +16,8 @@ class Adapter(LoggerAdapter):
 
 class Logger:
     events = [
-        ('container-start', 'info', 'Container {} is running'),
-        ('container-end', 'info', 'Container {} has finished'),
+        ('container-start', 'info', 'Container {} is executing'),
+        ('container-end', 'info', 'Container {} has finished executing'),
         ('story-start', 'info',
          'Start processing story "{}" for app {} with id {}'),
         ('story-save', 'info', 'Saved results of story "{}" for app {}'),
@@ -44,15 +42,6 @@ class Logger:
 
     def __init__(self, config):
         self.frustum = Frustum(config.logger_name, config.logger_level)
-        self.logdna_key = config.logdna_key
-
-    def logdna_handler(self, key, options):
-        return LogDNAHandler(key, options)
-
-    def add_logdna(self):
-        options = {'app': 'asyncy_engine'}
-        handler = self.logdna_handler(self.logdna_key, options)
-        self.frustum.logger.addHandler(handler)
 
     def adapter(self, app, story):
         return Adapter(self.frustum.logger, {'app': app, 'story': story})
@@ -61,7 +50,6 @@ class Logger:
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
         self.frustum.start_logger()
-        self.add_logdna()
 
     def adapt(self, app, story):
         self.frustum.logger = self.adapter(app, story)

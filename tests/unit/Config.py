@@ -20,7 +20,6 @@ def test_config():
     assert Config.defaults['api_url'] == 'api-private:8080'
     assert Config.defaults['logger_name'] == 'asyncy'
     assert Config.defaults['logger_level'] == 'warning'
-    assert Config.defaults['logdna_key'] == 'ingestion_key'
 
 
 def test_config_init(patch):

@@ -1,101 +1,24 @@
 # -*- coding: utf-8 -*-
+
 from asyncy.Containers import Containers
+from asyncy.processing import Story
 
-import docker
-
-from pytest import fixture, raises
-
-
-@fixture
-def client(patch):
-    patch.object(docker, 'from_env')
-    return docker.from_env()
+from docker import DockerClient
 
 
-@fixture
-def container(patch, logger, client):
-    patch.object(Containers, 'alias', return_value='name')
-    return Containers(logger, 'containers', 'hello-world')
+def test_container_exec(patch, config, logger):
+    patch.object(DockerClient, 'containers')
+    DockerClient.containers.get.return_value.exec_run \
+        .return_value = [0, 'output']
+    patch.object(Story, 'story')
 
+    story = Story.story(config, logger, None, 'story_name')
+    story.get_environment.return_value = {'foo': 'bar'}
 
-def test_containers_init(patch, logger, client):
-    patch.object(Containers, 'alias')
-    container = Containers(logger, 'containers', 'hello-world')
-    Containers.alias.assert_called_with('hello-world')
-    assert container.client == docker.from_env()
-    assert container.name == 'hello-world'
-    assert container.image == Containers.alias()
-    assert container.containers == 'containers'
-    assert container.env == {}
-    assert container.volume is None
-    assert container.logger == logger
+    result = Containers.exec(logger, story, 'container_name', 'command')
 
-
-def test_containers_alias(logger):
-    container = Containers(logger, 'containers', 'name')
-    container.containers = {'simple': {'pull_url': 'hub.docker.container'}}
-    assert container.alias('simple') == 'hub.docker.container'
-
-
-def test_containers_alias_empty(logger):
-    container = Containers(logger, 'containers', 'name')
-    container.alias('empty') == 'empty'
-
-
-def test_containers_get_image(container):
-    container.image = 'image'
-    container.get_image()
-    container.client.images.get.assert_called_with('image')
-
-
-def test_containers_get_image_pull(container):
-    container.image = 'image'
-    container.client.images.get.side_effect = docker.errors.ImageNotFound('')
-    container.get_image()
-    container.client.images.pull.assert_called_with('image')
-
-
-def test_containers_make_volume(container):
-    container.make_volume('volume')
-    container.client.volumes.get.assert_called_with('volume')
-    container.logger.log.assert_called_with('container-volume', 'volume')
-    assert container.volume == container.client.volumes.get()
-
-
-def test_containers_make_volume_create(container):
-    container.client.volumes.get.side_effect = docker.errors.NotFound('')
-    container.make_volume('volume')
-    container.client.volumes.create.assert_called_with('volume')
-    assert container.volume == container.client.volumes.create()
-
-
-def test_containers_summon(patch, magic, client, container):
-    patch.object(Containers, 'get_image')
-    container.volume = magic(name='volume')
-    container.summon('command', {})
-    kwargs = {'auto_remove': True, 'command': 'command', 'environment': {},
-              'cap_drop': 'all',
-              'volumes': {container.volume.name: {'bind': '/tmp/cache',
-                                                  'mode': 'rw'}}}
-    client.containers.run.assert_called_with(container.image, **kwargs)
-    assert Containers.get_image.call_count == 1
-    assert container.logger.log.call_count == 2
-    assert container.output == client.containers.run()
-
-
-def test_containers_results(container):
-    container.output = 'output'
-    assert container.result() == 'output'
-
-
-def test_containers_run(patch, logger, story):
-    patch.init(Containers)
-    patch.many(Containers, ['make_volume', 'summon', 'result'])
-    patch.object(story, 'get_environment')
-    story.containers = {}
-    result = Containers.run(logger, story, 'name', 'command')
-    Containers.__init__.assert_called_with(logger, story.containers, 'name')
-    Containers.make_volume.assert_called_with(story.name)
-    story.get_environment.assert_called_with('name')
-    Containers.summon.assert_called_with('command', story.get_environment())
-    assert result == Containers.result()
+    DockerClient.containers.get.return_value.exec_run.assert_called_with(
+        'command', environment={'foo': 'bar'}
+    )
+    assert DockerClient.containers.get.call_count == 1
+    assert result == 'output'
