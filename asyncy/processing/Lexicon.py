@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+from asyncy.processing import Story
 
+from asyncy.Exceptions import ArgumentNotFoundError
 from ..Containers import Containers
 
 
@@ -14,6 +16,35 @@ class Lexicon:
         Runs a container with the resolution values as commands
         """
         command = story.resolve_command(line)
+
+        """
+        If the command is http-endpoint (a special service), then register
+        the http method along with the path with the Server (also line).
+        
+        The Server will then make a RPC call back to engine on an actual HTTP
+        request, passing along the line to start executing from.
+        """
+        if command == 'http-endpoint':
+            # TODO 09/05/2018: Resolve argument "paths".
+            # Need more clarity from @vesuvium.
+            method = Lexicon.argument_by_name(line, 'method')
+            if method is None:
+                raise ArgumentNotFoundError(name='method')
+
+            path = Lexicon.argument_by_name(line, 'path')
+            if path is None:
+                raise ArgumentNotFoundError(name='path')
+
+            Story.register_http_endpoint(
+                story_name=story.name, method=method,
+                path=path, line=line['next']
+            )
+
+            # TODO 09/05/2018: Here, you can skip until the end of the current
+            # block, and start processing from there.
+            # TODO 09/05/2018: Check wih @steve.
+            return None
+
         if command == 'log':
             story.end_line(line['ln'])
             next_line = story.next_line(line['ln'])
@@ -63,6 +94,18 @@ class Lexicon:
             story.context[output] = item
             Lexicon.run(logger, story, line['ln'])
         return line['exit']
+
+    @staticmethod
+    def argument_by_name(line, argument_name):
+        args = line['args']
+        if args is None:
+            return None
+
+        for arg in args:
+            if arg['name'] == argument_name:
+                return arg
+
+        return None
 
     @staticmethod
     def next(logger, story, line):

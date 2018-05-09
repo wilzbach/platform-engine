@@ -167,6 +167,11 @@ class Stories:
         Resolves arguments for a container line to produce a command
         that can be passed to docker
         """
+        # TODO 09/05/2018: Look up asyncy.yml for this container,
+        # and build the command.
+        if line['container'] == 'http-endpoint':
+            return line['container']
+
         if line['container'] == 'log':
             args = line['args']
             if len(args) == 1:

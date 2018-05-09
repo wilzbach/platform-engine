@@ -43,3 +43,8 @@ class Story:
         cls.execute(config, logger, story)
         cls.save(config, logger, story, start_time)
         logger.log('story-end', story_name, app_id, story_id)
+
+    @classmethod
+    def register_http_endpoint(cls, story_name, method, path, line):
+        # TODO 09/05/2018: Make an rpc call to the server.
+        pass
