@@ -8,11 +8,11 @@ from pytest import fixture, mark
 from storyscript.resolver import Resolver
 
 
-def test_stories_init(config, logger, story):
-    assert story.app_id == 1
+def test_stories_init(app, logger, story):
+    assert story.app == app
     assert story.name == 'hello.story'
-    assert story.config == config
     assert story.logger == logger
+    # assert story.tree ==
     assert story.results == {}
 
 
@@ -234,39 +234,22 @@ def test_stories_encode(story, input, output):
     assert story.encode(input) == output
 
 
-def test_stories_get_environment(story):
-    story.environment = {'container': {}}
-    assert story.get_environment('container') == {}
-
-
-def test_stories_get_environment_none(story):
-    story.environment = {'container': 'dict'}
-    assert story.get_environment('else') == {}
-
-
 def test_stories_prepare(story):
-    story.prepare(None, None, None, None)
+    story.prepare(None, None, None)
 
 
-def test_stories_prepare_environment(story):
-    env = {}
-    story.prepare(env, None, None, None)
-    assert story.environment is env
-
-
-def test_stories_prepare_context(story):
-    context = {}
-    story.prepare(None, context, None, None)
-    assert story.context is context
+def test_stories_prepare_context(story, app):
+    story.prepare({}, None, None)
+    assert story.context == {'env': app.environment}
 
 
 def test_stories_prepare_start(patch, story):
     patch.object(Stories, 'start_from')
-    story.prepare(None, None, 'start', None)
+    story.prepare(None, 'start', None)
     Stories.start_from.assert_called_with('start')
 
 
 def test_stories_prepare_block(patch, story):
     patch.object(Stories, 'child_block')
-    story.prepare(None, None, None, 'block')
+    story.prepare(None, None, 'block')
     Stories.child_block.assert_called_with('block')

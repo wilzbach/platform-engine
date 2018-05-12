@@ -9,8 +9,13 @@ from storyscript.parser import Parser
 
 
 @fixture
-def story(config, logger):
-    return Stories(config, logger, 1, 'hello.story')
+def app(magic):
+    return magic()
+
+
+@fixture
+def story(app, logger):
+    return Stories(app, logger, 'hello.story')
 
 
 def test_stories_get(patch, magic, story, patch_request):

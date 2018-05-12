@@ -9,6 +9,7 @@ import grpc
 import ujson
 
 from . import Version
+from .App import App
 from .Config import Config
 from .Logger import Logger
 from .processing import Story
@@ -18,6 +19,7 @@ from .rpc.http_proxy_pb2_grpc import HttpProxyServicer, \
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+app = App()
 config = Config()
 logger = Logger(config)
 logger.start()
@@ -26,22 +28,17 @@ logger.start()
 class Service(HttpProxyServicer):
 
     def RunStory(self, request, context):
-        logger.log('rpc-request-run-story', request.story_name, request.app_id)
+        logger.log('rpc-request-run-story', request.story_name)
 
-        environment = {}
         context = {}
-
-        if (request.json_environment is not None and
-                request.json_environment is not ''):
-            environment = ujson.loads(request.json_environment)
 
         if (request.json_context is not None and
                 request.json_context is not ''):
             context = ujson.loads(request.json_context)
 
-        Story.run(config, logger, app_id=request.app_id,
+        Story.run(app, logger,
                   story_name=request.story_name,
-                  environment=environment, context=context,
+                  context=context,
                   block=request.block, start=request.start)
 
         return http_proxy_pb2.Response(status=200, status_line='OK')

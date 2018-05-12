@@ -15,5 +15,10 @@ def config(magic):
 
 
 @fixture
-def story(config, logger):
-    return Stories(config, logger, 1, 'hello.story')
+def app(magic):
+    return magic()
+
+
+@fixture
+def story(app, logger):
+    return Stories(app, 'hello.story', logger)

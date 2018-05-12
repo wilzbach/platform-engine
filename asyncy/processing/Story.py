@@ -8,18 +8,18 @@ from ..Stories import Stories
 class Story:
 
     @staticmethod
-    def story(config, logger, app_id, story_name):
-        return Stories(config, logger, app_id, story_name)
+    def story(app, logger, story_name):
+        return Stories(app, story_name, logger)
 
     @staticmethod
-    def save(config, logger, story, start):
+    def save(logger, story, start):
         """
         Saves the narration and the results for each line.
         """
         logger.log('story-save', story.name, story.app_id)
 
     @staticmethod
-    def execute(config, logger, story):
+    def execute(app, logger, story):
         """
         Executes each line in the story
         """
@@ -29,16 +29,14 @@ class Story:
             logger.log('story-execution', line_number)
             if line_number:
                 if line_number.endswith('.story'):
-                    line_number = Story.run(config, logger, story.app_id,
-                                            line_number)
+                    line_number = Story.run(app, logger, line_number)
 
     @classmethod
-    def run(cls, config, logger, app_id, story_name, *, story_id=None,
-            start=None, block=None, environment=None, context=None):
-        logger.log('story-start', story_name, app_id, story_id)
+    def run(cls, app, logger, story_name, *, story_id=None,
+            start=None, block=None, context=None):
+        logger.log('story-start', story_name, story_id)
         start_time = time.time()
-        story = cls.story(config, logger, app_id, story_name)
-        story.prepare(environment, context, start, block)
-        cls.execute(config, logger, story)
-        cls.save(config, logger, story, start_time)
-        logger.log('story-end', story_name, app_id, story_id)
+        story = cls.story(app, logger, story_name)
+        story.prepare(context, start, block)
+        cls.execute(app, logger, story)
+        logger.log('story-end', story_name, story_id)
