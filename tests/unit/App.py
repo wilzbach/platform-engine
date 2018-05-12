@@ -12,7 +12,7 @@ def init(patch):
 
 
 @fixture
-def config():
+def app():
     return App()
 
 

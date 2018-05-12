@@ -3,8 +3,6 @@ from asyncy.Stories import Stories
 
 from pytest import fixture, raises
 
-import requests
-
 from storyscript.parser import Parser
 
 
@@ -15,16 +13,13 @@ def app(magic):
 
 @fixture
 def story(app, logger):
-    return Stories(app, logger, 'hello.story')
+    return Stories(app, 'hello.story', logger)
 
 
-def test_stories_get(patch, magic, story, patch_request):
-    patch_request('hello.story.json')
+def test_stories_get(patch, magic, story, patch_story):
+    patch_story('hello.story.json')
     assert story.tree is not None
-    assert story.context == {'name': 'Asyncy'}
-    assert 'pull_url' in story.containers['alpine']
-    assert 'echo' in story.containers['alpine']['commands']
-    assert story.repository == {'url': 'https://github.com/asyncy/stories.git'}
+    assert story.context is None
     assert story.version is None
 
 
@@ -58,12 +53,11 @@ def test_stories_resolve_command_no_commands(story):
     assert story.resolve_command(story.line('1')) == "echo 'hello'"
 
 
-def test_stories_resolve_replacement(patch, magic, story, api_response):
+def test_stories_resolve_replacement(patch, magic, story, patch_story):
     """
     Ensures a replacement resolve can be performed
     """
-    response = magic(json=magic(return_value=api_response('hello.story.json')))
-    patch.object(requests, 'get', return_value=response)
+    patch_story('hello.story.json')
     assert story.resolve(
         story.line('1')['args'][1],
         encode=False

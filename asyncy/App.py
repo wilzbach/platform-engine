@@ -16,12 +16,13 @@ class App:
         datapath = os.getenv('ASSET_DIR', os.getcwd())
         path = os.path.join(datapath, filepath)
         if os.path.exists(path):
-            return load(open())
+            with open(path, 'r') as file:
+                return load(file)
 
     def apply(self):
         """
         Build environment, stories, and services from start of service.
         """
-        self.environment = self.load_file('env.json')
+        self.environment = self.load_file('environment.json')
         self.stories = self.load_file('stories.json')
         self.services = self.load_file('services.json')

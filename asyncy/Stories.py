@@ -14,7 +14,7 @@ class Stories:
         self.app = app
         self.name = story_name
         self.logger = logger
-        self.tree = app.stories[story_name]
+        self.tree = app.stories[story_name]['tree']
         self.results = {}
         self.tree = None
         self.environment = None
@@ -24,13 +24,13 @@ class Stories:
         self.version = None
 
     def line(self, line_number):
-        return self.tree['script'][line_number]
+        return self.tree[line_number]
 
     def sorted_lines(self):
         """
         Returns sorted line numbers
         """
-        return sorted(self.tree['script'].keys(), key=lambda x: int(x))
+        return sorted(self.tree.keys(), key=lambda x: int(x))
 
     def first_line(self):
         """
@@ -49,7 +49,7 @@ class Stories:
         next_line_index = sorted_lines.index(line_number) + 1
         if next_line_index < len(sorted_lines):
             next_line = sorted_lines[next_line_index]
-            return self.tree['script'][str(next_line)]
+            return self.tree[str(next_line)]
 
     def start_from(self, line):
         """
@@ -60,8 +60,8 @@ class Stories:
         allowed_lines = sorted_lines[i:]
         dictionary = {}
         for line_number in allowed_lines:
-            dictionary[line_number] = self.tree['script'][line_number]
-        self.tree['script'] = dictionary
+            dictionary[line_number] = self.tree[line_number]
+        self.tree = dictionary
 
     def child_block(self, parent_line):
         """
@@ -70,11 +70,11 @@ class Stories:
         being resumed.
         """
         dictionary = {}
-        for key, value in self.tree['script'].items():
+        for key, value in self.tree.items():
             if 'parent' in value:
                 if value['parent'] == parent_line:
                     dictionary[key] = value
-        self.tree['script'] = dictionary
+        self.tree = dictionary
 
     def is_command(self, container, argument):
         """
@@ -209,7 +209,7 @@ class Stories:
 
         self.context = context
 
-        self.context['env'] = self.app.environment
+        self.context['env'] = self.app.environment['env']
 
         if start:
             self.start_from(start)
