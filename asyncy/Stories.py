@@ -88,6 +88,31 @@ class Stories:
                     dictionary[key] = value
         self.tree['script'] = dictionary
 
+    def next_block(self, parent_line):
+        """
+        Given a parent_line, it skips through the block and returns the next
+        line after this block.
+        """
+        next_line = parent_line
+
+        while next_line is not None:
+            next_line = self.next_line(next_line['ln'])
+
+            if next_line is None:
+                return None
+
+            # See if the next line is a block. If it is, skip through it.
+            if next_line.get('enter', None) is not None:
+                next_line = self.next_block(next_line)
+
+                if next_line is None:
+                    return None
+
+            if next_line.get('parent', None) != parent_line['ln']:
+                break
+
+        return next_line
+
     def is_command(self, container, argument):
         """
         Checks whether argument is a command for the given container
@@ -146,9 +171,9 @@ class Stories:
             arg = arguments[0]
             # if first path is undefined assume command
             if (
-                isinstance(arg, dict) and
-                arg['$OBJECT'] == 'path' and
-                len(arg['paths']) == 1
+                    isinstance(arg, dict) and
+                    arg['$OBJECT'] == 'path' and
+                    len(arg['paths']) == 1
             ):
                 res = self.resolve(arguments.pop(0))
                 if res is None:
