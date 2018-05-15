@@ -1,15 +1,13 @@
 syntax = "proto3";
 
 service HttpProxy {
-    rpc RunStory (Request) returns (Response) {
+    rpc RunStory (Request) returns (stream ResponseCommand) {
     }
 }
 
-message Response {
-    int32 status = 1;
-    string status_line = 2;
-    bytes body = 3;
-    repeated Header headers = 4;
+message ResponseCommand {
+    string command = 1;
+    map<string, string> args = 2;
 }
 
 message Request {
