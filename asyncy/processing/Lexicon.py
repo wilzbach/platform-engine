@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from asyncy.processing import Story
-
-from asyncy.Exceptions import ArgumentNotFoundError
+from .internal.HttpEndpoint import HttpEndpoint
 from ..Containers import Containers
+from ..Exceptions import ArgumentNotFoundError
+from ..processing import Story
 
 
 class Lexicon:
@@ -15,24 +15,21 @@ class Lexicon:
         """
         Runs a container with the resolution values as commands
         """
-        command = story.resolve_command(line)
-
-        """
-        If the command is http-endpoint (a special service), then register
-        the http method along with the path with the Server (also line).
-        
-        The Server will then make a RPC call back to engine on an actual HTTP
-        request, passing along the line to start executing from.
-        """
-        if command == 'http-endpoint':
-            # TODO 09/05/2018: Resolve argument "paths".
-            # Need more clarity from @vesuvium.
-            method = Lexicon.argument_by_name(line, 'method')
-            if method is None:
+        container = line['container']
+        if container == 'http-endpoint':
+            """
+            If the container is http-endpoint (a special service),
+            then register the http method along with the path with the Server
+            (also line). The Server will then make a RPC call back to engine
+            on an actual HTTP request, passing along the line to
+            start executing from.
+            """
+            method = Lexicon.argument_by_name(story, line, 'method')
+            if isinstance(method, str) is False:
                 raise ArgumentNotFoundError(name='method')
 
-            path = Lexicon.argument_by_name(line, 'path')
-            if path is None:
+            path = Lexicon.argument_by_name(story, line, 'path')
+            if isinstance(path, str) is False:
                 raise ArgumentNotFoundError(name='path')
 
             Story.register_http_endpoint(
@@ -40,22 +37,37 @@ class Lexicon:
                 path=path, line=line['next']
             )
 
-            # TODO 09/05/2018: Here, you can skip until the end of the current
-            # block, and start processing from there.
-            # TODO 09/05/2018: Check wih @steve.
-            return None
+            next_line = story.next_block(line)
 
-        if command == 'log':
-            story.end_line(line['ln'])
-            next_line = story.next_line(line['ln'])
             if next_line:
                 return next_line['ln']
+
             return None
-        output = Containers.exec(logger, story, line['container'], command)
-        story.end_line(line['ln'], output=output, assign=line.get('output'))
-        next_line = story.next_line(line['ln'])
-        if next_line:
-            return next_line['ln']
+        elif story.context.get('__server_request__') and \
+                (container is 'request' or container is 'response'):
+            output = HttpEndpoint.run(story, line)
+            story.end_line(line['ln'], output=output,
+                           assign=line.get('output'))
+            return Lexicon.next_line_or_none(story.next_line(line['ln']))
+        else:
+            command = story.resolve_command(line)
+
+            if command == 'log':
+                story.end_line(line['ln'])
+                return Lexicon.next_line_or_none(story.next_line(line['ln']))
+
+            output = Containers.exec(logger, story, line['container'], command)
+            story.end_line(line['ln'], output=output,
+                           assign=line.get('output'))
+
+        return Lexicon.next_line_or_none(story.next_line(line['ln']))
+
+    @staticmethod
+    def next_line_or_none(line):
+        if line:
+            return line['ln']
+
+        return None
 
     @staticmethod
     def set(logger, story, line):
@@ -96,14 +108,15 @@ class Lexicon:
         return line['exit']
 
     @staticmethod
-    def argument_by_name(line, argument_name):
+    def argument_by_name(story, line, argument_name):
         args = line['args']
         if args is None:
             return None
 
         for arg in args:
-            if arg['name'] == argument_name:
-                return arg
+            if arg['$OBJECT'] == 'argument' and \
+                    arg['name'] == argument_name:
+                return story.resolve(arg['argument'])
 
         return None
 

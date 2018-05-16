@@ -39,6 +39,8 @@ class Service(HttpProxyServicer):
                 request.json_context is not ''):
             context = ujson.loads(request.json_context)
 
+        context['__server_request__'] = request
+
         Story.run(config, logger, app_id=request.app_id,
                   story_name=request.story_name,
                   environment=environment, context=context,

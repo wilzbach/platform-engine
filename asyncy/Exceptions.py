@@ -18,6 +18,16 @@ class ArgumentNotFoundError(AsyncyError):
         super().__init__(message)
 
 
+class InvalidCommandError(AsyncyError):
+
+    def __init__(self, name=None):
+        message = None
+        if name is not None:
+            message = name + ' is not implemented'
+
+        super().__init__(message)
+
+
 class DockerError(docker.errors.DockerException):
 
     def __init__(self, message=None):
