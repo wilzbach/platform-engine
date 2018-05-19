@@ -5,6 +5,7 @@ import os
 class Config:
 
     defaults = {
+        'gateway_url': 'api-gateway:8081',
         'logger_name': 'asyncy',
         'logger_level': 'warning'
     }

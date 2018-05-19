@@ -29,8 +29,7 @@ setup(
     ],
     setup_requires=['pytest-runner'],
     install_requires=[
-        'grpcio>=1.11.0',
-        'grpcio-tools>=1.11.0',
+        'tornado==5.0.2',
         'click>=6.7',
         'cryptography>=2.1.4',
         'dateparser>=0.7.0',
@@ -47,7 +46,6 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        asyncy-engine=asyncy.Cli:Cli.main
         asyncy-server=asyncy.Service:Service.main
     """
 )

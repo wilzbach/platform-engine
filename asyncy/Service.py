@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-import time
-from concurrent import futures
-
 import click
 
-import grpc
+import tornado
+from tornado import gen, web
 
 import ujson
 
@@ -12,10 +10,8 @@ from . import Version
 from .App import App
 from .Config import Config
 from .Logger import Logger
+from .constants.ContextConstants import ContextConstants
 from .processing import Story
-from .rpc import http_proxy_pb2
-from .rpc.http_proxy_pb2_grpc import HttpProxyServicer, \
-    add_HttpProxyServicer_to_server
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -25,23 +21,27 @@ logger = Logger(config)
 logger.start()
 
 
-class Service(HttpProxyServicer):
+class RunStoryHandler(tornado.web.RequestHandler):
 
-    def RunStory(self, request, context):
-        logger.log('rpc-request-run-story', request.story_name)
+    @web.asynchronous
+    @gen.coroutine
+    def post(self):
+        req = ujson.loads(self.request.body)
 
-        context = {}
+        logger.log('http-request-run-story', req['story_name'], req['app_id'])
 
-        if (request.json_context is not None and
-                request.json_context is not ''):
-            context = ujson.loads(request.json_context)
+        environment = req.get('environment', {})
+        context = req.get('context', {})
 
-        Story.run(app, logger,
-                  story_name=request.story_name,
-                  context=context,
-                  block=request.block, start=request.start)
+        context[ContextConstants.server_request] = self
 
-        return http_proxy_pb2.Response(status=200, status_line='OK')
+        Story.run(config, logger, app_id=req['app_id'],
+                  story_name=req['story_name'],
+                  environment=environment, context=context,
+                  block=req.get('block'), start=req.get('line'))
+
+
+class Service:
 
     @click.group()
     def main():
@@ -50,19 +50,24 @@ class Service(HttpProxyServicer):
     @staticmethod
     @main.command()
     @click.option('--port',
-                  help='Set the port on which the RPC server binds to',
-                  default='32781')
-    def start(port):
+                  help='Set the port on which the HTTP server binds to',
+                  default='8084')
+    @click.option('--debug',
+                  help='Sets the engine into debug mode',
+                  default=False)
+    def start(port, debug):
         logger.log('service-init', Version.version)
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        add_HttpProxyServicer_to_server(Service(), server)
-        server.add_insecure_port('[::]:' + port)
+        app = tornado.web.Application(
+            [
+                (r'/story/run', RunStoryHandler)
+            ],
+            debug=debug,
+        )
+        app.listen(port)
 
-        server.start()
-        logger.log('rpc-init', port)
+        logger.log('http-init', port)
 
         try:
-            while True:
-                time.sleep(_ONE_DAY_IN_SECONDS)
+            tornado.ioloop.IOLoop.current().start()
         except KeyboardInterrupt:
-            server.stop(0)
+            logger.log_raw('info', 'Shutdown!')

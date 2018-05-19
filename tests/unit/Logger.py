@@ -96,14 +96,14 @@ def test_logger_events_service_init(logger):
     assert logger.events[11] == ('service-init', 'info', message)
 
 
-def test_logger_events_rpc_init(logger):
-    message = 'RPC server bound to port {}'
-    assert logger.events[12] == ('rpc-init', 'info', message)
+def test_logger_events_http_init(logger):
+    message = 'HTTP server bound to port {}'
+    assert logger.events[13] == ('http-init', 'info', message)
 
 
-def test_logger_events_rpc_run_story(logger):
-    message = 'Received run request for story {} via RPC'
-    assert logger.events[13] == ('rpc-request-run-story', 'debug', message)
+def test_logger_events_http_run_story(logger):
+    message = 'Received run request for story {} from app {} via HTTP'
+    assert logger.events[14] == ('http-request-run-story', 'debug', message)
 
 
 def test_logger_events_story_wait_err(logger):
