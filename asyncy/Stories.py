@@ -29,10 +29,10 @@ class Stories:
         url = url_template.format(self.config.api_url, self.app_id, self.name)
         story = Http.get(url, json=True)
         self.tree = story['tree']
-        self.environment = story['environment']
-        self.context = story['context']
-        self.containers = story['containers']
-        self.repository = story['repository']
+        self.environment = story.get('environment')
+        self.context = story.get('context')
+        self.containers = story.get('containers')
+        self.repository = story.get('repository')
         self.version = story['version']
 
     def line(self, line_number):
@@ -87,6 +87,31 @@ class Stories:
                 if value['parent'] == parent_line:
                     dictionary[key] = value
         self.tree['script'] = dictionary
+
+    def next_block(self, parent_line):
+        """
+        Given a parent_line, it skips through the block and returns the next
+        line after this block.
+        """
+        next_line = parent_line
+
+        while next_line is not None:
+            next_line = self.next_line(next_line['ln'])
+
+            if next_line is None:
+                return None
+
+            # See if the next line is a block. If it is, skip through it.
+            if next_line.get('enter', None) is not None:
+                next_line = self.next_block(next_line)
+
+                if next_line is None:
+                    return None
+
+            if next_line.get('parent', None) != parent_line['ln']:
+                break
+
+        return next_line
 
     def is_command(self, container, argument):
         """
@@ -146,9 +171,9 @@ class Stories:
             arg = arguments[0]
             # if first path is undefined assume command
             if (
-                isinstance(arg, dict) and
-                arg['$OBJECT'] == 'path' and
-                len(arg['paths']) == 1
+                    isinstance(arg, dict) and
+                    arg['$OBJECT'] == 'path' and
+                    len(arg['paths']) == 1
             ):
                 res = self.resolve(arguments.pop(0))
                 if res is None:
@@ -167,6 +192,11 @@ class Stories:
         Resolves arguments for a container line to produce a command
         that can be passed to docker
         """
+        # TODO 09/05/2018: Look up asyncy.yml for this container,
+        # and build the command.
+        if line['container'] == 'http-endpoint':
+            return line['container']
+
         if line['container'] == 'log':
             args = line['args']
             if len(args) == 1:
@@ -233,6 +263,18 @@ class Stories:
             for (key, value) in environment.items()
             if not isinstance(value, dict)
         ))
+
+    def argument_by_name(self, line, argument_name):
+        args = line['args']
+        if args is None:
+            return None
+
+        for arg in args:
+            if arg['$OBJECT'] == 'argument' and \
+                    arg['name'] == argument_name:
+                return self.resolve(arg['argument'])
+
+        return None
 
     def prepare(self, environment, context, start, block):
         if environment is None:

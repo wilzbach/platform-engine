@@ -6,6 +6,7 @@ class Config:
 
     defaults = {
         'api_url': 'api-private:8080',
+        'gateway_url': 'api-gateway:8081',
         'logger_name': 'asyncy',
         'logger_level': 'warning'
     }

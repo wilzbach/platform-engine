@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+from unittest.mock import Mock
+
+from asyncy import Exceptions
 from asyncy.Containers import Containers
+from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.processing import Lexicon
+from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
 import pytest
 from pytest import fixture, mark
@@ -13,8 +18,36 @@ def line():
 
 
 @fixture
+def http_line():
+    return {
+        'ln': '1',
+        'container': 'http-endpoint',
+        'next': '2',
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'method',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': 'get'
+                }
+            },
+            {
+                '$OBJECT': 'argument',
+                'name': 'path',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': '/foo'
+                }
+            }
+        ]
+    }
+
+
+@fixture
 def story(patch, story):
-    patch.many(story, ['end_line', 'resolve', 'resolve_command', 'next_line'])
+    patch.many(story, ['end_line', 'resolve', 'resolve_command', 'next_line',
+                       'context', 'next_block'])
     return story
 
 
@@ -115,6 +148,54 @@ def test_lexicon_next(logger, story, line, string):
     result = Lexicon.next(logger, story, line)
     story.resolve.assert_called_with(line['args'][0])
     assert result == 'hello.story'
+
+
+def test_lexicon_run_http_endpoint(patch, logger, story, http_line):
+    return_values = Mock()
+    return_values.side_effect = ['get', '/']
+    patch.object(HttpEndpoint, 'register_http_endpoint')
+    story.resolve.side_effect = return_values
+    story.next_line.return_value = None
+
+    Lexicon.run(logger, story, http_line)
+
+    HttpEndpoint.register_http_endpoint.assert_called_with(
+        line=http_line['next'], method='get', path='/',
+        story=story)
+
+    story.next_block.assert_called_with(http_line)
+
+
+@mark.parametrize('args', [[None, '/'], ['get', None]])
+def test_lexicon_run_http_endpoint_no_method(patch, logger, story,
+                                             http_line, args):
+    with pytest.raises(Exceptions.ArgumentNotFoundError):
+        return_values = Mock()
+        return_values.side_effect = args
+        story.resolve.side_effect = return_values
+        story.next_line.return_value = None
+
+        Lexicon.run(logger, story, http_line)
+
+
+@mark.parametrize('http_object', ['request', 'response'])
+def test_lexicon_run_http_request_response(patch, logger, story, http_object):
+    http_object_line = {
+        'ln': '1',
+        'container': http_object
+    }
+
+    story.context.return_value = {
+        ContextConstants.server_request: 'foo'
+    }
+
+    story.container = http_object
+    patch.object(HttpEndpoint, 'run')
+
+    Lexicon.run(logger, story, http_object_line)
+
+    HttpEndpoint.run.assert_called_with(story, http_object_line)
+    story.end_line.assert_called()
 
 
 def test_lexicon_wait(patch, logger, story, line):

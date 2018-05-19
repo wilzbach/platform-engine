@@ -33,9 +33,9 @@ class Logger:
         ('lexicon-unless', 'debug',
          'Processing line {} with "unless" method against context {}'),
         ('service-init', 'info', 'Starting Asyncy version {}'),
-        ('rpc-init', 'info', 'RPC server bound to port {}'),
-        ('rpc-request-run-story', 'debug',
-         'Received run request for story {} from app {} via RPC'),
+        ('http-init', 'info', 'HTTP server bound to port {}'),
+        ('http-request-run-story', 'debug',
+         'Received run request for story {} from app {} via HTTP'),
         ('lexicon-wait-err', 'error',
          'Cannot process line {} with "wait" method (unsupported)!'),
     ]
