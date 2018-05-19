@@ -52,7 +52,7 @@ class Service:
     @main.command()
     @click.option('--port',
                   help='Set the port on which the HTTP server binds to',
-                  default='8084')
+                  default=os.getenv('PORT', '8084'))
     @click.option('--debug',
                   help='Sets the engine into debug mode',
                   default=False)
