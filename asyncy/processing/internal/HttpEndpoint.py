@@ -26,16 +26,10 @@ class HttpEndpoint:
         # todo: Hack - read the command until we have a field in the tree
         # dedicated for the command.
         command = line['args'][0]['paths'][0]
-        # TODO 16/05/2018: implement the below by
-        # accessing story.context.__server_request__
-        if command == 'set_status':
-            pass
-        elif command == 'set_header':
-            pass
-        elif command == 'write':
-            pass
-        elif command == 'finish':
-            pass
+        req = story.context[ContextConstants.server_request]
+        # TODO 19/05/2018: This is not implemented fully due to unknown specs.
+        if command == 'body':
+            return req.body
         else:
             raise InvalidCommandError(command)
         pass
@@ -45,7 +39,6 @@ class HttpEndpoint:
         # todo: Hack - read the command until we have a field in the tree
         # dedicated for the command.
         command = line['args'][0]['paths'][0]
-        print(line)
         req = story.context[ContextConstants.server_request]
 
         data = {
@@ -111,8 +104,8 @@ class HttpEndpoint:
             except Exception as e:
                 # Other errors are possible, such as IOError.
                 story.logger.log_raw('error', 'Is the gateway up?' + str(e))
-
-            http_client.close()
+            finally:
+                http_client.close()
 
         msg = 'Exhausted all retries while ' \
               'attempting to register story ' \
