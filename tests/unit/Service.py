@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import time
-import tornado
 
 from asyncy.Service import Service
 
 from click.testing import CliRunner
 
 from pytest import fixture
+
+import tornado
 
 
 @fixture

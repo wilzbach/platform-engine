@@ -1,15 +1,8 @@
 # -*- coding: utf-8 -*-
-import pytest
-from pytest import fixture, mark
-
-
-#
-# @fixture
-# def line():
-#     return {
-#         'container'
-#     }
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
+
+import pytest
+from pytest import mark
 
 
 @mark.parametrize('http_object', ['request', 'response', 'foo'])

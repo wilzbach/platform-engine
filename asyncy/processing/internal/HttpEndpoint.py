@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import ujson
 
 from tornado import httpclient
 from tornado.httpclient import HTTPRequest
 
-from asyncy.constants.ContextConstants import ContextConstants
-from ...Exceptions import InvalidCommandError, AsyncyError
+import ujson
+
+from ...Exceptions import AsyncyError, InvalidCommandError
+from ...constants.ContextConstants import ContextConstants
 
 
 class HttpEndpoint:
@@ -105,8 +106,8 @@ class HttpEndpoint:
                 # HTTPError is raised for non-200 responses; the response
                 # can be found in e.response.
                 story.logger.log_raw(
-                    'error', 'The gateway sent a non 200 status; body='
-                             + e.response.body)
+                    'error', 'The gateway sent a non 200 status; body=' +
+                             e.response.body)
             except Exception as e:
                 # Other errors are possible, such as IOError.
                 story.logger.log_raw('error', 'Is the gateway up?' + str(e))
