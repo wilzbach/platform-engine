@@ -107,10 +107,3 @@ class Lexicon:
     @staticmethod
     def argument_by_name(story, line, argument_name):
         return story.argument_by_name(line, argument_name)
-
-    @staticmethod
-    def next(logger, story, line):
-        result = story.resolve(line['args'][0])
-        if result.endswith('.story'):
-            return result
-        return '{}.story'.format(result)

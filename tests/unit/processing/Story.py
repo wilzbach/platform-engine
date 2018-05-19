@@ -23,15 +23,6 @@ def test_story_execute(patch, app, logger, story):
     Handler.run.assert_called_with(logger, Stories.first_line(), story)
 
 
-def test_story_execute_next(patch, app, logger, story):
-    patch.object(Handler, 'run',
-                 return_value='next.story')
-    patch.object(Stories, 'first_line')
-    patch.object(Story, 'run', return_value=None)
-    Story.execute(app, logger, story)
-    Story.run.assert_called_with(app, logger, 'next.story')
-
-
 def test_story_run(patch, app, logger):
     patch.object(time, 'time')
     patch.many(Story, ['execute', 'story'])
