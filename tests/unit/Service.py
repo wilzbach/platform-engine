@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 import time
+import tornado
 
 from asyncy.Service import Service
-from asyncy.rpc import http_proxy_pb2_grpc
 
 from click.testing import CliRunner
-
-import grpc
 
 from pytest import fixture
 
@@ -26,11 +24,9 @@ def sleep():
 
 
 def test_server(patch, runner):
-    patch.object(grpc, 'server')
-
-    patch.object(time, 'sleep', side_effect=KeyboardInterrupt)
-    patch.object(http_proxy_pb2_grpc, 'add_HttpProxyServicer_to_server')
+    patch.many(tornado, ['web', 'ioloop'])
 
     result = runner.invoke(Service.start)
-    grpc.server.assert_called_once()
+    tornado.ioloop.IOLoop.current.assert_called()
+    tornado.ioloop.IOLoop.current.return_value.start.assert_called()
     assert result.exit_code == 0

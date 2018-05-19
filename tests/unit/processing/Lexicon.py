@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from asyncy import Exceptions
 from asyncy.Containers import Containers
+from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.processing import Lexicon
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
@@ -159,8 +160,8 @@ def test_lexicon_run_http_endpoint(patch, logger, story, http_line):
     Lexicon.run(logger, story, http_line)
 
     HttpEndpoint.register_http_endpoint.assert_called_with(
-        parent_line=http_line['ln'], method='get', path='/',
-        story_name='hello.story')
+        line=http_line['next'], method='get', path='/',
+        story=story)
 
     story.next_block.assert_called_with(http_line)
 
@@ -185,7 +186,7 @@ def test_lexicon_run_http_request_response(patch, logger, story, http_object):
     }
 
     story.context.return_value = {
-        '__server_request__': 'foo'
+        ContextConstants.server_request: 'foo'
     }
 
     story.container = http_object

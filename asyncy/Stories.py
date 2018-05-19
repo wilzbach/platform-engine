@@ -29,10 +29,10 @@ class Stories:
         url = url_template.format(self.config.api_url, self.app_id, self.name)
         story = Http.get(url, json=True)
         self.tree = story['tree']
-        self.environment = story['environment']
-        self.context = story['context']
-        self.containers = story['containers']
-        self.repository = story['repository']
+        self.environment = story.get('environment')
+        self.context = story.get('context')
+        self.containers = story.get('containers')
+        self.repository = story.get('repository')
         self.version = story['version']
 
     def line(self, line_number):
@@ -263,6 +263,18 @@ class Stories:
             for (key, value) in environment.items()
             if not isinstance(value, dict)
         ))
+
+    def argument_by_name(self, line, argument_name):
+        args = line['args']
+        if args is None:
+            return None
+
+        for arg in args:
+            if arg['$OBJECT'] == 'argument' and \
+                    arg['name'] == argument_name:
+                return self.resolve(arg['argument'])
+
+        return None
 
     def prepare(self, environment, context, start, block):
         if environment is None:

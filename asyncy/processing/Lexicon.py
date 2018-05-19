@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+
 from .internal.HttpEndpoint import HttpEndpoint
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
+from ..constants.ContextConstants import ContextConstants
 
 
 class Lexicon:
@@ -19,7 +21,7 @@ class Lexicon:
             """
             If the container is http-endpoint (a special service),
             then register the http method along with the path with the Server
-            (also line). The Server will then make a RPC call back to engine
+            (also line). The Server will then make a HTTP call back to engine
             on an actual HTTP request, passing along the line to
             start executing from.
             """
@@ -32,14 +34,14 @@ class Lexicon:
                 raise ArgumentNotFoundError(name='path')
 
             HttpEndpoint.register_http_endpoint(
-                story_name=story.name, method=method,
-                path=path, parent_line=line['ln']
+                story=story, method=method,
+                path=path, line=line['next']
             )
 
             next_line = story.next_block(line)
             return Lexicon.next_line_or_none(next_line)
-        elif story.context.get('__server_request__') and \
-                (container is 'request' or container is 'response'):
+        elif story.context.get(ContextConstants.server_request) is not None \
+                and (container == 'request' or container == 'response'):
             output = HttpEndpoint.run(story, line)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
@@ -104,16 +106,7 @@ class Lexicon:
 
     @staticmethod
     def argument_by_name(story, line, argument_name):
-        args = line['args']
-        if args is None:
-            return None
-
-        for arg in args:
-            if arg['$OBJECT'] == 'argument' and \
-                    arg['name'] == argument_name:
-                return story.resolve(arg['argument'])
-
-        return None
+        return story.argument_by_name(line, argument_name)
 
     @staticmethod
     def next(logger, story, line):
