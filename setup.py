@@ -35,6 +35,7 @@ setup(
         'dateparser>=0.7.0',
         'docker>=2.7.0',
         'frustum>=0.0.1',
+        'raven==6.8.0',
         'storyscript>=0.0.7',
         'ujson>=1.35'
     ],

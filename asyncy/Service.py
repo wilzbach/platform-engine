@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import click
+import os
 
 import tornado
 from tornado import gen, web
+from raven.contrib.tornado import AsyncSentryClient
 
 import ujson
 
@@ -54,7 +56,10 @@ class Service:
     @click.option('--debug',
                   help='Sets the engine into debug mode',
                   default=False)
-    def start(port, debug):
+    @click.option('--sentry_dsn',
+                  help='Sentry DNS for bug collection.',
+                  default=os.getenv('SENTRY_DSN'))
+    def start(port, debug, sentry_dsn):
         logger.log('service-init', Version.version)
         app = tornado.web.Application(
             [
@@ -63,6 +68,7 @@ class Service:
             debug=debug,
         )
         app.listen(port)
+        app.sentry_client = AsyncSentryClient(sentry_dsn)
 
         logger.log('http-init', port)
 
