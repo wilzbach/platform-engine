@@ -30,14 +30,13 @@ class RunStoryHandler(tornado.web.RequestHandler):
 
         logger.log('http-request-run-story', req['story_name'], req['app_id'])
 
-        environment = req.get('environment', {})
         context = req.get('context', {})
 
         context[ContextConstants.server_request] = self
 
-        Story.run(config, logger, app_id=req['app_id'],
+        Story.run(app, logger,
                   story_name=req['story_name'],
-                  environment=environment, context=context,
+                  context=context,
                   block=req.get('block'), start=req.get('line'))
 
 
