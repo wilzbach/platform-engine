@@ -50,3 +50,8 @@ class HttpEndpoint:
             pass
         else:
             raise InvalidCommandError(command)
+
+    @classmethod
+    def register_http_endpoint(cls, story_name, method, path, parent_line):
+        # TODO 09/05/2018: Make an rpc call to the server.
+        pass

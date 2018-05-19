@@ -2,7 +2,6 @@
 from .internal.HttpEndpoint import HttpEndpoint
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
-from ..processing import Story
 
 
 class Lexicon:
@@ -32,17 +31,13 @@ class Lexicon:
             if isinstance(path, str) is False:
                 raise ArgumentNotFoundError(name='path')
 
-            Story.register_http_endpoint(
+            HttpEndpoint.register_http_endpoint(
                 story_name=story.name, method=method,
-                path=path, line=line['next']
+                path=path, parent_line=line['ln']
             )
 
             next_line = story.next_block(line)
-
-            if next_line:
-                return next_line['ln']
-
-            return None
+            return Lexicon.next_line_or_none(next_line)
         elif story.context.get('__server_request__') and \
                 (container is 'request' or container is 'response'):
             output = HttpEndpoint.run(story, line)
@@ -60,7 +55,7 @@ class Lexicon:
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
 
-        return Lexicon.next_line_or_none(story.next_line(line['ln']))
+            return Lexicon.next_line_or_none(story.next_line(line['ln']))
 
     @staticmethod
     def next_line_or_none(line):
