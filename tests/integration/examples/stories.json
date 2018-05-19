@@ -1,0 +1,37 @@
+{
+  "version": null,
+  "stories": {
+    "hello.story": {
+      "tree": {
+        "1": {
+          "method": "run",
+          "ln": "1",
+          "output": null,
+          "container": "alpine",
+          "args": [
+            {
+              "$OBJECT": "path",
+              "paths": [
+                "echo"
+              ]
+            },
+            {
+              "$OBJECT": "string",
+              "values": [
+                {
+                  "$OBJECT": "path",
+                  "paths": [
+                    "name"
+                  ]
+                }
+              ],
+              "string": "Hi, I am {}!"
+            }
+          ],
+          "enter": null,
+          "exit": null
+        }
+      }
+    }
+  }
+}

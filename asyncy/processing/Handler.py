@@ -19,11 +19,7 @@ class Handler:
             return Lexicon.if_condition(logger, story, line)
         elif line['method'] == 'for':
             return Lexicon.for_loop(logger, story, line)
-        elif line['method'] == 'next':
-            return Lexicon.next(logger, story, line)
         elif line['method'] == 'run':
             return Lexicon.run(logger, story, line)
         elif line['method'] == 'set':
             return Lexicon.set(logger, story, line)
-        elif line['method'] == 'wait':
-            return Lexicon.wait(logger, story, line)

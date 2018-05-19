@@ -2,57 +2,34 @@
 import time
 
 from asyncy.Stories import Stories
-from asyncy.utils import Http
 
 from pytest import fixture, mark
 
 from storyscript.resolver import Resolver
 
 
-def test_stories_init(config, logger, story):
-    assert story.app_id == 1
+def test_stories_init(app, logger, story):
+    assert story.app == app
     assert story.name == 'hello.story'
-    assert story.config == config
     assert story.logger == logger
+    # assert story.tree ==
     assert story.results == {}
-
-
-def test_stories_get(patch, config, story):
-    patch.object(Http, 'get')
-    our_story = {
-        'tree': {},
-        'context': {},
-        'environment': {},
-        'containers': {},
-        'repository': {},
-        'version': 'foo'
-    }
-    Http.get.return_value = our_story
-    story.get()
-    url = 'http://{}/apps/1/stories/hello.story'.format(config.api_url)
-    Http.get.assert_called_with(url, json=True)
-    assert story.tree == our_story['tree']
-    assert story.context == our_story['context']
-    assert story.environment == our_story['environment']
-    assert story.containers == our_story['containers']
-    assert story.repository == our_story['repository']
-    assert story.version == our_story['version']
 
 
 def test_stories_line(magic, story):
     story.tree = magic()
     line = story.line('1')
-    assert line == story.tree['script']['1']
+    assert line == story.tree['1']
 
 
 def test_stories_sorted_lines(magic, story):
-    story.tree = {'script': {'1': {}, '2': {}, '21': {}, '3': {}}}
+    story.tree = {'1': {}, '2': {}, '21': {}, '3': {}}
     assert story.sorted_lines() == ['1', '2', '3', '21']
 
 
 def test_stories_first_line(patch, story):
     patch.object(Stories, 'sorted_lines', return_value=['16', '23'])
-    story.tree = {'script': {'23': {'ln': '23'}, '16': {'ln': '16'}}}
+    story.tree = {'23': {'ln': '23'}, '16': {'ln': '16'}}
     result = story.first_line()
     assert Stories.sorted_lines.call_count == 1
     assert result == '16'
@@ -60,42 +37,42 @@ def test_stories_first_line(patch, story):
 
 def test_stories_next_line(patch, story):
     patch.object(Stories, 'sorted_lines', return_value=['1', '2'])
-    story.tree = {'script': {'1': {'ln': '1'}, '2': {'ln': '2'}}}
+    story.tree = {'1': {'ln': '1'}, '2': {'ln': '2'}}
     result = story.next_line('1')
     assert Stories.sorted_lines.call_count == 1
-    assert result == story.tree['script']['2']
+    assert result == story.tree['2']
 
 
 def test_stories_next_line_jump(patch, story):
     patch.object(Stories, 'sorted_lines', return_value=['1', '3'])
-    story.tree = {'script': {'1': {'ln': '1'}, '3': {'ln': '3'}}}
-    assert story.next_line('1') == story.tree['script']['3']
+    story.tree = {'1': {'ln': '1'}, '3': {'ln': '3'}}
+    assert story.next_line('1') == story.tree['3']
 
 
 def test_stories_next_line_none(patch, story):
     patch.object(Stories, 'sorted_lines', return_value=['1'])
-    story.tree = {'script': {'1': {'ln': '1'}}}
+    story.tree = {'1': {'ln': '1'}}
     assert story.next_line('1') is None
 
 
 def test_stories_start_from(patch, story):
-    story.tree = {'script': {
+    story.tree = {
         '1': {'ln': '1'},
         '2': {'ln': '2'}
-    }}
+    }
     story.start_from('2')
-    assert story.tree == {'script': {'2': {'ln': '2'}}}
+    assert story.tree == {'2': {'ln': '2'}}
 
 
 def test_stories_child_block(patch, story):
-    story.tree = {'script': {
+    story.tree = {
         '1': {'ln': '1', 'enter': '2', 'exit': 2},
         '2': {'ln': '2', 'parent': '1'},
         '3': {'ln': '3', 'parent': '1'},
-    }}
+    }
     story.child_block('1')
-    assert story.tree == {'script': {'2': {'ln': '2', 'parent': '1'},
-                                     '3': {'ln': '3', 'parent': '1'}}}
+    assert story.tree == {'2': {'ln': '2', 'parent': '1'},
+                          '3': {'ln': '3', 'parent': '1'}}
 
 
 def test_stories_is_command(patch, logger, story):
@@ -257,41 +234,24 @@ def test_stories_encode(story, input, output):
     assert story.encode(input) == output
 
 
-def test_stories_get_environment(story):
-    story.environment = {'container': {}}
-    assert story.get_environment('container') == {}
-
-
-def test_stories_get_environment_none(story):
-    story.environment = {'container': 'dict'}
-    assert story.get_environment('else') == {}
-
-
 def test_stories_prepare(story):
-    story.prepare(None, None, None, None)
+    story.prepare(None, None, None)
 
 
-def test_stories_prepare_environment(story):
-    env = {}
-    story.prepare(env, None, None, None)
-    assert story.environment is env
-
-
-def test_stories_prepare_context(story):
-    context = {}
-    story.prepare(None, context, None, None)
-    assert story.context is context
+def test_stories_prepare_context(story, app):
+    story.prepare({}, None, None)
+    assert story.context == {'env': app.environment['env']}
 
 
 def test_stories_prepare_start(patch, story):
     patch.object(Stories, 'start_from')
-    story.prepare(None, None, 'start', None)
+    story.prepare(None, 'start', None)
     Stories.start_from.assert_called_with('start')
 
 
 def test_stories_prepare_block(patch, story):
     patch.object(Stories, 'child_block')
-    story.prepare(None, None, None, 'block')
+    story.prepare(None, None, 'block')
     Stories.child_block.assert_called_with('block')
 
 

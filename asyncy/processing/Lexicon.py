@@ -107,25 +107,3 @@ class Lexicon:
     @staticmethod
     def argument_by_name(story, line, argument_name):
         return story.argument_by_name(line, argument_name)
-
-    @staticmethod
-    def next(logger, story, line):
-        result = story.resolve(line['args'][0])
-        if result.endswith('.story'):
-            return result
-        return '{}.story'.format(result)
-
-    @staticmethod
-    def wait(logger, story, line):
-        logger.log('lexicon-wait-err', line)
-        raise NotImplementedError
-        # waiting_time = story.resolve(line['args'][0])
-        # eta = dateparser.parse('in {}'.format(waiting_time))
-        # kwargs = {'block': line['ln'], 'environment': story.environment}
-        # current_app.send_task('asyncy.CeleryTasks.process_story',
-        #                       args=[story.app_id, story.name], kwargs=kwargs,
-        #                       eta=eta)
-        # next_line = story.next_line(line['exit'])
-        # story.end_line(line['ln'])
-        # if next_line:
-        #     return next_line['ln']

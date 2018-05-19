@@ -1,0 +1,16 @@
+{
+  "alpine": {
+    "commands": {
+      "echo": {
+        "help": "Echoes stuff",
+        "format": "echo '{message}'",
+        "arguments": [
+          {
+            "name": "message",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -19,15 +19,13 @@ class Logger:
         ('container-start', 'info', 'Container {} is executing'),
         ('container-end', 'info', 'Container {} has finished executing'),
         ('story-start', 'info',
-         'Start processing story "{}" for app {} with id {}'),
-        ('story-save', 'info', 'Saved results of story "{}" for app {}'),
+         'Start processing story "{}" with id {}'),
+        ('story-save', 'info', 'Saved results of story "{}"'),
         ('story-end', 'info',
-         'Finished processing story "{}" for app {} with id {}'),
-        ('task-received', 'info', 'Received task for app {} with story "{}"'),
+         'Finished processing story "{}" with id {}'),
         ('container-volume', 'debug', 'Created volume {}'),
         ('lexicon-if', 'debug',
          'Processing line {} with "if" method against context {}'),
-        ('lexicon-wait', 'debug', 'Processing line {} with "wait" method'),
         ('story-execution', 'debug', 'Received line "{}" from handler'),
         ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
         ('lexicon-unless', 'debug',
@@ -36,8 +34,6 @@ class Logger:
         ('http-init', 'info', 'HTTP server bound to port {}'),
         ('http-request-run-story', 'debug',
          'Received run request for story {} from app {} via HTTP'),
-        ('lexicon-wait-err', 'error',
-         'Cannot process line {} with "wait" method (unsupported)!'),
     ]
 
     def __init__(self, config):

@@ -1,0 +1,12 @@
+{
+  "env": {
+    "key": "value",
+    "defined_by": "users"
+  },
+  "services": {
+    "container": {
+      "key": "value",
+      "specific_to": "container"
+    }
+  }
+}

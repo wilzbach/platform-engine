@@ -196,24 +196,3 @@ def test_lexicon_run_http_request_response(patch, logger, story, http_object):
 
     HttpEndpoint.run.assert_called_with(story, http_object_line)
     story.end_line.assert_called()
-
-
-def test_lexicon_wait(patch, logger, story, line):
-    with pytest.raises(NotImplementedError):
-        Lexicon.wait(logger, story, line)
-    # patch.object(current_app, 'send_task')
-    # patch.object(dateparser, 'parse')
-    # story.environment = {}
-    # result = Lexicon.wait(logger, story, line)
-    # story.resolve.assert_called_with(line['args'][0])
-    # logger.log.assert_called_with('lexicon-wait', line)
-    # dateparser.parse.assert_called_with('in {}'.format(story.resolve()))
-    # task_name = 'asyncy.CeleryTasks.process_story'
-    # args = [story.app_id, story.name]
-    # kwargs = {'block': '1', 'environment': story.environment}
-    # current_app.send_task.assert_called_with(task_name, args=args,
-    #                                          kwargs=kwargs,
-    #                                          eta=dateparser.parse())
-    # story.next_line.assert_called_with(line['exit'])
-    # story.end_line.assert_called_with(line['ln'])
-    # assert result == story.next_line()['ln']

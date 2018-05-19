@@ -6,16 +6,15 @@ from json import JSONDecodeError, dumps, loads
 from storyscript.resolver import Resolver
 
 from .utils import Dict
-from .utils import Http
 
 
 class Stories:
 
-    def __init__(self, config, logger, app_id, story_name):
-        self.app_id = app_id
+    def __init__(self, app, story_name, logger):
+        self.app = app
         self.name = story_name
-        self.config = config
         self.logger = logger
+        self.tree = app.stories[story_name]['tree']
         self.results = {}
         self.tree = None
         self.environment = None
@@ -24,25 +23,14 @@ class Stories:
         self.repository = None
         self.version = None
 
-    def get(self):
-        url_template = 'http://{}/apps/{}/stories/{}'
-        url = url_template.format(self.config.api_url, self.app_id, self.name)
-        story = Http.get(url, json=True)
-        self.tree = story['tree']
-        self.environment = story.get('environment')
-        self.context = story.get('context')
-        self.containers = story.get('containers')
-        self.repository = story.get('repository')
-        self.version = story['version']
-
     def line(self, line_number):
-        return self.tree['script'][line_number]
+        return self.tree[line_number]
 
     def sorted_lines(self):
         """
         Returns sorted line numbers
         """
-        return sorted(self.tree['script'].keys(), key=lambda x: int(x))
+        return sorted(self.tree.keys(), key=lambda x: int(x))
 
     def first_line(self):
         """
@@ -61,7 +49,7 @@ class Stories:
         next_line_index = sorted_lines.index(line_number) + 1
         if next_line_index < len(sorted_lines):
             next_line = sorted_lines[next_line_index]
-            return self.tree['script'][str(next_line)]
+            return self.tree[str(next_line)]
 
     def start_from(self, line):
         """
@@ -72,8 +60,8 @@ class Stories:
         allowed_lines = sorted_lines[i:]
         dictionary = {}
         for line_number in allowed_lines:
-            dictionary[line_number] = self.tree['script'][line_number]
-        self.tree['script'] = dictionary
+            dictionary[line_number] = self.tree[line_number]
+        self.tree = dictionary
 
     def child_block(self, parent_line):
         """
@@ -82,11 +70,11 @@ class Stories:
         being resumed.
         """
         dictionary = {}
-        for key, value in self.tree['script'].items():
+        for key, value in self.tree.items():
             if 'parent' in value:
                 if value['parent'] == parent_line:
                     dictionary[key] = value
-        self.tree['script'] = dictionary
+        self.tree = dictionary
 
     def next_block(self, parent_line):
         """
@@ -245,25 +233,6 @@ class Stories:
         if assign:
             Dict.set(self.context, assign['paths'], output)
 
-    def get_environment(self, scope):
-        """
-        Returns a scoped part of the environment
-        """
-        if scope in self.environment:
-            return self.environment[scope]
-        return {}
-
-    def _reduce_environment(self):
-        """
-        Removes container configuration
-        """
-        environment = self.environment or {}
-        return dict((
-            (key, value)
-            for (key, value) in environment.items()
-            if not isinstance(value, dict)
-        ))
-
     def argument_by_name(self, line, argument_name):
         args = line['args']
         if args is None:
@@ -276,17 +245,13 @@ class Stories:
 
         return None
 
-    def prepare(self, environment, context, start, block):
-        if environment is None:
-            environment = {}
-
-        self.environment = environment
-
+    def prepare(self, context, start, block):
         if context is None:
             context = {}
 
         self.context = context
-        self.context['env'] = self._reduce_environment()
+
+        self.context['env'] = self.app.environment['env']
 
         if start:
             self.start_from(start)

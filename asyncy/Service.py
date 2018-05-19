@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 import click
+import os
 
 import tornado
 from tornado import gen, web
+from raven.contrib.tornado import AsyncSentryClient
 
 import ujson
 
 from . import Version
+from .App import App
 from .Config import Config
 from .Logger import Logger
 from .constants.ContextConstants import ContextConstants
@@ -14,6 +17,7 @@ from .processing import Story
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+app = App()
 config = Config()
 logger = Logger(config)
 logger.start()
@@ -28,14 +32,13 @@ class RunStoryHandler(tornado.web.RequestHandler):
 
         logger.log('http-request-run-story', req['story_name'], req['app_id'])
 
-        environment = req.get('environment', {})
         context = req.get('context', {})
 
         context[ContextConstants.server_request] = self
 
-        Story.run(config, logger, app_id=req['app_id'],
+        Story.run(app, logger,
                   story_name=req['story_name'],
-                  environment=environment, context=context,
+                  context=context,
                   block=req.get('block'), start=req.get('line'))
 
 
@@ -49,11 +52,14 @@ class Service:
     @main.command()
     @click.option('--port',
                   help='Set the port on which the HTTP server binds to',
-                  default='8084')
+                  default=os.getenv('PORT', '8084'))
     @click.option('--debug',
                   help='Sets the engine into debug mode',
                   default=False)
-    def start(port, debug):
+    @click.option('--sentry_dsn',
+                  help='Sentry DNS for bug collection.',
+                  default=os.getenv('SENTRY_DSN'))
+    def start(port, debug, sentry_dsn):
         logger.log('service-init', Version.version)
         app = tornado.web.Application(
             [
@@ -62,6 +68,7 @@ class Service:
             debug=debug,
         )
         app.listen(port)
+        app.sentry_client = AsyncSentryClient(sentry_dsn)
 
         logger.log('http-init', port)
 
