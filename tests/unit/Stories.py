@@ -19,15 +19,24 @@ def test_stories_init(config, logger, story):
 
 def test_stories_get(patch, config, story):
     patch.object(Http, 'get')
+    our_story = {
+        'tree': {},
+        'context': {},
+        'environment': {},
+        'containers': {},
+        'repository': {},
+        'version': 'foo'
+    }
+    Http.get.return_value = our_story
     story.get()
     url = 'http://{}/apps/1/stories/hello.story'.format(config.api_url)
     Http.get.assert_called_with(url, json=True)
-    assert story.tree == Http.get()['tree']
-    assert story.context == Http.get()['context']
-    assert story.environment == Http.get()['environment']
-    assert story.containers == Http.get()['containers']
-    assert story.repository == Http.get()['repository']
-    assert story.version == Http.get()['version']
+    assert story.tree == our_story['tree']
+    assert story.context == our_story['context']
+    assert story.environment == our_story['environment']
+    assert story.containers == our_story['containers']
+    assert story.repository == our_story['repository']
+    assert story.version == our_story['version']
 
 
 def test_stories_line(magic, story):
