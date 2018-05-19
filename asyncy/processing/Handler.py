@@ -25,5 +25,3 @@ class Handler:
             return Lexicon.run(logger, story, line)
         elif line['method'] == 'set':
             return Lexicon.set(logger, story, line)
-        elif line['method'] == 'wait':
-            return Lexicon.wait(logger, story, line)

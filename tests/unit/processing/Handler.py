@@ -49,11 +49,3 @@ def test_handler_run_next(patch, logger, story):
     result = Handler.run(logger, '1', story)
     Lexicon.next.assert_called_with(logger, story, story.line())
     assert result == Lexicon.next()
-
-
-def test_handler_run_wait(patch, logger, story):
-    patch.object(Lexicon, 'wait')
-    patch.object(story, 'line', return_value={'method': 'wait'})
-    result = Handler.run(logger, '1', story)
-    Lexicon.wait.assert_called_with(logger, story, story.line())
-    assert result == Lexicon.wait()

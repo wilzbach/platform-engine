@@ -71,44 +71,34 @@ def test_logger_events_lexicon_if(logger):
     assert logger.events[6] == ('lexicon-if', 'debug', message)
 
 
-def test_logger_events_lexicon_wait(logger):
-    message = 'Processing line {} with "wait" method'
-    assert logger.events[7] == ('lexicon-wait', 'debug', message)
-
-
 def test_logger_events_story_execute(logger):
     message = 'Received line "{}" from handler'
-    assert logger.events[8] == ('story-execution', 'debug', message)
+    assert logger.events[7] == ('story-execution', 'debug', message)
 
 
 def test_logger_events_story_resolve(logger):
     message = 'Resolved "{}" to "{}"'
-    assert logger.events[9] == ('story-resolve', 'debug', message)
+    assert logger.events[8] == ('story-resolve', 'debug', message)
 
 
 def test_logger_events_story_unless(logger):
     message = 'Processing line {} with "unless" method against context {}'
-    assert logger.events[10] == ('lexicon-unless', 'debug', message)
+    assert logger.events[9] == ('lexicon-unless', 'debug', message)
 
 
 def test_logger_events_service_init(logger):
     message = 'Starting Asyncy version {}'
-    assert logger.events[11] == ('service-init', 'info', message)
+    assert logger.events[10] == ('service-init', 'info', message)
 
 
 def test_logger_events_http_init(logger):
     message = 'HTTP server bound to port {}'
-    assert logger.events[13] == ('http-init', 'info', message)
+    assert logger.events[12] == ('http-init', 'info', message)
 
 
 def test_logger_events_http_run_story(logger):
     message = 'Received run request for story {} from app {} via HTTP'
-    assert logger.events[14] == ('http-request-run-story', 'debug', message)
-
-
-def test_logger_events_story_wait_err(logger):
-    message = 'Cannot process line {} with "wait" method (unsupported)!'
-    assert logger.events[14] == ('lexicon-wait-err', 'error', message)
+    assert logger.events[13] == ('http-request-run-story', 'debug', message)
 
 
 def test_logger_adapter(patch, magic, logger):

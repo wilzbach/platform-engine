@@ -26,7 +26,6 @@ class Logger:
         ('container-volume', 'debug', 'Created volume {}'),
         ('lexicon-if', 'debug',
          'Processing line {} with "if" method against context {}'),
-        ('lexicon-wait', 'debug', 'Processing line {} with "wait" method'),
         ('story-execution', 'debug', 'Received line "{}" from handler'),
         ('story-resolve', 'debug', 'Resolved "{}" to "{}"'),
         ('lexicon-unless', 'debug',
@@ -35,8 +34,6 @@ class Logger:
         ('http-init', 'info', 'HTTP server bound to port {}'),
         ('http-request-run-story', 'debug',
          'Received run request for story {} from app {} via HTTP'),
-        ('lexicon-wait-err', 'error',
-         'Cannot process line {} with "wait" method (unsupported)!'),
     ]
 
     def __init__(self, config):
