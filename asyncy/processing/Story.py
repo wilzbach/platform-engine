@@ -35,7 +35,6 @@ class Story:
     def run(cls, app, logger, story_name, *, story_id=None,
             start=None, block=None, context=None):
         logger.log('story-start', story_name, story_id)
-        start_time = time.time()
         story = cls.story(app, logger, story_name)
         story.prepare(context, start, block)
         cls.execute(app, logger, story)

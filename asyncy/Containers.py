@@ -27,7 +27,7 @@ class Containers:
             If the execution failed for an unknown reason.
         """
         logger.log('container-start', name)
-        environment = story.get_environment(name)
+        environment = story.environment
         tries = 0
         while tries < MAX_RETRIES:
             tries = tries + 1

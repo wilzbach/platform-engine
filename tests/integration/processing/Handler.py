@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from pytest import fixture
-
-from asyncy.Stories import Stories
 from asyncy.processing import Handler
+
+from pytest import fixture
 
 
 @fixture
@@ -10,6 +9,6 @@ def app(magic):
     return magic()
 
 
-def test_handler_run(logger, app, patch_story):
-    story = Stories(app, 'hello.story', logger)
+def test_handler_run(logger, story):
+    story.prepare()
     Handler.run(logger, '1', story)

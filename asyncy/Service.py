@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-import click
 import os
+
+import click
+
+from raven.contrib.tornado import AsyncSentryClient
 
 import tornado
 from tornado import gen, web
-from raven.contrib.tornado import AsyncSentryClient
 
 import ujson
 

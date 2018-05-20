@@ -257,48 +257,42 @@ def test_stories_prepare_block(patch, story):
 
 def test_stories_next_block_simple(patch, story):
     story.tree = {
-        'script': {
-            '2': {'ln': '2', 'enter': '3', 'next': '3'},
-            '3': {'ln': '3', 'parent': '2', 'next': '4'},
-            '4': {'ln': '4'}
-        }
+        '2': {'ln': '2', 'enter': '3', 'next': '3'},
+        '3': {'ln': '3', 'parent': '2', 'next': '4'},
+        '4': {'ln': '4'}
     }
 
     assert isinstance(story, Stories)
 
-    assert story.next_block(story.line('2')) == story.tree['script']['4']
+    assert story.next_block(story.line('2')) == story.tree['4']
 
 
 def test_stories_next_block_nested(patch, story):
     story.tree = {
-        'script': {
-            '2': {'ln': '2', 'enter': '3', 'next': '3'},
-            '3': {'ln': '3', 'parent': '2', 'next': '4'},
-            '4': {'ln': '4', 'enter': '5', 'parent': '2', 'next': '5'},
-            '5': {'ln': '5', 'parent': '4', 'next': '6'},
-            '6': {'ln': '6', 'parent': '4', 'next': '7'},
-            '7': {'ln': '7'}
-        }
+        '2': {'ln': '2', 'enter': '3', 'next': '3'},
+        '3': {'ln': '3', 'parent': '2', 'next': '4'},
+        '4': {'ln': '4', 'enter': '5', 'parent': '2', 'next': '5'},
+        '5': {'ln': '5', 'parent': '4', 'next': '6'},
+        '6': {'ln': '6', 'parent': '4', 'next': '7'},
+        '7': {'ln': '7'}
     }
 
     assert isinstance(story, Stories)
 
-    assert story.next_block(story.line('2')) == story.tree['script']['7']
+    assert story.next_block(story.line('2')) == story.tree['7']
 
 
 def test_stories_next_block_nested_inner(patch, story):
     story.tree = {
-        'script': {
-            '2': {'ln': '2', 'enter': '3', 'next': '3'},
-            '3': {'ln': '3', 'parent': '2', 'next': '4'},
-            '4': {'ln': '4', 'enter': '5', 'parent': '2', 'next': '5'},
-            '5': {'ln': '5', 'parent': '4', 'next': '6'},
-            '6': {'ln': '6', 'parent': '4', 'next': '7'},
-            '7': {'ln': '7', 'parent': '2', 'next': '8'},
-            '8': {'ln': '8', 'parent': '2'}
-        }
+        '2': {'ln': '2', 'enter': '3', 'next': '3'},
+        '3': {'ln': '3', 'parent': '2', 'next': '4'},
+        '4': {'ln': '4', 'enter': '5', 'parent': '2', 'next': '5'},
+        '5': {'ln': '5', 'parent': '4', 'next': '6'},
+        '6': {'ln': '6', 'parent': '4', 'next': '7'},
+        '7': {'ln': '7', 'parent': '2', 'next': '8'},
+        '8': {'ln': '8', 'parent': '2'}
     }
 
     assert isinstance(story, Stories)
 
-    assert story.next_block(story.line('4')) == story.tree['script']['7']
+    assert story.next_block(story.line('4')) == story.tree['7']

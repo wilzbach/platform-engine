@@ -66,7 +66,7 @@ class HttpEndpoint:
     @classmethod
     def register_http_endpoint(cls, story, method, path, line):
         url = 'http://{}/register/story'
-        url = url.format(story.config.gateway_url)
+        url = url.format(story.app.config.gateway_url)
 
         req = HTTPRequest(
             url=url,

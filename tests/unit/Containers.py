@@ -13,7 +13,7 @@ def test_container_exec(patch, config, logger):
     patch.object(Story, 'story')
 
     story = Story.story(config, logger, None, 'story_name')
-    story.get_environment.return_value = {'foo': 'bar'}
+    story.environment = {'foo': 'bar'}
 
     result = Containers.exec(logger, story, 'container_name', 'command')
 

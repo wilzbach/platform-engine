@@ -19,10 +19,8 @@
               "$OBJECT": "string",
               "values": [
                 {
-                  "$OBJECT": "path",
-                  "paths": [
-                    "name"
-                  ]
+                  "$OBJECT": "string",
+                  "string": "Asyncy"
                 }
               ],
               "string": "Hi, I am {}!"

@@ -142,14 +142,6 @@ def test_lexicon_for_loop(patch, logger, story, line):
     assert result == line['exit']
 
 
-@mark.parametrize('string', ['hello', 'hello.story'])
-def test_lexicon_next(logger, story, line, string):
-    story.resolve.return_value = string
-    result = Lexicon.next(logger, story, line)
-    story.resolve.assert_called_with(line['args'][0])
-    assert result == 'hello.story'
-
-
 def test_lexicon_run_http_endpoint(patch, logger, story, http_line):
     return_values = Mock()
     return_values.side_effect = ['get', '/']

@@ -16,7 +16,6 @@ class Stories:
         self.logger = logger
         self.tree = app.stories[story_name]['tree']
         self.results = {}
-        self.tree = None
         self.environment = None
         self.context = None
         self.containers = None
@@ -105,7 +104,7 @@ class Stories:
         """
         Checks whether argument is a command for the given container
         """
-        if type(argument) is str:
+        if type(argument) is str or self.containers is None:
             return None
 
         if argument['$OBJECT'] == 'path':
@@ -245,7 +244,7 @@ class Stories:
 
         return None
 
-    def prepare(self, context, start, block):
+    def prepare(self, context=None, start=None, block=None):
         if context is None:
             context = {}
 
