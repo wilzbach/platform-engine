@@ -17,8 +17,8 @@ from .processing import Story
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-app = App()
 config = Config()
+app = App(config)
 logger = Logger(config)
 logger.start()
 

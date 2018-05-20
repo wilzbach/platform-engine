@@ -9,8 +9,9 @@ class App:
     stories = {}
     services = {}
 
-    def __init__(self):
+    def __init__(self, config):
         self.apply()
+        self.config = config
 
     def load_file(self, filepath):
         datapath = os.getenv('ASSET_DIR', os.getcwd())
