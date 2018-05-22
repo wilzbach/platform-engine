@@ -27,7 +27,6 @@ logger.start()
 
 class RunStoryHandler(tornado.web.RequestHandler):
 
-    @web.asynchronous
     @gen.coroutine
     def post(self):
         req = ujson.loads(self.request.body)
@@ -42,6 +41,13 @@ class RunStoryHandler(tornado.web.RequestHandler):
                   story_name=req['story_name'],
                   context=context,
                   block=req.get('block'), start=req.get('line'))
+
+        # Until now, the Story is executed synchronously, i.e. it doesn't
+        # become async. When the Docker commands are executed asynchronously,
+        # the following lines must be moved elsewhere (preferably once the
+        # entire block executes in Stories).
+        if self._finished is False:
+            self.finish()
 
 
 class Service:
