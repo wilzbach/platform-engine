@@ -62,7 +62,35 @@ class Stories:
             dictionary[line_number] = self.tree[line_number]
         self.tree = dictionary
 
-    def child_block(self, parent_line):
+    def line_has_parent(self, parent_line_number, line):
+        """
+        Looks up the hierarchy of this line to see if it
+        belongs to a particular parent.
+
+        :param parent_line_number: The parent line number
+        :param line: The line to test
+        :return: True if this line is a child of the parent (directly or
+                 indirectly), False otherwise
+        """
+
+        # Fast test - this line is an immediate child of the parent.
+        if parent_line_number == line.get('parent', None):
+            return True
+
+        while line is not None:
+            my_parent_number = line.get('parent', None)
+
+            if my_parent_number is None:
+                return False
+
+            if my_parent_number == parent_line_number:
+                return True
+
+            line = self.line(my_parent_number)
+
+        return False
+
+    def child_block(self, parent_line_number):
         """
         Slices the story to a single block with the same parent. Used when
         running a single block of the story, for example when the story is
@@ -70,9 +98,8 @@ class Stories:
         """
         dictionary = {}
         for key, value in self.tree.items():
-            if 'parent' in value:
-                if value['parent'] == parent_line:
-                    dictionary[key] = value
+            if self.line_has_parent(parent_line_number, value):
+                dictionary[key] = value
         self.tree = dictionary
 
     def next_block(self, parent_line):

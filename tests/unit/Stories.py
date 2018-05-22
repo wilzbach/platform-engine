@@ -75,6 +75,66 @@ def test_stories_child_block(patch, story):
                           '3': {'ln': '3', 'parent': '1'}}
 
 
+def test_stories_child_block_with_nested_blocks(patch, story):
+    story.tree = {
+        '1': {'ln': '1', 'enter': '2', 'exit': '2', 'next': '2'},
+        '2': {'ln': '2', 'parent': '1', 'next': '3'},
+        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
+        '4': {'ln': '4', 'parent': '3', 'next': '5'},
+        '5': {'ln': '5', 'parent': '1'},
+        '6': {'ln': '6'}
+    }
+
+    story.child_block('1')
+
+    assert story.tree == {
+        '2': {'ln': '2', 'parent': '1', 'next': '3'},
+        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
+        '4': {'ln': '4', 'parent': '3', 'next': '5'},
+        '5': {'ln': '5', 'parent': '1'}
+    }
+
+
+def test_stories_child_block_inside_block(patch, story):
+    story.tree = {
+        '1': {'ln': '1', 'enter': '2', 'exit': '2', 'next': '2'},
+        '2': {'ln': '2', 'parent': '1', 'next': '3'},
+        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
+        '4': {'ln': '4', 'parent': '3', 'next': '5'},
+        '5': {'ln': '5', 'parent': '1'},
+        '6': {'ln': '6'}
+    }
+
+    story.child_block('3')
+
+    assert story.tree == {
+        '4': {'ln': '4', 'parent': '3', 'next': '5'}
+    }
+
+
+def test_stories_child_block_for_empty_result(patch, story):
+    story.tree = {
+        '1': {'ln': '1', 'enter': '2', 'exit': '2', 'next': '2'},
+        '2': {'ln': '2', 'parent': '1', 'next': '3'},
+        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
+        '4': {'ln': '4', 'parent': '3', 'next': '5'},
+        '5': {'ln': '5', 'parent': '1'},
+        '6': {'ln': '6'}
+    }
+
+    story.child_block('6')
+
+    assert story.tree == {}
+
+
+def test_stories_child_block_for_non_existent(patch, story):
+    story.tree = {}
+
+    story.child_block('1')
+
+    assert story.tree == {}
+
+
 def test_stories_is_command(patch, logger, story):
     story.containers = {'container': {'commands': {'command': {}}}}
     argument = {'$OBJECT': 'path', 'paths': ['command']}
