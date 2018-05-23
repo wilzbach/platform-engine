@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 import click
 
@@ -24,30 +25,46 @@ app = App(config)
 logger = Logger(config)
 logger.start()
 
+# 20 is an arbitrary number. Feel free to increase it.
+story_executor = ThreadPoolExecutor(max_workers=20)
+
 
 class RunStoryHandler(tornado.web.RequestHandler):
+    finished = False
 
-    @gen.coroutine
-    def post(self):
-        req = ujson.loads(self.request.body)
+    @classmethod
+    def run_story(cls, request_response, io_loop):
+        req = ujson.loads(request_response.request.body)
 
         logger.log('http-request-run-story', req['story_name'], req['app_id'])
 
         context = req.get('context', {})
+        context[ContextConstants.server_request] = request_response
+        context[ContextConstants.server_io_loop] = io_loop
 
-        context[ContextConstants.server_request] = self
+        try:
+            Story.run(app, logger,
+                      story_name=req['story_name'],
+                      context=context,
+                      block=req.get('block'), start=req.get('line'))
+        except Exception as e:
+            logger.log_raw('error', 'Failed to execute story! error=' + str(e))
 
-        Story.run(app, logger,
-                  story_name=req['story_name'],
-                  context=context,
-                  block=req.get('block'), start=req.get('line'))
+    @web.asynchronous
+    def post(self):
+        io_loop = tornado.ioloop.IOLoop.current()
+        args = [self, io_loop]
+        story_executor.submit(RunStoryHandler.run_story, *args)
 
-        # Until now, the Story is executed synchronously, i.e. it doesn't
-        # become async. When the Docker commands are executed asynchronously,
-        # the following lines must be moved elsewhere (preferably once the
-        # entire block executes in Stories).
-        if self._finished is False:
-            self.finish()
+    def on_finish(self):
+        self.finished = True
+        super().on_finish()
+
+    def is_finished(self):
+        return self.finished
+
+    def is_not_finished(self):
+        return self.finished is False
 
 
 class Service:

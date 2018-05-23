@@ -58,10 +58,12 @@ class HttpEndpoint:
         else:
             raise InvalidCommandError(command)
 
-        req.write(ujson.dumps(data) + '\n')
+        story.context[ContextConstants.server_io_loop].add_callback(
+            lambda: req.write(ujson.dumps(data) + '\n'))
 
         if command == 'finish':
-            req.finish()
+            story.context[ContextConstants.server_io_loop]\
+                .add_callback(req.finish)
 
     @classmethod
     def register_http_endpoint(cls, story, method, path, line):
