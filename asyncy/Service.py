@@ -30,7 +30,6 @@ story_executor = ThreadPoolExecutor(max_workers=20)
 
 
 class RunStoryHandler(tornado.web.RequestHandler):
-    finished = False
 
     @classmethod
     def run_story(cls, request_response, io_loop):
@@ -56,15 +55,11 @@ class RunStoryHandler(tornado.web.RequestHandler):
         args = [self, io_loop]
         story_executor.submit(RunStoryHandler.run_story, *args)
 
-    def on_finish(self):
-        self.finished = True
-        super().on_finish()
-
     def is_finished(self):
-        return self.finished
+        return self._finished
 
     def is_not_finished(self):
-        return self.finished is False
+        return self.is_finished() is False
 
 
 class Service:
