@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import struct
 
-from tornado.httpclient import AsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
+from .Exceptions import DockerError
 
 MAX_RETRIES = 3
 
@@ -67,7 +68,8 @@ class Containers:
 
         cls._insert_auth_kwargs(story, create_kwargs)
 
-        response = await http_client.fetch(exec_create_url, **create_kwargs)
+        response = await cls._fetch_with_retry(story, exec_create_url,
+                                               http_client, create_kwargs)
 
         create_result = ujson.loads(response.body)
 
@@ -89,9 +91,8 @@ class Containers:
 
         cls._insert_auth_kwargs(story, exec_start_kwargs)
 
-        response = await http_client.fetch(
-            exec_start_url,
-            **exec_start_kwargs)
+        response = await cls._fetch_with_retry(story, exec_start_url,
+                                               http_client, exec_start_kwargs)
 
         # Read our stdin/stdout multiplexed stream.
         # https://docs.docker.com/engine/api/v1.32/#operation/ContainerAttach
@@ -119,6 +120,21 @@ class Containers:
         logger.log('container-end', name)
 
         return stdout[:-1]  # Truncate the leading \n from the console.
+
+    @classmethod
+    async def _fetch_with_retry(cls, story, url, http_client, kwargs):
+        attempts = 0
+        while attempts < MAX_RETRIES:
+            attempts = attempts + 1
+            try:
+                return await http_client.fetch(url, **kwargs)
+            except HTTPError as e:
+                story.logger.log_raw(
+                    'error',
+                    f'Failed to call {url}; attempt={attempts}; err={str(e)}'
+                )
+
+        raise DockerError(message=f'Failed to call {url}!')
 
     @classmethod
     def _insert_auth_kwargs(cls, story, kwargs):
