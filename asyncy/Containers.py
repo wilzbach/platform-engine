@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
+import struct
+
 import docker
 
-from .Exceptions import DockerContainerNotFoundError, DockerError
+from tornado.httpclient import AsyncHTTPClient
+
+import ujson
+
 
 MAX_RETRIES = 3
+
+API_VERSION = 'v1.37'
 
 
 class Containers:
@@ -13,7 +20,7 @@ class Containers:
     client = docker.from_env()
 
     @classmethod
-    def exec(cls, logger, story, name, command):
+    async def exec(cls, logger, story, name, command):
         """
         Executes a command in the given container.
 
@@ -26,29 +33,83 @@ class Containers:
         asyncy.Exceptions.DockerError:
             If the execution failed for an unknown reason.
         """
+
+        # TODO 27/05/2018: retry logic
+
         logger.log('container-start', name)
-        environment = story.environment
-        tries = 0
-        while tries < MAX_RETRIES:
-            tries = tries + 1
-            container = Containers.container_cache.get(name)
-            try:
-                if container is None:
-                    container = cls.client.containers.get(container_id=name)
-                    if container is None:
-                        raise DockerContainerNotFoundError(
-                            'Container not found')
-                    Containers.container_cache[name] = container
+        http_client = AsyncHTTPClient()
 
-                result = container.exec_run(command, environment=environment)
-                logger.log('container-end', name)
-                return result[1]  # container.exec_run returns a tuple.
-            except docker.errors.DockerException:
-                logger.log_raw('error',
-                               'Error finding container, trying again.')
-                # Remove the container from container_cache.
-                Containers.container_cache[name] = None
+        env_arr = []
+        for key in story.environment:
+            env_arr.append(key + '=' + story.environment[key])
 
-        logger.log_raw('error',
-                       'Execution failed after all retries.')
-        raise DockerError('Execution failed')
+        exec_create_post_data = {
+            'Container': name,
+            'User': 'root',
+            'Privileged': False,
+            'Env': env_arr,
+            'Cmd': [command],
+            'AttachStdin': False,
+            'AttachStdout': True,
+            'AttachStderr': True,
+            'Tty': False
+        }
+
+        headers = {
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+
+        endpoint = story.app.config.docker['endpoint']
+        exec_create_url = '{0}/{1}/containers/{2}/exec'\
+            .format(endpoint, API_VERSION, name)
+
+        response = await http_client.fetch(
+            exec_create_url,
+            method='POST',
+            headers=headers,
+            body=ujson.dumps(exec_create_post_data))
+
+        create_result = ujson.loads(response.body)
+
+        exec_id = create_result['Id']
+
+        exec_start_url = '{0}/{1}/exec/{2}/start'\
+            .format(endpoint, API_VERSION, exec_id)
+
+        exec_start_post_data = {
+            'Tty': False,
+            'Detach': False
+        }
+
+        response = await http_client.fetch(
+            exec_start_url,
+            method='POST',
+            headers=headers,
+            body=ujson.dumps(exec_start_post_data))
+
+        # Read our stdin/stdout multiplexed stream.
+        # https://docs.docker.com/engine/api/v1.32/#operation/ContainerAttach
+        stdout = ''
+        stderr = ''
+
+        while True:
+            header = response.buffer.read(8)
+
+            if header is b'':  # EOS.
+                break
+
+            length = struct.unpack('>I', header[4:])  # Big endian.
+
+            output = response.buffer.read(length[0]).decode('utf-8')
+
+            if header[0] == 1:
+                stdout += output
+            elif header[0] == 2:
+                stderr += output
+            else:
+                raise Exception('Don\'t know what {0} in the header means'
+                                .format(header[0]))
+
+        logger.log('container-end', name)
+
+        return stdout[:-1]  # Truncate the leading \n from the console.
