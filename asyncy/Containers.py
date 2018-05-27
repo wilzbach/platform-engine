@@ -124,4 +124,7 @@ class Containers:
     def _insert_auth_kwargs(cls, story, kwargs):
         if story.app.config.DOCKER_TLS_VERIFY != '':
             kwargs['validate_cert'] = True
-            kwargs['client_cert'] = story.app.config.DOCKER_CERT_PATH
+            cert_path = story.app.config.DOCKER_CERT_PATH
+            kwargs['ca_certs'] = cert_path + '/ca.pem'
+            kwargs['client_key'] = cert_path + '/key.pem'
+            kwargs['client_cert'] = cert_path + '/cert.pem'
