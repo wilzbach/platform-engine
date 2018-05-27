@@ -58,7 +58,8 @@ async def test_lexicon_run(patch, logger, story, line, async_mock):
     patch.object(Containers, 'exec', new=async_mock(return_value=output))
     result = await Lexicon.run(logger, story, line)
     story.resolve_command.assert_called_with(line)
-    Containers.exec.mock.assert_called_with(logger, story, line['container'],
+    c = line['container']
+    Containers.exec.mock.assert_called_with(logger, story, f'asyncy--{c}-1',
                                             story.resolve_command())
     story.end_line.assert_called_with(line['ln'],
                                       output=output,
