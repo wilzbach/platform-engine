@@ -14,22 +14,16 @@ API_VERSION = 'v1.37'
 
 
 class Containers:
-    # Caches the container name (key) to the Container instance from docker.
-    container_cache = {}
-
-    client = docker.from_env()
 
     @classmethod
     async def exec(cls, logger, story, name, command):
         """
-        Executes a command in the given container.
+        Executes a command asynchronously in the given container.
 
         Returns:
-        Output of the process.
+        Output of the process (stdout).
 
         Raises:
-        asyncy.Exceptions.DockerContainerNotFoundError:
-            When the container is not found.
         asyncy.Exceptions.DockerError:
             If the execution failed for an unknown reason.
         """
