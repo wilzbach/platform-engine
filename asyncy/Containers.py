@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import struct
 
-import docker
-
 from tornado.httpclient import AsyncHTTPClient
 
 import ujson

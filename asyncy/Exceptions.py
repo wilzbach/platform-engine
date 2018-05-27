@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import docker
 
 
 class AsyncyError(Exception):
@@ -28,13 +27,7 @@ class InvalidCommandError(AsyncyError):
         super().__init__(message)
 
 
-class DockerError(docker.errors.DockerException):
-
-    def __init__(self, message=None):
-        super().__init__(message)
-
-
-class DockerContainerNotFoundError(DockerError):
+class DockerError(AsyncyError):
 
     def __init__(self, message=None):
         super().__init__(message)
