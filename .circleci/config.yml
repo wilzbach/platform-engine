@@ -35,6 +35,7 @@ jobs:
             docker volume create hello.story
             python3 -m venv venv
             . venv/bin/activate
+            pip3 install pytest-asyncio
             pip3 install tox
             env
             python3 setup.py install
