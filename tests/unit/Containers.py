@@ -32,7 +32,6 @@ async def test_container_exec(patch, story, app, logger, async_mock):
 
     story.app = app
     story.prepare()
-    story.environment = {'foo': 'bar'}
 
     result = await Containers.exec(logger, story, 'alpine', 'pwd')
 
@@ -49,7 +48,7 @@ async def test_container_exec(patch, story, app, logger, async_mock):
     assert fetch.mock_calls[0][2]['method'] == 'POST'
     assert fetch.mock_calls[0][2]['body'] == \
         '{"Container":"alpine","User":"root","Privileged":false,' \
-        '"Env":["foo=bar"],"Cmd":["pwd"],"AttachStdin":false,' \
+        '"Cmd":["pwd"],"AttachStdin":false,' \
         '"AttachStdout":true,"AttachStderr":true,"Tty":false}'
 
     assert fetch.mock_calls[1][1][1] == \

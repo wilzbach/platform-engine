@@ -29,15 +29,10 @@ class Containers:
         logger.log('container-start', name)
         http_client = AsyncHTTPClient()
 
-        env_arr = []
-        for key in story.environment:
-            env_arr.append(key + '=' + story.environment[key])
-
         exec_create_post_data = {
             'Container': name,
             'User': 'root',
             'Privileged': False,
-            'Env': env_arr,
             'Cmd': [command],
             'AttachStdin': False,
             'AttachStdout': True,
