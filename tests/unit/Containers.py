@@ -39,6 +39,8 @@ async def test_container_exec(patch, story, app, logger, async_mock):
     fetch = AsyncHTTPClient.fetch.mock
 
     endpoint = app.config.DOCKER_HOST
+    if story.app.config.DOCKER_TLS_VERIFY == '1':
+        endpoint = endpoint.replace('http://', 'https://')
 
     assert fetch.mock_calls[0][1][1] == \
         '{0}/v1.37/containers/alpine/exec'.format(endpoint)
