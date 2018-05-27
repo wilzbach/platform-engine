@@ -26,9 +26,6 @@ class Containers:
         asyncy.Exceptions.DockerError:
             If the execution failed for an unknown reason.
         """
-
-        # TODO 27/05/2018: retry logic
-
         logger.log('container-start', name)
         http_client = AsyncHTTPClient()
 
