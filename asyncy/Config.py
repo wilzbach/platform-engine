@@ -8,9 +8,10 @@ class Config:
         'gateway_url': 'api-gateway:8081',
         'logger_name': 'asyncy',
         'logger_level': 'warning',
-        'docker': {
-            'endpoint': 'http://localhost:2375'
-        }
+        'DOCKER_HOST': 'http://localhost:2375',
+        'DOCKER_TLS_VERIFY': '0',
+        'DOCKER_CERT_PATH': '',
+        'DOCKER_MACHINE_NAME': ''
     }
 
     def __init__(self):
@@ -21,7 +22,8 @@ class Config:
         Applies values, taking them from the environment or from the defaults
         """
         for key, value in self.defaults.items():
-            setattr(self, key, os.getenv(key, default=value))
+            setattr(self, key, os.getenv(key, default=value)
+                    .replace('tcp://', 'http://'))  # For CircleCI tests.
 
     def __getattribute__(self, name):
         """

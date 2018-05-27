@@ -51,15 +51,23 @@ class Containers:
             'Content-Type': 'application/json; charset=utf-8'
         }
 
-        endpoint = story.app.config.docker['endpoint']
+        endpoint = story.app.config.DOCKER_HOST
+
+        if story.app.config.DOCKER_TLS_VERIFY == '1':
+            endpoint = endpoint.replace('http://', 'https://')
+
         exec_create_url = '{0}/{1}/containers/{2}/exec'\
             .format(endpoint, API_VERSION, name)
 
-        response = await http_client.fetch(
-            exec_create_url,
-            method='POST',
-            headers=headers,
-            body=ujson.dumps(exec_create_post_data))
+        create_kwargs = {
+            'method': 'POST',
+            'headers': headers,
+            'body': ujson.dumps(exec_create_post_data)
+        }
+
+        cls._insert_auth_kwargs(story, create_kwargs)
+
+        response = await http_client.fetch(exec_create_url, **create_kwargs)
 
         create_result = ujson.loads(response.body)
 
@@ -73,11 +81,17 @@ class Containers:
             'Detach': False
         }
 
+        exec_start_kwargs = {
+            'method': 'POST',
+            'headers': headers,
+            'body': ujson.dumps(exec_start_post_data)
+        }
+
+        cls._insert_auth_kwargs(story, exec_start_kwargs)
+
         response = await http_client.fetch(
             exec_start_url,
-            method='POST',
-            headers=headers,
-            body=ujson.dumps(exec_start_post_data))
+            **exec_start_kwargs)
 
         # Read our stdin/stdout multiplexed stream.
         # https://docs.docker.com/engine/api/v1.32/#operation/ContainerAttach
@@ -105,3 +119,9 @@ class Containers:
         logger.log('container-end', name)
 
         return stdout[:-1]  # Truncate the leading \n from the console.
+
+    @classmethod
+    def _insert_auth_kwargs(cls, story, kwargs):
+        if story.app.config.DOCKER_TLS_VERIFY != '':
+            kwargs['validate_cert'] = True
+            kwargs['client_cert'] = story.app.config.DOCKER_CERT_PATH
