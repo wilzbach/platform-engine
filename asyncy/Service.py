@@ -27,10 +27,6 @@ app = App(config)
 logger = Logger(config)
 logger.start()
 
-# 20 is an arbitrary number. Feel free to increase it.
-# TODO 26/05/2018: Actually use this story_executor somehow with asyncio.
-story_executor = ThreadPoolExecutor(max_workers=20)
-
 
 class RunStoryHandler(tornado.web.RequestHandler):
 
