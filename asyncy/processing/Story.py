@@ -18,18 +18,18 @@ class Story:
         logger.log('story-save', story.name, story.app_id)
 
     @staticmethod
-    def execute(app, logger, story, skip_server_finish=False):
+    async def execute(app, logger, story, skip_server_finish=False):
         """
         Executes each line in the story
         """
         line_number = story.first_line()
         while line_number:
-            line_number = Handler.run(logger, line_number, story)
+            line_number = await Handler.run(logger, line_number, story)
             logger.log('story-execution', line_number)
-            if line_number:
-                if line_number.endswith('.story'):
-                    line_number = Story.run(app, logger, line_number,
-                                            skip_server_finish=True)
+            # if line_number:
+            #     if line_number.endswith('.story'):
+            #         line_number = await Story.run(app, logger, line_number,
+            #                                       skip_server_finish=True)
 
         if skip_server_finish is False:
             # If we're running in an http context, then we need to call finish
@@ -43,10 +43,14 @@ class Story:
                         .add_callback(server_request.finish)
 
     @classmethod
-    def run(cls, app, logger, story_name, *, story_id=None,
-            start=None, block=None, context=None, skip_server_finish=False):
+    async def run(cls,
+                  app, logger, story_name, *, story_id=None,
+                  start=None, block=None, context=None,
+                  skip_server_finish=False):
+
         logger.log('story-start', story_name, story_id)
         story = cls.story(app, logger, story_name)
         story.prepare(context, start, block)
-        cls.execute(app, logger, story, skip_server_finish=skip_server_finish)
+        await cls.execute(app, logger, story,
+                          skip_server_finish=skip_server_finish)
         logger.log('story-end', story_name, story_id)

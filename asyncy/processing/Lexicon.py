@@ -12,7 +12,7 @@ class Lexicon:
     """
 
     @staticmethod
-    def run(logger, story, line):
+    async def run(logger, story, line):
         """
         Runs a container with the resolution values as commands
         """
@@ -53,7 +53,8 @@ class Lexicon:
                 story.end_line(line['ln'])
                 return Lexicon.next_line_or_none(story.next_line(line['ln']))
 
-            output = Containers.exec(logger, story, line['container'], command)
+            output = await Containers.exec(logger, story,
+                                           line['container'], command)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
 
@@ -93,7 +94,7 @@ class Lexicon:
         return line['enter']
 
     @staticmethod
-    def for_loop(logger, story, line):
+    async def for_loop(logger, story, line):
         """
         Evaluates a for loop
         """
@@ -101,7 +102,7 @@ class Lexicon:
         output = line['args'][0]
         for item in _list:
             story.context[output] = item
-            Lexicon.run(logger, story, line['ln'])
+            await Lexicon.run(logger, story, line['ln'])
         return line['exit']
 
     @staticmethod

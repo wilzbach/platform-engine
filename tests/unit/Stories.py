@@ -299,8 +299,9 @@ def test_stories_prepare(story):
 
 
 def test_stories_prepare_context(story, app):
+    story.app = app
     story.prepare({}, None, None)
-    assert story.context == {'env': app.environment['env']}
+    assert story.environment == app.environment
 
 
 def test_stories_prepare_start(patch, story):

@@ -7,7 +7,10 @@ class Config:
     defaults = {
         'gateway_url': 'api-gateway:8081',
         'logger_name': 'asyncy',
-        'logger_level': 'warning'
+        'logger_level': 'warning',
+        'docker': {
+            'endpoint': 'http://localhost:2375'
+        }
     }
 
     def __init__(self):

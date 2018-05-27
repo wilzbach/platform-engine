@@ -8,7 +8,7 @@ class Handler:
     """
 
     @staticmethod
-    def run(logger, line_number, story):
+    async def run(logger, line_number, story):
         """
         Run the story
         """
@@ -18,8 +18,8 @@ class Handler:
         if line['method'] == 'if':
             return Lexicon.if_condition(logger, story, line)
         elif line['method'] == 'for':
-            return Lexicon.for_loop(logger, story, line)
+            return await Lexicon.for_loop(logger, story, line)
         elif line['method'] == 'run':
-            return Lexicon.run(logger, story, line)
+            return await Lexicon.run(logger, story, line)
         elif line['method'] == 'set':
             return Lexicon.set(logger, story, line)
