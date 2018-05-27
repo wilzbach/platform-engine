@@ -25,7 +25,8 @@ setup(
     tests_require=[
         'pytest',
         'pytest-cov',
-        'pytest-mock'
+        'pytest-mock',
+        'pytest-asyncio'
     ],
     setup_requires=['pytest-runner'],
     install_requires=[
@@ -33,7 +34,6 @@ setup(
         'click>=6.7',
         'cryptography>=2.1.4',
         'dateparser>=0.7.0',
-        'docker>=2.7.0',
         'frustum>=0.0.1',
         'raven==6.8.0',
         'storyscript>=0.0.7',

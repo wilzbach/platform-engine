@@ -277,8 +277,7 @@ class Stories:
 
         self.context = context
 
-        if self.app.environment is not None:
-            self.context['env'] = self.app.environment
+        self.environment = self.app.environment or {}
 
         if start:
             self.start_from(start)

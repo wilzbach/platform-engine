@@ -1,24 +1,72 @@
 # -*- coding: utf-8 -*-
+from io import BytesIO
+from unittest.mock import MagicMock
 
-from asyncy.Containers import Containers
-from asyncy.processing import Story
+from asyncy.Config import Config
+from asyncy.Containers import Containers, MAX_RETRIES
+from asyncy.Exceptions import DockerError
 
-from docker import DockerClient
+import pytest
+from pytest import mark
+
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 
-def test_container_exec(patch, config, logger):
-    patch.object(DockerClient, 'containers')
-    DockerClient.containers.get.return_value.exec_run \
-        .return_value = [0, 'output']
-    patch.object(Story, 'story')
+@mark.asyncio
+async def test_container_exec(patch, story, app, logger, async_mock):
+    create_response = MagicMock()
+    create_response.body = '{"Id": "exec_id"}'
 
-    story = Story.story(config, logger, None, 'story_name')
-    story.environment = {'foo': 'bar'}
+    exec_response = MagicMock()
+    exec_response.buffer = BytesIO(b'\x01\x00\x00\x00\x00\x00\x00\x03asy'
+                                   b'\x01\x00\x00\x00\x00\x00\x00\x01n'
+                                   b'\x01\x00\x00\x00\x00\x00\x00\x01c'
+                                   b'\x01\x00\x00\x00\x00\x00\x00\x02y\n')
 
-    result = Containers.exec(logger, story, 'container_name', 'command')
+    patch.object(AsyncHTTPClient, '__init__', return_value=None)
 
-    DockerClient.containers.get.return_value.exec_run.assert_called_with(
-        'command', environment={'foo': 'bar'}
-    )
-    assert DockerClient.containers.get.call_count == 1
-    assert result == 'output'
+    patch.object(AsyncHTTPClient, 'fetch',
+                 new=async_mock(side_effect=[create_response, exec_response]))
+
+    app.config = Config()
+
+    story.app = app
+    story.prepare()
+
+    result = await Containers.exec(logger, story, 'alpine', 'pwd')
+
+    assert result == 'asyncy'
+
+    fetch = AsyncHTTPClient.fetch.mock
+
+    endpoint = app.config.DOCKER_HOST
+    if story.app.config.DOCKER_TLS_VERIFY == '1':
+        endpoint = endpoint.replace('http://', 'https://')
+
+    assert fetch.mock_calls[0][1][1] == \
+        '{0}/v1.37/containers/alpine/exec'.format(endpoint)
+    assert fetch.mock_calls[0][2]['method'] == 'POST'
+    assert fetch.mock_calls[0][2]['body'] == \
+        '{"Container":"alpine","User":"root","Privileged":false,' \
+        '"Cmd":["pwd"],"AttachStdin":false,' \
+        '"AttachStdout":true,"AttachStderr":true,"Tty":false}'
+
+    assert fetch.mock_calls[1][1][1] == \
+        '{0}/v1.37/exec/exec_id/start'.format(endpoint)
+    assert fetch.mock_calls[1][2]['method'] == 'POST'
+    assert fetch.mock_calls[1][2]['body'] == '{"Tty":false,"Detach":false}'
+
+
+@mark.asyncio
+async def test_fetch_with_retry(patch, story):
+    def raise_error(url):
+        raise HTTPError(500)
+
+    patch.object(AsyncHTTPClient, 'fetch', side_effect=raise_error)
+    client = AsyncHTTPClient()
+
+    with pytest.raises(DockerError):
+        # noinspection PyProtectedMember
+        await Containers._fetch_with_retry(story, 'url', client, {})
+
+    assert client.fetch.call_count == MAX_RETRIES

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import os
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import click
@@ -7,7 +9,7 @@ import click
 from raven.contrib.tornado import AsyncSentryClient
 
 import tornado
-from tornado import gen, web
+from tornado import web
 
 import ujson
 
@@ -25,14 +27,11 @@ app = App(config)
 logger = Logger(config)
 logger.start()
 
-# 20 is an arbitrary number. Feel free to increase it.
-story_executor = ThreadPoolExecutor(max_workers=20)
-
 
 class RunStoryHandler(tornado.web.RequestHandler):
 
     @classmethod
-    def run_story(cls, request_response, io_loop):
+    async def run_story(cls, request_response, io_loop):
         req = ujson.loads(request_response.request.body)
 
         logger.log('http-request-run-story', req['story_name'], req['app_id'])
@@ -41,19 +40,20 @@ class RunStoryHandler(tornado.web.RequestHandler):
         context[ContextConstants.server_request] = request_response
         context[ContextConstants.server_io_loop] = io_loop
 
-        try:
-            Story.run(app, logger,
-                      story_name=req['story_name'],
-                      context=context,
-                      block=req.get('block'), start=req.get('line'))
-        except Exception as e:
-            logger.log_raw('error', 'Failed to execute story! error=' + str(e))
+        await Story.run(app, logger,
+                        story_name=req['story_name'],
+                        context=context,
+                        block=req.get('block'), start=req.get('line'))
 
     @web.asynchronous
-    def post(self):
+    async def post(self):
         io_loop = tornado.ioloop.IOLoop.current()
-        args = [self, io_loop]
-        story_executor.submit(RunStoryHandler.run_story, *args)
+        try:
+            await RunStoryHandler.run_story(self, io_loop)
+        except Exception as e:
+            logger.log_raw('error', 'Story execution failed; cause=' + str(e))
+            self.set_status(500, 'Story execution failed')
+            self.finish()
 
     def is_finished(self):
         return self._finished

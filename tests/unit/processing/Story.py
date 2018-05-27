@@ -6,7 +6,7 @@ from asyncy.Stories import Stories
 from asyncy.constants import ContextConstants
 from asyncy.processing import Handler, Story
 
-from pytest import fixture, raises
+from pytest import mark, raises
 
 
 def test_story_story(patch, app, logger):
@@ -16,18 +16,21 @@ def test_story_story(patch, app, logger):
     assert isinstance(story, Stories)
 
 
-def test_story_execute(patch, app, logger, story):
-    patch.object(Handler, 'run', return_value=None)
+@mark.asyncio
+async def test_story_execute(patch, app, logger, story, async_mock):
+    patch.object(Handler, 'run', new=async_mock(return_value=None))
     patch.object(Stories, 'first_line')
     story.prepare()
-    Story.execute(app, logger, story)
+    await Story.execute(app, logger, story)
     assert Stories.first_line.call_count == 1
     logger.log.assert_called_with('story-execution', None)
-    Handler.run.assert_called_with(logger, Stories.first_line(), story)
+    Handler.run.mock.assert_called_with(logger, Stories.first_line(), story)
 
 
-def test_story_execute_calls_finish(patch, app, logger, story):
-    patch.object(Handler, 'run', return_value=None)
+@mark.asyncio
+async def test_story_execute_calls_finish(patch, app, logger,
+                                          story, async_mock):
+    patch.object(Handler, 'run', new=async_mock(return_value=None))
     patch.object(Stories, 'first_line')
     io_loop = Mock()
     request = Mock()
@@ -37,40 +40,50 @@ def test_story_execute_calls_finish(patch, app, logger, story):
         ContextConstants.server_request: request
     }
     story.prepare(context=context)
-    Story.execute(app, logger, story)
+    await Story.execute(app, logger, story)
     io_loop.add_callback.assert_called_once()
     request.finish.assert_called_once()
 
 
-def test_story_run(patch, app, logger):
+@mark.asyncio
+async def test_story_run(patch, app, logger, async_mock):
     patch.object(time, 'time')
-    patch.many(Story, ['execute', 'story'])
-    Story.run(app, logger, 'story_name')
+    patch.object(Story, 'execute', new=async_mock())
+    patch.object(Story, 'story')
+    await Story.run(app, logger, 'story_name')
     Story.story.assert_called_with(app, logger, 'story_name')
-    Story.story().prepare.assert_called_with(None, None, None)
-    Story.execute.assert_called_with(app, logger, Story.story(),
-                                     skip_server_finish=False)
+    Story.story.return_value.prepare.assert_called_with(None, None, None)
+    Story.execute.mock.assert_called_with(app, logger, Story.story(),
+                                          skip_server_finish=False)
 
 
-def test_story_run_logger(patch, app, logger):
-    patch.many(Story, ['execute', 'story'])
-    Story.run(app, logger, 'story_name')
+@mark.asyncio
+async def test_story_run_logger(patch, app, logger, async_mock):
+    patch.object(Story, 'execute', new=async_mock())
+    patch.object(Story, 'story')
+    await Story.run(app, logger, 'story_name')
     assert logger.log.call_count == 2
 
 
-def test_tasks_run_force_keyword(patch, app, logger):
-    patch.many(Story, ['execute', 'story'])
+@mark.asyncio
+async def test_tasks_run_force_keyword(patch, app, logger, async_mock):
+    patch.object(Story, 'execute', new=async_mock())
+    patch.object(Story, 'story')
     with raises(TypeError):
-        Story.run(app, logger, 'story_name', 'story_id')
+        await Story.run(app, logger, 'story_name', 'story_id')
 
 
-def test_story_run_with_id(patch, app, logger):
-    patch.many(Story, ['execute', 'story'])
-    Story.run(app, logger, 'story_name', story_id='story_id')
+@mark.asyncio
+async def test_story_run_with_id(patch, app, logger, async_mock):
+    patch.object(Story, 'execute', new=async_mock())
+    patch.object(Story, 'story')
+    await Story.run(app, logger, 'story_name', story_id='story_id')
 
 
-def test_story_run_prepare(patch, app, logger):
-    patch.many(Story, ['execute', 'story'])
+@mark.asyncio
+async def test_story_run_prepare(patch, app, logger, async_mock):
+    patch.object(Story, 'execute', new=async_mock())
+    patch.object(Story, 'story')
     kwargs = {'start': 'start', 'block': 'block', 'context': 'context'}
-    Story.run(app, logger, 'story_name', **kwargs)
+    await Story.run(app, logger, 'story_name', **kwargs)
     Story.story().prepare.assert_called_with('context', 'start', 'block')
