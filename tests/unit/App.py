@@ -12,11 +12,11 @@ def init(patch):
 
 
 @fixture
-def app():
-    return App()
+def app(config):
+    return App(config)
 
 
-def test_app_init(patch):
+def test_app_init(patch, config):
     patch.object(App, 'apply')
-    App()
+    App(config)
     App.apply.assert_called_with()

@@ -93,12 +93,12 @@ def test_logger_events_service_init(logger):
 
 def test_logger_events_http_init(logger):
     message = 'HTTP server bound to port {}'
-    assert logger.events[12] == ('http-init', 'info', message)
+    assert logger.events[11] == ('http-init', 'info', message)
 
 
 def test_logger_events_http_run_story(logger):
     message = 'Received run request for story {} from app {} via HTTP'
-    assert logger.events[13] == ('http-request-run-story', 'debug', message)
+    assert logger.events[12] == ('http-request-run-story', 'debug', message)
 
 
 def test_logger_adapter(patch, magic, logger):

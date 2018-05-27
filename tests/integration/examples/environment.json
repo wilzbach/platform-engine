@@ -1,12 +1,4 @@
 {
-  "env": {
-    "key": "value",
-    "defined_by": "users"
-  },
-  "services": {
-    "container": {
-      "key": "value",
-      "specific_to": "container"
-    }
-  }
+  "FOO": "bar",
+  "MY_APP_LOG_LEVEL": "info"
 }

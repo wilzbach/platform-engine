@@ -34,7 +34,7 @@ def test_http_endpoint_register(patch, story):
     patch.object(HTTPRequest, '__init__', return_value=None)
     HttpEndpoint.register_http_endpoint(story, 'foo_method', 'foo_path', '28')
     url = 'http://{}/register/story'
-    url = url.format(story.config.gateway_url)
+    url = url.format(story.app.config.gateway_url)
     HTTPRequest.__init__.assert_called_with(
         url=url, method='POST',
         headers={
@@ -55,8 +55,12 @@ def test_http_endpoint_access_response(patch, story, command):
 
     patch.object(story, 'argument_by_name')
     tornado_req = Mock()
+    io_loop = Mock()
+
+    patch.object(io_loop, 'add_callback', side_effect=lambda x: x())
     story.context = {
-        ContextConstants.server_request: tornado_req
+        ContextConstants.server_request: tornado_req,
+        ContextConstants.server_io_loop: io_loop
     }
 
     story.argument_by_name.return_value = 'argument_val'

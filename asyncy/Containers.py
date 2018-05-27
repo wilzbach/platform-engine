@@ -1,54 +1,138 @@
 # -*- coding: utf-8 -*-
-import docker
+import struct
 
-from .Exceptions import DockerContainerNotFoundError, DockerError
+from tornado.httpclient import AsyncHTTPClient, HTTPError
+
+import ujson
+
+from .Exceptions import DockerError
 
 MAX_RETRIES = 3
 
+API_VERSION = 'v1.37'
+
 
 class Containers:
-    # Caches the container name (key) to the Container instance from docker.
-    container_cache = {}
-
-    client = docker.from_env()
 
     @classmethod
-    def exec(cls, logger, story, name, command):
+    async def exec(cls, logger, story, name, command):
         """
-        Executes a command in the given container.
+        Executes a command asynchronously in the given container.
 
         Returns:
-        Output of the process.
+        Output of the process (stdout).
 
         Raises:
-        asyncy.Exceptions.DockerContainerNotFoundError:
-            When the container is not found.
         asyncy.Exceptions.DockerError:
             If the execution failed for an unknown reason.
         """
         logger.log('container-start', name)
-        environment = story.get_environment(name)
-        tries = 0
-        while tries < MAX_RETRIES:
-            tries = tries + 1
-            container = Containers.container_cache.get(name)
+        http_client = AsyncHTTPClient()
+
+        exec_create_post_data = {
+            'Container': name,
+            'User': 'root',
+            'Privileged': False,
+            'Cmd': [command],
+            'AttachStdin': False,
+            'AttachStdout': True,
+            'AttachStderr': True,
+            'Tty': False
+        }
+
+        headers = {
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+
+        endpoint = story.app.config.DOCKER_HOST
+
+        if story.app.config.DOCKER_TLS_VERIFY == '1':
+            endpoint = endpoint.replace('http://', 'https://')
+
+        exec_create_url = '{0}/{1}/containers/{2}/exec'\
+            .format(endpoint, API_VERSION, name)
+
+        create_kwargs = {
+            'method': 'POST',
+            'headers': headers,
+            'body': ujson.dumps(exec_create_post_data)
+        }
+
+        cls._insert_auth_kwargs(story, create_kwargs)
+
+        response = await cls._fetch_with_retry(story, exec_create_url,
+                                               http_client, create_kwargs)
+
+        create_result = ujson.loads(response.body)
+
+        exec_id = create_result['Id']
+
+        exec_start_url = '{0}/{1}/exec/{2}/start'\
+            .format(endpoint, API_VERSION, exec_id)
+
+        exec_start_post_data = {
+            'Tty': False,
+            'Detach': False
+        }
+
+        exec_start_kwargs = {
+            'method': 'POST',
+            'headers': headers,
+            'body': ujson.dumps(exec_start_post_data)
+        }
+
+        cls._insert_auth_kwargs(story, exec_start_kwargs)
+
+        response = await cls._fetch_with_retry(story, exec_start_url,
+                                               http_client, exec_start_kwargs)
+
+        # Read our stdin/stdout multiplexed stream.
+        # https://docs.docker.com/engine/api/v1.32/#operation/ContainerAttach
+        stdout = ''
+        stderr = ''
+
+        while True:
+            header = response.buffer.read(8)
+
+            if header is b'':  # EOS.
+                break
+
+            length = struct.unpack('>I', header[4:])  # Big endian.
+
+            output = response.buffer.read(length[0]).decode('utf-8')
+
+            if header[0] == 1:
+                stdout += output
+            elif header[0] == 2:
+                stderr += output
+            else:
+                raise Exception('Don\'t know what {0} in the header means'
+                                .format(header[0]))
+
+        logger.log('container-end', name)
+
+        return stdout[:-1]  # Truncate the leading \n from the console.
+
+    @classmethod
+    async def _fetch_with_retry(cls, story, url, http_client, kwargs):
+        attempts = 0
+        while attempts < MAX_RETRIES:
+            attempts = attempts + 1
             try:
-                if container is None:
-                    container = cls.client.containers.get(container_id=name)
-                    if container is None:
-                        raise DockerContainerNotFoundError(
-                            'Container not found')
-                    Containers.container_cache[name] = container
+                return await http_client.fetch(url, **kwargs)
+            except HTTPError as e:
+                story.logger.log_raw(
+                    'error',
+                    f'Failed to call {url}; attempt={attempts}; err={str(e)}'
+                )
 
-                result = container.exec_run(command, environment=environment)
-                logger.log('container-end', name)
-                return result[1]  # container.exec_run returns a tuple.
-            except docker.errors.DockerException:
-                logger.log_raw('error',
-                               'Error finding container, trying again.')
-                # Remove the container from container_cache.
-                Containers.container_cache[name] = None
+        raise DockerError(message=f'Failed to call {url}!')
 
-        logger.log_raw('error',
-                       'Execution failed after all retries.')
-        raise DockerError('Execution failed')
+    @classmethod
+    def _insert_auth_kwargs(cls, story, kwargs):
+        if story.app.config.DOCKER_TLS_VERIFY != '':
+            kwargs['validate_cert'] = True
+            cert_path = story.app.config.DOCKER_CERT_PATH
+            kwargs['ca_certs'] = cert_path + '/ca.pem'
+            kwargs['client_key'] = cert_path + '/key.pem'
+            kwargs['client_cert'] = cert_path + '/cert.pem'

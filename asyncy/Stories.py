@@ -16,7 +16,6 @@ class Stories:
         self.logger = logger
         self.tree = app.stories[story_name]['tree']
         self.results = {}
-        self.tree = None
         self.environment = None
         self.context = None
         self.containers = None
@@ -63,7 +62,35 @@ class Stories:
             dictionary[line_number] = self.tree[line_number]
         self.tree = dictionary
 
-    def child_block(self, parent_line):
+    def line_has_parent(self, parent_line_number, line):
+        """
+        Looks up the hierarchy of this line to see if it
+        belongs to a particular parent.
+
+        :param parent_line_number: The parent line number
+        :param line: The line to test
+        :return: True if this line is a child of the parent (directly or
+                 indirectly), False otherwise
+        """
+
+        # Fast test - this line is an immediate child of the parent.
+        if parent_line_number == line.get('parent', None):
+            return True
+
+        while line is not None:
+            my_parent_number = line.get('parent', None)
+
+            if my_parent_number is None:
+                return False
+
+            if my_parent_number == parent_line_number:
+                return True
+
+            line = self.line(my_parent_number)
+
+        return False
+
+    def child_block(self, parent_line_number):
         """
         Slices the story to a single block with the same parent. Used when
         running a single block of the story, for example when the story is
@@ -71,9 +98,8 @@ class Stories:
         """
         dictionary = {}
         for key, value in self.tree.items():
-            if 'parent' in value:
-                if value['parent'] == parent_line:
-                    dictionary[key] = value
+            if self.line_has_parent(parent_line_number, value):
+                dictionary[key] = value
         self.tree = dictionary
 
     def next_block(self, parent_line):
@@ -105,7 +131,7 @@ class Stories:
         """
         Checks whether argument is a command for the given container
         """
-        if type(argument) is str:
+        if type(argument) is str or self.containers is None:
             return None
 
         if argument['$OBJECT'] == 'path':
@@ -245,13 +271,13 @@ class Stories:
 
         return None
 
-    def prepare(self, context, start, block):
+    def prepare(self, context=None, start=None, block=None):
         if context is None:
             context = {}
 
         self.context = context
 
-        self.context['env'] = self.app.environment['env']
+        self.environment = self.app.environment or {}
 
         if start:
             self.start_from(start)

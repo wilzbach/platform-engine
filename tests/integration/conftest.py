@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-import os
-
-from asyncy.App import App
 from asyncy.Config import Config
 from asyncy.Logger import Logger
+from asyncy.Stories import Stories
 
 from pytest import fixture
+
+import ujson
+
+from . import examples
 
 
 @fixture
@@ -14,9 +16,18 @@ def config():
 
 
 @fixture
-def app():
-    os.environ['ASSET_DIR'] = os.path.join(__dir__, './examples/')
-    return App()
+def app(magic):
+    return magic()
+
+
+@fixture
+def story(app, logger):
+    asset_dir = examples.__path__[0]
+
+    with open(asset_dir + '/stories.json', 'r') as file:
+        app.stories = ujson.loads(file.read())['stories']
+
+    return Stories(app, 'hello.story', logger)
 
 
 @fixture
