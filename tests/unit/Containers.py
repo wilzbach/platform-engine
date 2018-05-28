@@ -2,14 +2,15 @@
 from io import BytesIO
 from unittest.mock import MagicMock
 
-import pytest
-from pytest import mark
-from tornado.httpclient import AsyncHTTPClient, HTTPError
-
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
 from asyncy.Exceptions import DockerError
 from asyncy.processing import Story
+
+import pytest
+from pytest import mark
+
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 
 @mark.asyncio
