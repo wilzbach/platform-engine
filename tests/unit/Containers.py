@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from io import BytesIO
-from time import time
 from unittest.mock import MagicMock
 
 import pytest
