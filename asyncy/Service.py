@@ -4,6 +4,7 @@ import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
+from asyncy.Exceptions import AsyncyError
 import click
 
 from raven.contrib.tornado import AsyncSentryClient
@@ -50,10 +51,16 @@ class RunStoryHandler(tornado.web.RequestHandler):
         io_loop = tornado.ioloop.IOLoop.current()
         try:
             await RunStoryHandler.run_story(self, io_loop)
-        except Exception as e:
+        except BaseException as e:
             logger.log_raw('error', 'Story execution failed; cause=' + str(e))
             self.set_status(500, 'Story execution failed')
             self.finish()
+            if isinstance(e, AsyncyError):
+                app.sentry_client.capture('raven.events.Exception', extra={
+                    'tree': e.tree,
+                    'line': e.line,
+                    'context': e.context
+                })
 
     def is_finished(self):
         return self._finished
@@ -81,13 +88,13 @@ class Service:
                   default=os.getenv('SENTRY_DSN'))
     def start(port, debug, sentry_dsn):
         logger.log('service-init', Version.version)
-        app = tornado.web.Application(
+        web_app = tornado.web.Application(
             [
                 (r'/story/run', RunStoryHandler)
             ],
             debug=debug,
         )
-        app.listen(port)
+        web_app.listen(port)
         app.sentry_client = AsyncSentryClient(sentry_dsn)
 
         logger.log('http-init', port)

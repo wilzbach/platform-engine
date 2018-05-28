@@ -15,7 +15,7 @@ API_VERSION = 'v1.37'
 class Containers:
 
     @classmethod
-    async def exec(cls, logger, story, name, command):
+    async def exec(cls, logger, story, line, name, command):
         """
         Executes a command asynchronously in the given container.
 
@@ -60,7 +60,7 @@ class Containers:
 
         cls._insert_auth_kwargs(story, create_kwargs)
 
-        response = await cls._fetch_with_retry(story, exec_create_url,
+        response = await cls._fetch_with_retry(story, line, exec_create_url,
                                                http_client, create_kwargs)
 
         create_result = ujson.loads(response.body)
@@ -83,7 +83,7 @@ class Containers:
 
         cls._insert_auth_kwargs(story, exec_start_kwargs)
 
-        response = await cls._fetch_with_retry(story, exec_start_url,
+        response = await cls._fetch_with_retry(story, line, exec_start_url,
                                                http_client, exec_start_kwargs)
 
         # Read our stdin/stdout multiplexed stream.
@@ -114,7 +114,7 @@ class Containers:
         return stdout[:-1]  # Truncate the leading \n from the console.
 
     @classmethod
-    async def _fetch_with_retry(cls, story, url, http_client, kwargs):
+    async def _fetch_with_retry(cls, story, line, url, http_client, kwargs):
         attempts = 0
         while attempts < MAX_RETRIES:
             attempts = attempts + 1
@@ -126,7 +126,8 @@ class Containers:
                     f'Failed to call {url}; attempt={attempts}; err={str(e)}'
                 )
 
-        raise DockerError(message=f'Failed to call {url}!')
+        raise DockerError(message=f'Failed to call {url}!',
+                          story=story, line=line)
 
     @classmethod
     def _insert_auth_kwargs(cls, story, kwargs):
