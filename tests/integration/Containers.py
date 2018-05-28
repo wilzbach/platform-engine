@@ -13,6 +13,6 @@ async def test_exec(logger, config, story, echo_service, echo_line):
     }
     story.prepare()
     result = await Containers.exec(logger, story, echo_line,
-                                   'asyncy_echo', 'echo')
+                                   'asyncy--echo', 'echo')
 
     assert result == 'foo'

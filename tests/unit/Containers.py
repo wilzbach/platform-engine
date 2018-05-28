@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from io import BytesIO
+from time import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -21,6 +22,7 @@ async def test_container_exec(patch, story, app, logger, async_mock):
     exec_response.buffer = BytesIO(b'\x01\x00\x00\x00\x00\x00\x00\x03asy'
                                    b'\x01\x00\x00\x00\x00\x00\x00\x01n'
                                    b'\x01\x00\x00\x00\x00\x00\x00\x01c'
+                                   b'\x02\x00\x00\x00\x00\x00\x00\x08my_error'
                                    b'\x01\x00\x00\x00\x00\x00\x00\x02y\n')
 
     patch.object(AsyncHTTPClient, '__init__', return_value=None)
@@ -74,11 +76,11 @@ async def test_fetch_with_retry(patch, story):
     assert client.fetch.call_count == MAX_RETRIES
 
 
-def test_format_command(logger, patch, app, echo_service, echo_line):
+def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = {
         'services': echo_service
     }
 
-    cmd = Containers.format_command(story, echo_line, 'asyncy_echo', 'echo')
-    assert cmd == ['echo', 'foo']
+    cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
+    assert ['echo', 'foo'] == cmd

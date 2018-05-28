@@ -62,7 +62,7 @@ def patch(mocker, patch_init, patch_many):
 def echo_line():
     return {
         'ln': '1',
-        'container': 'asyncy_echo',
+        'container': 'asyncy--echo',
         'args': [
             {
                 '$OBJECT': 'argument',
@@ -79,7 +79,7 @@ def echo_line():
 @fixture
 def echo_service():
     return {
-        'asyncy_echo': {
+        'asyncy--echo': {
             'config': {
                 'commands': {
                     'echo': {
