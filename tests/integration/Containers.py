@@ -6,9 +6,13 @@ from pytest import mark
 
 
 @mark.asyncio
-async def test_exec(logger, config, story):
+async def test_exec(logger, config, story, echo_service, echo_line):
     story.app = App(config)
+    story.app.services = {
+        'services': echo_service
+    }
     story.prepare()
-    result = await Containers.exec(logger, story, 'alpine', 'pwd')
+    result = await Containers.exec(logger, story, echo_line,
+                                   'asyncy_echo', 'echo')
 
-    assert result == '/'
+    assert result == 'foo'

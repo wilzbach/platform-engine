@@ -2,14 +2,14 @@
 from io import BytesIO
 from unittest.mock import MagicMock
 
+import pytest
+from pytest import mark
+from tornado.httpclient import AsyncHTTPClient, HTTPError
+
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
 from asyncy.Exceptions import DockerError
-
-import pytest
-from pytest import mark
-
-from tornado.httpclient import AsyncHTTPClient, HTTPError
+from asyncy.processing import Story
 
 
 @mark.asyncio
@@ -33,7 +33,9 @@ async def test_container_exec(patch, story, app, logger, async_mock):
     story.app = app
     story.prepare()
 
-    result = await Containers.exec(logger, story, 'alpine', 'pwd')
+    patch.object(Containers, 'format_command', return_value=['pwd'])
+
+    result = await Containers.exec(logger, story, None, 'alpine', 'pwd')
 
     assert result == 'asyncy'
 
@@ -44,10 +46,10 @@ async def test_container_exec(patch, story, app, logger, async_mock):
         endpoint = endpoint.replace('http://', 'https://')
 
     assert fetch.mock_calls[0][1][1] == \
-        '{0}/v1.37/containers/alpine/exec'.format(endpoint)
+        '{0}/v1.37/containers/asyncy--alpine-1/exec'.format(endpoint)
     assert fetch.mock_calls[0][2]['method'] == 'POST'
     assert fetch.mock_calls[0][2]['body'] == \
-        '{"Container":"alpine","User":"root","Privileged":false,' \
+        '{"Container":"asyncy--alpine-1","User":"root","Privileged":false,' \
         '"Cmd":["pwd"],"AttachStdin":false,' \
         '"AttachStdout":true,"AttachStderr":true,"Tty":false}'
 
@@ -70,3 +72,13 @@ async def test_fetch_with_retry(patch, story):
         await Containers._fetch_with_retry(story, 'url', client, {})
 
     assert client.fetch.call_count == MAX_RETRIES
+
+
+def test_format_command(logger, patch, app, echo_service, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    app.services = {
+        'services': echo_service
+    }
+
+    cmd = Containers.format_command(story, echo_line, 'asyncy_echo', 'echo')
+    assert cmd == ['echo', 'foo']

@@ -56,3 +56,41 @@ def patch(mocker, patch_init, patch_many):
     mocker.patch.init = patch_init
     mocker.patch.many = patch_many
     return mocker.patch
+
+
+@fixture
+def echo_line():
+    return {
+        'ln': '1',
+        'container': 'asyncy_echo',
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'message',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': 'foo'
+                }
+            }
+        ]
+    }
+
+
+@fixture
+def echo_service():
+    return {
+        'asyncy_echo': {
+            'config': {
+                'commands': {
+                    'echo': {
+                        'format': 'echo {message}',
+                        'arguments': {
+                            'message': {
+                                'type': 'string'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
