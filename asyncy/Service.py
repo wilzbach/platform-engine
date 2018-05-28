@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-import asyncio
 import os
-import traceback
-from concurrent.futures import ThreadPoolExecutor
 
-from asyncy.Exceptions import AsyncyError
 import click
 
 from raven.contrib.tornado import AsyncSentryClient
@@ -17,6 +13,7 @@ import ujson
 from . import Version
 from .App import App
 from .Config import Config
+from .Exceptions import AsyncyError
 from .Logger import Logger
 from .constants.ContextConstants import ContextConstants
 from .processing import Story
