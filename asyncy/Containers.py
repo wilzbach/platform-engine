@@ -24,9 +24,22 @@ class Containers:
                 container_name=container_name
             )
 
-        command_format = spec['config']['commands'][command]['format']
+        args = spec['config']['commands'][command].get('arguments')
+
+        if args is None:
+            return [command]
+
+        command_format = spec['config']['commands'][command].get('format')
+        if command_format is None:
+            # Construct a dictionary of all arguments required and send them
+            # as a JSON string to the command.
+            all_args = {}
+            for k in args:
+                all_args[k] = story.argument_by_name(line, k)
+
+            return [command, ujson.dumps(all_args)]
+
         command_parts = command_format.split(' ')
-        args = spec['config']['commands'][command]['arguments']
 
         for k in args:
             actual = story.argument_by_name(line, k)

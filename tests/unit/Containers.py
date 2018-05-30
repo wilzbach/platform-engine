@@ -84,3 +84,16 @@ def test_format_command(logger, app, echo_service, echo_line):
 
     cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
     assert ['echo', 'foo'] == cmd
+
+
+def test_format_command_no_format(logger, app, echo_service, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    app.services = {
+        'services': echo_service
+    }
+
+    config = app.services['services']['asyncy--echo']['config']
+    config['commands']['echo']['format'] = None
+
+    cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
+    assert ['echo', '{"message":"foo"}'] == cmd
