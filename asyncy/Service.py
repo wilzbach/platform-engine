@@ -15,6 +15,7 @@ from .App import App
 from .Config import Config
 from .Exceptions import AsyncyError
 from .Logger import Logger
+from .Stories import Stories
 from .constants.ContextConstants import ContextConstants
 from .processing import Story
 
@@ -53,10 +54,11 @@ class RunStoryHandler(tornado.web.RequestHandler):
             self.set_status(500, 'Story execution failed')
             self.finish()
             if isinstance(e, AsyncyError):
+                assert isinstance(e.story, Stories)
                 app.sentry_client.capture('raven.events.Exception', extra={
-                    'tree': e.tree,
-                    'line': e.line,
-                    'context': e.context
+                    'context': e.context,
+                    'story_name': e.story.name,
+                    'story_line': e.line['ln']
                 })
 
     def is_finished(self):

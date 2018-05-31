@@ -2,12 +2,9 @@
 
 
 class AsyncyError(Exception):
-    tree = None
-    line = None
-    context = None
 
     def __init__(self, message=None, story=None, line=None):
-        self.tree = story['tree']
+        self.story = story
         self.context = story.context
         self.line = line
         super().__init__(message)
