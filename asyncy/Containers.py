@@ -5,7 +5,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
-from .Exceptions import DockerError
+from .Exceptions import ContainerSpecNotRegisteredError, DockerError
 
 MAX_RETRIES = 3
 
@@ -15,7 +15,42 @@ API_VERSION = 'v1.37'
 class Containers:
 
     @classmethod
-    async def exec(cls, logger, story, name, command):
+    def format_command(cls, story, line, container_name, command):
+        services = story.app.services.get('services', {})
+        spec = services.get(container_name)
+
+        if spec is None:
+            raise ContainerSpecNotRegisteredError(
+                container_name=container_name
+            )
+
+        args = spec['config']['commands'][command].get('arguments')
+
+        if args is None:
+            return [command]
+
+        command_format = spec['config']['commands'][command].get('format')
+        if command_format is None:
+            # Construct a dictionary of all arguments required and send them
+            # as a JSON string to the command.
+            all_args = {}
+            for k in args:
+                all_args[k] = story.argument_by_name(line, k)
+
+            return [command, ujson.dumps(all_args)]
+
+        command_parts = command_format.split(' ')
+
+        for k in args:
+            actual = story.argument_by_name(line, k)
+            for i in range(0, len(command_parts)):
+                command_parts[i] = command_parts[i].replace('{' + k + '}',
+                                                            actual)
+
+        return command_parts
+
+    @classmethod
+    async def exec(cls, logger, story, line, container_name, command):
         """
         Executes a command asynchronously in the given container.
 
@@ -26,14 +61,16 @@ class Containers:
         asyncy.Exceptions.DockerError:
             If the execution failed for an unknown reason.
         """
-        logger.log('container-start', name)
+        logger.log('container-start', container_name)
         http_client = AsyncHTTPClient()
 
+        container = f'asyncy--{container_name}-1'
+
         exec_create_post_data = {
-            'Container': name,
+            'Container': container,
             'User': 'root',
             'Privileged': False,
-            'Cmd': [command],
+            'Cmd': cls.format_command(story, line, container_name, command),
             'AttachStdin': False,
             'AttachStdout': True,
             'AttachStderr': True,
@@ -49,8 +86,8 @@ class Containers:
         if story.app.config.DOCKER_TLS_VERIFY == '1':
             endpoint = endpoint.replace('http://', 'https://')
 
-        exec_create_url = '{0}/{1}/containers/{2}/exec'\
-            .format(endpoint, API_VERSION, name)
+        exec_create_url = f'{endpoint}/{API_VERSION}' \
+                          f'/containers/{container}/exec'
 
         create_kwargs = {
             'method': 'POST',
@@ -67,8 +104,7 @@ class Containers:
 
         exec_id = create_result['Id']
 
-        exec_start_url = '{0}/{1}/exec/{2}/start'\
-            .format(endpoint, API_VERSION, exec_id)
+        exec_start_url = f'{endpoint}/{API_VERSION}/exec/{exec_id}/start'
 
         exec_start_post_data = {
             'Tty': False,
@@ -109,7 +145,7 @@ class Containers:
                 raise Exception('Don\'t know what {0} in the header means'
                                 .format(header[0]))
 
-        logger.log('container-end', name)
+        logger.log('container-end', container_name)
 
         return stdout[:-1]  # Truncate the leading \n from the console.
 

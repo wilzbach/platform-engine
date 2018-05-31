@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
 from asyncy.Exceptions import DockerError
+from asyncy.processing import Story
 
 import pytest
 from pytest import mark
@@ -21,6 +22,7 @@ async def test_container_exec(patch, story, app, logger, async_mock):
     exec_response.buffer = BytesIO(b'\x01\x00\x00\x00\x00\x00\x00\x03asy'
                                    b'\x01\x00\x00\x00\x00\x00\x00\x01n'
                                    b'\x01\x00\x00\x00\x00\x00\x00\x01c'
+                                   b'\x02\x00\x00\x00\x00\x00\x00\x08my_error'
                                    b'\x01\x00\x00\x00\x00\x00\x00\x02y\n')
 
     patch.object(AsyncHTTPClient, '__init__', return_value=None)
@@ -33,7 +35,9 @@ async def test_container_exec(patch, story, app, logger, async_mock):
     story.app = app
     story.prepare()
 
-    result = await Containers.exec(logger, story, 'alpine', 'pwd')
+    patch.object(Containers, 'format_command', return_value=['pwd'])
+
+    result = await Containers.exec(logger, story, None, 'alpine', 'pwd')
 
     assert result == 'asyncy'
 
@@ -44,10 +48,10 @@ async def test_container_exec(patch, story, app, logger, async_mock):
         endpoint = endpoint.replace('http://', 'https://')
 
     assert fetch.mock_calls[0][1][1] == \
-        '{0}/v1.37/containers/alpine/exec'.format(endpoint)
+        '{0}/v1.37/containers/asyncy--alpine-1/exec'.format(endpoint)
     assert fetch.mock_calls[0][2]['method'] == 'POST'
     assert fetch.mock_calls[0][2]['body'] == \
-        '{"Container":"alpine","User":"root","Privileged":false,' \
+        '{"Container":"asyncy--alpine-1","User":"root","Privileged":false,' \
         '"Cmd":["pwd"],"AttachStdin":false,' \
         '"AttachStdout":true,"AttachStderr":true,"Tty":false}'
 
@@ -70,3 +74,26 @@ async def test_fetch_with_retry(patch, story):
         await Containers._fetch_with_retry(story, 'url', client, {})
 
     assert client.fetch.call_count == MAX_RETRIES
+
+
+def test_format_command(logger, app, echo_service, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    app.services = {
+        'services': echo_service
+    }
+
+    cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
+    assert ['echo', 'foo'] == cmd
+
+
+def test_format_command_no_format(logger, app, echo_service, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    app.services = {
+        'services': echo_service
+    }
+
+    config = app.services['services']['asyncy--echo']['config']
+    config['commands']['echo']['format'] = None
+
+    cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
+    assert ['echo', '{"message":"foo"}'] == cmd
