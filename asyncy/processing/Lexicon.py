@@ -33,7 +33,7 @@ class Lexicon:
             if isinstance(path, str) is False:
                 raise ArgumentNotFoundError(name='path')
 
-            HttpEndpoint.register_http_endpoint(
+            await HttpEndpoint.register_http_endpoint(
                 story=story, method=method,
                 path=path, line=line['next']
             )

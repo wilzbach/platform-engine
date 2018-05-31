@@ -6,6 +6,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 import ujson
 
 from .Exceptions import DockerError
+from .utils.HttpUtils import HttpUtils
 
 MAX_RETRIES = 3
 
@@ -115,18 +116,11 @@ class Containers:
 
     @classmethod
     async def _fetch_with_retry(cls, story, url, http_client, kwargs):
-        attempts = 0
-        while attempts < MAX_RETRIES:
-            attempts = attempts + 1
-            try:
-                return await http_client.fetch(url, **kwargs)
-            except HTTPError as e:
-                story.logger.log_raw(
-                    'error',
-                    f'Failed to call {url}; attempt={attempts}; err={str(e)}'
-                )
-
-        raise DockerError(message=f'Failed to call {url}!')
+        try:
+            return await HttpUtils.fetch_with_retry(MAX_RETRIES, story.logger,
+                                                    url, http_client, kwargs)
+        except HTTPError as e:
+            raise DockerError(message=f'Failed to call {url}!')
 
     @classmethod
     def _insert_auth_kwargs(cls, story, kwargs):
