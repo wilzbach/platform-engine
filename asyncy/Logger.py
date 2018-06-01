@@ -33,7 +33,7 @@ class Logger:
         ('service-init', 'info', 'Starting Asyncy version {}'),
         ('http-init', 'info', 'HTTP server bound to port {}'),
         ('http-request-run-story', 'debug',
-         'Received run request for story {} from app {} via HTTP'),
+         'Received run request for story {} via HTTP'),
     ]
 
     def __init__(self, config):

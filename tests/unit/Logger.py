@@ -97,7 +97,7 @@ def test_logger_events_http_init(logger):
 
 
 def test_logger_events_http_run_story(logger):
-    message = 'Received run request for story {} from app {} via HTTP'
+    message = 'Received run request for story {} via HTTP'
     assert logger.events[12] == ('http-request-run-story', 'debug', message)
 
 

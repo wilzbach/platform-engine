@@ -46,7 +46,7 @@ async def test_http_endpoint_register(patch, story, async_mock):
             'Content-Type': 'application/json; charset=utf-8'
         },
         'body': '{"method":"foo_method","endpoint":"foo_path",'
-                '"filename":"hello.story","linenum":"28"}'
+                '"filename":"hello.story","block":"28"}'
     }
 
     HttpUtils.fetch_with_retry.mock \

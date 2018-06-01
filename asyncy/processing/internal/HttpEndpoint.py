@@ -65,7 +65,7 @@ class HttpEndpoint:
                 .add_callback(req.finish)
 
     @classmethod
-    async def register_http_endpoint(cls, story, method, path, line):
+    async def register_http_endpoint(cls, story, method, path, block):
         story.app.config.gateway_url = 'localhost:8888'
         url = f'http://{story.app.config.gateway_url}/+'
 
@@ -73,7 +73,7 @@ class HttpEndpoint:
             'method': method,
             'endpoint': path,
             'filename': story.name,
-            'linenum': line
+            'block': block
         })
 
         kwargs = {

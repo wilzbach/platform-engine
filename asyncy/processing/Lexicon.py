@@ -35,7 +35,7 @@ class Lexicon:
 
             await HttpEndpoint.register_http_endpoint(
                 story=story, method=method,
-                path=path, line=line['next']
+                path=path, block=line['ln']
             )
 
             next_line = story.next_block(line)

@@ -162,7 +162,7 @@ async def test_lexicon_run_http_endpoint(patch, logger, story,
     await Lexicon.run(logger, story, http_line)
 
     HttpEndpoint.register_http_endpoint.mock.assert_called_with(
-        line=http_line['next'], method='get', path='/',
+        block=http_line['ln'], method='get', path='/',
         story=story)
 
     story.next_block.assert_called_with(http_line)

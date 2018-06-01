@@ -34,7 +34,7 @@ class RunStoryHandler(tornado.web.RequestHandler):
     async def run_story(cls, request_response, io_loop):
         req = ujson.loads(request_response.request.body)
 
-        logger.log('http-request-run-story', req['story_name'], req['app_id'])
+        logger.log('http-request-run-story', req['story_name'])
 
         context = req.get('context', {})
         context[ContextConstants.server_request] = request_response
@@ -43,7 +43,7 @@ class RunStoryHandler(tornado.web.RequestHandler):
         await Story.run(app, logger,
                         story_name=req['story_name'],
                         context=context,
-                        block=req.get('block'), start=req.get('line'))
+                        block=req.get('block'))
 
     @web.asynchronous
     async def post(self):
@@ -52,6 +52,7 @@ class RunStoryHandler(tornado.web.RequestHandler):
             await RunStoryHandler.run_story(self, io_loop)
         except Exception as e:
             logger.log_raw('error', 'Story execution failed; cause=' + str(e))
+            traceback.print_exc()
             self.set_status(500, 'Story execution failed')
             self.finish()
 
