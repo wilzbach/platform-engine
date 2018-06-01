@@ -66,8 +66,7 @@ class HttpEndpoint:
 
     @classmethod
     async def register_http_endpoint(cls, story, method, path, block):
-        story.app.config.gateway_url = 'localhost:8888'
-        url = f'http://{story.app.config.gateway_url}/+'
+        url = f'http://{story.app.config.gateway_url}/register'
 
         body = ujson.dumps({
             'method': method,

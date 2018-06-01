@@ -34,10 +34,10 @@ def test_http_endpoint_run(patch, story, http_object):
 async def test_http_endpoint_register(patch, story, async_mock):
     patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
     patch.object(AsyncHTTPClient, '__init__', return_value=None)
-    story.app.config.gateway_url = 'localhost:8888'
+    story.app.config.gateway_url = 'localhost:8889'
     await HttpEndpoint.register_http_endpoint(story,
                                               'foo_method', 'foo_path', '28')
-    url = f'http://{story.app.config.gateway_url}/+'
+    url = f'http://{story.app.config.gateway_url}/register'
     client = AsyncHTTPClient()
 
     expected_kwargs = {
