@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import traceback
 from json import load
 
 from raven.contrib.tornado import AsyncSentryClient
@@ -14,11 +15,12 @@ class App:
     services = {}
     sentry_client = None
 
-    def __init__(self, config, beta_user_id=None,
+    def __init__(self, config, logger, beta_user_id=None,
                  sentry_dsn=None, release=None):
         self.apply()
         self.config = config
         self.beta_user_id = beta_user_id
+        self.logger = logger
 
         self.sentry_client = AsyncSentryClient(
             dsn=sentry_dsn,
@@ -41,11 +43,16 @@ class App:
         self.stories = self.load_file('stories.json')
         self.services = self.load_file('services.json')
 
-    def bootstrap(self):
+    async def bootstrap(self):
         """
         Executes all the stories.
         This enables the story to listen to pub/sub,
         register with the gateway, and queue cron jobs.
         """
         for story_name in self.stories:
-            Story.story(self, logger, story_name)
+            try:
+                story = Story.story(self, self.logger, story_name)
+                story.prepare()
+                await Story.execute(self, self.logger, story)
+            except Exception as e:
+                traceback.print_exc()

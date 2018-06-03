@@ -16,7 +16,7 @@ def app(config):
     return App(config)
 
 
-def test_app_init(patch, config):
+def test_app_init(patch, config, logger):
     patch.object(App, 'apply')
-    App(config, beta_user_id=None, sentry_dsn=None, release=None)
+    App(config, logger, beta_user_id=None, sentry_dsn=None, release=None)
     App.apply.assert_called_with()

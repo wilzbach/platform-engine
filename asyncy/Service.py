@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import os
+import traceback
 
 import click
 
@@ -96,7 +98,7 @@ class Service:
                   default=os.getenv('BETA_USER_ID'))
     def start(port, debug, sentry_dsn, release, user_id):
         global app
-        app = App(config, beta_user_id=user_id,
+        app = App(config, logger, beta_user_id=user_id,
                   sentry_dsn=sentry_dsn, release=release)
 
         logger.log('service-init', Version.version)
@@ -109,6 +111,9 @@ class Service:
         web_app.listen(port)
 
         logger.log('http-init', port)
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(app.bootstrap())
 
         try:
             tornado.ioloop.IOLoop.current().start()
