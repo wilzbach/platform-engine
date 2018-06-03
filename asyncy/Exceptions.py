@@ -7,6 +7,11 @@ class AsyncyError(Exception):
         super().__init__(message)
 
 
+class ContainerSpecNotRegisteredError(AsyncyError):
+    def __init__(self, container_name):
+        super().__init__(message=f'Service {container_name} not registered!')
+
+
 class ArgumentNotFoundError(AsyncyError):
 
     def __init__(self, name=None):
