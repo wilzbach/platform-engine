@@ -42,7 +42,8 @@ class RunStoryHandler(tornado.web.RequestHandler):
         await Story.run(app, logger,
                         story_name=req['story_name'],
                         context=context,
-                        block=req.get('block'))
+                        block=req.get('block'),
+                        function_name=req.get('function'))
 
     @web.asynchronous
     async def post(self):

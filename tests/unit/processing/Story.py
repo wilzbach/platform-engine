@@ -52,7 +52,8 @@ async def test_story_run(patch, app, logger, async_mock):
     patch.object(Story, 'story')
     await Story.run(app, logger, 'story_name')
     Story.story.assert_called_with(app, logger, 'story_name')
-    Story.story.return_value.prepare.assert_called_with(None, None, None)
+    Story.story.return_value.prepare.assert_called_with(None, None, None,
+                                                        function_name=None)
     Story.execute.mock.assert_called_with(app, logger, Story.story(),
                                           skip_server_finish=False)
 
@@ -84,6 +85,8 @@ async def test_story_run_with_id(patch, app, logger, async_mock):
 async def test_story_run_prepare(patch, app, logger, async_mock):
     patch.object(Story, 'execute', new=async_mock())
     patch.object(Story, 'story')
-    kwargs = {'start': 'start', 'block': 'block', 'context': 'context'}
+    kwargs = {'start': 'start', 'block': 'block', 'context': 'context',
+              'function_name': 'function_name'}
     await Story.run(app, logger, 'story_name', **kwargs)
-    Story.story().prepare.assert_called_with('context', 'start', 'block')
+    Story.story().prepare.assert_called_with('context', 'start', 'block',
+                                             function_name='function_name')

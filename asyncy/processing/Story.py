@@ -46,11 +46,11 @@ class Story:
     async def run(cls,
                   app, logger, story_name, *, story_id=None,
                   start=None, block=None, context=None,
-                  skip_server_finish=False):
+                  skip_server_finish=False, function_name=None):
 
         logger.log('story-start', story_name, story_id)
         story = cls.story(app, logger, story_name)
-        story.prepare(context, start, block)
+        story.prepare(context, start, block, function_name=function_name)
         await cls.execute(app, logger, story,
                           skip_server_finish=skip_server_finish)
         logger.log('story-end', story_name, story_id)
