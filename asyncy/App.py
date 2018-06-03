@@ -54,3 +54,13 @@ class App:
                 await Story.run(self, self.logger, story_name)
             except Exception as e:
                 traceback.print_exc()
+
+    async def destroy(self):
+        """
+        Destroys all stories, one at a time.
+        """
+        for story_name in self.stories:
+            try:
+                await Story.destroy(self, self.logger, story_name)
+            except Exception as e:
+                traceback.print_exc()

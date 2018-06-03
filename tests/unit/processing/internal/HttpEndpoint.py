@@ -32,12 +32,33 @@ def test_http_endpoint_run(patch, story, http_object):
 
 @mark.asyncio
 async def test_http_endpoint_register(patch, story, async_mock):
+    line = {}
+    patch.object(HttpEndpoint, '_update_gateway', new=async_mock())
+    await HttpEndpoint.register_http_endpoint(story, line, 'post', '/', '28')
+    HttpEndpoint._update_gateway.mock.assert_called_with(
+        story, line, 'post', 'register', '/', '28'
+    )
+
+
+@mark.asyncio
+async def test_http_endpoint_unregister(patch, story, async_mock):
+    line = {}
+    patch.object(HttpEndpoint, '_update_gateway', new=async_mock())
+    await HttpEndpoint.unregister_http_endpoint(story, line, 'post', '/', '28')
+    HttpEndpoint._update_gateway.mock.assert_called_with(
+        story, line, 'post', 'unregister', '/', '28'
+    )
+
+
+@mark.asyncio
+@mark.parametrize('action', ['register', 'unregister'])
+async def test_http_endpoint_update_gateway(patch, story, async_mock, action):
     patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
     patch.object(AsyncHTTPClient, '__init__', return_value=None)
     story.app.config.gateway_url = 'localhost:8889'
-    await HttpEndpoint.register_http_endpoint(story, {},
-                                              'foo_method', 'foo_path', '28')
-    url = f'http://{story.app.config.gateway_url}/register'
+    await HttpEndpoint._update_gateway(story, {}, 'foo_method',
+                                       action, 'foo_path', '28')
+    url = f'http://{story.app.config.gateway_url}/{action}'
     client = AsyncHTTPClient()
 
     expected_kwargs = {
@@ -54,7 +75,7 @@ async def test_http_endpoint_register(patch, story, async_mock):
 
 
 @mark.asyncio
-async def test_http_endpoint_register_with_error(patch, story, async_mock):
+async def test_http_endpoint_update_gw_with_error(patch, story, async_mock):
     def throw_error(a, b, c, d, e):
         raise HTTPError(500)
 
@@ -62,8 +83,8 @@ async def test_http_endpoint_register_with_error(patch, story, async_mock):
                  new=async_mock(side_effect=throw_error))
 
     with pytest.raises(AsyncyError):
-        await HttpEndpoint.register_http_endpoint(
-            story, {}, 'foo_method', 'foo_path', '28'
+        await HttpEndpoint._update_gateway(
+            story, {}, 'foo_method', 'register', 'foo_path', '28'
         )
 
 

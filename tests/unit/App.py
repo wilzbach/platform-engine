@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from unittest import mock
 
-from asyncy.processing import Story
-
 from asyncy.App import App
+from asyncy.processing import Story
 
 from pytest import fixture, mark
 
@@ -25,16 +24,21 @@ def test_app_init(patch, config, logger):
 
 
 @mark.asyncio
-async def test_app_bootstrap(patch, app, async_mock):
+@mark.parametrize('story_method', ['run', 'destroy'])
+async def test_app_bootstrap_destroy(patch, app, async_mock,
+                                     story_method):
     app.stories = {
         'foo': {},
         'bar': {}
     }
-    patch.object(Story, 'run', new=async_mock())
-    await app.bootstrap()
+    patch.object(Story, story_method, new=async_mock())
+    if story_method == 'run':
+        await getattr(app, 'bootstrap')()
+    elif story_method == 'destroy':
+        await getattr(app, 'destroy')()
 
-    assert Story.run.mock.call_count == 2
-    assert Story.run.mock.mock_calls == [
+    assert getattr(Story, story_method).mock.call_count == 2
+    assert getattr(Story, story_method).mock.mock_calls == [
         mock.call(app, app.logger, 'foo'),
         mock.call(app, app.logger, 'bar')
     ]

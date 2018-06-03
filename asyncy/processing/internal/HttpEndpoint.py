@@ -65,7 +65,17 @@ class HttpEndpoint:
 
     @classmethod
     async def register_http_endpoint(cls, story, line, method, path, block):
-        url = f'http://{story.app.config.gateway_url}/register'
+        await cls._update_gateway(story, line, method,
+                                  'register', path, block)
+
+    @classmethod
+    async def unregister_http_endpoint(cls, story, line, method, path, block):
+        await cls._update_gateway(story, line, method,
+                                  'unregister', path, block)
+
+    @classmethod
+    async def _update_gateway(cls, story, line, method, action, path, block):
+        url = f'http://{story.app.config.gateway_url}/{action}'
 
         body = ujson.dumps({
             'method': method,

@@ -19,33 +19,6 @@ def line():
 
 
 @fixture
-def http_line():
-    return {
-        'ln': '1',
-        'container': 'http-endpoint',
-        'next': '2',
-        'args': [
-            {
-                '$OBJECT': 'argument',
-                'name': 'method',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': 'get'
-                }
-            },
-            {
-                '$OBJECT': 'argument',
-                'name': 'path',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': '/foo'
-                }
-            }
-        ]
-    }
-
-
-@fixture
 def story(patch, story):
     patch.many(story, ['end_line', 'resolve', 'resolve_command', 'next_line',
                        'context', 'next_block'])

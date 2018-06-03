@@ -120,3 +120,6 @@ class Service:
             tornado.ioloop.IOLoop.current().start()
         except KeyboardInterrupt:
             logger.log_raw('info', 'Shutdown!')
+
+        logger.log_raw('info', 'Unregistering with the gateway...')
+        loop.run_until_complete(app.destroy())
