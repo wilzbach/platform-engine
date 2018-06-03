@@ -30,8 +30,7 @@ class HttpEndpoint:
         if command == 'body':
             return req.body
         else:
-            raise InvalidCommandError(command)
-        pass
+            raise InvalidCommandError(command, story=story, line=line)
 
     @classmethod
     def access_response(cls, story, line):
@@ -55,7 +54,7 @@ class HttpEndpoint:
             # Do nothing.
             pass
         else:
-            raise InvalidCommandError(command)
+            raise InvalidCommandError(command, story=story, line=line)
 
         story.context[ContextConstants.server_io_loop].add_callback(
             lambda: req.write(ujson.dumps(data) + '\n'))
@@ -65,7 +64,7 @@ class HttpEndpoint:
                 .add_callback(req.finish)
 
     @classmethod
-    async def register_http_endpoint(cls, story, method, path, block):
+    async def register_http_endpoint(cls, story, line, method, path, block):
         url = f'http://{story.app.config.gateway_url}/register'
 
         body = ujson.dumps({
@@ -95,4 +94,4 @@ class HttpEndpoint:
                   + story.name + ' with the gateway'
 
             story.logger.log_raw('error', msg)
-            raise AsyncyError(message=msg)
+            raise AsyncyError(message=msg, story=story, line=line)

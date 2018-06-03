@@ -35,7 +35,7 @@ async def test_http_endpoint_register(patch, story, async_mock):
     patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
     patch.object(AsyncHTTPClient, '__init__', return_value=None)
     story.app.config.gateway_url = 'localhost:8889'
-    await HttpEndpoint.register_http_endpoint(story,
+    await HttpEndpoint.register_http_endpoint(story, {},
                                               'foo_method', 'foo_path', '28')
     url = f'http://{story.app.config.gateway_url}/register'
     client = AsyncHTTPClient()
@@ -63,7 +63,7 @@ async def test_http_endpoint_register_with_error(patch, story, async_mock):
 
     with pytest.raises(AsyncyError):
         await HttpEndpoint.register_http_endpoint(
-            story, 'foo_method', 'foo_path', '28'
+            story, {}, 'foo_method', 'foo_path', '28'
         )
 
 

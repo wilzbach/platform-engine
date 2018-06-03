@@ -98,7 +98,7 @@ class Containers:
 
         cls._insert_auth_kwargs(story, create_kwargs)
 
-        response = await cls._fetch_with_retry(story, exec_create_url,
+        response = await cls._fetch_with_retry(story, line, exec_create_url,
                                                http_client, create_kwargs)
 
         create_result = ujson.loads(response.body)
@@ -120,7 +120,7 @@ class Containers:
 
         cls._insert_auth_kwargs(story, exec_start_kwargs)
 
-        response = await cls._fetch_with_retry(story, exec_start_url,
+        response = await cls._fetch_with_retry(story, line, exec_start_url,
                                                http_client, exec_start_kwargs)
 
         # Read our stdin/stdout multiplexed stream.
@@ -151,12 +151,13 @@ class Containers:
         return stdout[:-1]  # Truncate the leading \n from the console.
 
     @classmethod
-    async def _fetch_with_retry(cls, story, url, http_client, kwargs):
+    async def _fetch_with_retry(cls, story, line, url, http_client, kwargs):
         try:
             return await HttpUtils.fetch_with_retry(MAX_RETRIES, story.logger,
                                                     url, http_client, kwargs)
         except HTTPError as e:
-            raise DockerError(message=f'Failed to call {url}!')
+            raise DockerError(message=f'Failed to call {url}!',
+                              story=story, line=line)
 
     @classmethod
     def _insert_auth_kwargs(cls, story, kwargs):

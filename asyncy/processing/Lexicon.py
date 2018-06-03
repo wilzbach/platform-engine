@@ -27,14 +27,16 @@ class Lexicon:
             """
             method = Lexicon.argument_by_name(story, line, 'method')
             if isinstance(method, str) is False:
-                raise ArgumentNotFoundError(name='method')
+                raise ArgumentNotFoundError(name='method',
+                                            story=story, line=line)
 
             path = Lexicon.argument_by_name(story, line, 'path')
             if isinstance(path, str) is False:
-                raise ArgumentNotFoundError(name='path')
+                raise ArgumentNotFoundError(name='path',
+                                            story=story, line=line)
 
             await HttpEndpoint.register_http_endpoint(
-                story=story, method=method,
+                story=story, line=line, method=method,
                 path=path, block=line['ln']
             )
 
