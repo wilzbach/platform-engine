@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import asyncio
+
 from asyncy.App import App
 from asyncy.Service import Service
 
@@ -26,6 +28,7 @@ def sleep():
 def test_server(patch, runner):
     patch.many(App, ['bootstrap', 'destroy'])
     patch.many(tornado, ['web', 'ioloop'])
+    patch.object(asyncio, 'get_event_loop')
 
     result = runner.invoke(Service.start)
 
