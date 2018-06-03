@@ -2,18 +2,29 @@
 import os
 from json import load
 
+from raven.contrib.tornado import AsyncSentryClient
+
 
 class App:
 
     environment = {}
     stories = {}
     services = {}
+    sentry_client = None
 
-    def __init__(self, config):
+    def __init__(self, config, beta_user_id=None,
+                 sentry_dsn=None, release=None):
         self.apply()
         self.config = config
+        self.beta_user_id = beta_user_id
 
-    def load_file(self, filepath):
+        self.sentry_client = AsyncSentryClient(
+            dsn=sentry_dsn,
+            release=release
+        )
+
+    @staticmethod
+    def load_file(filepath):
         datapath = os.getenv('ASSET_DIR', os.getcwd())
         path = os.path.join(datapath, filepath)
         if os.path.exists(path):

@@ -8,13 +8,18 @@ from asyncy.Exceptions import DockerError
 from asyncy.processing import Story
 
 import pytest
-from pytest import mark
+from pytest import fixture, mark
 
 from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 
+@fixture
+def line():
+    return MagicMock()
+
+
 @mark.asyncio
-async def test_container_exec(patch, story, app, logger, async_mock):
+async def test_container_exec(patch, story, app, logger, async_mock, line):
     create_response = MagicMock()
     create_response.body = '{"Id": "exec_id"}'
 
@@ -62,7 +67,7 @@ async def test_container_exec(patch, story, app, logger, async_mock):
 
 
 @mark.asyncio
-async def test_fetch_with_retry(patch, story):
+async def test_fetch_with_retry(patch, story, line):
     def raise_error(url):
         raise HTTPError(500)
 
@@ -71,7 +76,7 @@ async def test_fetch_with_retry(patch, story):
 
     with pytest.raises(DockerError):
         # noinspection PyProtectedMember
-        await Containers._fetch_with_retry(story, 'url', client, {})
+        await Containers._fetch_with_retry(story, line, 'url', client, {})
 
     assert client.fetch.call_count == MAX_RETRIES
 

@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-import asyncio
 import os
-import traceback
-from concurrent.futures import ThreadPoolExecutor
 
 import click
-
-from raven.contrib.tornado import AsyncSentryClient
 
 import tornado
 from tornado import web
@@ -16,14 +11,16 @@ import ujson
 from . import Version
 from .App import App
 from .Config import Config
+from .Exceptions import AsyncyError
 from .Logger import Logger
+from .Stories import Stories
 from .constants.ContextConstants import ContextConstants
 from .processing import Story
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 config = Config()
-app = App(config)
+app = None
 logger = Logger(config)
 logger.start()
 
@@ -48,12 +45,23 @@ class RunStoryHandler(tornado.web.RequestHandler):
     @web.asynchronous
     async def post(self):
         io_loop = tornado.ioloop.IOLoop.current()
+        app.sentry_client.context.clear()
+        app.sentry_client.user_context({
+            'id': app.beta_user_id,
+        })
+
         try:
             await RunStoryHandler.run_story(self, io_loop)
-        except Exception as e:
+        except BaseException as e:
             logger.log_raw('error', 'Story execution failed; cause=' + str(e))
             self.set_status(500, 'Story execution failed')
             self.finish()
+            if isinstance(e, AsyncyError):
+                assert isinstance(e.story, Stories)
+                app.sentry_client.capture('raven.events.Exception', extra={
+                    'story_name': e.story.name,
+                    'story_line': e.line['ln']
+                })
 
     def is_finished(self):
         return self._finished
@@ -79,16 +87,25 @@ class Service:
     @click.option('--sentry_dsn',
                   help='Sentry DNS for bug collection.',
                   default=os.getenv('SENTRY_DSN'))
-    def start(port, debug, sentry_dsn):
+    @click.option('--release',
+                  help='The version being released (provide a Git commit ID)',
+                  default=os.getenv('RELEASE_VER'))
+    @click.option('--user_id',
+                  help='The Asyncy User ID',
+                  default=os.getenv('BETA_USER_ID'))
+    def start(port, debug, sentry_dsn, release, user_id):
+        global app
+        app = App(config, beta_user_id=user_id,
+                  sentry_dsn=sentry_dsn, release=release)
+
         logger.log('service-init', Version.version)
-        app = tornado.web.Application(
+        web_app = tornado.web.Application(
             [
                 (r'/story/run', RunStoryHandler)
             ],
             debug=debug,
         )
-        app.listen(port)
-        app.sentry_client = AsyncSentryClient(sentry_dsn)
+        web_app.listen(port)
 
         logger.log('http-init', port)
 
