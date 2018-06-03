@@ -56,7 +56,7 @@ class Lexicon:
                 return Lexicon.next_line_or_none(story.next_line(line['ln']))
 
             container = line['container']
-            output = await Containers.exec(logger, story,
+            output = await Containers.exec(logger, story, line,
                                            f'asyncy--{container}-1', command)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))

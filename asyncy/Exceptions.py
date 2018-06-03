@@ -5,7 +5,6 @@ class AsyncyError(Exception):
 
     def __init__(self, message=None, story=None, line=None):
         self.story = story
-        self.context = story.context
         self.line = line
         super().__init__(message)
 
