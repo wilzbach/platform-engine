@@ -51,8 +51,6 @@ class App:
         """
         for story_name in self.stories:
             try:
-                story = Story.story(self, self.logger, story_name)
-                story.prepare()
-                await Story.execute(self, self.logger, story)
+                await Story.run(self, self.logger, story_name)
             except Exception as e:
                 traceback.print_exc()
