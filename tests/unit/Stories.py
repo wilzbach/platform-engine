@@ -348,6 +348,29 @@ def test_stories_next_block_simple(patch, story):
     assert story.next_block(story.line('2')) == story.tree['4']
 
 
+def test_stories_next_block_as_lines(patch, story):
+    story.tree = {
+        '2': {'ln': '2', 'next': '3'},
+        '3': {'ln': '3', 'next': '4'}
+    }
+
+    assert isinstance(story, Stories)
+
+    assert story.next_block(story.line('2')) == story.tree['3']
+
+
+def test_stories_next_block_where_next_block_is_block(patch, story):
+    story.tree = {
+        '2': {'ln': '2', 'next': '3'},
+        '3': {'ln': '3', 'next': '4', 'enter': '4'},
+        '4': {'ln': '4', 'parent': '3'}
+    }
+
+    assert isinstance(story, Stories)
+
+    assert story.next_block(story.line('2')) == story.tree['3']
+
+
 def test_stories_next_block_nested(patch, story):
     story.tree = {
         '2': {'ln': '2', 'enter': '3', 'next': '3'},

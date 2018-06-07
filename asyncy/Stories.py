@@ -117,7 +117,8 @@ class Stories:
                 return None
 
             # See if the next line is a block. If it is, skip through it.
-            if next_line.get('enter', None) is not None:
+            if next_line.get('enter', None) is not None \
+                    and next_line.get('parent') == parent_line['ln']:
                 next_line = self.next_block(next_line)
 
                 if next_line is None:
