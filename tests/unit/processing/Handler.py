@@ -16,12 +16,12 @@ async def test_handler_run(patch, logger, story):
 
 @mark.asyncio
 async def test_handler_run_run(patch, logger, story, async_mock):
-    patch.object(Lexicon, 'run', new=async_mock(return_value=MagicMock()))
-    Lexicon.run.return_value = MagicMock()
-    patch.object(story, 'line', return_value={'method': 'run'})
+    patch.object(Lexicon, 'execute', new=async_mock(return_value=MagicMock()))
+    Lexicon.execute.return_value = MagicMock()
+    patch.object(story, 'line', return_value={'method': 'execute'})
     result = await Handler.run(logger, '1', story)
-    Lexicon.run.mock.assert_called_with(logger, story, story.line())
-    assert result == Lexicon.run.mock.return_value
+    Lexicon.execute.mock.assert_called_with(logger, story, story.line())
+    assert result == Lexicon.execute.mock.return_value
 
 
 @mark.asyncio

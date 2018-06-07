@@ -19,7 +19,7 @@ class Handler:
             return Lexicon.if_condition(logger, story, line)
         elif line['method'] == 'for':
             return await Lexicon.for_loop(logger, story, line)
-        elif line['method'] == 'run':
-            return await Lexicon.run(logger, story, line)
+        elif line['method'] == 'execute':
+            return await Lexicon.execute(logger, story, line)
         elif line['method'] == 'set':
             return Lexicon.set(logger, story, line)

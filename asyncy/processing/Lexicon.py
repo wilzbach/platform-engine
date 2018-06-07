@@ -12,7 +12,7 @@ class Lexicon:
     """
 
     @staticmethod
-    async def run(logger, story, line):
+    async def execute(logger, story, line):
         """
         Runs a container with the resolution values as commands
         """
@@ -105,7 +105,7 @@ class Lexicon:
         output = line['args'][0]
         for item in _list:
             story.context[output] = item
-            await Lexicon.run(logger, story, line['ln'])
+            await Lexicon.execute(logger, story, line['ln'])
         return line['exit']
 
     @staticmethod

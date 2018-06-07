@@ -8,7 +8,7 @@ def http_line():
         'ln': '1',
         'container': 'http-endpoint',
         'next': '2',
-        'method': 'run',
+        'method': 'execute',
         'args': [
             {
                 '$OBJECT': 'argument',
