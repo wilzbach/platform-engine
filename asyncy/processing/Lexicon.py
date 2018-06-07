@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from ..constants.LineConstants import LineConstants
 from .internal.HttpEndpoint import HttpEndpoint
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
@@ -14,12 +14,12 @@ class Lexicon:
     @staticmethod
     async def execute(logger, story, line):
         """
-        Runs a container with the resolution values as commands
+        Runs a service with the resolution values as commands
         """
-        container = line['container']
-        if container == 'http-endpoint':
+        service = line[LineConstants.service]
+        if service == 'http-endpoint':
             """
-            If the container is http-endpoint (a special service),
+            If the service is http-endpoint (a special service),
             then register the http method along with the path with the Server
             (also line). The Server will then make a HTTP call back to engine
             on an actual HTTP request, passing along the line to
@@ -43,7 +43,7 @@ class Lexicon:
             next_line = story.next_block(line)
             return Lexicon.next_line_or_none(next_line)
         elif story.context.get(ContextConstants.server_request) is not None \
-                and (container == 'request' or container == 'response'):
+                and (service == 'request' or service == 'response'):
             output = HttpEndpoint.run(story, line)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
@@ -55,9 +55,9 @@ class Lexicon:
                 story.end_line(line['ln'])
                 return Lexicon.next_line_or_none(story.next_line(line['ln']))
 
-            container = line['container']
+            service = line[LineConstants.service]
             output = await Containers.exec(logger, story, line,
-                                           container, command)
+                                           service, command)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from ..constants.LineConstants import LineConstants
 from .Handler import Handler
 from ..Stories import Stories
 from ..constants import ContextConstants
@@ -66,7 +67,7 @@ class Story:
         line = story.line(story.first_line())
         while line is not None:
             if line['method'] == 'run':
-                if line['container'] == 'http-endpoint':
+                if line[LineConstants.service] == 'http-endpoint':
                     method = story.argument_by_name(line, 'method')
                     path = story.argument_by_name(line, 'path')
                     await HttpEndpoint.unregister_http_endpoint(

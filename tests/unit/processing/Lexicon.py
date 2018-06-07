@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock
 from asyncy import Exceptions
 from asyncy.Containers import Containers
 from asyncy.constants.ContextConstants import ContextConstants
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
@@ -14,7 +15,7 @@ from pytest import fixture, mark
 
 @fixture
 def line():
-    return {'enter': '2', 'exit': '25', 'ln': '1', 'container': 'alpine',
+    return {'enter': '2', 'exit': '25', 'ln': '1', LineConstants.service: 'alpine',
             'args': ['args']}
 
 
@@ -31,7 +32,7 @@ async def test_lexicon_run(patch, logger, story, line, async_mock):
     patch.object(Containers, 'exec', new=async_mock(return_value=output))
     result = await Lexicon.execute(logger, story, line)
     story.resolve_command.assert_called_with(line)
-    c = line['container']
+    c = line[LineConstants.service]
     Containers.exec.mock.assert_called_with(logger, story, line, c,
                                             story.resolve_command())
     story.end_line.assert_called_with(line['ln'],
@@ -159,7 +160,7 @@ async def test_lexicon_run_http_endpoint_no_method(patch, logger, story,
 async def test_lexicon_run_http_functions(patch, logger, story, http_object):
     http_object_line = {
         'ln': '1',
-        'container': http_object
+        LineConstants.service: http_object
     }
 
     story.context.return_value = {

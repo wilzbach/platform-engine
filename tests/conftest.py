@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 
 from pytest import fixture
 
+from asyncy.constants.LineConstants import LineConstants
+
 
 @fixture
 def magic(mocker):
@@ -62,7 +64,7 @@ def patch(mocker, patch_init, patch_many):
 def echo_line():
     return {
         'ln': '1',
-        'container': 'asyncy--echo',
+        LineConstants.service: 'asyncy--echo',
         'args': [
             {
                 '$OBJECT': 'argument',

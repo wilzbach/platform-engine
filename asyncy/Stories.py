@@ -5,6 +5,7 @@ from json import JSONDecodeError, dumps, loads
 
 from storyscript.resolver import Resolver
 
+from .constants.LineConstants import LineConstants
 from .utils import Dict
 
 
@@ -214,10 +215,10 @@ class Stories:
         """
         # TODO 09/05/2018: Look up asyncy.yml for this container,
         # and build the command.
-        if line['container'] == 'http-endpoint':
-            return line['container']
+        if line[LineConstants.service] == 'http-endpoint':
+            return line[LineConstants.service]
 
-        if line['container'] == 'log':
+        if line[LineConstants.service] == 'log':
             args = line['args']
             if len(args) == 1:
                 lvl = 'info'
@@ -233,7 +234,7 @@ class Stories:
             self.logger.log_raw(lvl, message)
             return 'log'
 
-        if self.is_command(line['container'], line['args'][0]):
+        if self.is_command(line[LineConstants.service], line['args'][0]):
             command = line['args'][0]['paths'][0]
             arguments_list = self.command_arguments_list(line['args'][1:])
             arguments_list.insert(0, command)

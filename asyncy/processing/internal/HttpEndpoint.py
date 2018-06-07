@@ -3,6 +3,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
+from ...constants.LineConstants import LineConstants
 from ...Exceptions import AsyncyError, InvalidCommandError
 from ...constants.ContextConstants import ContextConstants
 from ...utils.HttpUtils import HttpUtils
@@ -11,7 +12,7 @@ from ...utils.HttpUtils import HttpUtils
 class HttpEndpoint:
     @classmethod
     def run(cls, story, line):
-        container = line['container']
+        container = line[LineConstants.service]
 
         if container == 'request':
             return HttpEndpoint.access_request(story, line)

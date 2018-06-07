@@ -7,6 +7,8 @@ from pytest import fixture, mark
 
 from storyscript.resolver import Resolver
 
+from asyncy.constants.LineConstants import LineConstants
+
 
 def test_stories_init(app, logger, story):
     assert story.app == app
@@ -154,21 +156,21 @@ def test_stories_child_block_for_non_existent(patch, story):
 
 
 def test_stories_is_command(patch, logger, story):
-    story.containers = {'container': {'commands': {'command': {}}}}
+    story.containers = {LineConstants.service: {'commands': {'command': {}}}}
     argument = {'$OBJECT': 'path', 'paths': ['command']}
-    result = story.is_command('container', argument)
+    result = story.is_command(LineConstants.service, argument)
     assert result
 
 
 def test_stories_is_command_no_object(patch, logger, story):
-    result = story.is_command('container', 'string')
+    result = story.is_command(LineConstants.service, 'string')
     assert result is None
 
 
 def test_stories_is_command_none(patch, logger, story):
-    story.containers = {'container': {'commands': {'command': {}}}}
+    story.containers = {LineConstants.service: {'commands': {'command': {}}}}
     argument = {'$OBJECT': 'string'}
-    result = story.is_command('container', argument)
+    result = story.is_command(LineConstants.service, argument)
     assert result is None
 
 
@@ -210,16 +212,16 @@ def test_command_arguments_list_none(patch, story):
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.command_arguments_list.return_value = ['argument']
-    line = {'container': 'container', 'args': [{'paths': ['command']}, 'arg']}
+    line = {LineConstants.service: LineConstants.service, 'args': [{'paths': ['command']}, 'arg']}
     result = story.resolve_command(line)
-    Stories.is_command.assert_called_with('container', {'paths': ['command']})
+    Stories.is_command.assert_called_with(LineConstants.service, {'paths': ['command']})
     assert result == 'command argument'
 
 
 def test_stories_resolve_command_log(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.command_arguments_list.return_value = ['info', 'message']
-    line = {'container': 'log',
+    line = {LineConstants.service: 'log',
             'args': [{'$OBJECT': 'path', 'paths': ['info']},
                      {'$OBJECT': 'string', 'string': 'message'}]}
     result = story.resolve_command(line)
@@ -231,7 +233,7 @@ def test_stories_resolve_command_log(patch, logger, story):
 def test_stories_resolve_command_log_single_arg(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.command_arguments_list.return_value = ['part1', 'part2']
-    line = {'container': 'log',
+    line = {LineConstants.service: 'log',
             'args': [{'$OBJECT': 'string', 'string': 'part1'},
                      {'$OBJECT': 'string', 'string': 'part2'}]}
     result = story.resolve_command(line)
@@ -243,7 +245,7 @@ def test_stories_resolve_command_log_single_arg(patch, logger, story):
 def test_stories_resolve_command_none(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.is_command.return_value = None
-    line = {'container': 'container', 'args': ['command', 'arg']}
+    line = {LineConstants.service: LineConstants.service, 'args': ['command', 'arg']}
     story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
 
