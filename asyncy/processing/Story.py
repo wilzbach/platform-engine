@@ -2,6 +2,7 @@
 from .Handler import Handler
 from ..Stories import Stories
 from ..constants import ContextConstants
+from ..processing.internal.HttpEndpoint import HttpEndpoint
 
 
 class Story:
@@ -46,11 +47,30 @@ class Story:
     async def run(cls,
                   app, logger, story_name, *, story_id=None,
                   start=None, block=None, context=None,
-                  skip_server_finish=False):
+                  skip_server_finish=False, function_name=None):
 
         logger.log('story-start', story_name, story_id)
         story = cls.story(app, logger, story_name)
-        story.prepare(context, start, block)
+        story.prepare(context, start, block, function_name=function_name)
         await cls.execute(app, logger, story,
                           skip_server_finish=skip_server_finish)
         logger.log('story-end', story_name, story_id)
+
+    @classmethod
+    async def destroy(cls, app, logger, story_name):
+        """
+        Finds all http-endpoint calls in a story and
+        unregisters then with the gateway.
+        """
+        story = cls.story(app, logger, story_name)
+        line = story.line(story.first_line())
+        while line is not None:
+            if line['method'] == 'run':
+                if line['container'] == 'http-endpoint':
+                    method = story.argument_by_name(line, 'method')
+                    path = story.argument_by_name(line, 'path')
+                    await HttpEndpoint.unregister_http_endpoint(
+                        story, line, method, path, line['ln']
+                    )
+
+            line = story.next_block(line)

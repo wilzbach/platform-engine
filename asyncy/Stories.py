@@ -265,6 +265,23 @@ class Stories:
         if assign:
             Dict.set(self.context, assign['paths'], output)
 
+    def function_line_by_name(self, function_name):
+        """
+        Finds the line which declares a function by the name of `function_name`
+        and returns it.
+
+        If no such function could be found, it returns None.
+        """
+        next_line = self.line(self.first_line())
+        while next_line is not None:
+            if next_line.get('method', None) == 'function':
+                if next_line['function'] == function_name:
+                    return next_line
+
+            next_line = self.next_block(next_line)
+
+        return None
+
     def argument_by_name(self, line, argument_name):
         args = line['args']
         if args is None:
@@ -277,7 +294,8 @@ class Stories:
 
         return None
 
-    def prepare(self, context=None, start=None, block=None):
+    def prepare(self, context=None, start=None,
+                block=None, function_name=None):
         if context is None:
             context = {}
 
@@ -285,6 +303,8 @@ class Stories:
 
         self.environment = self.app.environment or {}
 
+        if function_name:
+            self.child_block(self.function_line_by_name(function_name)['ln'])
         if start:
             self.start_from(start)
         if block:

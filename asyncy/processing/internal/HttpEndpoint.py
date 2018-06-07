@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-
-from tornado import httpclient
-from tornado.httpclient import HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
 from ...Exceptions import AsyncyError, InvalidCommandError
 from ...constants.ContextConstants import ContextConstants
+from ...utils.HttpUtils import HttpUtils
 
 
 class HttpEndpoint:
@@ -65,52 +64,44 @@ class HttpEndpoint:
                 .add_callback(req.finish)
 
     @classmethod
-    def register_http_endpoint(cls, story, method, path, line):
-        url = 'http://{}/register/story'
-        url = url.format(story.app.config.gateway_url)
+    async def register_http_endpoint(cls, story, line, method, path, block):
+        await cls._update_gateway(story, line, method,
+                                  'register', path, block)
 
-        req = HTTPRequest(
-            url=url,
-            method='POST',
-            headers={
+    @classmethod
+    async def unregister_http_endpoint(cls, story, line, method, path, block):
+        await cls._update_gateway(story, line, method,
+                                  'unregister', path, block)
+
+    @classmethod
+    async def _update_gateway(cls, story, line, method, action, path, block):
+        url = f'http://{story.app.config.gateway_url}/{action}'
+
+        body = ujson.dumps({
+            'method': method,
+            'endpoint': path,
+            'filename': story.name,
+            'block': block
+        })
+
+        kwargs = {
+            'method': 'POST',
+            'headers': {
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            body=ujson.dumps({
-                'method': method,
-                'endpoint': path,
-                'story_name': story.name,
-                'line': line
-            })
-        )
+            'body': body
+        }
 
-        tries = 3
+        http_client = AsyncHTTPClient()
 
-        while tries > 0:
-            tries = tries - 1
+        try:
+            await HttpUtils.fetch_with_retry(3, story.logger,
+                                             url, http_client, kwargs)
+        except HTTPError as e:
+            story.logger.log_raw('error', 'Is the gateway up?' + str(e))
+            msg = 'Exhausted all retries while ' \
+                  'attempting to register story ' \
+                  + story.name + ' with the gateway'
 
-            http_client = httpclient.HTTPClient()
-
-            try:
-                http_client.fetch(req)
-                story.logger.log_raw(
-                    'info',
-                    'Registered successfully with the gateway')
-                return
-            except httpclient.HTTPError as e:
-                # HTTPError is raised for non-200 responses; the response
-                # can be found in e.response.
-                story.logger.log_raw(
-                    'error', 'The gateway sent a non 200 status; body=' +
-                             e.response.body)
-            except Exception as e:
-                # Other errors are possible, such as IOError.
-                story.logger.log_raw('error', 'Is the gateway up?' + str(e))
-            finally:
-                http_client.close()
-
-        msg = 'Exhausted all retries while ' \
-              'attempting to register story ' \
-              + story.name + ' with the gateway'
-
-        story.logger.log_raw('error', msg)
-        raise AsyncyError(message=msg, story=story, line=line)
+            story.logger.log_raw('error', msg)
+            raise AsyncyError(message=msg, story=story, line=line)

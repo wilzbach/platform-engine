@@ -35,6 +35,24 @@ def test_stories_first_line(patch, story):
     assert result == '16'
 
 
+def test_stories_function_line_by_name(patch, story):
+    story.tree = {
+        '1': {'ln': '1', 'next': '2'},
+        '2': {'ln': '2', 'method': 'function', 'function': 'execute'}
+    }
+
+    function_line = story.function_line_by_name('execute')
+    assert function_line == story.tree['2']
+
+
+def test_stories_prepare_function(patch, story):
+    patch.many(Stories, ['function_line_by_name', 'child_block'])
+    story.prepare(function_name='my_function')
+    Stories.function_line_by_name.assert_called_with('my_function')
+    Stories.child_block.assert_called_with(Stories.function_line_by_name
+                                           .return_value['ln'])
+
+
 def test_stories_next_line(patch, story):
     patch.object(Stories, 'sorted_lines', return_value=['1', '2'])
     story.tree = {'1': {'ln': '1'}, '2': {'ln': '2'}}

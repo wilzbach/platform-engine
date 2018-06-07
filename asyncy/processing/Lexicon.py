@@ -35,9 +35,9 @@ class Lexicon:
                 raise ArgumentNotFoundError(name='path',
                                             story=story, line=line)
 
-            HttpEndpoint.register_http_endpoint(
-                story=story, method=method,
-                path=path, line=line['next']
+            await HttpEndpoint.register_http_endpoint(
+                story=story, line=line, method=method,
+                path=path, block=line['ln']
             )
 
             next_line = story.next_block(line)

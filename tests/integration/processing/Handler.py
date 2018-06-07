@@ -14,7 +14,7 @@ def app(magic):
 
 @mark.asyncio
 async def test_handler_run(patch, logger, story):
-    story.app = App(Config())
+    story.app = App(Config(), logger)
     story.prepare()
     patch.object(Containers, 'format_command', return_value=['pwd'])
 

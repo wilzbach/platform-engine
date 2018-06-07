@@ -19,33 +19,6 @@ def line():
 
 
 @fixture
-def http_line():
-    return {
-        'ln': '1',
-        'container': 'http-endpoint',
-        'next': '2',
-        'args': [
-            {
-                '$OBJECT': 'argument',
-                'name': 'method',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': 'get'
-                }
-            },
-            {
-                '$OBJECT': 'argument',
-                'name': 'path',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': '/foo'
-                }
-            }
-        ]
-    }
-
-
-@fixture
 def story(patch, story):
     patch.many(story, ['end_line', 'resolve', 'resolve_command', 'next_line',
                        'context', 'next_block'])
@@ -151,17 +124,18 @@ async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
 
 
 @mark.asyncio
-async def test_lexicon_run_http_endpoint(patch, logger, story, http_line):
+async def test_lexicon_run_http_endpoint(patch, logger, story,
+                                         http_line, async_mock):
     return_values = Mock()
     return_values.side_effect = ['get', '/']
-    patch.object(HttpEndpoint, 'register_http_endpoint')
+    patch.object(HttpEndpoint, 'register_http_endpoint', new=async_mock())
     story.resolve.side_effect = return_values
     story.next_line.return_value = None
 
     await Lexicon.run(logger, story, http_line)
 
-    HttpEndpoint.register_http_endpoint.assert_called_with(
-        line=http_line['next'], method='get', path='/',
+    HttpEndpoint.register_http_endpoint.mock.assert_called_with(
+        block=http_line['ln'], line=http_line, method='get', path='/',
         story=story)
 
     story.next_block.assert_called_with(http_line)
