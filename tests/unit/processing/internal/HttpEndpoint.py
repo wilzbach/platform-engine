@@ -2,14 +2,15 @@
 
 from unittest.mock import Mock
 
+from asyncy.Exceptions import AsyncyError
 from asyncy.constants import ContextConstants
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
+from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
 from pytest import mark
 
-from tornado import httpclient
-from tornado.httpclient import HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 
 @mark.parametrize('http_object', ['request', 'response', 'foo'])
@@ -29,22 +30,62 @@ def test_http_endpoint_run(patch, story, http_object):
             HttpEndpoint.run(story, line)
 
 
-def test_http_endpoint_register(patch, story):
-    patch.object(httpclient, 'HTTPClient')
-    patch.object(HTTPRequest, '__init__', return_value=None)
-    HttpEndpoint.register_http_endpoint(story, 'foo_method', 'foo_path', '28')
-    url = 'http://{}/register/story'
-    url = url.format(story.app.config.gateway_url)
-    HTTPRequest.__init__.assert_called_with(
-        url=url, method='POST',
-        headers={
+@mark.asyncio
+async def test_http_endpoint_register(patch, story, async_mock):
+    line = {}
+    patch.object(HttpEndpoint, '_update_gateway', new=async_mock())
+    await HttpEndpoint.register_http_endpoint(story, line, 'post', '/', '28')
+    HttpEndpoint._update_gateway.mock.assert_called_with(
+        story, line, 'post', 'register', '/', '28'
+    )
+
+
+@mark.asyncio
+async def test_http_endpoint_unregister(patch, story, async_mock):
+    line = {}
+    patch.object(HttpEndpoint, '_update_gateway', new=async_mock())
+    await HttpEndpoint.unregister_http_endpoint(story, line, 'post', '/', '28')
+    HttpEndpoint._update_gateway.mock.assert_called_with(
+        story, line, 'post', 'unregister', '/', '28'
+    )
+
+
+@mark.asyncio
+@mark.parametrize('action', ['register', 'unregister'])
+async def test_http_endpoint_update_gateway(patch, story, async_mock, action):
+    patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
+    patch.object(AsyncHTTPClient, '__init__', return_value=None)
+    story.app.config.gateway_url = 'localhost:8889'
+    await HttpEndpoint._update_gateway(story, {}, 'foo_method',
+                                       action, 'foo_path', '28')
+    url = f'http://{story.app.config.gateway_url}/{action}'
+    client = AsyncHTTPClient()
+
+    expected_kwargs = {
+        'method': 'POST',
+        'headers': {
             'Content-Type': 'application/json; charset=utf-8'
         },
-        body='{"method":"foo_method","endpoint":"foo_path",'
-             '"story_name":"' + story.name + '","line":"28"}')
+        'body': '{"method":"foo_method","endpoint":"foo_path",'
+                '"filename":"hello.story","block":"28"}'
+    }
 
-    httpclient.HTTPClient.return_value.fetch.assert_called_once()
-    httpclient.HTTPClient.return_value.close.assert_called_once()
+    HttpUtils.fetch_with_retry.mock \
+        .assert_called_with(3, story.logger, url, client, expected_kwargs)
+
+
+@mark.asyncio
+async def test_http_endpoint_update_gw_with_error(patch, story, async_mock):
+    def throw_error(a, b, c, d, e):
+        raise HTTPError(500)
+
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(side_effect=throw_error))
+
+    with pytest.raises(AsyncyError):
+        await HttpEndpoint._update_gateway(
+            story, {}, 'foo_method', 'register', 'foo_path', '28'
+        )
 
 
 @mark.parametrize('command', ['set_status', 'set_header', 'write', 'finish'])

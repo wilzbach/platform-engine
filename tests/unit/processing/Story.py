@@ -5,6 +5,7 @@ from unittest.mock import Mock
 from asyncy.Stories import Stories
 from asyncy.constants import ContextConstants
 from asyncy.processing import Handler, Story
+from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
 from pytest import mark, raises
 
@@ -52,7 +53,8 @@ async def test_story_run(patch, app, logger, async_mock):
     patch.object(Story, 'story')
     await Story.run(app, logger, 'story_name')
     Story.story.assert_called_with(app, logger, 'story_name')
-    Story.story.return_value.prepare.assert_called_with(None, None, None)
+    Story.story.return_value.prepare.assert_called_with(None, None, None,
+                                                        function_name=None)
     Story.execute.mock.assert_called_with(app, logger, Story.story(),
                                           skip_server_finish=False)
 
@@ -84,6 +86,22 @@ async def test_story_run_with_id(patch, app, logger, async_mock):
 async def test_story_run_prepare(patch, app, logger, async_mock):
     patch.object(Story, 'execute', new=async_mock())
     patch.object(Story, 'story')
-    kwargs = {'start': 'start', 'block': 'block', 'context': 'context'}
+    kwargs = {'start': 'start', 'block': 'block', 'context': 'context',
+              'function_name': 'function_name'}
     await Story.run(app, logger, 'story_name', **kwargs)
-    Story.story().prepare.assert_called_with('context', 'start', 'block')
+    Story.story().prepare.assert_called_with('context', 'start', 'block',
+                                             function_name='function_name')
+
+
+@mark.asyncio
+async def test_story_destroy(patch, app, logger, http_line, story, async_mock):
+    patch.object(HttpEndpoint, 'unregister_http_endpoint', new=async_mock())
+    patch.object(Story, 'story', return_value=story)
+    patch.object(story, 'next_block', return_value=None)
+    story.tree = {'1': http_line}
+    await Story.destroy(app, logger, 'foo')
+    HttpEndpoint.unregister_http_endpoint.mock.assert_called_with(
+        story, http_line, 'get', '/foo', http_line['ln']
+    )
+
+    story.next_block.assert_called_once()
