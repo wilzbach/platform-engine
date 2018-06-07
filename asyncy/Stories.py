@@ -268,6 +268,12 @@ class Stories:
             Dict.set(self.context, assign['paths'], output)
 
     def function_line_by_name(self, function_name):
+        """
+        Finds the line which declares a function by the name of `function_name`
+        and returns it.
+
+        If no such function could be found, it returns None.
+        """
         next_line = self.line(self.first_line())
         while next_line is not None:
             if next_line.get('method', None) == 'function':
