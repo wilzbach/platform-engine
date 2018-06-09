@@ -23,3 +23,5 @@ class Handler:
             return await Lexicon.run(logger, story, line)
         elif line['method'] == 'set':
             return Lexicon.set(logger, story, line)
+        else:
+            raise NotImplementedError()

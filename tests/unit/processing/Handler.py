@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock
 
+import pytest
+
 from asyncy.processing import Handler, Lexicon
 
 from pytest import mark
@@ -9,6 +11,8 @@ from pytest import mark
 @mark.asyncio
 async def test_handler_run(patch, logger, story):
     patch.many(story, ['line', 'start_line'])
+    patch.object(Lexicon, 'set')
+    patch.object(story, 'line', return_value={'method': 'set'})
     await Handler.run(logger, '1', story)
     story.line.assert_called_with('1')
     story.start_line.assert_called_with('1')
@@ -22,6 +26,13 @@ async def test_handler_run_run(patch, logger, story, async_mock):
     result = await Handler.run(logger, '1', story)
     Lexicon.run.mock.assert_called_with(logger, story, story.line())
     assert result == Lexicon.run.mock.return_value
+
+
+@mark.asyncio
+async def test_handler_run_unknown_method(logger, story):
+    story.tree['1']['method'] = 'foo_method'
+    with pytest.raises(NotImplementedError):
+        await Handler.run(logger, '1', story)
 
 
 @mark.asyncio
