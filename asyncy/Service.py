@@ -45,6 +45,11 @@ class RunStoryHandler(tornado.web.RequestHandler):
                         block=req.get('block'),
                         function_name=req.get('function'))
 
+        # If we're running in an http context, then we need to call finish
+        # on Tornado's response object.
+        if request_response.is_not_finished():
+            io_loop.add_callback(request_response.finish)
+
     @web.asynchronous
     async def post(self):
         io_loop = tornado.ioloop.IOLoop.current()

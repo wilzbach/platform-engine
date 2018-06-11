@@ -47,13 +47,13 @@ class Lexicon:
             output = HttpEndpoint.run(story, line)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
-            return Lexicon.next_line_or_none(story.next_line(line['ln']))
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
             command = story.resolve_command(line)
 
             if command == 'log':
                 story.end_line(line['ln'])
-                return Lexicon.next_line_or_none(story.next_line(line['ln']))
+                return Lexicon.next_line_or_none(story.line(line.get('next')))
 
             container = line['container']
             output = await Containers.exec(logger, story, line,
@@ -61,7 +61,16 @@ class Lexicon:
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
 
-            return Lexicon.next_line_or_none(story.next_line(line['ln']))
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
+
+    @staticmethod
+    def function(logger, story, line):
+        """
+        Functions are not executed when they're encountered.
+        This method returns the next block's line number,
+        if there are more statements to be executed.
+        """
+        return Lexicon.next_line_or_none(story.next_block(line))
 
     @staticmethod
     def next_line_or_none(line):
@@ -74,7 +83,7 @@ class Lexicon:
     def set(logger, story, line):
         value = story.resolve(line['args'][1])
         story.end_line(line['ln'], output=value, assign=line['args'][0])
-        return story.next_line(line['ln'])['ln']
+        return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod
     def if_condition(logger, story, line):

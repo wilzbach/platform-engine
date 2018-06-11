@@ -22,6 +22,12 @@ def test_stories_line(magic, story):
     assert line == story.tree['1']
 
 
+def test_stories_line_none(magic, story):
+    story.tree = magic()
+    line = story.line(None)
+    assert line is None
+
+
 def test_stories_sorted_lines(magic, story):
     story.tree = {'1': {}, '2': {}, '21': {}, '3': {}}
     assert story.sorted_lines() == ['1', '2', '3', '21']
@@ -43,114 +49,6 @@ def test_stories_function_line_by_name(patch, story):
 
     function_line = story.function_line_by_name('execute')
     assert function_line == story.tree['2']
-
-
-def test_stories_prepare_function(patch, story):
-    patch.many(Stories, ['function_line_by_name', 'child_block'])
-    story.prepare(function_name='my_function')
-    Stories.function_line_by_name.assert_called_with('my_function')
-    Stories.child_block.assert_called_with(Stories.function_line_by_name
-                                           .return_value['ln'])
-
-
-def test_stories_next_line(patch, story):
-    patch.object(Stories, 'sorted_lines', return_value=['1', '2'])
-    story.tree = {'1': {'ln': '1'}, '2': {'ln': '2'}}
-    result = story.next_line('1')
-    assert Stories.sorted_lines.call_count == 1
-    assert result == story.tree['2']
-
-
-def test_stories_next_line_jump(patch, story):
-    patch.object(Stories, 'sorted_lines', return_value=['1', '3'])
-    story.tree = {'1': {'ln': '1'}, '3': {'ln': '3'}}
-    assert story.next_line('1') == story.tree['3']
-
-
-def test_stories_next_line_none(patch, story):
-    patch.object(Stories, 'sorted_lines', return_value=['1'])
-    story.tree = {'1': {'ln': '1'}}
-    assert story.next_line('1') is None
-
-
-def test_stories_start_from(patch, story):
-    story.tree = {
-        '1': {'ln': '1'},
-        '2': {'ln': '2'}
-    }
-    story.start_from('2')
-    assert story.tree == {'2': {'ln': '2'}}
-
-
-def test_stories_child_block(patch, story):
-    story.tree = {
-        '1': {'ln': '1', 'enter': '2', 'exit': 2},
-        '2': {'ln': '2', 'parent': '1'},
-        '3': {'ln': '3', 'parent': '1'},
-    }
-    story.child_block('1')
-    assert story.tree == {'2': {'ln': '2', 'parent': '1'},
-                          '3': {'ln': '3', 'parent': '1'}}
-
-
-def test_stories_child_block_with_nested_blocks(patch, story):
-    story.tree = {
-        '1': {'ln': '1', 'enter': '2', 'exit': '2', 'next': '2'},
-        '2': {'ln': '2', 'parent': '1', 'next': '3'},
-        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
-        '4': {'ln': '4', 'parent': '3', 'next': '5'},
-        '5': {'ln': '5', 'parent': '1'},
-        '6': {'ln': '6'}
-    }
-
-    story.child_block('1')
-
-    assert story.tree == {
-        '2': {'ln': '2', 'parent': '1', 'next': '3'},
-        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
-        '4': {'ln': '4', 'parent': '3', 'next': '5'},
-        '5': {'ln': '5', 'parent': '1'}
-    }
-
-
-def test_stories_child_block_inside_block(patch, story):
-    story.tree = {
-        '1': {'ln': '1', 'enter': '2', 'exit': '2', 'next': '2'},
-        '2': {'ln': '2', 'parent': '1', 'next': '3'},
-        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
-        '4': {'ln': '4', 'parent': '3', 'next': '5'},
-        '5': {'ln': '5', 'parent': '1'},
-        '6': {'ln': '6'}
-    }
-
-    story.child_block('3')
-
-    assert story.tree == {
-        '4': {'ln': '4', 'parent': '3', 'next': '5'}
-    }
-
-
-def test_stories_child_block_for_empty_result(patch, story):
-    story.tree = {
-        '1': {'ln': '1', 'enter': '2', 'exit': '2', 'next': '2'},
-        '2': {'ln': '2', 'parent': '1', 'next': '3'},
-        '3': {'ln': '3', 'parent': '1', 'enter': '4', 'exit': '4'},
-        '4': {'ln': '4', 'parent': '3', 'next': '5'},
-        '5': {'ln': '5', 'parent': '1'},
-        '6': {'ln': '6'}
-    }
-
-    story.child_block('6')
-
-    assert story.tree == {}
-
-
-def test_stories_child_block_for_non_existent(patch, story):
-    story.tree = {}
-
-    story.child_block('1')
-
-    assert story.tree == {}
 
 
 def test_stories_is_command(patch, logger, story):
@@ -312,26 +210,41 @@ def test_stories_encode(story, input, output):
     assert story.encode(input) == output
 
 
+def test_stories_argument_by_name_empty(story):
+    assert story.argument_by_name({}, 'foo') is None
+
+
+def test_stories_argument_by_name_lookup(patch, story):
+    line = {
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo',
+                'argument': {'$OBJECT': 'string', 'string': 'bar'}
+            }
+        ]
+    }
+
+    patch.object(story, 'resolve')
+    story.argument_by_name(line, 'foo')
+    story.resolve.assert_called_with(line['args'][0]['argument'])
+
+
+def test_stories_argument_by_name_missing(patch, story):
+    line = {'args': []}
+    assert story.argument_by_name(line, 'foo') is None
+
+
 def test_stories_prepare(story):
-    story.prepare(None, None, None)
+    story.prepare(None)
 
 
 def test_stories_prepare_context(story, app):
     story.app = app
-    story.prepare({}, None, None)
+    context = {}
+    story.prepare(context=context)
     assert story.environment == app.environment
-
-
-def test_stories_prepare_start(patch, story):
-    patch.object(Stories, 'start_from')
-    story.prepare(None, 'start', None)
-    Stories.start_from.assert_called_with('start')
-
-
-def test_stories_prepare_block(patch, story):
-    patch.object(Stories, 'child_block')
-    story.prepare(None, None, 'block')
-    Stories.child_block.assert_called_with('block')
+    assert story.context == context
 
 
 def test_stories_next_block_simple(patch, story):
@@ -344,6 +257,82 @@ def test_stories_next_block_simple(patch, story):
     assert isinstance(story, Stories)
 
     assert story.next_block(story.line('2')) == story.tree['4']
+
+
+def test_stories_next_block_as_lines(patch, story):
+    story.tree = {
+        '2': {'ln': '2', 'next': '3'},
+        '3': {'ln': '3', 'next': '4'}
+    }
+
+    assert isinstance(story, Stories)
+
+    assert story.next_block(story.line('2')) == story.tree['3']
+
+
+def test_stories_next_block_where_next_block_is_block(patch, story):
+    story.tree = {
+        '2': {'ln': '2', 'next': '3'},
+        '3': {'ln': '3', 'next': '4', 'enter': '4'},
+        '4': {'ln': '4', 'parent': '3'}
+    }
+
+    assert isinstance(story, Stories)
+
+    assert story.next_block(story.line('2')) == story.tree['3']
+
+
+def test_stories_context_for_function_call(story):
+    assert story.context_for_function_call({}, {}) == {}
+
+
+def test_stories_context_for_function_call_with_args(story):
+    line = {
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': 'bar'
+                }
+            },
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo1',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': 'bar1'
+                }
+            }
+        ]
+    }
+
+    function_line = {
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo',
+                'argument': {
+                    '$OBJECT': 'type',
+                    'type': 'string'
+                }
+            },
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo1',
+                'argument': {
+                    '$OBJECT': 'type',
+                    'type': 'string'
+                }
+            }
+        ]
+    }
+
+    assert story.context_for_function_call(line, function_line) == {
+        'foo': 'bar',
+        'foo1': 'bar1'
+    }
 
 
 def test_stories_next_block_nested(patch, story):
@@ -361,6 +350,20 @@ def test_stories_next_block_nested(patch, story):
     assert story.next_block(story.line('2')) == story.tree['7']
 
 
+def test_stories_next_block_last_line(patch, story):
+    story.tree = {
+        '2': {'ln': '2', 'enter': '3', 'next': '3'},
+        '3': {'ln': '3', 'parent': '2', 'next': '4'},
+        '4': {'ln': '4', 'enter': '5', 'parent': '2', 'next': '5'},
+        '5': {'ln': '5', 'parent': '4', 'next': '6'},
+        '6': {'ln': '6', 'parent': '4'}
+    }
+
+    assert isinstance(story, Stories)
+
+    assert story.next_block(story.line('2')) is None
+
+
 def test_stories_next_block_nested_inner(patch, story):
     story.tree = {
         '2': {'ln': '2', 'enter': '3', 'next': '3'},
@@ -374,4 +377,4 @@ def test_stories_next_block_nested_inner(patch, story):
 
     assert isinstance(story, Stories)
 
-    assert story.next_block(story.line('4')) == story.tree['7']
+    assert story.tree['7'] == story.next_block(story.line('4'))

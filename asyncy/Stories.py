@@ -23,6 +23,9 @@ class Stories:
         self.version = None
 
     def line(self, line_number):
+        if line_number is None:
+            return None
+
         return self.tree[line_number]
 
     def sorted_lines(self):
@@ -37,30 +40,6 @@ class Stories:
         than '1' so the first line is not obvious.
         """
         return self.sorted_lines()[0]
-
-    def next_line(self, line_number):
-        """
-        Finds the next line from the current one.
-        Storyscript does not always provide the next line explicitly, which
-        is instead necessary in some cases.
-        """
-        sorted_lines = self.sorted_lines()
-        next_line_index = sorted_lines.index(line_number) + 1
-        if next_line_index < len(sorted_lines):
-            next_line = sorted_lines[next_line_index]
-            return self.tree[str(next_line)]
-
-    def start_from(self, line):
-        """
-        Slices the story from the given line onwards.
-        """
-        sorted_lines = self.sorted_lines()
-        i = sorted_lines.index(line)
-        allowed_lines = sorted_lines[i:]
-        dictionary = {}
-        for line_number in allowed_lines:
-            dictionary[line_number] = self.tree[line_number]
-        self.tree = dictionary
 
     def line_has_parent(self, parent_line_number, line):
         """
@@ -90,18 +69,6 @@ class Stories:
 
         return False
 
-    def child_block(self, parent_line_number):
-        """
-        Slices the story to a single block with the same parent. Used when
-        running a single block of the story, for example when the story is
-        being resumed.
-        """
-        dictionary = {}
-        for key, value in self.tree.items():
-            if self.line_has_parent(parent_line_number, value):
-                dictionary[key] = value
-        self.tree = dictionary
-
     def next_block(self, parent_line):
         """
         Given a parent_line, it skips through the block and returns the next
@@ -109,14 +76,15 @@ class Stories:
         """
         next_line = parent_line
 
-        while next_line is not None:
-            next_line = self.next_line(next_line['ln'])
+        while next_line.get('next') is not None:
+            next_line = self.line(next_line['next'])
 
             if next_line is None:
                 return None
 
             # See if the next line is a block. If it is, skip through it.
-            if next_line.get('enter', None) is not None:
+            if next_line.get('enter', None) is not None \
+                    and next_line.get('parent') == parent_line['ln']:
                 next_line = self.next_block(next_line)
 
                 if next_line is None:
@@ -124,6 +92,15 @@ class Stories:
 
             if next_line.get('parent', None) != parent_line['ln']:
                 break
+
+        # We might have skipped through all the lines in this story,
+        # and ended up on on the last line.
+        # If this last line belongs to the same parent, then return None.
+        # This check is required because the while loop breaks when it can't
+        # find a next line.
+        if next_line.get('parent') is not None \
+                and self.line_has_parent(parent_line['ln'], next_line):
+            return None
 
         return next_line
 
@@ -212,8 +189,6 @@ class Stories:
         Resolves arguments for a container line to produce a command
         that can be passed to docker
         """
-        # TODO 09/05/2018: Look up asyncy.yml for this container,
-        # and build the command.
         if line['container'] == 'http-endpoint':
             return line['container']
 
@@ -283,7 +258,7 @@ class Stories:
         return None
 
     def argument_by_name(self, line, argument_name):
-        args = line['args']
+        args = line.get('args')
         if args is None:
             return None
 
@@ -294,18 +269,34 @@ class Stories:
 
         return None
 
-    def prepare(self, context=None, start=None,
-                block=None, function_name=None):
-        if context is None:
-            context = {}
+    def context_for_function_call(self, line, function_line):
+        """
+        Prepares a new context for calling a function.
+        This context consists of the arguments required by the function,
+        and is copied over in a new map. As a result, the nature of function
+        calls in Storyscript is call by value.
 
-        self.context = context
+        Functions are executed in the following manner:
+        1. Prepare a new context for the function
+        2. Temporarily switch Stories#context to this new context
+        3. Execute the function block
+        4. Restore the original Stories#context and continue execution
 
+        :return: A new context, which contains the arguments required (if any)
+        """
+        new_context = {}
+        args = function_line.get('args', [])
+        for arg in args:
+            if arg['$OBJECT'] == 'argument':
+                arg_name = arg['name']
+                actual = self.argument_by_name(line, arg_name)
+                Dict.set(new_context, [arg_name], actual)
+
+        return new_context
+
+    def set_context(self, context):
+        self.context = context or {}
+
+    def prepare(self, context=None):
+        self.set_context(context)
         self.environment = self.app.environment or {}
-
-        if function_name:
-            self.child_block(self.function_line_by_name(function_name)['ln'])
-        if start:
-            self.start_from(start)
-        if block:
-            self.child_block(block)
