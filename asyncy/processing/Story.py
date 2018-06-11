@@ -42,17 +42,17 @@ class Story:
 
         method = line['method']
         if method == 'if':
-            return Lexicon.if_condition(logger, story, line)
+            return await Lexicon.if_condition(logger, story, line)
         elif method == 'for':
             return await Lexicon.for_loop(logger, story, line)
         elif method == 'run':
             return await Lexicon.run(logger, story, line)
         elif method == 'set':
-            return Lexicon.set(logger, story, line)
+            return await Lexicon.set(logger, story, line)
         elif method == 'call':
             return await Story.execute_function(logger, story, line)
         elif method == 'function':
-            return Lexicon.function(logger, story, line)
+            return await Lexicon.function(logger, story, line)
         else:
             raise NotImplementedError(f'Unknown method to execute: {method}')
 

@@ -64,7 +64,7 @@ class Lexicon:
             return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod
-    def function(logger, story, line):
+    async def function(logger, story, line):
         """
         Functions are not executed when they're encountered.
         This method returns the next block's line number,
@@ -80,13 +80,13 @@ class Lexicon:
         return None
 
     @staticmethod
-    def set(logger, story, line):
+    async def set(logger, story, line):
         value = story.resolve(line['args'][1])
         story.end_line(line['ln'], output=value, assign=line['args'][0])
         return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod
-    def if_condition(logger, story, line):
+    async def if_condition(logger, story, line):
         """
         Evaluates the resolution value to decide wheter to enter
         inside an if-block.

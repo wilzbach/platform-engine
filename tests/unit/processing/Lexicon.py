@@ -69,12 +69,13 @@ async def test_lexicon_run_log_none(patch, logger, story, line):
     assert result is None
 
 
-def test_lexicon_set(patch, logger, story):
+@mark.asyncio
+async def test_lexicon_set(patch, logger, story):
     story.context = {}
     patch.object(Lexicon, 'next_line_or_none')
     line = {'ln': '1', 'args': [{'paths': ['name']}, 'values'], 'next': '2'}
     story.resolve.return_value = 'resolved'
-    result = Lexicon.set(logger, story, line)
+    result = await Lexicon.set(logger, story, line)
     story.resolve.assert_called_with(line['args'][1])
     story.end_line.assert_called_with(line['ln'],
                                       assign={'paths': ['name']},
@@ -83,25 +84,28 @@ def test_lexicon_set(patch, logger, story):
     assert result == Lexicon.next_line_or_none()
 
 
-def test_lexicon_function(patch, logger, story, line):
+@mark.asyncio
+async def test_lexicon_function(patch, logger, story, line):
     patch.object(story, 'next_block')
     patch.object(Lexicon, 'next_line_or_none', return_value='1')
-    assert Lexicon.function(logger, story, line) == '1'
+    assert await Lexicon.function(logger, story, line) == '1'
     story.next_block.assert_called_with(line)
 
 
-def test_lexicon_if(logger, story, line):
+@mark.asyncio
+async def test_lexicon_if(logger, story, line):
     story.context = {}
-    result = Lexicon.if_condition(logger, story, line)
+    result = await Lexicon.if_condition(logger, story, line)
     logger.log.assert_called_with('lexicon-if', line, story.context)
     story.resolve.assert_called_with(line['args'][0], encode=False)
     assert result == line['enter']
 
 
-def test_lexicon_if_false(logger, story, line):
+@mark.asyncio
+async def test_lexicon_if_false(logger, story, line):
     story.context = {}
     story.resolve.return_value = False
-    assert Lexicon.if_condition(logger, story, line) == line['exit']
+    assert await Lexicon.if_condition(logger, story, line) == line['exit']
 
 
 def test_lexicon_unless(logger, story, line):
