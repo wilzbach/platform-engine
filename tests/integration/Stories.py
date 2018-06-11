@@ -25,7 +25,7 @@ def test_stories_resolve_command(story):
     story.containers = {'alpine': {'commands': {
         'echo': {'args': [{'type': 'string'}]}
     }}}
-    story.tree = Parser().parse(story_text).json()
+    story.tree = Parser().parse(story_text).json()['script']
     assert story.resolve_command(story.line('1')) == "echo 'hello'"
 
 
