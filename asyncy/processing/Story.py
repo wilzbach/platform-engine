@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import time
+
+from .. import Metrics
 from ..Stories import Stories
 from ..processing import Lexicon
 from ..processing.internal.HttpEndpoint import HttpEndpoint
@@ -93,20 +96,31 @@ class Story:
                   app, logger, story_name, *, story_id=None,
                   block=None, context=None,
                   function_name=None):
-        logger.log('story-start', story_name, story_id)
+        start = time.time()
+        try:
+            logger.log('story-start', story_name, story_id)
 
-        story = cls.story(app, logger, story_name)
-        story.prepare(context)
+            story = cls.story(app, logger, story_name)
+            story.prepare(context)
 
-        if function_name:
-            function_line = story.function_line_by_name(function_name)
-            await cls.execute_function(logger, story, function_line)
-        elif block:
-            await cls.execute_block(logger, story, story.line(block))
-        else:
-            await cls.execute(logger, story)
+            if function_name:
+                function_line = story.function_line_by_name(function_name)
+                await cls.execute_function(logger, story, function_line)
+            elif block:
+                await cls.execute_block(logger, story, story.line(block))
+            else:
+                await cls.execute(logger, story)
 
-        logger.log('story-end', story_name, story_id)
+            logger.log('story-end', story_name, story_id)
+            Metrics.story_run_success.labels(story_name=story_name) \
+                .observe(time.time() - start)
+        except BaseException as err:
+            Metrics.story_run_failure.labels(story_name=story_name) \
+                .observe(time.time() - start)
+            raise err
+
+        Metrics.story_run_total.labels(story_name=story_name) \
+            .observe(time.time() - start)
 
     @classmethod
     async def destroy(cls, app, logger, story_name):

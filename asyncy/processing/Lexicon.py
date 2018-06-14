@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import time
+
+from asyncy import Metrics
 
 from .internal.HttpEndpoint import HttpEndpoint
 from ..Containers import Containers
@@ -56,8 +59,16 @@ class Lexicon:
                 return Lexicon.next_line_or_none(story.line(line.get('next')))
 
             container = line['container']
+
+            start = time.time()
+
             output = await Containers.exec(logger, story, line,
                                            container, command)
+
+            Metrics.container_exec_seconds_total.labels(
+                story_name=story.name, container=container
+            ).observe(time.time() - start)
+
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
 
