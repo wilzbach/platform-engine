@@ -2,6 +2,7 @@
 import time
 
 from asyncy.Stories import Stories
+from asyncy.utils import Dict
 
 from pytest import fixture, mark
 
@@ -114,6 +115,11 @@ def test_stories_resolve_command(patch, logger, story):
     assert result == 'command argument'
 
 
+def test_stories_resolve_command_http_endpoint(story):
+    line = {'container': 'http-endpoint'}
+    assert story.resolve_command(line) == 'http-endpoint'
+
+
 def test_stories_resolve_command_log(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.command_arguments_list.return_value = ['info', 'message']
@@ -135,6 +141,17 @@ def test_stories_resolve_command_log_single_arg(patch, logger, story):
     result = story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
     story.logger.log_raw.assert_called_with('info', 'part1, part2')
+    assert result == 'log'
+
+
+def test_stories_resolve_command_log_single_message(patch, logger, story):
+    patch.many(Stories, ['is_command'])
+    line = {
+        'container': 'log',
+        'args': [{'$OBJECT': 'string', 'string': 'part1'}]
+    }
+    result = story.resolve_command(line)
+    story.logger.log_raw.assert_called_with('info', 'part1')
     assert result == 'log'
 
 
@@ -166,6 +183,15 @@ def test_stories_end_line_output(patch, story):
     story.results = {'1': {'start': 'start'}}
     story.end_line('1', output='output')
     assert story.results['1']['output'] == 'output'
+
+
+def test_stories_end_line_output_assign(patch, story):
+    patch.object(Dict, 'set')
+    story.results = {'1': {'start': 'start'}}
+    assign = {'paths': ['x']}
+    story.end_line('1', output='output', assign=assign)
+    assert story.results['1']['output'] == 'output'
+    Dict.set.assert_called_with(story.context, assign['paths'], 'output')
 
 
 def test_stories_end_line_output_as_list(patch, story):
