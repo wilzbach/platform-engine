@@ -67,8 +67,6 @@ class Stories:
 
             line = self.line(my_parent_number)
 
-        return False
-
     def next_block(self, parent_line):
         """
         Given a parent_line, it skips through the block and returns the next
@@ -78,9 +76,6 @@ class Stories:
 
         while next_line.get('next') is not None:
             next_line = self.line(next_line['next'])
-
-            if next_line is None:
-                return None
 
             # See if the next line is a block. If it is, skip through it.
             if next_line.get('enter', None) is not None \

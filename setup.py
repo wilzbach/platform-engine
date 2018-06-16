@@ -30,6 +30,7 @@ setup(
     ],
     setup_requires=['pytest-runner'],
     install_requires=[
+        'prometheus-client==0.2.0',
         'tornado==5.0.2',
         'click>=6.7',
         'cryptography>=2.1.4',
