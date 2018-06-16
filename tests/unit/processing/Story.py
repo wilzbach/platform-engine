@@ -3,6 +3,7 @@ import collections
 import time
 from unittest import mock
 
+from asyncy import Metrics
 from asyncy.Stories import Stories
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
@@ -143,14 +144,53 @@ async def test_story_execute_block(patch, logger, story, async_mock):
 
 
 @mark.asyncio
-async def test_story_run(patch, app, logger, async_mock):
+async def test_story_run(patch, app, logger, async_mock, magic):
     patch.object(time, 'time')
     patch.object(Story, 'execute', new=async_mock())
     patch.object(Story, 'story')
+    assert Metrics.story_run_total is not None
+    assert Metrics.story_run_success is not None
+    Metrics.story_run_total = magic()
+    Metrics.story_run_success = magic()
+
     await Story.run(app, logger, 'story_name')
     Story.story.assert_called_with(app, logger, 'story_name')
     Story.story.return_value.prepare.assert_called_with(None)
     Story.execute.mock.assert_called_with(logger, Story.story())
+
+    Metrics.story_run_total.labels.assert_called_with(story_name='story_name')
+    Metrics.story_run_total.labels.return_value.observe.assert_called_once()
+
+    Metrics.story_run_success.labels \
+        .assert_called_with(story_name='story_name')
+    Metrics.story_run_success.labels.return_value.observe.assert_called_once()
+
+
+@mark.asyncio
+async def test_story_run_metrics_exc(patch, app, logger, async_mock, magic):
+    patch.object(time, 'time')
+    assert Metrics.story_run_total is not None
+    assert Metrics.story_run_failure is not None
+    Metrics.story_run_total = magic()
+    Metrics.story_run_failure = magic()
+
+    def exc():
+        raise Exception()
+
+    patch.object(Story, 'execute', new=async_mock(side_effect=exc))
+    patch.object(Story, 'story')
+    with pytest.raises(Exception):
+        await Story.run(app, logger, 'story_name')
+    Story.story.assert_called_with(app, logger, 'story_name')
+    Story.story.return_value.prepare.assert_called_with(None)
+    Story.execute.mock.assert_called_with(logger, Story.story())
+
+    Metrics.story_run_total.labels.assert_called_with(story_name='story_name')
+    Metrics.story_run_total.labels.return_value.observe.assert_called_once()
+
+    Metrics.story_run_failure.labels\
+        .assert_called_with(story_name='story_name')
+    Metrics.story_run_failure.labels.return_value.observe.assert_called_once()
 
 
 @mark.asyncio

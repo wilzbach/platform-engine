@@ -118,9 +118,9 @@ class Story:
             Metrics.story_run_failure.labels(story_name=story_name) \
                 .observe(time.time() - start)
             raise err
-
-        Metrics.story_run_total.labels(story_name=story_name) \
-            .observe(time.time() - start)
+        finally:
+            Metrics.story_run_total.labels(story_name=story_name) \
+                .observe(time.time() - start)
 
     @classmethod
     async def destroy(cls, app, logger, story_name):
