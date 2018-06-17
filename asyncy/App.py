@@ -17,7 +17,6 @@ class App:
 
     def __init__(self, config, logger, beta_user_id=None,
                  sentry_dsn=None, release=None):
-        self.apply()
         self.config = config
         self.beta_user_id = beta_user_id
         self.logger = logger
@@ -35,25 +34,33 @@ class App:
             with open(path, 'r') as file:
                 return load(file)
 
-    def apply(self):
-        """
-        Build environment, stories, and services from start of service.
-        """
-        self.environment = self.load_file('environment.json')
-        self.stories = self.load_file('stories.json')
-        self.services = self.load_file('services.json')
-
     async def bootstrap(self):
+        """
+        Build environment, stories, and services from start of service via
+        the deployment story. It then executes all the stories.
+        This enables the story to listen to pub/sub,
+        register with the gateway, and queue cron jobs.
+        """
+        deploy_stories = self.load_file('deploy.json')
+        await self.run_stories(deploy_stories)
+
+        self.environment = self.load_file('config/environment.json')
+        self.stories = self.load_file('config/stories.json')
+        self.services = self.load_file('config/services.json')
+        await self.run_stories(self.stories)
+
+    async def run_stories(self, stories):
         """
         Executes all the stories.
         This enables the story to listen to pub/sub,
         register with the gateway, and queue cron jobs.
         """
-        for story_name in self.stories:
+        for story_name in stories:
             try:
                 await Story.run(self, self.logger, story_name)
             except Exception as e:
                 traceback.print_exc()
+                raise e
 
     async def destroy(self):
         """
@@ -64,3 +71,4 @@ class App:
                 await Story.destroy(self, self.logger, story_name)
             except Exception as e:
                 traceback.print_exc()
+                raise e
