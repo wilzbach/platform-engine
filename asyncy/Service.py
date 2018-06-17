@@ -5,12 +5,14 @@ import traceback
 
 import click
 
+import prometheus_client
+
 import tornado
 from tornado import web
 
 import ujson
 
-from . import Version
+from . import Metrics, Version
 from .App import App
 from .Config import Config
 from .Exceptions import AsyncyError
@@ -45,7 +47,13 @@ class RunStoryHandler(tornado.web.RequestHandler):
                         block=req.get('block'),
                         function_name=req.get('function'))
 
+        # If we're running in an http context, then we need to call finish
+        # on Tornado's response object.
+        if request_response.is_not_finished():
+            io_loop.add_callback(request_response.finish)
+
     @web.asynchronous
+    @Metrics.story_request.time()
     async def post(self):
         io_loop = tornado.ioloop.IOLoop.current()
         app.sentry_client.context.clear()
@@ -85,6 +93,9 @@ class Service:
     @click.option('--port',
                   help='Set the port on which the HTTP server binds to',
                   default=os.getenv('PORT', '8084'))
+    @click.option('--prometheus_port',
+                  help='Set the port on which metrics are exposed',
+                  default=os.getenv('METRICS_PORT', '8085'))
     @click.option('--debug',
                   help='Sets the engine into debug mode',
                   default=False)
@@ -97,7 +108,7 @@ class Service:
     @click.option('--user_id',
                   help='The Asyncy User ID',
                   default=os.getenv('BETA_USER_ID'))
-    def start(port, debug, sentry_dsn, release, user_id):
+    def start(port, debug, sentry_dsn, release, user_id, prometheus_port):
         global app
         app = App(config, logger, beta_user_id=user_id,
                   sentry_dsn=sentry_dsn, release=release)
@@ -110,6 +121,7 @@ class Service:
             debug=debug,
         )
         web_app.listen(port)
+        prometheus_client.start_http_server(port=int(prometheus_port))
 
         logger.log('http-init', port)
 

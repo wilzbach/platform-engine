@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 from ..constants.LineConstants import LineConstants
+import time
+
+from asyncy import Metrics
+
 from .internal.HttpEndpoint import HttpEndpoint
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
@@ -47,21 +51,35 @@ class Lexicon:
             output = HttpEndpoint.run(story, line)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
-            return Lexicon.next_line_or_none(story.next_line(line['ln']))
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
             command = story.resolve_command(line)
 
             if command == 'log':
                 story.end_line(line['ln'])
-                return Lexicon.next_line_or_none(story.next_line(line['ln']))
+                return Lexicon.next_line_or_none(story.line(line.get('next')))
 
             service = line[LineConstants.service]
+            start = time.time()
             output = await Containers.exec(logger, story, line,
                                            service, command)
+            Metrics.container_exec_seconds_total.labels(
+                story_name=story.name, service=service
+            ).observe(time.time() - start)
+
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
 
-            return Lexicon.next_line_or_none(story.next_line(line['ln']))
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
+
+    @staticmethod
+    async def function(logger, story, line):
+        """
+        Functions are not executed when they're encountered.
+        This method returns the next block's line number,
+        if there are more statements to be executed.
+        """
+        return Lexicon.next_line_or_none(story.next_block(line))
 
     @staticmethod
     def next_line_or_none(line):
@@ -71,13 +89,13 @@ class Lexicon:
         return None
 
     @staticmethod
-    def set(logger, story, line):
+    async def set(logger, story, line):
         value = story.resolve(line['args'][1])
         story.end_line(line['ln'], output=value, assign=line['args'][0])
-        return story.next_line(line['ln'])['ln']
+        return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod
-    def if_condition(logger, story, line):
+    async def if_condition(logger, story, line):
         """
         Evaluates the resolution value to decide wheter to enter
         inside an if-block.

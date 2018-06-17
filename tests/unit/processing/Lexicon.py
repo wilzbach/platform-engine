@@ -15,14 +15,14 @@ from pytest import fixture, mark
 
 @fixture
 def line():
-    return {'enter': '2', 'exit': '25', 'ln': '1', LineConstants.service: 'alpine',
-            'args': ['args']}
+    return {'enter': '2', 'exit': '25', 'ln': '1', 'container': 'alpine',
+            'args': ['args'], 'next': '26'}
 
 
 @fixture
 def story(patch, story):
-    patch.many(story, ['end_line', 'resolve', 'resolve_command', 'next_line',
-                       'context', 'next_block'])
+    patch.many(story, ['end_line', 'resolve', 'resolve_command',
+                       'context', 'next_block', 'line'])
     return story
 
 
@@ -30,6 +30,7 @@ def story(patch, story):
 async def test_lexicon_run(patch, logger, story, line, async_mock):
     output = MagicMock()
     patch.object(Containers, 'exec', new=async_mock(return_value=output))
+    patch.object(Lexicon, 'next_line_or_none')
     result = await Lexicon.execute(logger, story, line)
     story.resolve_command.assert_called_with(line)
     c = line[LineConstants.service]
@@ -38,13 +39,13 @@ async def test_lexicon_run(patch, logger, story, line, async_mock):
     story.end_line.assert_called_with(line['ln'],
                                       output=output,
                                       assign=None)
-    story.next_line.assert_called_with(line['ln'])
-    assert result == story.next_line()['ln']
+    story.line.assert_called_with(line['next'])
+    assert result == Lexicon.next_line_or_none()
 
 
 @mark.asyncio
 async def test_lexicon_run_none(patch, logger, story, line, async_mock):
-    story.next_line.return_value = None
+    story.line.return_value = None
     patch.object(Containers, 'exec', new=async_mock())
     result = await Lexicon.execute(logger, story, line)
     assert result is None
@@ -52,47 +53,60 @@ async def test_lexicon_run_none(patch, logger, story, line, async_mock):
 
 @mark.asyncio
 async def test_lexicon_run_log(patch, logger, story, line):
+    patch.object(Lexicon, 'next_line_or_none')
     story.resolve_command.return_value = 'log'
     result = await Lexicon.execute(logger, story, line)
     story.resolve_command.assert_called_with(line)
     story.end_line.assert_called_with(line['ln'])
-    story.next_line.assert_called_with(line['ln'])
-    assert result == story.next_line()['ln']
+    story.line.assert_called_with(line['next'])
+    assert result == Lexicon.next_line_or_none()
 
 
 @mark.asyncio
 async def test_lexicon_run_log_none(patch, logger, story, line):
     story.resolve_command.return_value = 'log'
-    story.next_line.return_value = None
+    patch.object(Lexicon, 'next_line_or_none', return_value=None)
     result = await Lexicon.execute(logger, story, line)
     assert result is None
 
 
-def test_lexicon_set(patch, logger, story):
+@mark.asyncio
+async def test_lexicon_set(patch, logger, story):
     story.context = {}
-    line = {'ln': '1', 'args': [{'paths': ['name']}, 'values']}
+    patch.object(Lexicon, 'next_line_or_none')
+    line = {'ln': '1', 'args': [{'paths': ['name']}, 'values'], 'next': '2'}
     story.resolve.return_value = 'resolved'
-    result = Lexicon.set(logger, story, line)
+    result = await Lexicon.set(logger, story, line)
     story.resolve.assert_called_with(line['args'][1])
-    story.next_line.assert_called_with('1')
     story.end_line.assert_called_with(line['ln'],
                                       assign={'paths': ['name']},
                                       output='resolved')
-    assert result == story.next_line()['ln']
+    story.line.assert_called_with(line['next'])
+    assert result == Lexicon.next_line_or_none()
 
 
-def test_lexicon_if(logger, story, line):
+@mark.asyncio
+async def test_lexicon_function(patch, logger, story, line):
+    patch.object(story, 'next_block')
+    patch.object(Lexicon, 'next_line_or_none', return_value='1')
+    assert await Lexicon.function(logger, story, line) == '1'
+    story.next_block.assert_called_with(line)
+
+
+@mark.asyncio
+async def test_lexicon_if(logger, story, line):
     story.context = {}
-    result = Lexicon.if_condition(logger, story, line)
+    result = await Lexicon.if_condition(logger, story, line)
     logger.log.assert_called_with('lexicon-if', line, story.context)
     story.resolve.assert_called_with(line['args'][0], encode=False)
     assert result == line['enter']
 
 
-def test_lexicon_if_false(logger, story, line):
+@mark.asyncio
+async def test_lexicon_if_false(logger, story, line):
     story.context = {}
     story.resolve.return_value = False
-    assert Lexicon.if_condition(logger, story, line) == line['exit']
+    assert await Lexicon.if_condition(logger, story, line) == line['exit']
 
 
 def test_lexicon_unless(logger, story, line):
@@ -131,15 +145,12 @@ async def test_lexicon_run_http_endpoint(patch, logger, story,
     return_values.side_effect = ['get', '/']
     patch.object(HttpEndpoint, 'register_http_endpoint', new=async_mock())
     story.resolve.side_effect = return_values
-    story.next_line.return_value = None
 
     await Lexicon.execute(logger, story, http_line)
 
     HttpEndpoint.register_http_endpoint.mock.assert_called_with(
         block=http_line['ln'], line=http_line, method='get', path='/',
         story=story)
-
-    story.next_block.assert_called_with(http_line)
 
 
 @mark.parametrize('args', [[None, '/'], ['get', None]])
@@ -150,7 +161,6 @@ async def test_lexicon_run_http_endpoint_no_method(patch, logger, story,
         return_values = Mock()
         return_values.side_effect = args
         story.resolve.side_effect = return_values
-        story.next_line.return_value = None
 
         await Lexicon.execute(logger, story, http_line)
 

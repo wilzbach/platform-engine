@@ -4,6 +4,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 import ujson
 
 from ...constants.LineConstants import LineConstants
+from ... import Metrics
 from ...Exceptions import AsyncyError, InvalidCommandError
 from ...constants.ContextConstants import ContextConstants
 from ...utils.HttpUtils import HttpUtils
@@ -65,11 +66,13 @@ class HttpEndpoint:
                 .add_callback(req.finish)
 
     @classmethod
+    @Metrics.http_register.time()
     async def register_http_endpoint(cls, story, line, method, path, block):
         await cls._update_gateway(story, line, method,
                                   'register', path, block)
 
     @classmethod
+    @Metrics.http_unregister.time()
     async def unregister_http_endpoint(cls, story, line, method, path, block):
         await cls._update_gateway(story, line, method,
                                   'unregister', path, block)

@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 from ..constants.LineConstants import LineConstants
 from .Handler import Handler
+import time
+
+from .. import Metrics
 from ..Stories import Stories
-from ..constants import ContextConstants
+from ..processing import Lexicon
 from ..processing.internal.HttpEndpoint import HttpEndpoint
 
 
@@ -20,42 +23,106 @@ class Story:
         logger.log('story-save', story.name, story.app_id)
 
     @staticmethod
-    async def execute(app, logger, story, skip_server_finish=False):
+    async def execute(logger, story):
         """
         Executes each line in the story
         """
         line_number = story.first_line()
         while line_number:
-            line_number = await Handler.run(logger, line_number, story)
+            line_number = await Story.execute_line(logger, story, line_number)
             logger.log('story-execution', line_number)
-            # if line_number:
-            #     if line_number.endswith('.story'):
-            #         line_number = await Story.run(app, logger, line_number,
-            #                                       skip_server_finish=True)
 
-        if skip_server_finish is False:
-            # If we're running in an http context, then we need to call finish
-            # on Tornado's response object.
-            server_request = story.context.get(ContextConstants.server_request)
-            if server_request:
-                if server_request.is_not_finished():
-                    story.logger.log_raw('debug',
-                                         'Closing Tornado\'s response')
-                    story.context[ContextConstants.server_io_loop] \
-                        .add_callback(server_request.finish)
+    @staticmethod
+    async def execute_line(logger, story, line_number):
+        """
+        Executes a single line by calling the Lexicon for various operations.
+
+        To execute a function completely, see Story#execute_function.
+
+        :return: Returns the next line number to be executed
+        (return value from Lexicon), or None if there is none.
+        """
+        line = story.line(line_number)
+        story.start_line(line_number)
+
+        method = line['method']
+        if method == 'if':
+            return await Lexicon.if_condition(logger, story, line)
+        elif method == 'for':
+            return await Lexicon.for_loop(logger, story, line)
+        elif method == 'run':
+            return await Lexicon.run(logger, story, line)
+        elif method == 'set':
+            return await Lexicon.set(logger, story, line)
+        elif method == 'call':
+            return await Story.execute_function(logger, story, line)
+        elif method == 'function':
+            return await Lexicon.function(logger, story, line)
+        else:
+            raise NotImplementedError(f'Unknown method to execute: {method}')
+
+    @staticmethod
+    async def execute_function(logger, story, line):
+        """
+        Calls a particular function indicated by the line.
+        The parameter types are verified, and ensures that all the required
+        parameters are present. This will setup a new context for the
+        function block to be executed, and will return the output (if any).
+        """
+        current_context = story.context
+        function_line = story.function_line_by_name(line['function'])
+        context = story.context_for_function_call(line, function_line)
+        try:
+            story.set_context(context)
+            await Story.execute_block(logger, story, function_line)
+        finally:
+            story.set_context(current_context)
+
+    @staticmethod
+    async def execute_block(logger, story, parent_line):
+        """
+        Executes all the lines whose parent is parent_line.
+        """
+        next_line = story.line(parent_line['enter'])
+        while next_line is not None and \
+                next_line['parent'] == parent_line['ln']:
+            if next_line.get('enter') is not None:
+                await Story.execute_block(logger, story, next_line)
+                next_line = story.next_block(next_line)
+            else:
+                await Story.execute_line(logger, story, next_line['ln'])
+                next_line = story.line(next_line.get('next'))
 
     @classmethod
     async def run(cls,
                   app, logger, story_name, *, story_id=None,
-                  start=None, block=None, context=None,
-                  skip_server_finish=False, function_name=None):
+                  block=None, context=None,
+                  function_name=None):
+        start = time.time()
+        try:
+            logger.log('story-start', story_name, story_id)
 
-        logger.log('story-start', story_name, story_id)
-        story = cls.story(app, logger, story_name)
-        story.prepare(context, start, block, function_name=function_name)
-        await cls.execute(app, logger, story,
-                          skip_server_finish=skip_server_finish)
-        logger.log('story-end', story_name, story_id)
+            story = cls.story(app, logger, story_name)
+            story.prepare(context)
+
+            if function_name:
+                function_line = story.function_line_by_name(function_name)
+                await cls.execute_function(logger, story, function_line)
+            elif block:
+                await cls.execute_block(logger, story, story.line(block))
+            else:
+                await cls.execute(logger, story)
+
+            logger.log('story-end', story_name, story_id)
+            Metrics.story_run_success.labels(story_name=story_name) \
+                .observe(time.time() - start)
+        except BaseException as err:
+            Metrics.story_run_failure.labels(story_name=story_name) \
+                .observe(time.time() - start)
+            raise err
+        finally:
+            Metrics.story_run_total.labels(story_name=story_name) \
+                .observe(time.time() - start)
 
     @classmethod
     async def destroy(cls, app, logger, story_name):
