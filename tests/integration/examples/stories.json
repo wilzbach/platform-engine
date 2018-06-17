@@ -4,10 +4,10 @@
     "hello.story": {
       "tree": {
         "1": {
-          "method": "run",
+          "method": "execute",
           "ln": "1",
           "output": null,
-          "container": "alpine",
+          "service": "alpine",
           "args": [
             {
               "$OBJECT": "path",
