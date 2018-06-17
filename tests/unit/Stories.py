@@ -2,13 +2,12 @@
 import time
 
 from asyncy.Stories import Stories
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.utils import Dict
 
 from pytest import fixture, mark
 
 from storyscript.resolver import Resolver
-
-from asyncy.constants.LineConstants import LineConstants
 
 
 def test_stories_init(app, logger, story):
@@ -111,9 +110,11 @@ def test_command_arguments_list_none(patch, story):
 def test_stories_resolve_command(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.command_arguments_list.return_value = ['argument']
-    line = {LineConstants.service: LineConstants.service, 'args': [{'paths': ['command']}, 'arg']}
+    line = {LineConstants.service: LineConstants.service,
+            'args': [{'paths': ['command']}, 'arg']}
     result = story.resolve_command(line)
-    Stories.is_command.assert_called_with(LineConstants.service, {'paths': ['command']})
+    Stories.is_command.assert_called_with(LineConstants.service,
+                                          {'paths': ['command']})
     assert result == 'command argument'
 
 
@@ -160,7 +161,8 @@ def test_stories_resolve_command_log_single_message(patch, logger, story):
 def test_stories_resolve_command_none(patch, logger, story):
     patch.many(Stories, ['is_command', 'command_arguments_list'])
     Stories.is_command.return_value = None
-    line = {LineConstants.service: LineConstants.service, 'args': ['command', 'arg']}
+    line = {LineConstants.service: LineConstants.service,
+            'args': ['command', 'arg']}
     story.resolve_command(line)
     Stories.command_arguments_list.assert_called_with(line['args'])
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock
 
-from pytest import fixture
-
 from asyncy.constants.LineConstants import LineConstants
+
+from pytest import fixture
 
 
 @fixture

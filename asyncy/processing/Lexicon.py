@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-from ..constants.LineConstants import LineConstants
 import time
 
-from asyncy import Metrics
-
 from .internal.HttpEndpoint import HttpEndpoint
+from .. import Metrics
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
 from ..constants.ContextConstants import ContextConstants
+from ..constants.LineConstants import LineConstants
 
 
 class Lexicon:

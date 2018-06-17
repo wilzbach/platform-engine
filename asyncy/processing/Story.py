@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from ..constants.LineConstants import LineConstants
-from .Handler import Handler
 import time
 
 from .. import Metrics
 from ..Stories import Stories
+from ..constants.LineConstants import LineConstants
 from ..processing import Lexicon
 from ..processing.internal.HttpEndpoint import HttpEndpoint
 

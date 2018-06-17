@@ -3,10 +3,10 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
-from ...constants.LineConstants import LineConstants
 from ... import Metrics
 from ...Exceptions import AsyncyError, InvalidCommandError
 from ...constants.ContextConstants import ContextConstants
+from ...constants.LineConstants import LineConstants
 from ...utils.HttpUtils import HttpUtils
 
 
