@@ -68,7 +68,7 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
 @mark.parametrize('method', [
     Method(name='if', lexicon_name='if_condition', async_mock=True),
     Method(name='for', lexicon_name='for_loop', async_mock=True),
-    Method(name='run', lexicon_name='run', async_mock=True),
+    Method(name='execute', lexicon_name='execute', async_mock=True),
     Method(name='set', lexicon_name='set', async_mock=True),
     Method(name='function', lexicon_name='function', async_mock=True)
 ])

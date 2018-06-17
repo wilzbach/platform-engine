@@ -119,7 +119,7 @@ def test_stories_resolve_command(patch, logger, story):
 
 
 def test_stories_resolve_command_http_endpoint(story):
-    line = {'container': 'http-endpoint'}
+    line = {LineConstants.service: 'http-endpoint'}
     assert story.resolve_command(line) == 'http-endpoint'
 
 
@@ -150,7 +150,7 @@ def test_stories_resolve_command_log_single_arg(patch, logger, story):
 def test_stories_resolve_command_log_single_message(patch, logger, story):
     patch.many(Stories, ['is_command'])
     line = {
-        'container': 'log',
+        LineConstants.service: 'log',
         'args': [{'$OBJECT': 'string', 'string': 'part1'}]
     }
     result = story.resolve_command(line)

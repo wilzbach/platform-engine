@@ -15,7 +15,8 @@ from pytest import fixture, mark
 
 @fixture
 def line():
-    return {'enter': '2', 'exit': '25', 'ln': '1', 'container': 'alpine',
+    return {'enter': '2', 'exit': '25', 'ln': '1',
+            LineConstants.service: 'alpine',
             'args': ['args'], 'next': '26'}
 
 

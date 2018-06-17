@@ -49,8 +49,8 @@ class Story:
             return await Lexicon.if_condition(logger, story, line)
         elif method == 'for':
             return await Lexicon.for_loop(logger, story, line)
-        elif method == 'run':
-            return await Lexicon.run(logger, story, line)
+        elif method == 'execute':
+            return await Lexicon.execute(logger, story, line)
         elif method == 'set':
             return await Lexicon.set(logger, story, line)
         elif method == 'call':
@@ -132,7 +132,7 @@ class Story:
         story = cls.story(app, logger, story_name)
         line = story.line(story.first_line())
         while line is not None:
-            if line['method'] == 'run':
+            if line['method'] == 'execute':
                 if line[LineConstants.service] == 'http-endpoint':
                     method = story.argument_by_name(line, 'method')
                     path = story.argument_by_name(line, 'path')
