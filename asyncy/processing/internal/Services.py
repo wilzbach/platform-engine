@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
 
+from ...Exceptions import AsyncyError
+
 Command = namedtuple('Command', ['arguments', 'output_type', 'handler'])
 Service = namedtuple('Service', ['commands'])
 
@@ -27,16 +29,24 @@ class Services:
     @classmethod
     async def execute(cls, story, line):
         service = cls.services[line['service']]
-        command = story.resolve_command(line)
+        command = service.commands.get(line['command'])
+
+        if command is None:
+            raise AsyncyError(
+                message=f'No command {line["command"]} '
+                        f'for service {line["service"]}',
+                story=story,
+                line=line)
+
         resolved_args = {}
 
-        if service[command].arguments:
-            # TODO resolve all the arguments from the story
-            # TODO and construct resolved_args.
-            pass
+        if command.arguments:
+            for arg in command.arguments:
+                actual = story.argument_by_name(line=line, argument_name=arg)
+                resolved_args[arg] = actual
 
-        return await service[command].handler(story=story, line=line,
-                                              resolved_args=resolved_args)
+        return await command.handler(story=story, line=line,
+                                     resolved_args=resolved_args)
 
     @classmethod
     def init(cls, logger):
