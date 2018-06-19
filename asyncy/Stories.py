@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import time
 from json import JSONDecodeError, dumps, loads
 
@@ -100,19 +99,6 @@ class Stories:
 
         return next_line
 
-    def is_command(self, container, argument):
-        """
-        Checks whether argument is a command for the given container
-        """
-        if type(argument) is str or self.containers is None:
-            return None
-
-        if argument['$OBJECT'] == 'path':
-            if len(argument['paths']) == 1:
-                path = argument['paths'][0]
-                if path in self.containers[container]['commands']:
-                    return True
-
     def resolve(self, arg, encode=False):
         """
         Resolves line argument to their real value
@@ -121,19 +107,7 @@ class Stories:
             self.logger.log('story-resolve', arg, arg)
             return arg
 
-        # patch for $OBJECT=file
-        is_file = (
-            isinstance(arg, dict) and
-            (arg['$OBJECT'] == 'file' or arg.get('type') == 'file')
-        )
-        # end patch
-
         result = Resolver.resolve(arg, self.context)
-
-        # patch for $OBJECT=file
-        if is_file:
-            result = os.path.join('/tmp/cache', result.lstrip('/'))
-        # end patch
 
         self.logger.log('story-resolve', arg, result)
 
