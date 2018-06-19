@@ -188,29 +188,7 @@ class Stories:
         if line[LineConstants.service] == 'http-endpoint':
             return line[LineConstants.service]
 
-        if line[LineConstants.service] == 'log':
-            args = line['args']
-            if len(args) == 1:
-                lvl = 'info'
-                message = self.resolve(args[0])
-            else:
-                arguments = self.command_arguments_list(args)
-                if arguments[0] not in ('info', 'warn', 'error', 'debug'):
-                    lvl = 'info'
-                else:
-                    lvl = arguments.pop(0)
-                message = ', '.join(arguments)
-
-            self.logger.log_raw(lvl, message)
-            return 'log'
-
-        if self.is_command(line[LineConstants.service], line['args'][0]):
-            command = line['args'][0]['paths'][0]
-            arguments_list = self.command_arguments_list(line['args'][1:])
-            arguments_list.insert(0, command)
-            return ' '.join(arguments_list)
-
-        return ' '.join(self.command_arguments_list(line['args']))
+        return line['command']
 
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}

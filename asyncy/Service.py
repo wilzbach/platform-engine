@@ -20,7 +20,7 @@ from .Logger import Logger
 from .Stories import Stories
 from .constants.ContextConstants import ContextConstants
 from .processing import Story
-from .processing.internal import File
+from .processing.internal import File, Log
 from .processing.internal.Services import Services
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -119,6 +119,7 @@ class Service:
 
         # Init internal services.
         File.init()
+        Log.init()
         Services.log_registry()
 
         logger.log('service-init', Version.version)
