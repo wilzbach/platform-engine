@@ -221,7 +221,7 @@ class Stories:
         if type(output) is bytes:
             output = output.decode('utf-8')
 
-        if not isinstance(output, (list, dict)) and output:
+        if not isinstance(output, (list, dict, bool)) and output:
             try:
                 # try to load it as json
                 output = loads(output)
