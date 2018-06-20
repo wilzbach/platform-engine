@@ -58,16 +58,10 @@ class Lexicon:
                            assign=line.get('output'))
             return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
-            command = story.resolve_command(line)
-
-            if command == 'log':
-                story.end_line(line['ln'])
-                return Lexicon.next_line_or_none(story.line(line.get('next')))
-
             service = line[LineConstants.service]
             start = time.time()
             output = await Containers.exec(logger, story, line,
-                                           service, command)
+                                           service, line['command'])
             Metrics.container_exec_seconds_total.labels(
                 story_name=story.name, service=service
             ).observe(time.time() - start)

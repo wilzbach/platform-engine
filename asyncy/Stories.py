@@ -154,16 +154,6 @@ class Stories:
 
         return results
 
-    def resolve_command(self, line):
-        """
-        Resolves arguments for a container line to produce a command
-        that can be passed to docker
-        """
-        if line[LineConstants.service] == 'http-endpoint':
-            return line[LineConstants.service]
-
-        return line['command']
-
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
 
