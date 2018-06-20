@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants import ContextConstants
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.utils.HttpUtils import HttpUtils
 
@@ -16,7 +17,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 @mark.parametrize('http_object', ['request', 'response', 'foo'])
 def test_http_endpoint_run(patch, story, http_object):
     line = {
-        'container': http_object
+        LineConstants.service: http_object
     }
     patch.many(HttpEndpoint, ['access_request', 'access_response'])
     if http_object is 'request':

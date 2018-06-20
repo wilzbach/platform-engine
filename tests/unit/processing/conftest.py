@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from asyncy.constants.LineConstants import LineConstants
+
 from pytest import fixture
 
 
@@ -6,9 +8,9 @@ from pytest import fixture
 def http_line():
     return {
         'ln': '1',
-        'container': 'http-endpoint',
+        LineConstants.service: 'http-endpoint',
         'next': '2',
-        'method': 'run',
+        'method': 'execute',
         'args': [
             {
                 '$OBJECT': 'argument',

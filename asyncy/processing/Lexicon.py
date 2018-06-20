@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import time
 
-from asyncy import Metrics
-
 from .internal.HttpEndpoint import HttpEndpoint
+from .. import Metrics
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
 from ..constants.ContextConstants import ContextConstants
+from ..constants.LineConstants import LineConstants
 
 
 class Lexicon:
@@ -15,14 +15,14 @@ class Lexicon:
     """
 
     @staticmethod
-    async def run(logger, story, line):
+    async def execute(logger, story, line):
         """
-        Runs a container with the resolution values as commands
+        Runs a service with the resolution values as commands
         """
-        container = line['container']
-        if container == 'http-endpoint':
+        service = line[LineConstants.service]
+        if service == 'http-endpoint':
             """
-            If the container is http-endpoint (a special service),
+            If the service is http-endpoint (a special service),
             then register the http method along with the path with the Server
             (also line). The Server will then make a HTTP call back to engine
             on an actual HTTP request, passing along the line to
@@ -46,7 +46,7 @@ class Lexicon:
             next_line = story.next_block(line)
             return Lexicon.next_line_or_none(next_line)
         elif story.context.get(ContextConstants.server_request) is not None \
-                and (container == 'request' or container == 'response'):
+                and (service == 'request' or service == 'response'):
             output = HttpEndpoint.run(story, line)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
@@ -58,15 +58,12 @@ class Lexicon:
                 story.end_line(line['ln'])
                 return Lexicon.next_line_or_none(story.line(line.get('next')))
 
-            container = line['container']
-
+            service = line[LineConstants.service]
             start = time.time()
-
             output = await Containers.exec(logger, story, line,
-                                           container, command)
-
+                                           service, command)
             Metrics.container_exec_seconds_total.labels(
-                story_name=story.name, container=container
+                story_name=story.name, service=service
             ).observe(time.time() - start)
 
             story.end_line(line['ln'], output=output,
@@ -125,7 +122,7 @@ class Lexicon:
         output = line['args'][0]
         for item in _list:
             story.context[output] = item
-            await Lexicon.run(logger, story, line['ln'])
+            await Lexicon.execute(logger, story, line['ln'])
         return line['exit']
 
     @staticmethod

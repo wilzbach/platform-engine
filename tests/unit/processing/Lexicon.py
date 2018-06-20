@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock
 from asyncy import Exceptions
 from asyncy.Containers import Containers
 from asyncy.constants.ContextConstants import ContextConstants
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
@@ -14,7 +15,8 @@ from pytest import fixture, mark
 
 @fixture
 def line():
-    return {'enter': '2', 'exit': '25', 'ln': '1', 'container': 'alpine',
+    return {'enter': '2', 'exit': '25', 'ln': '1',
+            LineConstants.service: 'alpine',
             'args': ['args'], 'next': '26'}
 
 
@@ -30,9 +32,9 @@ async def test_lexicon_run(patch, logger, story, line, async_mock):
     output = MagicMock()
     patch.object(Containers, 'exec', new=async_mock(return_value=output))
     patch.object(Lexicon, 'next_line_or_none')
-    result = await Lexicon.run(logger, story, line)
+    result = await Lexicon.execute(logger, story, line)
     story.resolve_command.assert_called_with(line)
-    c = line['container']
+    c = line[LineConstants.service]
     Containers.exec.mock.assert_called_with(logger, story, line, c,
                                             story.resolve_command())
     story.end_line.assert_called_with(line['ln'],
@@ -46,7 +48,7 @@ async def test_lexicon_run(patch, logger, story, line, async_mock):
 async def test_lexicon_run_none(patch, logger, story, line, async_mock):
     story.line.return_value = None
     patch.object(Containers, 'exec', new=async_mock())
-    result = await Lexicon.run(logger, story, line)
+    result = await Lexicon.execute(logger, story, line)
     assert result is None
 
 
@@ -54,7 +56,7 @@ async def test_lexicon_run_none(patch, logger, story, line, async_mock):
 async def test_lexicon_run_log(patch, logger, story, line):
     patch.object(Lexicon, 'next_line_or_none')
     story.resolve_command.return_value = 'log'
-    result = await Lexicon.run(logger, story, line)
+    result = await Lexicon.execute(logger, story, line)
     story.resolve_command.assert_called_with(line)
     story.end_line.assert_called_with(line['ln'])
     story.line.assert_called_with(line['next'])
@@ -65,7 +67,7 @@ async def test_lexicon_run_log(patch, logger, story, line):
 async def test_lexicon_run_log_none(patch, logger, story, line):
     story.resolve_command.return_value = 'log'
     patch.object(Lexicon, 'next_line_or_none', return_value=None)
-    result = await Lexicon.run(logger, story, line)
+    result = await Lexicon.execute(logger, story, line)
     assert result is None
 
 
@@ -124,7 +126,7 @@ def test_lexicon_unless_false(logger, story, line):
 
 @mark.asyncio
 async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
-    patch.object(Lexicon, 'run', new=async_mock())
+    patch.object(Lexicon, 'execute', new=async_mock())
     line['args'] = [
         'element',
         {'$OBJECT': 'path', 'paths': ['elements']}
@@ -133,7 +135,7 @@ async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
     story.resolve.return_value = ['one']
     story.environment = {}
     result = await Lexicon.for_loop(logger, story, line)
-    Lexicon.run.mock.assert_called_with(logger, story, line['ln'])
+    Lexicon.execute.mock.assert_called_with(logger, story, line['ln'])
     assert result == line['exit']
 
 
@@ -145,7 +147,7 @@ async def test_lexicon_run_http_endpoint(patch, logger, story,
     patch.object(HttpEndpoint, 'register_http_endpoint', new=async_mock())
     story.resolve.side_effect = return_values
 
-    await Lexicon.run(logger, story, http_line)
+    await Lexicon.execute(logger, story, http_line)
 
     HttpEndpoint.register_http_endpoint.mock.assert_called_with(
         block=http_line['ln'], line=http_line, method='get', path='/',
@@ -161,7 +163,7 @@ async def test_lexicon_run_http_endpoint_no_method(patch, logger, story,
         return_values.side_effect = args
         story.resolve.side_effect = return_values
 
-        await Lexicon.run(logger, story, http_line)
+        await Lexicon.execute(logger, story, http_line)
 
 
 @mark.parametrize('http_object', ['request', 'response'])
@@ -169,7 +171,7 @@ async def test_lexicon_run_http_endpoint_no_method(patch, logger, story,
 async def test_lexicon_run_http_functions(patch, logger, story, http_object):
     http_object_line = {
         'ln': '1',
-        'container': http_object
+        LineConstants.service: http_object
     }
 
     story.context.return_value = {
@@ -179,7 +181,7 @@ async def test_lexicon_run_http_functions(patch, logger, story, http_object):
     story.container = http_object
     patch.object(HttpEndpoint, 'run')
 
-    await Lexicon.run(logger, story, http_object_line)
+    await Lexicon.execute(logger, story, http_object_line)
 
     HttpEndpoint.run.assert_called_with(story, http_object_line)
     story.end_line.assert_called()
