@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from storyscript.compiler import Compiler
-from storyscript.parser import Parser
-
 from asyncy.App import App
 from asyncy.Containers import Containers
 
 from pytest import mark
+
+from storyscript.compiler import Compiler
+from storyscript.parser import Parser
 
 
 @mark.asyncio

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from asyncy.processing.internal import Log
-from pytest import fixture, mark
-
 from asyncy.processing.internal.Services import Services
+
+from pytest import fixture, mark
 
 
 @fixture

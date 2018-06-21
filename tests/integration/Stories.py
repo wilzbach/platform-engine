@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 def test_stories_get(patch, magic, story):
     assert story.tree is not None
     assert story.context is None
