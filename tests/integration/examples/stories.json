@@ -8,22 +8,21 @@
           "ln": "1",
           "output": null,
           "service": "alpine",
+          "command": "echo",
           "args": [
             {
-              "$OBJECT": "path",
-              "paths": [
-                "echo"
-              ]
-            },
-            {
-              "$OBJECT": "string",
-              "values": [
-                {
-                  "$OBJECT": "string",
-                  "string": "Asyncy"
-                }
-              ],
-              "string": "Hi, I am {}!"
+              "$OBJECT": "argument",
+              "name": "msg",
+              "argument": {
+                "$OBJECT": "string",
+                "values": [
+                  {
+                    "$OBJECT": "string",
+                    "string": "Asyncy"
+                  }
+                ],
+                "string": "Hi, I am {}!"
+              }
             }
           ],
           "enter": null,

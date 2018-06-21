@@ -17,7 +17,7 @@ class Containers:
 
     @classmethod
     def format_command(cls, story, line, container_name, command):
-        services = story.app.services.get('services', {})
+        services = story.app.services or {}
         spec = services.get(container_name)
 
         if spec is None:

@@ -170,7 +170,7 @@ def test_stories_argument_by_name_lookup(patch, story):
 
     patch.object(story, 'resolve')
     story.argument_by_name(line, 'foo')
-    story.resolve.assert_called_with(line['args'][0]['argument'])
+    story.resolve.assert_called_with(line['args'][0]['argument'], encode=False)
 
 
 def test_stories_argument_by_name_missing(patch, story):

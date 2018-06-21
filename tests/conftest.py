@@ -68,7 +68,7 @@ def echo_line():
         'args': [
             {
                 '$OBJECT': 'argument',
-                'name': 'message',
+                'name': 'msg',
                 'argument': {
                     '$OBJECT': 'string',
                     'string': 'foo'
@@ -85,9 +85,8 @@ def echo_service():
             'config': {
                 'commands': {
                     'echo': {
-                        'format': 'echo {message}',
                         'arguments': {
-                            'message': {
+                            'msg': {
                                 'type': 'string'
                             }
                         }

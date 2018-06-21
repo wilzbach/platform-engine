@@ -195,7 +195,7 @@ class Stories:
 
         return None
 
-    def argument_by_name(self, line, argument_name):
+    def argument_by_name(self, line, argument_name, encode=False):
         args = line.get('args')
         if args is None:
             return None
@@ -203,7 +203,7 @@ class Stories:
         for arg in args:
             if arg['$OBJECT'] == 'argument' and \
                     arg['name'] == argument_name:
-                return self.resolve(arg['argument'])
+                return self.resolve(arg['argument'], encode=encode)
 
         return None
 
