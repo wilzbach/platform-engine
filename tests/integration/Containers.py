@@ -7,6 +7,8 @@ from pytest import mark
 from storyscript.compiler import Compiler
 from storyscript.parser import Parser
 
+from asyncy.constants.ServiceConstants import ServiceConstants
+
 
 @mark.asyncio
 async def test_exec(logger, config, story, echo_service, echo_line):
@@ -28,7 +30,7 @@ def test_containers_format_command(story):
     story.context = {}
     story.app.services = {
         'alpine': {
-            'config': {
+            ServiceConstants.config: {
                 'commands': {
                     'echo': {
                         'arguments': {'msg': {'type': 'string'}}
@@ -49,7 +51,7 @@ def test_containers_format_command_no_arguments(story):
     story.context = {}
     story.app.services = {
         'alpine': {
-            'config': {
+            ServiceConstants.config: {
                 'commands': {
                     'echo': {}
                 }

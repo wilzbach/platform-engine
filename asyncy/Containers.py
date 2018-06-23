@@ -5,6 +5,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
+from asyncy.constants.ServiceConstants import ServiceConstants
 from .Exceptions import ContainerSpecNotRegisteredError, DockerError
 from .utils.HttpUtils import HttpUtils
 
@@ -25,12 +26,14 @@ class Containers:
                 container_name=container_name
             )
 
-        args = spec['config']['commands'][command].get('arguments')
+        args = spec[ServiceConstants.config]['commands'][command]\
+            .get('arguments')
 
         if args is None:
             return [command]
 
-        command_format = spec['config']['commands'][command].get('format')
+        command_format = spec[ServiceConstants.config]['commands'][command]\
+            .get('format')
         if command_format is None:
             # Construct a dictionary of all arguments required and send them
             # as a JSON string to the command.

@@ -5,6 +5,8 @@ from asyncy.constants.LineConstants import LineConstants
 
 from pytest import fixture
 
+from asyncy.constants.ServiceConstants import ServiceConstants
+
 
 @fixture
 def magic(mocker):
@@ -82,7 +84,7 @@ def echo_line():
 def echo_service():
     return {
         'asyncy--echo': {
-            'config': {
+            ServiceConstants.config: {
                 'commands': {
                     'echo': {
                         'arguments': {
