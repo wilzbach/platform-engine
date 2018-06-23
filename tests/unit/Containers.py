@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
 from asyncy.Exceptions import DockerError
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 
 import pytest
@@ -83,22 +84,18 @@ async def test_fetch_with_retry(patch, story, line):
 
 def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
-    app.services = {
-        'services': echo_service
-    }
+    app.services = echo_service
 
     cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
-    assert ['echo', 'foo'] == cmd
+    assert ['echo', '{"msg":"foo"}'] == cmd
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
-    app.services = {
-        'services': echo_service
-    }
+    app.services = echo_service
 
-    config = app.services['services']['asyncy--echo']['config']
+    config = app.services['asyncy--echo'][ServiceConstants.config]
     config['commands']['echo']['format'] = None
 
     cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
-    assert ['echo', '{"message":"foo"}'] == cmd
+    assert ['echo', '{"msg":"foo"}'] == cmd

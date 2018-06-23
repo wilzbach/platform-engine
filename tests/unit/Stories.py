@@ -53,39 +53,12 @@ def test_stories_function_line_by_name(patch, story):
     assert function_line == story.tree['2']
 
 
-def test_stories_is_command(patch, logger, story):
-    story.containers = {LineConstants.service: {'commands': {'command': {}}}}
-    argument = {'$OBJECT': 'path', 'paths': ['command']}
-    result = story.is_command(LineConstants.service, argument)
-    assert result
-
-
-def test_stories_is_command_no_object(patch, logger, story):
-    result = story.is_command(LineConstants.service, 'string')
-    assert result is None
-
-
-def test_stories_is_command_none(patch, logger, story):
-    story.containers = {LineConstants.service: {'commands': {'command': {}}}}
-    argument = {'$OBJECT': 'string'}
-    result = story.is_command(LineConstants.service, argument)
-    assert result is None
-
-
 def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.context = 'context'
     result = story.resolve('args')
     logger.log.assert_called_with('story-resolve', 'args', 'args')
     assert result == 'args'
-
-
-def test_stories_resolve_file(patch, story):
-    # patch for $OBJECT=file
-    patch.object(Resolver, 'resolve', return_value='/file.path')
-    story.context = 'context'
-    result = story.resolve({'$OBJECT': 'file', 'string': '/file.path'})
-    assert result == '/tmp/cache/file.path'
 
 
 def test_command_arguments_list(patch, story):
@@ -105,66 +78,6 @@ def test_command_arguments_list_none(patch, story):
     result = story.command_arguments_list([obj])
     Stories.resolve.assert_called_with(obj)
     assert result == ['literal']
-
-
-def test_stories_resolve_command(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list'])
-    Stories.command_arguments_list.return_value = ['argument']
-    line = {LineConstants.service: LineConstants.service,
-            'args': [{'paths': ['command']}, 'arg']}
-    result = story.resolve_command(line)
-    Stories.is_command.assert_called_with(LineConstants.service,
-                                          {'paths': ['command']})
-    assert result == 'command argument'
-
-
-def test_stories_resolve_command_http_endpoint(story):
-    line = {LineConstants.service: 'http-endpoint'}
-    assert story.resolve_command(line) == 'http-endpoint'
-
-
-def test_stories_resolve_command_log(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list'])
-    Stories.command_arguments_list.return_value = ['info', 'message']
-    line = {LineConstants.service: 'log',
-            'args': [{'$OBJECT': 'path', 'paths': ['info']},
-                     {'$OBJECT': 'string', 'string': 'message'}]}
-    result = story.resolve_command(line)
-    Stories.command_arguments_list.assert_called_with(line['args'])
-    story.logger.log_raw.assert_called_with('info', 'message')
-    assert result == 'log'
-
-
-def test_stories_resolve_command_log_single_arg(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list'])
-    Stories.command_arguments_list.return_value = ['part1', 'part2']
-    line = {LineConstants.service: 'log',
-            'args': [{'$OBJECT': 'string', 'string': 'part1'},
-                     {'$OBJECT': 'string', 'string': 'part2'}]}
-    result = story.resolve_command(line)
-    Stories.command_arguments_list.assert_called_with(line['args'])
-    story.logger.log_raw.assert_called_with('info', 'part1, part2')
-    assert result == 'log'
-
-
-def test_stories_resolve_command_log_single_message(patch, logger, story):
-    patch.many(Stories, ['is_command'])
-    line = {
-        LineConstants.service: 'log',
-        'args': [{'$OBJECT': 'string', 'string': 'part1'}]
-    }
-    result = story.resolve_command(line)
-    story.logger.log_raw.assert_called_with('info', 'part1')
-    assert result == 'log'
-
-
-def test_stories_resolve_command_none(patch, logger, story):
-    patch.many(Stories, ['is_command', 'command_arguments_list'])
-    Stories.is_command.return_value = None
-    line = {LineConstants.service: LineConstants.service,
-            'args': ['command', 'arg']}
-    story.resolve_command(line)
-    Stories.command_arguments_list.assert_called_with(line['args'])
 
 
 def test_stories_start_line(patch, story):
@@ -257,7 +170,7 @@ def test_stories_argument_by_name_lookup(patch, story):
 
     patch.object(story, 'resolve')
     story.argument_by_name(line, 'foo')
-    story.resolve.assert_called_with(line['args'][0]['argument'])
+    story.resolve.assert_called_with(line['args'][0]['argument'], encode=False)
 
 
 def test_stories_argument_by_name_missing(patch, story):

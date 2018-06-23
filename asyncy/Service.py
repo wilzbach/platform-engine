@@ -20,6 +20,8 @@ from .Logger import Logger
 from .Stories import Stories
 from .constants.ContextConstants import ContextConstants
 from .processing import Story
+from .processing.internal import File, Http, Log
+from .processing.internal.Services import Services
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -112,6 +114,14 @@ class Service:
         global app
         app = App(config, logger, beta_user_id=user_id,
                   sentry_dsn=sentry_dsn, release=release)
+
+        Services.logger = logger
+
+        # Init internal services.
+        File.init()
+        Log.init()
+        Http.init()
+        Services.log_registry()
 
         logger.log('service-init', Version.version)
         web_app = tornado.web.Application(

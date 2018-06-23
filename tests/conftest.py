@@ -2,6 +2,7 @@
 from unittest.mock import MagicMock
 
 from asyncy.constants.LineConstants import LineConstants
+from asyncy.constants.ServiceConstants import ServiceConstants
 
 from pytest import fixture
 
@@ -68,7 +69,7 @@ def echo_line():
         'args': [
             {
                 '$OBJECT': 'argument',
-                'name': 'message',
+                'name': 'msg',
                 'argument': {
                     '$OBJECT': 'string',
                     'string': 'foo'
@@ -82,12 +83,11 @@ def echo_line():
 def echo_service():
     return {
         'asyncy--echo': {
-            'config': {
+            ServiceConstants.config: {
                 'commands': {
                     'echo': {
-                        'format': 'echo {message}',
                         'arguments': {
-                            'message': {
+                            'msg': {
                                 'type': 'string'
                             }
                         }

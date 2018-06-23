@@ -7,6 +7,7 @@ from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
+from ..processing.internal.Services import Services
 
 
 class Lexicon:
@@ -20,7 +21,12 @@ class Lexicon:
         Runs a service with the resolution values as commands
         """
         service = line[LineConstants.service]
-        if service == 'http-endpoint':
+        if Services.is_internal(service):
+            output = await Services.execute(story, line)
+            story.end_line(line['ln'], output=output,
+                           assign=line.get('output'))
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
+        elif service == 'http-endpoint':
             """
             If the service is http-endpoint (a special service),
             then register the http method along with the path with the Server
@@ -52,16 +58,10 @@ class Lexicon:
                            assign=line.get('output'))
             return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
-            command = story.resolve_command(line)
-
-            if command == 'log':
-                story.end_line(line['ln'])
-                return Lexicon.next_line_or_none(story.line(line.get('next')))
-
             service = line[LineConstants.service]
             start = time.time()
             output = await Containers.exec(logger, story, line,
-                                           service, command)
+                                           service, line['command'])
             Metrics.container_exec_seconds_total.labels(
                 story_name=story.name, service=service
             ).observe(time.time() - start)

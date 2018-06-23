@@ -6,6 +6,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 import ujson
 
 from .Exceptions import ContainerSpecNotRegisteredError, DockerError
+from .constants.ServiceConstants import ServiceConstants
 from .utils.HttpUtils import HttpUtils
 
 MAX_RETRIES = 3
@@ -17,7 +18,7 @@ class Containers:
 
     @classmethod
     def format_command(cls, story, line, container_name, command):
-        services = story.app.services.get('services', {})
+        services = story.app.services or {}
         spec = services.get(container_name)
 
         if spec is None:
@@ -25,12 +26,14 @@ class Containers:
                 container_name=container_name
             )
 
-        args = spec['config']['commands'][command].get('arguments')
+        args = spec[ServiceConstants.config]['commands'][command]\
+            .get('arguments')
 
         if args is None:
             return [command]
 
-        command_format = spec['config']['commands'][command].get('format')
+        command_format = spec[ServiceConstants.config]['commands'][command]\
+            .get('format')
         if command_format is None:
             # Construct a dictionary of all arguments required and send them
             # as a JSON string to the command.

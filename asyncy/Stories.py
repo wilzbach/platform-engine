@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import time
 from json import JSONDecodeError, dumps, loads
 
@@ -100,19 +99,6 @@ class Stories:
 
         return next_line
 
-    def is_command(self, container, argument):
-        """
-        Checks whether argument is a command for the given container
-        """
-        if type(argument) is str or self.containers is None:
-            return None
-
-        if argument['$OBJECT'] == 'path':
-            if len(argument['paths']) == 1:
-                path = argument['paths'][0]
-                if path in self.containers[container]['commands']:
-                    return True
-
     def resolve(self, arg, encode=False):
         """
         Resolves line argument to their real value
@@ -121,19 +107,7 @@ class Stories:
             self.logger.log('story-resolve', arg, arg)
             return arg
 
-        # patch for $OBJECT=file
-        is_file = (
-            isinstance(arg, dict) and
-            (arg['$OBJECT'] == 'file' or arg.get('type') == 'file')
-        )
-        # end patch
-
         result = Resolver.resolve(arg, self.context)
-
-        # patch for $OBJECT=file
-        if is_file:
-            result = os.path.join('/tmp/cache', result.lstrip('/'))
-        # end patch
 
         self.logger.log('story-resolve', arg, result)
 
@@ -180,38 +154,6 @@ class Stories:
 
         return results
 
-    def resolve_command(self, line):
-        """
-        Resolves arguments for a container line to produce a command
-        that can be passed to docker
-        """
-        if line[LineConstants.service] == 'http-endpoint':
-            return line[LineConstants.service]
-
-        if line[LineConstants.service] == 'log':
-            args = line['args']
-            if len(args) == 1:
-                lvl = 'info'
-                message = self.resolve(args[0])
-            else:
-                arguments = self.command_arguments_list(args)
-                if arguments[0] not in ('info', 'warn', 'error', 'debug'):
-                    lvl = 'info'
-                else:
-                    lvl = arguments.pop(0)
-                message = ', '.join(arguments)
-
-            self.logger.log_raw(lvl, message)
-            return 'log'
-
-        if self.is_command(line[LineConstants.service], line['args'][0]):
-            command = line['args'][0]['paths'][0]
-            arguments_list = self.command_arguments_list(line['args'][1:])
-            arguments_list.insert(0, command)
-            return ' '.join(arguments_list)
-
-        return ' '.join(self.command_arguments_list(line['args']))
-
     def start_line(self, line_number):
         self.results[line_number] = {'start': time.time()}
 
@@ -221,7 +163,7 @@ class Stories:
         if type(output) is bytes:
             output = output.decode('utf-8')
 
-        if not isinstance(output, (list, dict)) and output:
+        if not isinstance(output, (list, dict, bool)) and output:
             try:
                 # try to load it as json
                 output = loads(output)
@@ -253,7 +195,7 @@ class Stories:
 
         return None
 
-    def argument_by_name(self, line, argument_name):
+    def argument_by_name(self, line, argument_name, encode=False):
         args = line.get('args')
         if args is None:
             return None
@@ -261,7 +203,7 @@ class Stories:
         for arg in args:
             if arg['$OBJECT'] == 'argument' and \
                     arg['name'] == argument_name:
-                return self.resolve(arg['argument'])
+                return self.resolve(arg['argument'], encode=encode)
 
         return None
 

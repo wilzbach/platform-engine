@@ -3,7 +3,7 @@
     "asyncy/twitter": {
       "tag": "latest",
       "environment": {},
-      "config": {
+      "configuration": {
         "commands": {
           "echo": {
             "help": "Echoes stuff",
