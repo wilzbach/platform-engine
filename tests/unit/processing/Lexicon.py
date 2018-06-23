@@ -8,6 +8,7 @@ from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
+from asyncy.processing.internal.Services import Services
 
 import pytest
 from pytest import fixture, mark
@@ -41,6 +42,24 @@ async def test_lexicon_execute(patch, logger, story, line, async_mock):
                                       output=output,
                                       assign=None)
     story.line.assert_called_with(line['next'])
+    assert result == Lexicon.next_line_or_none()
+
+
+@mark.asyncio
+async def test_lexicon_execute_internal_functions(patch, logger,
+                                                  story, line, async_mock):
+    line['output'] = 'assign'
+    patch.object(Services, 'is_internal', return_value=True)
+    patch.object(Services, 'execute', new=async_mock())
+    patch.object(Lexicon, 'next_line_or_none')
+    result = await Lexicon.execute(logger, story, line)
+
+    Services.is_internal.assert_called_with(line[LineConstants.service])
+    Services.execute.mock.assert_called_with(story, line)
+    output = await Services.execute()
+    story.end_line.assert_called_with(line['ln'], output=output,
+                                      assign='assign')
+
     assert result == Lexicon.next_line_or_none()
 
 
@@ -122,7 +141,7 @@ async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
 
 @mark.asyncio
 async def test_lexicon_execute_http_endpoint(patch, logger, story,
-                                         http_line, async_mock):
+                                             http_line, async_mock):
     return_values = Mock()
     return_values.side_effect = ['get', '/']
     patch.object(HttpEndpoint, 'register_http_endpoint', new=async_mock())
@@ -138,7 +157,7 @@ async def test_lexicon_execute_http_endpoint(patch, logger, story,
 @mark.parametrize('args', [[None, '/'], ['get', None]])
 @mark.asyncio
 async def test_lexicon_execute_http_endpoint_no_method(patch, logger, story,
-                                                   http_line, args):
+                                                       http_line, args):
     with pytest.raises(Exceptions.ArgumentNotFoundError):
         return_values = Mock()
         return_values.side_effect = args
@@ -149,7 +168,8 @@ async def test_lexicon_execute_http_endpoint_no_method(patch, logger, story,
 
 @mark.parametrize('http_object', ['request', 'response'])
 @mark.asyncio
-async def test_lexicon_execute_http_functions(patch, logger, story, http_object):
+async def test_lexicon_execute_http_functions(patch, logger,
+                                              story, http_object):
     http_object_line = {
         'ln': '1',
         LineConstants.service: http_object
