@@ -107,7 +107,14 @@ class Stories:
             self.logger.log('story-resolve', arg, arg)
             return arg
 
-        result = Resolver.resolve(arg, self.context)
+        if arg.get('$OBJECT') == 'method':
+            from asyncy.processing import Story
+            arg.output = ['__tmp_inline__']
+            Story.execute_line(self.logger, self, arg)
+            result = self.context['__tmp_inline__']
+            arg.output = None
+        else:
+            result = Resolver.resolve(arg, self.context)
 
         self.logger.log('story-resolve', arg, result)
 

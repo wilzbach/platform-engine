@@ -32,7 +32,7 @@ class Story:
             logger.log('story-execution', line_number)
 
     @staticmethod
-    async def execute_line(logger, story, line_number):
+    async def execute_line(logger, story, line):
         """
         Executes a single line by calling the Lexicon for various operations.
 
@@ -41,8 +41,9 @@ class Story:
         :return: Returns the next line number to be executed
         (return value from Lexicon), or None if there is none.
         """
-        line = story.line(line_number)
-        story.start_line(line_number)
+        if isinstance(line, str):
+            story.start_line(line)
+            line = story.line(line)
 
         method = line['method']
         if method == 'if':
