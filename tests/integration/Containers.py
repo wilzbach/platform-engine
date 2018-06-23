@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from asyncy.App import App
 from asyncy.Containers import Containers
+from asyncy.constants.ServiceConstants import ServiceConstants
 
 from pytest import mark
 
 from storyscript.compiler import Compiler
 from storyscript.parser import Parser
-
-from asyncy.constants.ServiceConstants import ServiceConstants
 
 
 @mark.asyncio

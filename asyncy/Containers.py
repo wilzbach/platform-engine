@@ -5,8 +5,8 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 import ujson
 
-from asyncy.constants.ServiceConstants import ServiceConstants
 from .Exceptions import ContainerSpecNotRegisteredError, DockerError
+from .constants.ServiceConstants import ServiceConstants
 from .utils.HttpUtils import HttpUtils
 
 MAX_RETRIES = 3
