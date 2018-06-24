@@ -36,14 +36,10 @@ class App:
 
     async def bootstrap(self):
         """
-        Build environment, stories, and services from start of service via
-        the deployment story. It then executes all the stories.
+        Executes all stories found in stories.json.
         This enables the story to listen to pub/sub,
         register with the gateway, and queue cron jobs.
         """
-        deploy_stories = self.load_file('deploy.json')
-        await self.run_stories(deploy_stories)
-
         self.environment = self.load_file('config/environment.json')
         self.stories = self.load_file('config/stories.json')
         self.services = self.load_file('config/services.json')
@@ -66,6 +62,9 @@ class App:
         """
         Destroys all stories, one at a time.
         """
+        if self.stories is None:
+            return
+        
         for story_name in self.stories:
             try:
                 await Story.destroy(self, self.logger, story_name)

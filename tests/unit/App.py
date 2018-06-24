@@ -44,13 +44,12 @@ async def test_app_bootstrap(patch, app, async_mock):
     await app.bootstrap()
 
     assert app.load_file.mock_calls == [
-        mock.call('deploy.json'),
         mock.call('config/environment.json'),
         mock.call('config/stories.json'),
         mock.call('config/services.json')
     ]
 
-    assert app.run_stories.mock.call_count == 2
+    assert app.run_stories.mock.call_count == 1
 
 
 @mark.asyncio
