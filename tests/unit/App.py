@@ -11,11 +11,6 @@ from pytest import fixture, mark
 
 
 @fixture
-def init(patch):
-    patch.object(App, '__init__', return_value=None)
-
-
-@fixture
 def exc(patch):
     patch.object(traceback, 'print_exc')
 
