@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import traceback
 from unittest import mock
 
@@ -52,6 +53,16 @@ async def test_app_bootstrap(patch, app, async_mock):
     assert app.run_stories.mock.call_count == 1
 
 
+def test_app_load_file(patch, app):
+    import asyncy
+    patch.many(asyncy.App, ['open', 'load'])
+    patch.object(os.path, 'exists', return_value=True)
+    path = '/config/stories.json'
+    result = app.load_file(path)
+    asyncy.App.open.assert_called_with(path, 'r')
+    assert asyncy.App.load() == result
+
+
 @mark.asyncio
 async def test_app_run_stories(patch, app, async_mock):
     stories = {
@@ -61,6 +72,12 @@ async def test_app_run_stories(patch, app, async_mock):
     patch.object(Story, 'run', new=async_mock())
     await app.run_stories(stories)
     assert Story.run.mock.call_count == 2
+
+
+@mark.asyncio
+async def test_app_destroy_no_stories(app):
+    app.stories = None
+    assert await app.destroy() is None
 
 
 @mark.asyncio
