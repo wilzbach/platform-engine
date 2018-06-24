@@ -64,7 +64,7 @@ class App:
         """
         if self.stories is None:
             return
-        
+
         for story_name in self.stories:
             try:
                 await Story.destroy(self, self.logger, story_name)
