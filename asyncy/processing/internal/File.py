@@ -1,8 +1,27 @@
 # -*- coding: utf-8 -*-
 import os
+import pathlib
 
 from .Decorators import Decorators
 from ...Exceptions import AsyncyError
+
+
+def safe_path(story, path):
+    """
+    safe_path resolves a path completely (../../a/../b) completely
+    and returns an absolute path which can be used safely by prepending
+    the story's tmp dir. This ensures that the story cannot abuse the system
+    and write elsewhere, for example, stories.json.
+    :param story: The story (Stories object)
+    :param path: A path to be resolved
+    :return: The absolute path, which can be used to read/write directly
+    """
+    story.create_tmp_dir()
+    # Adding the leading "/" is important, otherwise the current working
+    # directory will be used as the base path.
+    path = f'/{path}'
+    path = pathlib.Path(path).resolve()
+    return f'{story.get_tmp_dir()}{os.fspath(path)}'
 
 
 @Decorators.create_service(name='file', command='write', arguments={
@@ -10,9 +29,9 @@ from ...Exceptions import AsyncyError
     'content': {'type': 'any'}
 })
 async def file_write(story, line, resolved_args):
-    # TODO handle /asyncy/story.hash here
+    path = safe_path(story, resolved_args['path'])
     try:
-        with open(resolved_args['path'], 'w') as f:
+        with open(path, 'w') as f:
             f.write(resolved_args['content'])
     except IOError as e:
         raise AsyncyError(message=f'Failed to write to file: {e}',
@@ -23,9 +42,9 @@ async def file_write(story, line, resolved_args):
     'path': {'type': 'string'}
 }, output_type='string')
 async def file_read(story, line, resolved_args):
-    # TODO handle /asyncy/story.hash here
+    path = safe_path(story, resolved_args['path'])
     try:
-        with open(resolved_args['path'], 'r') as f:
+        with open(path, 'r') as f:
             return f.read()
     except IOError as e:
         raise AsyncyError(message=f'Failed to read file: {e}',
@@ -36,8 +55,8 @@ async def file_read(story, line, resolved_args):
     'path': {'type': 'string'}
 }, output_type='boolean')
 async def file_exists(story, line, resolved_args):
-    # TODO handle /asyncy/story.hash here
-    return os.path.exists(resolved_args['path'])
+    path = safe_path(story, resolved_args['path'])
+    return os.path.exists(path)
 
 
 def init():
