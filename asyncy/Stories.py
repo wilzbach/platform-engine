@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+import pathlib
 import time
+import uuid
 from json import JSONDecodeError, dumps, loads
 
 from storyscript.resolver import Resolver
 
-from .constants.LineConstants import LineConstants
 from .utils import Dict
 
 
@@ -21,6 +22,21 @@ class Stories:
         self.containers = None
         self.repository = None
         self.version = None
+        self.execution_id = str(uuid.uuid4())
+        self._tmp_dir_created = False
+
+    def create_tmp_dir(self):
+        if self._tmp_dir_created:
+            return
+
+        self._tmp_dir_created = True
+
+        path = self.get_tmp_dir()
+        pathlib.Path(path).mkdir(parents=True, mode=0o700, exist_ok=True)
+        self.logger.log_raw('debug', f'Created tmp dir {path} (on-demand)')
+
+    def get_tmp_dir(self):
+        return f'/tmp/story.{self.execution_id}'
 
     def line(self, line_number):
         if line_number is None:

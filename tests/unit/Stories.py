@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pathlib
 import time
 
 from asyncy.Stories import Stories
@@ -14,8 +15,28 @@ def test_stories_init(app, logger, story):
     assert story.app == app
     assert story.name == 'hello.story'
     assert story.logger == logger
-    # assert story.tree ==
+    assert story.execution_id is not None
     assert story.results == {}
+
+
+def test_stories_get_tmp_dir(story):
+    story.execution_id = 'ex'
+    assert story.get_tmp_dir() == '/tmp/story.ex'
+
+
+def test_stories_create_tmp_dir(patch, story):
+    patch.object(pathlib, 'Path')
+    patch.object(story, 'get_tmp_dir')
+
+    # Yes, called twice to ensure the dir is created just once.
+    story.create_tmp_dir()
+    story.create_tmp_dir()
+
+    story.get_tmp_dir.assert_called_once()
+
+    pathlib.Path.assert_called_with(story.get_tmp_dir())
+    pathlib.Path().mkdir.assert_called_with(
+        parents=True, mode=0o700, exist_ok=True)
 
 
 def test_stories_line(magic, story):

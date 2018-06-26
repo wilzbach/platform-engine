@@ -5,7 +5,7 @@ import os
 class Config:
 
     defaults = {
-        'gateway_url': 'api-gateway:8081',
+        'gateway_url': 'gateway:8889',
         'logger_name': 'asyncy',
         'logger_level': 'warning',
         'DOCKER_HOST': 'http://localhost:2375',
