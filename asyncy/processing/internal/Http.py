@@ -17,9 +17,11 @@ async def http_post(story, line, resolved_args):
     if resolved_args.get('body'):
         kwargs['body'] = resolved_args['body']
 
-    return await HttpUtils.fetch_with_retry(1, story.logger,
-                                            resolved_args['url'],
-                                            http_client, kwargs)
+    res = await HttpUtils.fetch_with_retry(1, story.logger,
+                                           resolved_args['url'],
+                                           http_client, kwargs)
+
+    return res.body
 
 
 @Decorators.create_service(name='http', command='get', arguments={
@@ -30,9 +32,11 @@ async def http_get(story, line, resolved_args):
     http_client = AsyncHTTPClient()
     kwargs = _make_kwargs('GET', resolved_args.get('headers'))
 
-    return await HttpUtils.fetch_with_retry(1, story.logger,
-                                            resolved_args['url'],
-                                            http_client, kwargs)
+    res = await HttpUtils.fetch_with_retry(1, story.logger,
+                                           resolved_args['url'],
+                                           http_client, kwargs)
+
+    return res.body
 
 
 def _make_kwargs(method, headers):

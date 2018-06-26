@@ -41,7 +41,7 @@ async def test_service_http_post(patch, story, line,
         1, story.logger, resolved_args['url'],
         AsyncHTTPClient(), client_kwargs
     )
-    assert result == await HttpUtils.fetch_with_retry()
+    assert result == HttpUtils.fetch_with_retry.mock().body
 
 
 @mark.asyncio
@@ -61,7 +61,7 @@ async def test_service_http_get(patch, story, line, service_patch, async_mock):
         1, story.logger, resolved_args['url'],
         AsyncHTTPClient(), client_kwargs
     )
-    assert result == await HttpUtils.fetch_with_retry()
+    assert result == HttpUtils.fetch_with_retry.mock().body
 
 
 def test_service_http_init():
