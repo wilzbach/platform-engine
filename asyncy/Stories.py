@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import pathlib
 import time
 import uuid
@@ -115,7 +116,7 @@ class Stories:
 
         return next_line
 
-    def resolve(self, arg, encode=False):
+    async def resolve(self, arg, encode=False):
         """
         Resolves line argument to their real value
         """
@@ -124,11 +125,22 @@ class Stories:
             return arg
 
         if arg.get('$OBJECT') == 'method':
-            from asyncy.processing import Story
-            arg.output = ['__tmp_inline__']
-            Story.execute_line(self.logger, self, arg)
-            result = self.context['__tmp_inline__']
-            arg.output = None
+            # BEGIN hack - inline trees
+            from .processing import Story
+            # TODO add docs about tree_id here
+            arg = copy.deepcopy(arg)
+            tree_id = f'$INLINE-{arg["ln"]}'
+
+            arg['output'] = {
+                'paths': [tree_id]
+            }
+            await Story.execute_line(self.logger, self, arg)
+            result = self.context[tree_id]
+
+            # Reset tmp.
+            self.context[tree_id] = None
+            arg['output'] = None
+            # END hack - inline trees
         else:
             result = Resolver.resolve(arg, self.context)
 
@@ -154,7 +166,7 @@ class Stories:
             arg = str(arg)
         return "'%s'" % arg.replace("'", "\'")
 
-    def command_arguments_list(self, arguments):
+    async def command_arguments_list(self, arguments):
         results = []
 
         if arguments:
@@ -165,7 +177,7 @@ class Stories:
                     arg['$OBJECT'] == 'path' and
                     len(arg['paths']) == 1
             ):
-                res = self.resolve(arguments.pop(0))
+                res = await self.resolve(arguments.pop(0))
                 if res is None:
                     results.append(arg['paths'][0])
                 else:
@@ -173,7 +185,7 @@ class Stories:
 
         if arguments:
             for argument in arguments:
-                results.append(self.resolve(argument, encode=True))
+                results.append(await self.resolve(argument, encode=True))
 
         return results
 
@@ -181,8 +193,6 @@ class Stories:
         self.results[line_number] = {'start': time.time()}
 
     def end_line(self, line_number, output=None, assign=None):
-        start = self.results[line_number]['start']
-
         if type(output) is bytes:
             output = output.decode('utf-8')
 
@@ -194,8 +204,13 @@ class Stories:
                 # strip the string of tabs, spaces, newlines
                 output = output.strip()
 
-        dictionary = {'output': output, 'end': time.time(), 'start': start}
-        self.results[line_number] = dictionary
+        if line_number:
+            dictionary = {
+                'output': output,
+                'end': time.time(),
+                'start': self.results[line_number]['start']
+            }
+            self.results[line_number] = dictionary
 
         # assign a variable to the output
         if assign:
@@ -218,7 +233,7 @@ class Stories:
 
         return None
 
-    def argument_by_name(self, line, argument_name, encode=False):
+    async def argument_by_name(self, line, argument_name, encode=False):
         args = line.get('args')
         if args is None:
             return None
@@ -226,11 +241,11 @@ class Stories:
         for arg in args:
             if arg['$OBJECT'] == 'argument' and \
                     arg['name'] == argument_name:
-                return self.resolve(arg['argument'], encode=encode)
+                return await self.resolve(arg['argument'], encode=encode)
 
         return None
 
-    def context_for_function_call(self, line, function_line):
+    async def context_for_function_call(self, line, function_line):
         """
         Prepares a new context for calling a function.
         This context consists of the arguments required by the function,
@@ -250,7 +265,7 @@ class Stories:
         for arg in args:
             if arg['$OBJECT'] == 'argument':
                 arg_name = arg['name']
-                actual = self.argument_by_name(line, arg_name)
+                actual = await self.argument_by_name(line, arg_name)
                 Dict.set(new_context, [arg_name], actual)
 
         return new_context

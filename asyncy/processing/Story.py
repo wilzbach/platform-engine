@@ -42,8 +42,9 @@ class Story:
         (return value from Lexicon), or None if there is none.
         """
         if isinstance(line, str):
-            story.start_line(line)
             line = story.line(line)
+
+        story.start_line(line['ln'])
 
         method = line['method']
         if method == 'if':
@@ -71,7 +72,7 @@ class Story:
         """
         current_context = story.context
         function_line = story.function_line_by_name(line['function'])
-        context = story.context_for_function_call(line, function_line)
+        context = await story.context_for_function_call(line, function_line)
         try:
             story.set_context(context)
             await Story.execute_block(logger, story, function_line)
@@ -135,8 +136,8 @@ class Story:
         while line is not None:
             if line['method'] == 'execute':
                 if line[LineConstants.service] == 'http-endpoint':
-                    method = story.argument_by_name(line, 'method')
-                    path = story.argument_by_name(line, 'path')
+                    method = await story.argument_by_name(line, 'method')
+                    path = await story.argument_by_name(line, 'path')
                     await HttpEndpoint.unregister_http_endpoint(
                         story, line, method, path, line['ln']
                     )

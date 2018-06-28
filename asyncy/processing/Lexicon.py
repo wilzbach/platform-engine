@@ -34,12 +34,12 @@ class Lexicon:
             on an actual HTTP request, passing along the line to
             start executing from.
             """
-            method = Lexicon.argument_by_name(story, line, 'method')
+            method = await Lexicon.argument_by_name(story, line, 'method')
             if isinstance(method, str) is False:
                 raise ArgumentNotFoundError(name='method',
                                             story=story, line=line)
 
-            path = Lexicon.argument_by_name(story, line, 'path')
+            path = await Lexicon.argument_by_name(story, line, 'path')
             if isinstance(path, str) is False:
                 raise ArgumentNotFoundError(name='path',
                                             story=story, line=line)
@@ -89,7 +89,7 @@ class Lexicon:
 
     @staticmethod
     async def set(logger, story, line):
-        value = story.resolve(line['args'][1])
+        value = await story.resolve(line['args'][1])
         story.end_line(line['ln'], output=value, assign=line['args'][0])
         return Lexicon.next_line_or_none(story.line(line.get('next')))
 
@@ -100,15 +100,15 @@ class Lexicon:
         inside an if-block.
         """
         logger.log('lexicon-if', line, story.context)
-        result = story.resolve(line['args'][0], encode=False)
+        result = await story.resolve(line['args'][0], encode=False)
         if result:
             return line['enter']
         return line['exit']
 
     @staticmethod
-    def unless_condition(logger, story, line):
+    async def unless_condition(logger, story, line):
         logger.log('lexicon-unless', line, story.context)
-        result = story.resolve(line['args'][0], encode=False)
+        result = await story.resolve(line['args'][0], encode=False)
         if result:
             return line['exit']
         return line['enter']
@@ -118,7 +118,7 @@ class Lexicon:
         """
         Evaluates a for loop
         """
-        _list = story.resolve(line['args'][1], encode=False)
+        _list = await story.resolve(line['args'][1], encode=False)
         output = line['args'][0]
         for item in _list:
             story.context[output] = item
@@ -126,5 +126,5 @@ class Lexicon:
         return line['exit']
 
     @staticmethod
-    def argument_by_name(story, line, argument_name):
-        return story.argument_by_name(line, argument_name)
+    async def argument_by_name(story, line, argument_name):
+        return await story.argument_by_name(line, argument_name)

@@ -35,7 +35,8 @@ async def test_story_execute(patch, app, logger, story, async_mock):
 async def test_story_execute_function(patch, logger, story, async_mock):
     line = {'function': 'my_super_awesome_function'}
     patch.many(story, ['function_line_by_name',
-                       'context_for_function_call', 'set_context'])
+                       'set_context'])
+    patch.object(story, 'context_for_function_call', new=async_mock())
     patch.object(Story, 'execute_block', new=async_mock())
     first_context = {'first': 'context'}
 
@@ -43,11 +44,11 @@ async def test_story_execute_function(patch, logger, story, async_mock):
     await Story.execute_function(logger, story, line)
 
     story.function_line_by_name.assert_called_with(line['function'])
-    story.context_for_function_call \
+    story.context_for_function_call.mock \
         .assert_called_with(line, story.function_line_by_name())
 
     assert story.set_context.mock_calls == [
-        mock.call(story.context_for_function_call()),
+        mock.call(story.context_for_function_call.mock()),
         mock.call(first_context)
     ]
 
@@ -80,7 +81,8 @@ async def test_story_execute_line_generic(patch, logger, story,
     else:
         patch.object(Lexicon, method.lexicon_name)
 
-    patch.object(story, 'line', return_value={'method': method.name})
+    patch.object(story, 'line',
+                 return_value={'method': method.name, 'ln': '1'})
     patch.object(story, 'start_line')
     result = await Story.execute_line(logger, story, '1')
 
@@ -98,7 +100,7 @@ async def test_story_execute_line_generic(patch, logger, story,
 @mark.asyncio
 async def test_story_execute_line_call(patch, logger, story, async_mock):
     patch.object(Story, 'execute_function', new=async_mock())
-    patch.object(story, 'line', return_value={'method': 'call'})
+    patch.object(story, 'line', return_value={'method': 'call', 'ln': '1'})
     patch.object(story, 'start_line')
     result = await Story.execute_line(logger, story, '1')
 

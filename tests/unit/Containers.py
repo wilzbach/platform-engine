@@ -41,7 +41,8 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
     story.app = app
     story.prepare()
 
-    patch.object(Containers, 'format_command', return_value=['pwd'])
+    patch.object(Containers, 'format_command',
+                 new=async_mock(return_value=['pwd']))
 
     result = await Containers.exec(logger, story, None, 'alpine', 'pwd')
 
@@ -82,20 +83,24 @@ async def test_fetch_with_retry(patch, story, line):
     assert client.fetch.call_count == MAX_RETRIES
 
 
-def test_format_command(logger, app, echo_service, echo_line):
+@mark.asyncio
+async def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
 
-    cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
+    cmd = await Containers.format_command(story, echo_line, 'asyncy--echo',
+                                          'echo')
     assert ['echo', '{"msg":"foo"}'] == cmd
 
 
-def test_format_command_no_format(logger, app, echo_service, echo_line):
+@mark.asyncio
+async def test_format_command_no_format(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
 
     config = app.services['asyncy--echo'][ServiceConstants.config]
     config['commands']['echo']['format'] = None
 
-    cmd = Containers.format_command(story, echo_line, 'asyncy--echo', 'echo')
+    cmd = await Containers.format_command(story, echo_line,
+                                          'asyncy--echo', 'echo')
     assert ['echo', '{"msg":"foo"}'] == cmd

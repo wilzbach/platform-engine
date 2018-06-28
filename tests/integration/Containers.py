@@ -21,7 +21,8 @@ async def test_exec(logger, config, story, echo_service, echo_line):
     assert result == '{"msg":"foo"}'
 
 
-def test_containers_format_command(story):
+@mark.asyncio
+async def test_containers_format_command(story):
     """
     Ensures a simple resolve can be performed
     """
@@ -40,12 +41,13 @@ def test_containers_format_command(story):
     }
 
     story.tree = Compiler.compile(Parser().parse(story_text))['tree']
-    assert Containers.format_command(
+    assert await Containers.format_command(
         story, story.line('1'), 'alpine', 'echo'
     ) == ['echo', '{"msg":"foo"}']
 
 
-def test_containers_format_command_no_arguments(story):
+@mark.asyncio
+async def test_containers_format_command_no_arguments(story):
     story_text = 'alpine echo\n'
     story.context = {}
     story.app.services = {
@@ -58,6 +60,6 @@ def test_containers_format_command_no_arguments(story):
         }
     }
     story.tree = Compiler.compile(Parser().parse(story_text))['tree']
-    assert Containers.format_command(
+    assert await Containers.format_command(
         story, story.line('1'), 'alpine', 'echo'
     ) == ['echo']

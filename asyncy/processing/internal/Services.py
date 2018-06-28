@@ -42,7 +42,8 @@ class Services:
 
         if command.arguments:
             for arg in command.arguments:
-                actual = story.argument_by_name(line=line, argument_name=arg)
+                actual = await story.argument_by_name(
+                    line=line, argument_name=arg)
                 resolved_args[arg] = actual
 
         return await command.handler(story=story, line=line,

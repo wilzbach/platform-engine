@@ -17,7 +17,7 @@ API_VERSION = 'v1.37'
 class Containers:
 
     @classmethod
-    def format_command(cls, story, line, container_name, command):
+    async def format_command(cls, story, line, container_name, command):
         services = story.app.services or {}
         spec = services.get(container_name)
 
@@ -39,14 +39,14 @@ class Containers:
             # as a JSON string to the command.
             all_args = {}
             for k in args:
-                all_args[k] = story.argument_by_name(line, k)
+                all_args[k] = await story.argument_by_name(line, k)
 
             return [command, ujson.dumps(all_args)]
 
         command_parts = command_format.split(' ')
 
         for k in args:
-            actual = story.argument_by_name(line, k)
+            actual = await story.argument_by_name(line, k)
             for i in range(0, len(command_parts)):
                 command_parts[i] = command_parts[i].replace('{' + k + '}',
                                                             actual)
@@ -74,7 +74,8 @@ class Containers:
             'Container': container,
             'User': 'root',
             'Privileged': False,
-            'Cmd': cls.format_command(story, line, container_name, command),
+            'Cmd': await cls.format_command(story, line,
+                                            container_name, command),
             'AttachStdin': False,
             'AttachStdout': True,
             'AttachStderr': True,

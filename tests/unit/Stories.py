@@ -74,30 +74,33 @@ def test_stories_function_line_by_name(patch, story):
     assert function_line == story.tree['2']
 
 
-def test_stories_resolve(patch, logger, story):
+@mark.asyncio
+async def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.context = 'context'
-    result = story.resolve('args')
+    result = await story.resolve('args')
     logger.log.assert_called_with('story-resolve', 'args', 'args')
     assert result == 'args'
 
 
-def test_command_arguments_list(patch, story):
-    patch.object(Stories, 'resolve', return_value='something')
+@mark.asyncio
+async def test_command_arguments_list(patch, story, async_mock):
+    patch.object(story, 'resolve', new=async_mock(return_value='something'))
     obj = {'$OBJECT': 'string', 'string': 'string'}
-    result = story.command_arguments_list([obj])
-    Stories.resolve.assert_called_with(obj, encode=True)
+    result = await story.command_arguments_list([obj])
+    story.resolve.mock.assert_called_with(obj, encode=True)
     assert result == ['something']
 
 
-def test_command_arguments_list_none(patch, story):
+@mark.asyncio
+async def test_command_arguments_list_none(patch, story, async_mock):
     """
     Ensures that when an argument resolves to None it is used literally
     """
-    patch.object(Stories, 'resolve', return_value=None)
+    patch.object(story, 'resolve', new=async_mock(return_value=None))
     obj = {'$OBJECT': 'path', 'paths': ['literal']}
-    result = story.command_arguments_list([obj])
-    Stories.resolve.assert_called_with(obj)
+    result = await story.command_arguments_list([obj])
+    story.resolve.mock.assert_called_with(obj)
     assert result == ['literal']
 
 
@@ -174,11 +177,13 @@ def test_stories_encode(story, input, output):
     assert story.encode(input) == output
 
 
-def test_stories_argument_by_name_empty(story):
-    assert story.argument_by_name({}, 'foo') is None
+@mark.asyncio
+async def test_stories_argument_by_name_empty(story):
+    assert await story.argument_by_name({}, 'foo') is None
 
 
-def test_stories_argument_by_name_lookup(patch, story):
+@mark.asyncio
+async def test_stories_argument_by_name_lookup(patch, story, async_mock):
     line = {
         'args': [
             {
@@ -189,14 +194,16 @@ def test_stories_argument_by_name_lookup(patch, story):
         ]
     }
 
-    patch.object(story, 'resolve')
-    story.argument_by_name(line, 'foo')
-    story.resolve.assert_called_with(line['args'][0]['argument'], encode=False)
+    patch.object(story, 'resolve', new=async_mock())
+    await story.argument_by_name(line, 'foo')
+    story.resolve.mock.assert_called_with(
+        line['args'][0]['argument'], encode=False)
 
 
-def test_stories_argument_by_name_missing(patch, story):
+@mark.asyncio
+async def test_stories_argument_by_name_missing(patch, story):
     line = {'args': []}
-    assert story.argument_by_name(line, 'foo') is None
+    assert await story.argument_by_name(line, 'foo') is None
 
 
 def test_stories_prepare(story):
@@ -246,11 +253,13 @@ def test_stories_next_block_where_next_block_is_block(patch, story):
     assert story.next_block(story.line('2')) == story.tree['3']
 
 
-def test_stories_context_for_function_call(story):
-    assert story.context_for_function_call({}, {}) == {}
+@mark.asyncio
+async def test_stories_context_for_function_call(story):
+    assert await story.context_for_function_call({}, {}) == {}
 
 
-def test_stories_context_for_function_call_with_args(story):
+@mark.asyncio
+async def test_stories_context_for_function_call_with_args(story):
     line = {
         'args': [
             {
@@ -293,7 +302,7 @@ def test_stories_context_for_function_call_with_args(story):
         ]
     }
 
-    assert story.context_for_function_call(line, function_line) == {
+    assert await story.context_for_function_call(line, function_line) == {
         'foo': 'bar',
         'foo1': 'bar1'
     }

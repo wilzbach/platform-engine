@@ -90,12 +90,15 @@ async def test_http_endpoint_update_gw_with_error(patch, story, async_mock):
 
 
 @mark.parametrize('command', ['set_status', 'set_header', 'write', 'finish'])
-def test_http_endpoint_access_response(patch, story, command):
+@mark.asyncio
+async def test_http_endpoint_access_response(patch, story,
+                                             command, async_mock):
     line = {
         'args': [{'paths': [command]}]
     }
 
-    patch.object(story, 'argument_by_name')
+    patch.object(story, 'argument_by_name',
+                 new=async_mock(return_value='argument_val'))
     tornado_req = Mock()
     io_loop = Mock()
 
@@ -105,8 +108,7 @@ def test_http_endpoint_access_response(patch, story, command):
         ContextConstants.server_io_loop: io_loop
     }
 
-    story.argument_by_name.return_value = 'argument_val'
-    HttpEndpoint.access_response(story, line)
+    await HttpEndpoint.access_response(story, line)
 
     if command == 'set_status':
         tornado_req.write.assert_called_with(

@@ -35,7 +35,7 @@ class HttpEndpoint:
             raise InvalidCommandError(command, story=story, line=line)
 
     @classmethod
-    def access_response(cls, story, line):
+    async def access_response(cls, story, line):
         # todo: Hack - read the command until we have a field in the tree
         # dedicated for the command.
         command = line['args'][0]['paths'][0]
@@ -46,12 +46,12 @@ class HttpEndpoint:
         }
 
         if command == 'set_status':
-            data['code'] = story.argument_by_name(line, 'code')
+            data['code'] = await story.argument_by_name(line, 'code')
         elif command == 'set_header':
-            data['key'] = story.argument_by_name(line, 'key')
-            data['value'] = story.argument_by_name(line, 'value')
+            data['key'] = await story.argument_by_name(line, 'key')
+            data['value'] = await story.argument_by_name(line, 'value')
         elif command == 'write':
-            data['content'] = story.argument_by_name(line, 'content')
+            data['content'] = await story.argument_by_name(line, 'content')
         elif command == 'finish':
             # Do nothing.
             pass
