@@ -117,7 +117,7 @@ class Stories:
         # after the parent.
         if next_line['ln'] == parent_line['ln']:
             return None
-        
+
         return next_line
 
     def resolve(self, arg, encode=False):
