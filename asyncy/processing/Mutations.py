@@ -74,12 +74,12 @@ class Mutations:
     @classmethod
     def _mutate_dict(cls, mutation, value, story, operator):
         operand = story.argument_by_name(mutation, operator)
-        if operator == 'length':
+        if operator == 'size':
             return len(value)
         elif operator == 'keys':
-            return value.keys()
+            return list(value.keys())
         elif operator == 'values':
-            return value.values()
+            return list(value.values())
         elif operator == 'items':
             value.items()
             # TODO
