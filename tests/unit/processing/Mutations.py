@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from asyncy.Exceptions import AsyncyError
-import pytest
-
 from asyncy.processing.Mutations import Mutations
+
+import pytest
 from pytest import mark
 
 
