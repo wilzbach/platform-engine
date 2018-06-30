@@ -113,6 +113,11 @@ class Stories:
                 and self.line_has_parent(parent_line['ln'], next_line):
             return None
 
+        # If the next_line == parent_line, then there weren't any more lines
+        # after the parent.
+        if next_line['ln'] == parent_line['ln']:
+            return None
+
         return next_line
 
     def resolve(self, arg, encode=False):

@@ -246,6 +246,16 @@ def test_stories_next_block_where_next_block_is_block(patch, story):
     assert story.next_block(story.line('2')) == story.tree['3']
 
 
+def test_stories_next_block_only_block(patch, story):
+    story.tree = {
+        '2': {'ln': '2'}
+    }
+
+    assert isinstance(story, Stories)
+
+    assert story.next_block(story.line('2')) is None
+
+
 def test_stories_context_for_function_call(story):
     assert story.context_for_function_call({}, {}) == {}
 
