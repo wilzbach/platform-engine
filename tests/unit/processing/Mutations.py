@@ -161,3 +161,12 @@ def test_mutations_unexpected_type(story):
 
     with pytest.raises(AsyncyError):
         Mutations.mutate(mutation, Mutations, story, None)
+
+
+def test_mutations_unexpected_mutation(story):
+    mutation = {
+        'mutation': 'foo'
+    }
+
+    with pytest.raises(AsyncyError):
+        Mutations.mutate(mutation, 'string', story, None)
