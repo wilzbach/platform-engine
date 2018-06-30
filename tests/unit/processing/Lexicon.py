@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock, Mock
 
-
 from asyncy import Exceptions
 from asyncy.Containers import Containers
 from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon
+from asyncy.processing.Mutations import Mutations
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.processing.internal.Services import Services
 
@@ -83,6 +83,36 @@ async def test_lexicon_set(patch, logger, story):
                                       assign={'paths': ['name']},
                                       output='resolved')
     story.line.assert_called_with(line['next'])
+    assert result == Lexicon.next_line_or_none()
+
+
+@mark.asyncio
+async def test_lexicon_set_mutation(patch, logger, story):
+    story.context = {}
+    patch.object(Lexicon, 'next_line_or_none')
+    patch.object(Mutations, 'mutate')
+    line = {
+        'ln': '1',
+        'args': [
+            {
+                'paths': ['name']
+            },
+            'values',
+            {
+                '$OBJECT': 'mutation'
+            }
+        ],
+        'next': '2'
+    }
+    Mutations.mutate.return_value = 'mutated_result'
+    result = await Lexicon.set(logger, story, line)
+    story.resolve.assert_called_with(line['args'][1])
+    story.end_line.assert_called_with(line['ln'],
+                                      assign={'paths': ['name']},
+                                      output='mutated_result')
+    story.line.assert_called_with(line['next'])
+    Mutations.mutate.assert_called_with(line['args'][2],
+                                        story.resolve(), story, line)
     assert result == Lexicon.next_line_or_none()
 
 
