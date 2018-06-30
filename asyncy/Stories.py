@@ -197,7 +197,10 @@ class Stories:
 
         # assign a variable to the output
         if assign:
-            Dict.set(self.context, assign['paths'], output)
+            self.set_variable(assign, output)
+
+    def set_variable(self, assign, output):
+        Dict.set(self.context, assign['paths'], output)
 
     def function_line_by_name(self, function_name):
         """

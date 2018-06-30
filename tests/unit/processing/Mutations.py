@@ -73,7 +73,9 @@ from pytest import mark
     # --- END - dict ---
 ])
 def test_mutations_mutate(story, case):
+    story.context = {}
     mutation = {
+        '$OBJECT': 'mutation',
         'mutation': case[1],
         'args': [
             {
@@ -87,13 +89,23 @@ def test_mutations_mutate(story, case):
         ]
     }
 
+    line = {
+        'args': [
+            {
+                'paths': ['my_var']
+            },
+            'value',
+            mutation
+        ]
+    }
+
     if case[4]:
         # Inplace updates.
-        assert Mutations.mutate(mutation, case[0], story, None) is None
+        assert Mutations.mutate(mutation, case[0], story, line) is None
         assert case[0] == case[3]
     else:
         # Check return type.
-        assert Mutations.mutate(mutation, case[0], story, None) == case[3]
+        assert Mutations.mutate(mutation, case[0], story, line) == case[3]
 
 
 def test_mutations_string_replace(story):
@@ -170,3 +182,41 @@ def test_mutations_unexpected_mutation(story):
 
     with pytest.raises(AsyncyError):
         Mutations.mutate(mutation, 'string', story, None)
+
+
+@mark.parametrize('op', [['increment', 1], ['decrement', -1]])
+def test_mutation_int_ops(story, op):
+    story.context = {'foo': 10}
+    mutation = {
+        '$OBJECT': 'mutation',
+        'mutation': op[0],
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': op[0],
+                'argument': {
+                    '$OBJECT': 'number',
+                    'number': 10
+                }
+            }
+        ]
+    }
+
+    line = {
+        'args': [
+            {
+                'paths': ['foo']
+            },
+            {'paths': ['foo']},
+            mutation
+        ]
+    }
+
+    # To test a case where len(args) is 2, for example, `a increment`
+    # len(args) is 3 when the statement is `a = a increment`
+    if op[0] == 'increment':
+        line['args'].pop(0)
+
+    assert story.context['foo'] == 10
+    assert Mutations.mutate(mutation, 10, story, line) == 10 + op[1]
+    assert story.context['foo'] == 10 + op[1]
