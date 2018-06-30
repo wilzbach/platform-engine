@@ -4,25 +4,25 @@
 class DictMutations:
 
     @classmethod
-    def size(cls, mutation, value, story, operator, operand):
+    def size(cls, mutation, value, story, line, operator, operand):
         return len(value)
 
     @classmethod
-    def keys(cls, mutation, value, story, operator, operand):
+    def keys(cls, mutation, value, story, line, operator, operand):
         return list(value.keys())
 
     @classmethod
-    def values(cls, mutation, value, story, operator, operand):
+    def values(cls, mutation, value, story, line, operator, operand):
         return list(value.values())
 
     @classmethod
-    def pop(cls, mutation, value, story, operator, operand):
+    def pop(cls, mutation, value, story, line, operator, operand):
         return value.pop(operand, None)
 
     @classmethod
-    def get(cls, mutation, value, story, operator, operand):
+    def get(cls, mutation, value, story, line, operator, operand):
         return value.get(operand)
 
     @classmethod
-    def has(cls, mutation, value, story, operator, operand):
+    def has(cls, mutation, value, story, line, operator, operand):
         return value.get(operand) is not None

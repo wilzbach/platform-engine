@@ -8,22 +8,22 @@ class StringMutations:
         return l[n:] + l[:n]
 
     @classmethod
-    def length(cls, mutation, value, story, operator, operand):
+    def length(cls, mutation, value, story, line, operator, operand):
         return len(value)
 
     @classmethod
-    def replace(cls, mutation, value, story, operator, operand):
+    def replace(cls, mutation, value, story, line, operator, operand):
         new_val = story.argument_by_name(mutation, 'with')
         return value.replace(operand, new_val)
 
     @classmethod
-    def split(cls, mutation, value, story, operator, operand):
+    def split(cls, mutation, value, story, line, operator, operand):
         return value.split(operand)
 
     @classmethod
-    def uppercase(cls, mutation, value, story, operator, operand):
+    def uppercase(cls, mutation, value, story, line, operator, operand):
         return value.upper()
 
     @classmethod
-    def lowercase(cls, mutation, value, story, operator, operand):
+    def lowercase(cls, mutation, value, story, line, operator, operand):
         return value.lower()

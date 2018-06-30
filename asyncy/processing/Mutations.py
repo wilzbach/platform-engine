@@ -34,4 +34,4 @@ class Mutations:
                         f'for mutation {operator}',
                 story=story, line=line)
 
-        return handler(mutation, value, story, operator, operand)
+        return handler(mutation, value, story, line, operator, operand)
