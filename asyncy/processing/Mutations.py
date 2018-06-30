@@ -50,18 +50,12 @@ class Mutations:
         elif operator == 'sort':
             value.sort()
             return
-        elif operator == 'apply':
-            # TODO
-            pass
         elif operator == 'min':
             return min(value)
         elif operator == 'max':
             return max(value)
         elif operator == 'sum':
             return sum(value)
-        elif operator == 'reduce':
-            # TODO
-            pass
         elif operator == 'contains':
             if operand in value:
                 return True
@@ -70,7 +64,11 @@ class Mutations:
             value.append(operand)
             return
         elif operator == 'remove':
-            value.remove(operand)
+            try:
+                value.remove(operand)
+            except ValueError:
+                # The value to be removed is not in the list.
+                pass
             return
 
     @classmethod
