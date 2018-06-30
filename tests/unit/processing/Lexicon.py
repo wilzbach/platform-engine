@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock
 
 from asyncy import Exceptions
 from asyncy.Containers import Containers
+from asyncy.Exceptions import AsyncyError
 from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon
@@ -114,6 +115,27 @@ async def test_lexicon_set_mutation(patch, logger, story):
     Mutations.mutate.assert_called_with(line['args'][2],
                                         story.resolve(), story, line)
     assert result == Lexicon.next_line_or_none()
+
+
+@mark.asyncio
+async def test_lexicon_set_invalid_operation(patch, logger, story):
+    story.context = {}
+    patch.object(Lexicon, 'next_line_or_none')
+    line = {
+        'ln': '1',
+        'args': [
+            {
+                'paths': ['name']
+            },
+            'values',
+            {
+                '$OBJECT': 'foo'
+            }
+        ],
+        'next': '2'
+    }
+    with pytest.raises(AsyncyError):
+        await Lexicon.set(logger, story, line)
 
 
 @mark.asyncio
