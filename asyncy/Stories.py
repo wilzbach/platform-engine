@@ -184,7 +184,7 @@ class Stories:
         if type(output) is bytes:
             output = output.decode('utf-8')
 
-        if not isinstance(output, (list, dict, bool)) and output:
+        if isinstance(output, str):
             try:
                 # try to load it as json
                 output = loads(output)
@@ -197,7 +197,10 @@ class Stories:
 
         # assign a variable to the output
         if assign:
-            Dict.set(self.context, assign['paths'], output)
+            self.set_variable(assign, output)
+
+    def set_variable(self, assign, output):
+        Dict.set(self.context, assign['paths'], output)
 
     def function_line_by_name(self, function_name):
         """

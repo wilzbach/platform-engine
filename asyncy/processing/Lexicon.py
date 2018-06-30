@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import time
 
+from .Mutations import Mutations
 from .internal.HttpEndpoint import HttpEndpoint
 from .. import Metrics
 from ..Containers import Containers
-from ..Exceptions import ArgumentNotFoundError
+from ..Exceptions import ArgumentNotFoundError, AsyncyError
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..processing.internal.Services import Services
@@ -90,6 +91,18 @@ class Lexicon:
     @staticmethod
     async def set(logger, story, line):
         value = story.resolve(line['args'][1])
+
+        if len(line['args']) > 2:
+            # Check if args[2] is a mutation.
+            if line['args'][2]['$OBJECT'] == 'mutation':
+                value = Mutations.mutate(line['args'][2], value, story, line)
+                logger.log_raw('debug', f'Mutation result: {value}')
+            else:
+                raise AsyncyError(
+                    message=f'Unsupported argument in set: '
+                            f'{line["args"][2]["$OBJECT"]}',
+                    story=story, line=line)
+
         story.end_line(line['ln'], output=value, assign=line['args'][0])
         return Lexicon.next_line_or_none(story.line(line.get('next')))
 
