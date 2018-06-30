@@ -7,7 +7,7 @@ from ..Exceptions import AsyncyError
 class Mutations:
 
     @classmethod
-    def list_shift(cls, l, n):
+    def _list_shift(cls, l, n):
         return l[n:] + l[:n]
 
     @classmethod
@@ -43,10 +43,18 @@ class Mutations:
             value.reverse()
             return
         elif operator == 'shift':
+            shifted = value
             if operand == 'left':
-                return cls.list_shift(value, -1)
+                shifted = cls._list_shift(value, 1)
             elif operand == 'right':
-                return cls.list_shift(value, 1)
+                shifted = cls._list_shift(value, -1)
+
+            # Copy the values of shifted into the original value.
+            # This is because our impl of shift is inplace.
+            for i in range(0, len(value)):
+                value[i] = shifted[i]
+
+            return
         elif operator == 'sort':
             value.sort()
             return
@@ -80,10 +88,6 @@ class Mutations:
             return list(value.keys())
         elif operator == 'values':
             return list(value.values())
-        elif operator == 'items':
-            value.items()
-            # TODO
-            pass
         elif operator == 'pop':
             return value.pop(operand, None)
         elif operator == 'get':
