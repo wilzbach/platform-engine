@@ -92,7 +92,7 @@ async def test_http_endpoint_update_gw_with_error(patch, story, async_mock):
 @mark.parametrize('command', ['set_status', 'set_header', 'write', 'finish'])
 def test_http_endpoint_access_response(patch, story, command):
     line = {
-        'args': [{'paths': [command]}]
+        'command': command
     }
 
     patch.object(story, 'argument_by_name')
