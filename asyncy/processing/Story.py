@@ -2,6 +2,7 @@
 import time
 
 from .. import Metrics
+from ..Exceptions import AsyncyError
 from ..Stories import Stories
 from ..constants.LineConstants import LineConstants
 from ..processing import Lexicon
@@ -43,22 +44,30 @@ class Story:
         """
         line = story.line(line_number)
         story.start_line(line_number)
+        try:
+            method = line['method']
+            if method == 'if':
+                return await Lexicon.if_condition(logger, story, line)
+            elif method == 'for':
+                return await Lexicon.for_loop(logger, story, line)
+            elif method == 'execute':
+                return await Lexicon.execute(logger, story, line)
+            elif method == 'set':
+                return await Lexicon.set(logger, story, line)
+            elif method == 'call':
+                return await Story.execute_function(logger, story, line)
+            elif method == 'function':
+                return await Lexicon.function(logger, story, line)
+            else:
+                raise NotImplementedError(
+                    f'Unknown method to execute: {method}'
+                )
+        except BaseException as e:
+            if isinstance(e, AsyncyError):  # Don't wrap AsyncyError.
+                raise e
 
-        method = line['method']
-        if method == 'if':
-            return await Lexicon.if_condition(logger, story, line)
-        elif method == 'for':
-            return await Lexicon.for_loop(logger, story, line)
-        elif method == 'execute':
-            return await Lexicon.execute(logger, story, line)
-        elif method == 'set':
-            return await Lexicon.set(logger, story, line)
-        elif method == 'call':
-            return await Story.execute_function(logger, story, line)
-        elif method == 'function':
-            return await Lexicon.function(logger, story, line)
-        else:
-            raise NotImplementedError(f'Unknown method to execute: {method}')
+            raise AsyncyError(message='Failed to execute line',
+                              story=story, line=line)
 
     @staticmethod
     async def execute_function(logger, story, line):

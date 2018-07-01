@@ -4,6 +4,7 @@ import time
 from unittest import mock
 
 from asyncy import Metrics
+from asyncy.Exceptions import AsyncyError
 from asyncy.Stories import Stories
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
@@ -58,7 +59,7 @@ async def test_story_execute_function(patch, logger, story, async_mock):
 @mark.asyncio
 async def test_story_execute_line_unknown_method(logger, story):
     story.tree['1']['method'] = 'foo_method'
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AsyncyError):
         await Story.execute_line(logger, story, '1')
 
 
