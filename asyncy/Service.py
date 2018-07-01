@@ -34,9 +34,7 @@ logger.start()
 class RunStoryHandler(tornado.web.RequestHandler):
 
     @classmethod
-    async def run_story(cls, request_response, io_loop):
-        req = ujson.loads(request_response.request.body)
-
+    async def run_story(cls, req, request_response, io_loop):
         logger.log('http-request-run-story', req['story_name'])
 
         context = req.get('context', {})
@@ -63,8 +61,10 @@ class RunStoryHandler(tornado.web.RequestHandler):
             'id': app.beta_user_id,
         })
 
+        req = None
         try:
-            await RunStoryHandler.run_story(self, io_loop)
+            req = ujson.loads(self.request.body)
+            await RunStoryHandler.run_story(req, self, io_loop)
         except BaseException as e:
             logger.log_raw('error', 'Story execution failed; cause=' + str(e))
             traceback.print_exc()
@@ -76,6 +76,13 @@ class RunStoryHandler(tornado.web.RequestHandler):
                     'story_name': e.story.name,
                     'story_line': e.line['ln']
                 })
+            else:
+                if req is None:
+                    app.sentry_client.capture('raven.events.Exception')
+                else:
+                    app.sentry_client.capture('raven.events.Exception', extra={
+                        'story_name': req['story_name']
+                    })
 
     def is_finished(self):
         return self._finished
