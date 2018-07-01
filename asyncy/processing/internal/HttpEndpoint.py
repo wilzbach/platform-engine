@@ -24,9 +24,7 @@ class HttpEndpoint:
 
     @classmethod
     def access_request(cls, story, line):
-        # todo: Hack - read the command until we have a field in the tree
-        # dedicated for the command.
-        command = line['args'][0]['paths'][0]
+        command = line['command']
         req = story.context[ContextConstants.server_request]
         # TODO 19/05/2018: This is not implemented fully due to unknown specs.
         if command == 'body':
@@ -36,9 +34,7 @@ class HttpEndpoint:
 
     @classmethod
     def access_response(cls, story, line):
-        # todo: Hack - read the command until we have a field in the tree
-        # dedicated for the command.
-        command = line['args'][0]['paths'][0]
+        command = line['command']
         req = story.context[ContextConstants.server_request]
 
         data = {
