@@ -131,11 +131,12 @@ class Lexicon:
         """
         Evaluates a for loop
         """
-        _list = story.resolve(line['args'][1], encode=False)
-        output = line['args'][0]
+        _list = story.resolve(line['args'][0], encode=False)
+        output = line['output'][0]
+        from . import Story
         for item in _list:
             story.context[output] = item
-            await Lexicon.execute(logger, story, line['ln'])
+            await Story.execute_block(logger, story, line)
         return line['exit']
 
     @staticmethod
