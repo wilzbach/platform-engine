@@ -6,7 +6,7 @@ from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
-from asyncy.processing import Lexicon
+from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.processing.internal.Services import Services
@@ -179,15 +179,17 @@ def test_lexicon_unless_false(logger, story, line):
 @mark.asyncio
 async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
     patch.object(Lexicon, 'execute', new=async_mock())
+    patch.object(Story, 'execute_block', new=async_mock())
     line['args'] = [
-        'element',
         {'$OBJECT': 'path', 'paths': ['elements']}
     ]
+    line['output'] = ['element']
     story.context = {'elements': ['one']}
     story.resolve.return_value = ['one']
     story.environment = {}
     result = await Lexicon.for_loop(logger, story, line)
-    Lexicon.execute.mock.assert_called_with(logger, story, line['ln'])
+    Story.execute_block.mock.assert_called_with(logger, story, line)
+    assert story.context['element'] == 'one'
     assert result == line['exit']
 
 
