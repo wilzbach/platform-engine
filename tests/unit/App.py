@@ -36,14 +36,16 @@ def test_app_init(patch, config, logger):
 @mark.asyncio
 async def test_app_bootstrap(patch, app, async_mock):
     patch.object(app, 'run_stories', new=async_mock())
-    patch.object(app, 'load_file')
+    stories = {'entrypoint': ['foo'], 'stories': {'foo': {}}}
+    env = {'env': {}}
+    services = {'services': []}
+    patch.object(app, 'load_file', side_effect=[env, stories, services])
     await app.bootstrap()
 
-    assert app.load_file.mock_calls == [
-        mock.call('config/environment.json'),
-        mock.call('config/stories.json'),
-        mock.call('config/services.json')
-    ]
+    assert app.stories == stories['stories']
+    assert app.entrypoint == stories['entrypoint']
+    assert app.services == services
+    assert app.environment == env
 
     assert app.run_stories.mock.call_count == 1
 
@@ -64,8 +66,10 @@ async def test_app_run_stories(patch, app, async_mock):
         'foo': {},
         'bar': {}
     }
+    app.entrypoint = ['foo', 'bar']
+    app.stories = stories
     patch.object(Story, 'run', new=async_mock())
-    await app.run_stories(stories)
+    await app.run_stories()
     assert Story.run.mock.call_count == 2
 
 
@@ -77,15 +81,16 @@ async def test_app_destroy_no_stories(app):
 
 @mark.asyncio
 async def test_app_run_stories_exc(patch, app, async_mock, exc):
-    stories = {
+    app.stories = {
         'foo': {},
         'bar': {}
     }
+    app.entrypoint = ['foo', 'bar']
 
     patch.object(Story, 'run', new=async_mock(side_effect=exc))
 
     with pytest.raises(Exception):
-        await app.run_stories(stories)
+        await app.run_stories()
 
     traceback.print_exc.assert_called_once()
 
@@ -96,6 +101,7 @@ async def test_app_destroy_exc(patch, app, async_mock, exc):
         'foo': {},
         'bar': {}
     }
+    app.entrypoint = ['foo', 'bar']
 
     patch.object(Story, 'destroy', new=async_mock(side_effect=exc))
 
@@ -111,6 +117,7 @@ async def test_app_destroy(patch, app, async_mock):
         'foo': {},
         'bar': {}
     }
+    app.entrypoint = ['foo', 'bar']
     patch.object(Story, 'destroy', new=async_mock())
     await app.destroy()
 

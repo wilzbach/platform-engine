@@ -11,6 +11,7 @@ from .processing import Story
 class App:
 
     environment = {}
+    entrypoint = []
     stories = {}
     services = {}
     sentry_client = None
@@ -41,17 +42,19 @@ class App:
         register with the gateway, and queue cron jobs.
         """
         self.environment = self.load_file('config/environment.json')
-        self.stories = self.load_file('config/stories.json')
+        meta = self.load_file('config/stories.json')
+        self.stories = meta['stories']
+        self.entrypoint = meta['entrypoint']
         self.services = self.load_file('config/services.json')
-        await self.run_stories(self.stories)
+        await self.run_stories()
 
-    async def run_stories(self, stories):
+    async def run_stories(self):
         """
         Executes all the stories.
         This enables the story to listen to pub/sub,
         register with the gateway, and queue cron jobs.
         """
-        for story_name in stories:
+        for story_name in self.entrypoint:
             try:
                 await Story.run(self, self.logger, story_name)
             except Exception as e:
@@ -62,10 +65,10 @@ class App:
         """
         Destroys all stories, one at a time.
         """
-        if self.stories is None:
+        if self.entrypoint is None:
             return
 
-        for story_name in self.stories:
+        for story_name in self.entrypoint:
             try:
                 await Story.destroy(self, self.logger, story_name)
             except Exception as e:
