@@ -260,6 +260,8 @@ async def test_story_destroy(patch, app, logger, http_line, story, async_mock):
     patch.object(Story, 'story', return_value=story)
     patch.object(story, 'next_block', return_value=None)
     story.tree = {'1': http_line}
+    story.entrypoint = '1'
+    app.entrypoint = ['hello.story']
     await Story.destroy(app, logger, 'foo')
     HttpEndpoint.unregister_http_endpoint.mock.assert_called_with(
         story, http_line, 'get', '/foo', http_line['ln']

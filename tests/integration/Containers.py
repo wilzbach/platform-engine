@@ -16,7 +16,7 @@ async def test_exec(logger, config, story, echo_service, echo_line):
 
     story.prepare()
     result = await Containers.exec(logger, story, echo_line,
-                                   'asyncy--echo', 'echo')
+                                   'alpine', 'echo')
 
     assert result == '{"msg":"foo"}'
 

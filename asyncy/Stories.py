@@ -16,6 +16,7 @@ class Stories:
         self.name = story_name
         self.logger = logger
         self.tree = app.stories[story_name]['tree']
+        self.entrypoint = app.stories[story_name]['entrypoint']
         self.results = {}
         self.environment = None
         self.context = None
@@ -44,18 +45,12 @@ class Stories:
 
         return self.tree[line_number]
 
-    def sorted_lines(self):
-        """
-        Returns sorted line numbers
-        """
-        return sorted(self.tree.keys(), key=lambda x: int(x))
-
     def first_line(self):
         """
-        Finds the first line of a story. The tree can start at lines other
+        Returns the first line of a story. The tree can start at lines other
         than '1' so the first line is not obvious.
         """
-        return self.sorted_lines()[0]
+        return self.entrypoint
 
     def line_has_parent(self, parent_line_number, line):
         """
