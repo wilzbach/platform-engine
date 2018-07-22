@@ -4,6 +4,7 @@ import time
 from .. import Metrics
 from ..Exceptions import AsyncyError
 from ..Stories import Stories
+from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..processing import Lexicon
 from ..processing.internal.HttpEndpoint import HttpEndpoint
@@ -92,6 +93,13 @@ class Story:
         Executes all the lines whose parent is parent_line.
         """
         next_line = story.line(parent_line['enter'])
+
+        # If this block represents a streaming service, copy over it's
+        # output to the context, so that Lexicon can read it later.
+        if parent_line.get('output') is not None:
+            story.context[ContextConstants.service_output] = \
+                parent_line['output'][0]
+
         while next_line is not None and \
                 next_line['parent'] == parent_line['ln']:
             if next_line.get('enter') is not None:

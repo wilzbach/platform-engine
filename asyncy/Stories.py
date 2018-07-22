@@ -48,7 +48,7 @@ class Stories:
         """
         Returns sorted line numbers
         """
-        return sorted(self.tree.keys(), key=lambda x: int(x))
+        return sorted(self.tree.keys(), key=lambda x: float(x))
 
     def first_line(self):
         """
