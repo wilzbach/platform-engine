@@ -13,53 +13,45 @@ from ...utils.HttpUtils import HttpUtils
 class HttpEndpoint:
     @classmethod
     def run(cls, story, line):
-        container = line[LineConstants.service]
-
-        if container == 'request':
-            return HttpEndpoint.access_request(story, line)
-        elif container == 'response':
-            return HttpEndpoint.access_response(story, line)
-        else:
-            raise NotImplementedError('Unknown method - ' + container)
-
-    @classmethod
-    def access_request(cls, story, line):
-        command = line['command']
         req = story.context[ContextConstants.server_request]
-        # TODO 19/05/2018: This is not implemented fully due to unknown specs.
-        if command == 'body':
-            return req.body
-        else:
-            raise InvalidCommandError(command, story=story, line=line)
 
-    @classmethod
-    def access_response(cls, story, line):
         command = line['command']
-        req = story.context[ContextConstants.server_request]
 
         data = {
             'command': command
         }
 
-        if command == 'set_status':
+        gateway_request = story.context[ContextConstants.gateway_request]
+
+        if command == 'body':
+            return gateway_request['json_context']['request']['body']
+        elif command == 'get_header':
+            key = story.argument_by_name(line, 'key')
+            return gateway_request['json_context']['request']['headers'] \
+                .get(key)
+        elif command == 'set_status':
             data['code'] = story.argument_by_name(line, 'code')
         elif command == 'set_header':
             data['key'] = story.argument_by_name(line, 'key')
             data['value'] = story.argument_by_name(line, 'value')
         elif command == 'write':
-            data['content'] = story.argument_by_name(line, 'content')
+            content = story.argument_by_name(line, 'content')
+            if content is None:
+                story.logger.log_raw('warn', 'Attempt to call http/write:'
+                                             'content with content as None!')
+                return
+            data['content'] = content
         elif command == 'finish':
             # Do nothing.
             pass
         else:
             raise InvalidCommandError(command, story=story, line=line)
 
-        story.context[ContextConstants.server_io_loop].add_callback(
-            lambda: req.write(ujson.dumps(data) + '\n'))
+        io_loop = story.context[ContextConstants.server_io_loop]
+        io_loop.add_callback(lambda: req.write(ujson.dumps(data) + '\n'))
 
         if command == 'finish':
-            story.context[ContextConstants.server_io_loop]\
-                .add_callback(req.finish)
+            io_loop.add_callback(req.finish)
 
     @classmethod
     @Metrics.http_register.time()

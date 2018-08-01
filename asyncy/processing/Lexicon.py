@@ -22,6 +22,9 @@ class Lexicon:
         Runs a service with the resolution values as commands
         """
         service = line[LineConstants.service]
+        service_output_name = story.context.get(
+            ContextConstants.service_output)
+
         if Services.is_internal(service):
             output = await Services.execute(story, line)
             story.end_line(line['ln'], output=output,
@@ -53,7 +56,7 @@ class Lexicon:
             next_line = story.next_block(line)
             return Lexicon.next_line_or_none(next_line)
         elif story.context.get(ContextConstants.server_request) is not None \
-                and (service == 'request' or service == 'response'):
+                and service == service_output_name:
             output = HttpEndpoint.run(story, line)
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))

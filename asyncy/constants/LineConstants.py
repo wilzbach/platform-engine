@@ -2,4 +2,5 @@
 
 
 class LineConstants:
+    command = 'command'
     service = 'service'

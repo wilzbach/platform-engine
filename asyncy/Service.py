@@ -39,6 +39,7 @@ class RunStoryHandler(tornado.web.RequestHandler):
 
         context = req.get('context', {})
         context[ContextConstants.server_request] = request_response
+        context[ContextConstants.gateway_request] = req
         context[ContextConstants.server_io_loop] = io_loop
 
         await Story.run(app, logger,
