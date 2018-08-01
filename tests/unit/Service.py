@@ -16,15 +16,6 @@ def runner():
     return CliRunner()
 
 
-@fixture
-def kwargs():
-    return {'block': None, 'context': None, 'environment': None, 'start': None}
-
-
-def sleep():
-    raise OSError
-
-
 def test_server(patch, runner):
     patch.many(App, ['bootstrap', 'destroy'])
     patch.many(tornado, ['web', 'ioloop'])
