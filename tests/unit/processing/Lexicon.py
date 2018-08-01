@@ -220,20 +220,19 @@ async def test_lexicon_execute_http_endpoint_no_method(patch, logger, story,
         await Lexicon.execute(logger, story, http_line)
 
 
-@mark.parametrize('http_object', ['request', 'response'])
 @mark.asyncio
-async def test_lexicon_execute_http_functions(patch, logger,
-                                              story, http_object):
+async def test_lexicon_execute_http_functions(patch, logger, story):
     http_object_line = {
         'ln': '1',
-        LineConstants.service: http_object
+        LineConstants.service: 'client',
+        LineConstants.command: 'body'
     }
 
-    story.context.return_value = {
-        ContextConstants.server_request: 'foo'
+    story.context = {
+        ContextConstants.server_request: 'foo',
+        ContextConstants.service_output: 'client'
     }
 
-    story.container = http_object
     patch.object(HttpEndpoint, 'run')
 
     await Lexicon.execute(logger, story, http_object_line)

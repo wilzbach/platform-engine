@@ -35,11 +35,12 @@ class HttpEndpoint:
             data['key'] = story.argument_by_name(line, 'key')
             data['value'] = story.argument_by_name(line, 'value')
         elif command == 'write':
-            if story.argument_by_name(line, 'content') is None:
+            content = story.argument_by_name(line, 'content')
+            if content is None:
                 story.logger.log_raw('warn', 'Attempt to call http/write:'
                                              'content with content as None!')
                 return
-            data['content'] = story.argument_by_name(line, 'content')
+            data['content'] = content
         elif command == 'finish':
             # Do nothing.
             pass
