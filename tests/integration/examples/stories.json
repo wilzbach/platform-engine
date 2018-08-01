@@ -1,7 +1,9 @@
 {
   "version": null,
+  "entrypoint": ["hello.story"],
   "stories": {
     "hello.story": {
+      "entrypoint": "1",
       "tree": {
         "1": {
           "method": "execute",

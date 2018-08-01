@@ -12,6 +12,7 @@ from storyscript.resolver import Resolver
 
 
 def test_stories_init(app, logger, story):
+    assert story.entrypoint == app.stories['hello.story']['entrypoint']
     assert story.app == app
     assert story.name == 'hello.story'
     assert story.logger == logger
@@ -51,20 +52,15 @@ def test_stories_line_none(magic, story):
     assert line is None
 
 
-def test_stories_sorted_lines(magic, story):
-    story.tree = {'1': {}, '2': {}, '21': {}, '3': {}}
-    assert story.sorted_lines() == ['1', '2', '3', '21']
-
-
 def test_stories_first_line(patch, story):
-    patch.object(Stories, 'sorted_lines', return_value=['16', '23'])
+    story.entrypoint = '16'
     story.tree = {'23': {'ln': '23'}, '16': {'ln': '16'}}
     result = story.first_line()
-    assert Stories.sorted_lines.call_count == 1
     assert result == '16'
 
 
 def test_stories_function_line_by_name(patch, story):
+    story.entrypoint = '1'
     story.tree = {
         '1': {'ln': '1', 'next': '2'},
         '2': {'ln': '2', 'method': 'function', 'function': 'execute'}
