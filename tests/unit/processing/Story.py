@@ -6,6 +6,7 @@ from unittest import mock
 from asyncy import Metrics
 from asyncy.Exceptions import AsyncyError
 from asyncy.Stories import Stories
+from asyncy.constants import ContextConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
@@ -115,7 +116,7 @@ async def test_story_execute_line_call(patch, logger, story, async_mock):
 async def test_story_execute_block(patch, logger, story, async_mock):
     story.tree = {
         '1': {'ln': '1', 'next': '2'},
-        '2': {'ln': '2', 'next': '3', 'enter': '3'},
+        '2': {'ln': '2', 'next': '3', 'enter': '3', 'output': ['foo_client']},
         '3': {'ln': '3', 'next': '4', 'parent': '2'},
         '4': {'ln': '4', 'next': '5', 'parent': '2', 'enter': '5'},
         '5': {'ln': '5', 'next': '6', 'parent': '4'},
@@ -126,6 +127,7 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     patch.object(story, 'next_block', return_value=story.tree['6'])
 
     line = story.line
+    story.context = {}
 
     def proxy_line(*args):
         return line(*args)
@@ -133,6 +135,8 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     patch.object(story, 'line', side_effect=proxy_line)
 
     await Story.execute_block(logger, story, story.tree['2'])
+
+    assert story.context[ContextConstants.service_output] == 'foo_client'
 
     story.next_block.assert_called_with(story.tree['4'])
     assert [
