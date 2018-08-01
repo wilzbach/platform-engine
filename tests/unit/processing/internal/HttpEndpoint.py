@@ -15,7 +15,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 
 @mark.parametrize('command', ['body', 'get_header', 'set_status',
-                              'set_header', 'write', 'finish'])
+                              'set_header', 'write', 'finish', 'flush'])
 def test_http_endpoint_run_request_ops(patch, story, command):
     line = {
         'command': command
@@ -61,6 +61,10 @@ def test_http_endpoint_run_request_ops(patch, story, command):
     elif command == 'write':
         tornado_req.write.assert_called_with(
             '{"command":"write","content":"argument_val"}\n')
+    elif command == 'flush':
+        tornado_req.write.assert_called_with(
+            '{"command":"flush"}\n')
+        tornado_req.flush.assert_called_once()
     elif command == 'finish':
         tornado_req.write.assert_called_with(
             '{"command":"finish"}\n')

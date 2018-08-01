@@ -22,6 +22,8 @@ class HttpEndpoint:
         }
 
         gateway_request = story.context[ContextConstants.gateway_request]
+        io_loop = story.context[ContextConstants.server_io_loop]
+        flush = False
 
         if command == 'body':
             return gateway_request['json_context']['request']['body']
@@ -36,19 +38,24 @@ class HttpEndpoint:
             data['value'] = story.argument_by_name(line, 'value')
         elif command == 'write':
             content = story.argument_by_name(line, 'content')
+            flush = story.argument_by_name(line, 'flush') or False
             if content is None:
                 story.logger.log_raw('warn', 'Attempt to call http/write:'
                                              'content with content as None!')
                 return
             data['content'] = content
+        elif command == 'flush':
+            flush = True
         elif command == 'finish':
             # Do nothing.
             pass
         else:
             raise InvalidCommandError(command, story=story, line=line)
 
-        io_loop = story.context[ContextConstants.server_io_loop]
         io_loop.add_callback(lambda: req.write(ujson.dumps(data) + '\n'))
+
+        if flush:
+            io_loop.add_callback(req.flush)
 
         if command == 'finish':
             io_loop.add_callback(req.finish)
