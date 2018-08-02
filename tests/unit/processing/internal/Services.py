@@ -69,4 +69,4 @@ def test_services_log_registry(logger):
     Services.register('my_service', 'my_command', {}, 'any', None)
     Services.log_registry()
     logger.log_raw.assert_called_with(
-        'info', 'Discovered internal service my_service/my_command')
+        'info', 'Discovered internal service my_service - [\'my_command\']')

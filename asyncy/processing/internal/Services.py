@@ -55,6 +55,9 @@ class Services:
     @classmethod
     def log_registry(cls):
         for key in cls.services:
+            commands = []
             for command in cls.services[key].commands:
-                cls.logger.log_raw(
-                    'info', f'Discovered internal service {key}/{command}')
+                commands.append(command)
+
+            cls.logger.log_raw(
+                'info', f'Discovered internal service {key} - {commands}')
