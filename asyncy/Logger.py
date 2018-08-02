@@ -55,3 +55,6 @@ class Logger:
 
     def log_raw(self, lvl, message):
         getattr(self.frustum.logger, lvl)(message)
+
+    def info(self, message):
+        getattr(self.frustum.logger, 'info')(message)

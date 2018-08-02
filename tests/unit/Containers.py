@@ -69,7 +69,7 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
 
 @mark.asyncio
 async def test_fetch_with_retry(patch, story, line):
-    def raise_error(url):
+    def raise_error(url, **kwargs):
         raise HTTPError(500)
 
     patch.object(AsyncHTTPClient, 'fetch', side_effect=raise_error)

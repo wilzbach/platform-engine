@@ -32,6 +32,7 @@ def story(patch, story):
 
 @mark.asyncio
 async def test_lexicon_execute(patch, logger, story, line, async_mock):
+    line['enter'] = None
     output = MagicMock()
     patch.object(Containers, 'exec', new=async_mock(return_value=output))
     patch.object(Lexicon, 'next_line_or_none')
@@ -66,6 +67,7 @@ async def test_lexicon_execute_internal_functions(patch, logger,
 
 @mark.asyncio
 async def test_lexicon_execute_none(patch, logger, story, line, async_mock):
+    line['enter'] = None
     story.line.return_value = None
     patch.object(Containers, 'exec', new=async_mock())
     result = await Lexicon.execute(logger, story, line)

@@ -25,6 +25,8 @@ class Lexicon:
         service_output_name = story.context.get(
             ContextConstants.service_output)
 
+        start = time.time()
+
         if Services.is_internal(service):
             output = await Services.execute(story, line)
             story.end_line(line['ln'], output=output,
@@ -61,9 +63,28 @@ class Lexicon:
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
             return Lexicon.next_line_or_none(story.line(line.get('next')))
+        elif line.get('enter') is not None:
+            """
+            When a service to be executed has an 'enter' line number, 
+            it's a streaming service. Let's bring up the service and 
+            update the context with the output name.
+            
+            Example:
+            foo stream as client
+                when client grep:'bar' as result
+                    # do something with result
+            """
+            output = await Containers.start(story, line)
+            Metrics.container_start_seconds_total.labels(
+                story_name=story.name, service=service
+            ).observe(time.time() - start)
+
+            story.end_line(line['ln'], output=output,
+                           assign=line.get('output'))
+
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
             service = line[LineConstants.service]
-            start = time.time()
             output = await Containers.exec(logger, story, line,
                                            service, line['command'])
             Metrics.container_exec_seconds_total.labels(

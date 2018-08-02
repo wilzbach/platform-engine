@@ -13,4 +13,4 @@ async def test_story_run(patch, logger, story):
     story.app = app
     patch.object(Story, 'story', return_value=story)
     patch.object(Containers, 'format_command', return_value=['pwd'])
-    await Story.run(app, logger, story_name='echo.story')
+    await Story.run(app, logger, story_name='hello.story')

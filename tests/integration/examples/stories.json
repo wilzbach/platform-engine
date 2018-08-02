@@ -9,7 +9,7 @@
           "method": "execute",
           "ln": "1",
           "output": null,
-          "service": "alpine",
+          "service": "alpine-echo",
           "command": "echo",
           "args": [
             {
