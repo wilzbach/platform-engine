@@ -48,7 +48,6 @@ class Containers:
                 await asyncio.sleep(.500)
                 out = await cls.inspect_container(story, line, container)
                 if out is not None:
-                    await asyncio.sleep(5)
                     break
 
             return
