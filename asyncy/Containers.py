@@ -8,6 +8,7 @@ import ujson
 
 from .Exceptions import ContainerSpecNotRegisteredError, DockerError
 from .constants.ServiceConstants import ServiceConstants
+from .processing.Types import StreamingService
 from .utils.HttpUtils import HttpUtils
 
 MAX_RETRIES = 3
@@ -54,7 +55,8 @@ class Containers:
 
         raise DockerError(
             story=story, line=line,
-            message=f'Failed to create {container} from {image}!')
+            message=f'Failed to create {container} from {image}! '
+                    f'error={resp.error}, response={resp.body}')
 
     @classmethod
     async def _start_container(cls, story, line, container):
@@ -115,24 +117,23 @@ class Containers:
         story.logger.info(f'Starting container {container_name}')
 
         container = await cls.inspect_container(story, line, container_name)
-        if container is not None:
-            if container['State']['Running'] is False:
-                await cls._start_container(story, line, container_name)
 
-            return {
-                'container_name': container_name,
-                'message': 'existing and started'
-            }
+        if container is None:
+            await cls._create_container(story, line, line['service'],
+                                        container_name)
+            await cls._start_container(story, line, container_name)
+            container = await cls.inspect_container(story, line,
+                                                    container_name)
 
-        await cls._create_container(story, line, line['service'],
-                                    container_name)
+        if container['State']['Running'] is False:
+            await cls._start_container(story, line, container_name)
 
-        await cls._start_container(story, line, container_name)
+        ss = StreamingService(name=line['service'], command=line['command'],
+                              container_name=container_name,
+                              hostname=container['Config']['Hostname'])
 
-        return {
-            'container_name': container_name,
-            'message': 'created and started'
-        }
+        story.logger.info(f'Started container {container_name}: {ss}')
+        return ss
 
     @classmethod
     def format_command(cls, story, line, container_name, command):
@@ -266,6 +267,9 @@ class Containers:
 
         if data is not None:
             kwargs['body'] = ujson.dumps(data)
+
+        story.logger.debug(f'Dialing {method} {url} with '
+                           f'headers {headers} and body {data}')
 
         cls._insert_auth_kwargs(story, kwargs)
         http_client = AsyncHTTPClient()

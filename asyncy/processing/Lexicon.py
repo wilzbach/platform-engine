@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
 import time
 
+from tornado.httpclient import AsyncHTTPClient
+
+import ujson
+
 from .Mutations import Mutations
+from .Types import StreamingService
 from .internal.HttpEndpoint import HttpEndpoint
+from .internal.Services import Services
 from .. import Metrics
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError, AsyncyError
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
-from ..processing.internal.Services import Services
+from ..constants.ServiceConstants import ServiceConstants
+from ..utils import Dict
+from ..utils.HttpUtils import HttpUtils
 
 
 class Lexicon:
@@ -65,10 +73,10 @@ class Lexicon:
             return Lexicon.next_line_or_none(story.line(line.get('next')))
         elif line.get('enter') is not None:
             """
-            When a service to be executed has an 'enter' line number, 
-            it's a streaming service. Let's bring up the service and 
+            When a service to be executed has an 'enter' line number,
+            it's a streaming service. Let's bring up the service and
             update the context with the output name.
-            
+
             Example:
             foo stream as client
                 when client grep:'bar' as result
@@ -80,7 +88,7 @@ class Lexicon:
             ).observe(time.time() - start)
 
             story.end_line(line['ln'], output=output,
-                           assign=line.get('output'))
+                           assign={'paths': line.get('output')})
 
             return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
@@ -166,3 +174,58 @@ class Lexicon:
     @staticmethod
     def argument_by_name(story, line, argument_name):
         return story.argument_by_name(line, argument_name)
+
+    @staticmethod
+    async def when(logger, story, line):
+        service = line[LineConstants.service]
+        # Does this service belong to a streaming service?
+        s = story.context.get(service)
+        if isinstance(s, StreamingService):
+            # Yes, we need to subscribe to an event with the service.
+            conf = story.app.services[s.name][ServiceConstants.config]
+            conf_event = Dict.find(
+                conf, f'commands.{s.command}.events.{service}')
+
+            port = Dict.find(conf, f'commands.{s.command}.run.port', 80)
+            subscribe_path = Dict.find(conf_event, 'http.path')
+            subscribe_method = Dict.find(conf_event, 'http.method', 'post')
+            event_args = Dict.find(conf_event, 'arguments', {})
+
+            data = {}
+            for key in event_args:
+                data[key] = story.argument_by_name(line, key)
+
+            url = f'http://{s.hostname}:{port}{subscribe_path}'
+
+            engine = f'{story.app.config.engine_host}:' \
+                     f'{story.app.config.engine_port}'
+
+            body = {
+                'endpoint': f'http://{engine}/v1/event/foo',
+                'data': data,
+                'event': service
+            }
+
+            kwargs = {
+                'method': subscribe_method,
+                'body': ujson.dumps(body),
+                'headers': {
+                    'Content-Type': 'application/json; charset=utf-8'
+                }
+            }
+
+            client = AsyncHTTPClient()
+            logger.info(f'Subscribing to {service} from {s.command}...')
+
+            response = await HttpUtils.fetch_with_retry(3, logger, url,
+                                                        client, kwargs)
+            if response.code / 100 == 2:  # Any 2xx is a successful response.
+                logger.info(f'Subscribed!')
+            else:
+                raise AsyncyError(
+                    message=f'Failed to subscribe to {service} from '
+                            f'{s.command} in {s.container_name}!',
+                    story=story, line=line)
+        else:
+            raise AsyncyError(message=f'Unknown service {service} for when!',
+                              story=story, line=line)
