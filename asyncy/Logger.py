@@ -58,3 +58,9 @@ class Logger:
 
     def info(self, message):
         getattr(self.frustum.logger, 'info')(message)
+
+    def debug(self, message):
+        getattr(self.frustum.logger, 'debug')(message)
+
+    def error(self, message):
+        getattr(self.frustum.logger, 'error')(message)
