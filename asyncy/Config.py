@@ -14,6 +14,9 @@ class Config:
         'DOCKER_MACHINE_NAME': ''
     }
 
+    engine_host = None
+    engine_port = None
+
     def __init__(self):
         self.apply()
 

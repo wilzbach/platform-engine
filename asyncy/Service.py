@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
+import socket
 import traceback
 
 import click
@@ -138,6 +139,10 @@ class Service:
             ],
             debug=debug,
         )
+
+        config.engine_host = socket.gethostname()
+        config.engine_port = port
+
         web_app.listen(port)
         prometheus_client.start_http_server(port=int(prometheus_port))
 
