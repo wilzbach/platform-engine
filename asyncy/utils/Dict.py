@@ -16,3 +16,26 @@ class Dict:
                     _dict[key] = {}
                     _cur = _dict[key]
             _cur[last] = output
+
+    @staticmethod
+    def find(root, path, default_value=None):
+        """
+        Finds a nested value in `root` by splitting `path` by a `.`.
+
+        :param default_value: If the value is not found, return this value
+        :param root: The dictionary to scan through
+        :param path: The path to the value, eg "foo.bar.a.b.v"
+        :return: The value, if found, `default_value` if not found
+        """
+        if root is None or path is None:
+            return default_value
+
+        assert isinstance(path, str)
+        tokens = path.split('.')
+        for token in tokens:
+            root = root.get(token)
+            if root is None:
+                return default_value
+
+            if isinstance(root, dict) is False:
+                return None
