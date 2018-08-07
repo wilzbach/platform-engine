@@ -36,6 +36,3 @@ class Dict:
             root = root.get(token)
             if root is None:
                 return default_value
-
-            if isinstance(root, dict) is False:
-                return None
