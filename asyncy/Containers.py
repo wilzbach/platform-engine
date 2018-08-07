@@ -201,11 +201,14 @@ class Containers:
             'Tty': False
         }
 
+        logger.debug('Creating exec...')
+
         response = await cls._make_docker_request(
             story, line, f'/containers/{container}/exec',
             exec_create_post_data, method='POST')
 
         create_result = ujson.loads(response.body)
+        logger.debug(f'Exec creation result {create_result}')
 
         exec_id = create_result['Id']
         exec_start_url = f'/exec/{exec_id}/start'
@@ -214,9 +217,12 @@ class Containers:
             'Detach': False
         }
 
+        logger.debug('Starting exec...')
         response = await cls._make_docker_request(
             story, line, exec_start_url,
             exec_start_post_data, method='POST')
+
+        logger.debug('Exec has a response! Parsing...')
 
         # Read our stdin/stdout multiplexed stream.
         # https://docs.docker.com/engine/api/v1.32/#operation/ContainerAttach
@@ -242,6 +248,8 @@ class Containers:
                                 .format(header[0]))
 
         logger.log('container-end', container_name)
+
+        logger.debug(f'Exec response - stdout {stdout}, stderr {stderr}')
 
         return stdout[:-1]  # Truncate the leading \n from the console.
 
