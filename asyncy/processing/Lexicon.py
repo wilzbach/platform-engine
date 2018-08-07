@@ -178,13 +178,14 @@ class Lexicon:
     @staticmethod
     async def when(logger, story, line):
         service = line[LineConstants.service]
+        command = line[LineConstants.command]
         # Does this service belong to a streaming service?
         s = story.context.get(service)
         if isinstance(s, StreamingService):
             # Yes, we need to subscribe to an event with the service.
             conf = story.app.services[s.name][ServiceConstants.config]
             conf_event = Dict.find(
-                conf, f'commands.{s.command}.events.{service}')
+                conf, f'commands.{s.command}.events.{command}')
 
             port = Dict.find(conf, f'commands.{s.command}.run.port', 80)
             subscribe_path = Dict.find(conf_event, 'http.path')
@@ -196,6 +197,8 @@ class Lexicon:
                 data[key] = story.argument_by_name(line, key)
 
             url = f'http://{s.hostname}:{port}{subscribe_path}'
+
+            logger.debug(f'Sending subscription request to {url}')
 
             engine = f'{story.app.config.engine_host}:' \
                      f'{story.app.config.engine_port}'
@@ -224,7 +227,8 @@ class Lexicon:
             else:
                 raise AsyncyError(
                     message=f'Failed to subscribe to {service} from '
-                            f'{s.command} in {s.container_name}!',
+                            f'{s.command} in {s.container_name}! '
+                            f'http err={response.error}; code={response.code}',
                     story=story, line=line)
         else:
             raise AsyncyError(message=f'Unknown service {service} for when!',
