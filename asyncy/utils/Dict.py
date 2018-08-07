@@ -36,3 +36,5 @@ class Dict:
             root = root.get(token)
             if root is None:
                 return default_value
+
+        return root or default_value
