@@ -62,5 +62,5 @@ class Logger:
     def debug(self, message):
         getattr(self.frustum.logger, 'debug')(message)
 
-    def error(self, message):
-        getattr(self.frustum.logger, 'error')(message)
+    def error(self, message, exc=None):
+        getattr(self.frustum.logger, 'error')(message, exc_info=exc)

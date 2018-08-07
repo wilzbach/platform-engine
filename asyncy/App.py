@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import traceback
 from json import load
 
 from raven.contrib.tornado import AsyncSentryClient
@@ -58,7 +57,7 @@ class App:
             try:
                 await Story.run(self, self.logger, story_name)
             except Exception as e:
-                traceback.print_exc()
+                self.logger.error('Failed to bootstrap story', exc=e)
                 raise e
 
     async def destroy(self):
@@ -72,5 +71,5 @@ class App:
             try:
                 await Story.destroy(self, self.logger, story_name)
             except Exception as e:
-                traceback.print_exc()
+                self.logger.error('Failed to destroy story', exc=e)
                 raise e

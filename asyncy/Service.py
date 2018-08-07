@@ -2,7 +2,6 @@
 import asyncio
 import os
 import socket
-import traceback
 
 import click
 
@@ -68,8 +67,7 @@ class RunStoryHandler(tornado.web.RequestHandler):
             req = ujson.loads(self.request.body)
             await RunStoryHandler.run_story(req, self, io_loop)
         except BaseException as e:
-            logger.log_raw('error', 'Story execution failed; cause=' + str(e))
-            traceback.print_exc()
+            logger.error(f'Story execution failed; cause={str(e)}', exc=e)
             self.set_status(500, 'Story execution failed')
             self.finish()
             if isinstance(e, AsyncyError):
