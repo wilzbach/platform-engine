@@ -10,16 +10,12 @@ import prometheus_client
 import tornado
 from tornado import web
 
-import ujson
 
-from . import Metrics, Version
+from .http_handlers.RunStoryHandler import RunStoryHandler
+from . import Version
 from .App import App
 from .Config import Config
-from .Exceptions import AsyncyError
 from .Logger import Logger
-from .Stories import Stories
-from .constants.ContextConstants import ContextConstants
-from .processing import Story
 from .processing.internal import File, Http, Log
 from .processing.internal.Services import Services
 
@@ -29,66 +25,6 @@ config = Config()
 app = None
 logger = Logger(config)
 logger.start()
-
-
-class RunStoryHandler(tornado.web.RequestHandler):
-
-    @classmethod
-    async def run_story(cls, req, request_response, io_loop):
-        logger.log('http-request-run-story', req['story_name'])
-
-        context = req.get('context', {})
-        context[ContextConstants.server_request] = request_response
-        context[ContextConstants.gateway_request] = req
-        context[ContextConstants.server_io_loop] = io_loop
-
-        await Story.run(app, logger,
-                        story_name=req['story_name'],
-                        context=context,
-                        block=req.get('block'),
-                        function_name=req.get('function'))
-
-        # If we're running in an http context, then we need to call finish
-        # on Tornado's response object.
-        if request_response.is_not_finished():
-            io_loop.add_callback(request_response.finish)
-
-    @web.asynchronous
-    @Metrics.story_request.time()
-    async def post(self):
-        io_loop = tornado.ioloop.IOLoop.current()
-        app.sentry_client.context.clear()
-        app.sentry_client.user_context({
-            'id': app.beta_user_id,
-        })
-
-        req = None
-        try:
-            req = ujson.loads(self.request.body)
-            await RunStoryHandler.run_story(req, self, io_loop)
-        except BaseException as e:
-            logger.error(f'Story execution failed; cause={str(e)}', exc=e)
-            self.set_status(500, 'Story execution failed')
-            self.finish()
-            if isinstance(e, AsyncyError):
-                assert isinstance(e.story, Stories)
-                app.sentry_client.capture('raven.events.Exception', extra={
-                    'story_name': e.story.name,
-                    'story_line': e.line['ln']
-                })
-            else:
-                if req is None:
-                    app.sentry_client.capture('raven.events.Exception')
-                else:
-                    app.sentry_client.capture('raven.events.Exception', extra={
-                        'story_name': req['story_name']
-                    })
-
-    def is_finished(self):
-        return self._finished
-
-    def is_not_finished(self):
-        return self.is_finished() is False
 
 
 class Service:
@@ -133,7 +69,7 @@ class Service:
         logger.log('service-init', Version.version)
         web_app = tornado.web.Application(
             [
-                (r'/story/run', RunStoryHandler)
+                (r'/story/run', RunStoryHandler, {app: app, logger: logger})
             ],
             debug=debug,
         )
