@@ -20,3 +20,5 @@ setup.cfg
 tests/
 tox.ini
 venv/
+.idea/
+*.iml
