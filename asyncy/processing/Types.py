@@ -6,4 +6,4 @@ StreamingService = namedtuple('StreamingService',
                                'container_name', 'hostname'])
 
 StreamingEvent = namedtuple('StreamingEvent',
-                            ['service'])
+                            ['service', 'output_name'])

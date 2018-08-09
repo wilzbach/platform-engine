@@ -9,7 +9,7 @@ class StoryLineContext:
 
     Usage:
     Set a k/v for a story: StoryLineContext.set(story, line, key, value)
-    Get a k/v for a story: StoryLineContext.get(story, line, key)
+    Get back the full context: StoryLineContext.get(story, line)
     """
 
     store = {}
@@ -25,7 +25,7 @@ class StoryLineContext:
         store[key] = value
 
     @classmethod
-    def get(cls, story, line, key):
+    def get(cls, story, line):
         store_key = cls.get_key(story, line)
         store = cls.store.setdefault(store_key, {})
-        return store.get(key)
+        return store

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import time
 
+from ..processing.Types import StreamingEvent
+from ..processing.StoryLineContext import StoryLineContext
 from .. import Metrics
 from ..Exceptions import AsyncyError
 from ..Stories import Stories
@@ -94,6 +96,19 @@ class Story:
         """
         Executes all the lines whose parent is parent_line.
         """
+
+        # Attach any additional event context found for this block.
+        # This happens in the case of event driven services.
+        # A block is executed with additional context
+        line_cxt = StoryLineContext.get(story, parent_line)
+        for key in line_cxt:
+            val = line_cxt[key]
+            story.context[key] = val
+            if isinstance(val, StreamingEvent):
+                story.logger.debug(f'c: {story.context[ContextConstants.service_event]}')
+                story.context[val.output_name] = story. \
+                    context[ContextConstants.service_event].get('data')
+
         next_line = story.line(parent_line['enter'])
 
         # If this block represents a streaming service, copy over it's

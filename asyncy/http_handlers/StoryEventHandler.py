@@ -35,6 +35,8 @@ class StoryEventHandler(BaseHandler):
 
         try:
             event_body = ujson.loads(self.request.body)
+            self.logger.info(f'Running story {story_name} @ {block} for '
+                             f'event {event_body}')
             await self.run_story(story_name, block, event_body)
             self.set_status(204)
             self.finish()
