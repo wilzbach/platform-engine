@@ -67,9 +67,15 @@ class Service:
         Services.log_registry()
 
         logger.log('service-init', Version.version)
+
         web_app = tornado.web.Application([
-            (r'/story/run', RunStoryHandler, {app: app, logger: logger}),
-            (r'/story/event', StoryEventHandler, {app: app, logger: logger})
+
+            (r'/story/run', RunStoryHandler,
+             {'app': app, 'logger': logger}),
+
+            (r'/story/event', StoryEventHandler,
+             {'app': app, 'logger': logger})
+
         ], debug=debug)
 
         config.engine_host = socket.gethostname()
