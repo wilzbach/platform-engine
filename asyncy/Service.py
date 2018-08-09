@@ -10,7 +10,7 @@ import prometheus_client
 import tornado
 from tornado import web
 
-
+from .http_handlers.StoryEventHandler import StoryEventHandler
 from .http_handlers.RunStoryHandler import RunStoryHandler
 from . import Version
 from .App import App
@@ -67,12 +67,10 @@ class Service:
         Services.log_registry()
 
         logger.log('service-init', Version.version)
-        web_app = tornado.web.Application(
-            [
-                (r'/story/run', RunStoryHandler, {app: app, logger: logger})
-            ],
-            debug=debug,
-        )
+        web_app = tornado.web.Application([
+            (r'/story/run', RunStoryHandler, {app: app, logger: logger}),
+            (r'/story/event', StoryEventHandler, {app: app, logger: logger})
+        ], debug=debug)
 
         config.engine_host = socket.gethostname()
         config.engine_port = port
