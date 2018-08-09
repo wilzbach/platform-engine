@@ -6,12 +6,11 @@ from urllib import parse
 
 from tornado.httpclient import AsyncHTTPClient
 
-
 from .StoryLineContext import StoryLineContext
 from .Mutations import Mutations
 from .Types import StreamingService, StreamingEvent
 from .internal.HttpEndpoint import HttpEndpoint
-from .internal.Services import Services
+from .Services import Services
 from .. import Metrics
 from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError, AsyncyError
@@ -38,12 +37,7 @@ class Lexicon:
 
         start = time.time()
 
-        if Services.is_internal(service):
-            output = await Services.execute(story, line)
-            story.end_line(line['ln'], output=output,
-                           assign=line.get('output'))
-            return Lexicon.next_line_or_none(story.line(line.get('next')))
-        elif service == 'http-endpoint':
+        if service == 'http-endpoint':
             """
             If the service is http-endpoint (a special service),
             then register the http method along with the path with the Server
@@ -95,9 +89,7 @@ class Lexicon:
 
             return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
-            service = line[LineConstants.service]
-            output = await Containers.exec(logger, story, line,
-                                           service, line['command'])
+            output = await Services.execute(story, line)
             Metrics.container_exec_seconds_total.labels(
                 story_name=story.name, service=service
             ).observe(time.time() - start)

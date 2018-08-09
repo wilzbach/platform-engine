@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from asyncy.processing.internal import Log
-from asyncy.processing.internal.Services import Services
+from asyncy.processing.Services import Services
 
 from pytest import fixture, mark
 
 
 @fixture
 def service_patch(patch):
-    patch.object(Services, 'register')
+    patch.object(Services, 'register_internal')
 
 
 @mark.parametrize('level', ['info', 'error', 'warn', 'debug'])

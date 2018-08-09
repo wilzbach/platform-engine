@@ -9,7 +9,7 @@ from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
-from asyncy.processing.internal.Services import Services
+from asyncy.processing.Services import Services
 
 import pytest
 from pytest import fixture, mark

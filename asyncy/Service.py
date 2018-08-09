@@ -17,7 +17,7 @@ from .App import App
 from .Config import Config
 from .Logger import Logger
 from .processing.internal import File, Http, Log
-from .processing.internal.Services import Services
+from .processing.Services import Services
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -64,7 +64,7 @@ class Service:
         File.init()
         Log.init()
         Http.init()
-        Services.log_registry()
+        Services.log_internal()
 
         logger.log('service-init', Version.version)
 

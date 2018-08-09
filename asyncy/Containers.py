@@ -34,7 +34,16 @@ class Containers:
             'AttachStdout': False,
             'AttachStderr': False,
             'Env': env_arr,
-            'Image': image
+            'Image': image,
+            'Network'
+            'NetworkingConfig': {
+                'EndpointsConfig': {
+                    'isolated_nw': {
+                        'Links': ['engine'],
+                        'Aliases': [container]
+                    }
+                }
+            }
         }
 
         ep = story.app.services[image_name].get('entrypoint')
@@ -105,6 +114,12 @@ class Containers:
 
         story.logger.info(f'Failed to remove container {container}')
         return None
+
+    @classmethod
+    async def get_hostname(cls, story, line, service_alias):
+        container = cls.get_container_name(service_alias)
+        c = await cls.inspect_container(story, line, container)
+        return c['Config']['Hostname']  # TODO safety checks
 
     @classmethod
     async def start(cls, story, line):

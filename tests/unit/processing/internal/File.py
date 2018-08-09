@@ -3,7 +3,7 @@ import os
 
 from asyncy.Exceptions import AsyncyError
 from asyncy.processing.internal import File
-from asyncy.processing.internal.Services import Services
+from asyncy.processing.Services import Services
 
 import pytest
 from pytest import fixture, mark
@@ -16,7 +16,7 @@ def line():
 
 @fixture
 def service_patch(patch):
-    patch.object(Services, 'register')
+    patch.object(Services, 'register_internal')
 
 
 @fixture
