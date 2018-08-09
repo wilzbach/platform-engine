@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+import json
 import time
+import urllib
+from urllib import parse
 
 from tornado.httpclient import AsyncHTTPClient
 
-import ujson
 
+from .StoryLineContext import StoryLineContext
 from .Mutations import Mutations
-from .Types import StreamingService
+from .Types import StreamingService, StreamingEvent
 from .internal.HttpEndpoint import HttpEndpoint
 from .internal.Services import Services
 from .. import Metrics
@@ -187,9 +190,11 @@ class Lexicon:
             conf_event = Dict.find(
                 conf, f'commands.{s.command}.events.{command}')
 
-            port = Dict.find(conf, f'commands.{s.command}.run.port', 80)
-            subscribe_path = Dict.find(conf_event, 'http.path')
-            subscribe_method = Dict.find(conf_event, 'http.method', 'post')
+            port = Dict.find(conf_event, f'http.port', 80)
+            subscribe_path = Dict.find(conf_event, 'http.subscribe.path')
+            subscribe_method = Dict.find(conf_event,
+                                         'http.subscribe.method', 'post')
+
             event_args = Dict.find(conf_event, 'arguments', {})
 
             data = {}
@@ -203,15 +208,20 @@ class Lexicon:
             engine = f'{story.app.config.engine_host}:' \
                      f'{story.app.config.engine_port}'
 
+            query_params = urllib.parse.urlencode({
+                'story': story.name,
+                'block': line['ln']
+            })
+
             body = {
-                'endpoint': f'http://{engine}/v1/event/foo',
+                'endpoint': f'http://{engine}/story/event?{query_params}',
                 'data': data,
                 'event': service
             }
 
             kwargs = {
-                'method': subscribe_method,
-                'body': ujson.dumps(body),
+                'method': subscribe_method.upper(),
+                'body': json.dumps(body),
                 'headers': {
                     'Content-Type': 'application/json; charset=utf-8'
                 }
@@ -222,8 +232,12 @@ class Lexicon:
 
             response = await HttpUtils.fetch_with_retry(3, logger, url,
                                                         client, kwargs)
-            if response.code / 100 == 2:  # Any 2xx is a successful response.
+            if round(response.code / 100) == 2:
                 logger.info(f'Subscribed!')
+                next_line = story.next_block(line)
+                se = StreamingEvent(s)
+                StoryLineContext.set(story, line, line['output'][0], se)
+                return Lexicon.next_line_or_none(next_line)
             else:
                 raise AsyncyError(
                     message=f'Failed to subscribe to {service} from '
