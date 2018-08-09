@@ -105,7 +105,6 @@ class Story:
             val = line_cxt[key]
             story.context[key] = val
             if isinstance(val, StreamingEvent):
-                story.logger.debug(f'c: {story.context[ContextConstants.service_event]}')
                 story.context[val.output_name] = story. \
                     context[ContextConstants.service_event].get('data')
 
