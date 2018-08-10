@@ -8,8 +8,8 @@ from pytest import mark
 
 
 @mark.asyncio
-async def test_story_run(patch, logger, story):
-    app = App(Config(), logger)
+async def test_story_run(patch, logger, story, app):
+    app.config = Config()
     story.app = app
     patch.object(Story, 'story', return_value=story)
     patch.object(Containers, 'format_command', return_value=['pwd'])
