@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from asyncy.processing.internal.Decorators import Decorators
 from asyncy.processing.Services import Services
+from asyncy.processing.internal.Decorators import Decorators
 
 
 def test_decorators_create_service(patch):
@@ -12,5 +12,5 @@ def test_decorators_create_service(patch):
     Decorators.create_service('name', 'command', 'arguments',
                               'output_type')(my_func)()
 
-    Services.register_internal.assert_called_with('name', 'command', 'arguments',
-                                         'output_type', my_func)
+    Services.register_internal.assert_called_with(
+        'name', 'command', 'arguments', 'output_type', my_func)

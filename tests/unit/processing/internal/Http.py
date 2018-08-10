@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from asyncy.processing.internal import Http
 from asyncy.processing.Services import Services
+from asyncy.processing.internal import Http
 from asyncy.utils.HttpUtils import HttpUtils
 
 from pytest import fixture, mark

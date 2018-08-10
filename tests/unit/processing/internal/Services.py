@@ -2,8 +2,8 @@
 from collections import deque
 
 from asyncy.Exceptions import AsyncyError
-from asyncy.constants.LineConstants import LineConstants as L
-from asyncy.processing.Services import Services, Service, Command, Event
+from asyncy.constants.LineConstants import LineConstants as Line
+from asyncy.processing.Services import Command, Event, Service, Services
 
 import pytest
 from pytest import mark
@@ -17,8 +17,8 @@ async def test_services_execute(story, async_mock):
 
     assert Services.is_internal('my_service') is True
     line = {
-        L.service: 'my_service',
-        L.command: 'my_command'
+        Line.service: 'my_service',
+        Line.command: 'my_command'
     }
 
     assert await Services.execute(story, line) == 'output'
@@ -29,8 +29,8 @@ async def test_services_execute_invalid_command(story):
     Services.register_internal('my_service', 'my_command', {}, 'any', None)
 
     line = {
-        L.service: 'my_service',
-        L.command: 'foo_command'
+        Line.service: 'my_service',
+        Line.command: 'foo_command'
     }
 
     with pytest.raises(AsyncyError):
@@ -43,12 +43,12 @@ async def test_services_execute_args(story, async_mock):
 
     Services.register_internal('my_service', 'my_command',
                                {'arg1': {'type': 'string'}},
-                      'any', handler)
+                               'any', handler)
 
     assert Services.is_internal('my_service') is True
     line = {
-        L.service: 'my_service',
-        L.command: 'my_command',
+        Line.service: 'my_service',
+        Line.command: 'my_command',
         'args': [
             {
                 '$OBJECT': 'argument',
@@ -85,42 +85,42 @@ def test_resolve_chain(story):
 
     """
     story.app.services = {
-        'alpine': {} 
+        'alpine': {}
     }
-    
+
     story.tree = {
         '1': {
-            L.method: 'execute',
-            L.service: 'alpine',
-            L.command: 'echo',
-            L.enter: '2',
-            L.output: ['client']
+            Line.method: 'execute',
+            Line.service: 'alpine',
+            Line.command: 'echo',
+            Line.enter: '2',
+            Line.output: ['client']
         },
         '2': {
-            L.method: 'when',
-            L.service: 'client',
-            L.command: 'foo',
-            L.parent: '1',
-            L.output: ['echo_helper']
+            Line.method: 'when',
+            Line.service: 'client',
+            Line.command: 'foo',
+            Line.parent: '1',
+            Line.output: ['echo_helper']
         },
         '3': {
-            L.method: 'execute',
-            L.service: 'alpine',
-            L.command: 'echo',
-            L.parent: '2',
-            L.enter: '4'
+            Line.method: 'execute',
+            Line.service: 'alpine',
+            Line.command: 'echo',
+            Line.parent: '2',
+            Line.enter: '4'
         },
         '4': {
-            L.method: 'execute',
-            L.service: 'echo_helper',
-            L.command: 'sonar',
-            L.parent: '3'
+            Line.method: 'execute',
+            Line.service: 'echo_helper',
+            Line.command: 'sonar',
+            Line.parent: '3'
         },
         '5': {
-            L.method: 'execute',
-            L.service: 'echo_helper',
-            L.command: 'sonar',
-            L.parent: '2'
+            Line.method: 'execute',
+            Line.service: 'echo_helper',
+            Line.command: 'sonar',
+            Line.parent: '2'
         }
     }
 
@@ -140,4 +140,4 @@ def test_resolve_chain(story):
 
     assert Services.resolve_chain(story, story.tree['5']) \
         == deque([Service(name='alpine'), Command(name='echo'),
-                     Event(name='foo'), Command(name='sonar')])
+                  Event(name='foo'), Command(name='sonar')])
