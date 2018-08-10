@@ -18,7 +18,7 @@ def config():
 
 def test_config():
     assert Config.defaults['logger_name'] == 'asyncy'
-    assert Config.defaults['logger_level'] == 'warning'
+    assert Config.defaults['logger_level'] == 'debug'
 
 
 def test_config_init(patch):

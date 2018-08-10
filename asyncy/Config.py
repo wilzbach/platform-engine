@@ -7,7 +7,7 @@ class Config:
     defaults = {
         'gateway_url': 'gateway:8889',
         'logger_name': 'asyncy',
-        'logger_level': 'warning',
+        'logger_level': 'debug',
         'DOCKER_HOST': 'http://localhost:2375',
         'DOCKER_TLS_VERIFY': '0',
         'DOCKER_CERT_PATH': '',
