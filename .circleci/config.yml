@@ -32,7 +32,7 @@ jobs:
           command: |
             docker pull alpine
             docker run -d --name "asyncy--alpine-1" alpine sleep 10000
-            docker run -d --name "asyncy--asyncy-echo-1" alpine sleep 10000
+            docker run -d --name "asyncy--alpine-echo-1" alpine sleep 10000
             docker run -d --name alpine alpine sleep 10000
             docker volume create hello.story
             python3 -m venv venv
