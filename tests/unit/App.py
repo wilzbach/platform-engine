@@ -4,6 +4,7 @@ import traceback
 from unittest import mock
 
 from asyncy.App import App
+from asyncy.Logger import Logger
 from asyncy.processing import Story
 
 import pytest
@@ -12,8 +13,6 @@ from pytest import fixture, mark
 
 @fixture
 def exc(patch):
-    patch.object(traceback, 'print_exc')
-
     def func(*args):
         raise Exception()
 
@@ -86,13 +85,14 @@ async def test_app_run_stories_exc(patch, app, async_mock, exc):
         'bar': {}
     }
     app.entrypoint = ['foo', 'bar']
+    patch.object(app, 'logger')
 
     patch.object(Story, 'run', new=async_mock(side_effect=exc))
 
     with pytest.raises(Exception):
         await app.run_stories()
 
-    traceback.print_exc.assert_called_once()
+    app.logger.error.assert_called_once()
 
 
 @mark.asyncio
@@ -108,7 +108,7 @@ async def test_app_destroy_exc(patch, app, async_mock, exc):
     with pytest.raises(Exception):
         await app.destroy()
 
-    traceback.print_exc.assert_called_once()
+    app.logger.error.assert_called_once()
 
 
 @mark.asyncio
