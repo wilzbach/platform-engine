@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
 
-from ..processing.Types import StreamingEvent
-from ..processing.StoryLineContext import StoryLineContext
 from .. import Metrics
 from ..Exceptions import AsyncyError
 from ..Stories import Stories
@@ -96,18 +94,6 @@ class Story:
         """
         Executes all the lines whose parent is parent_line.
         """
-
-        # Attach any additional event context found for this block.
-        # This happens in the case of event driven services.
-        # A block is executed with additional context
-        line_cxt = StoryLineContext.get(story, parent_line)
-        for key in line_cxt:
-            val = line_cxt[key]
-            story.context[key] = val
-            if isinstance(val, StreamingEvent):
-                story.context[val.output_name] = story. \
-                    context[ContextConstants.service_event].get('data')
-
         next_line = story.line(parent_line['enter'])
 
         # If this block represents a streaming service, copy over it's
@@ -115,6 +101,10 @@ class Story:
         if parent_line.get('output') is not None:
             story.context[ContextConstants.service_output] = \
                 parent_line['output'][0]
+
+            if story.context.get(ContextConstants.service_event) is not None:
+                story.context[parent_line['output'][0]] = \
+                    story.context[ContextConstants.service_event].get('data')
 
         while next_line is not None and \
                 next_line['parent'] == parent_line['ln']:

@@ -6,9 +6,7 @@ from urllib import parse
 
 from tornado.httpclient import AsyncHTTPClient
 
-from .StoryLineContext import StoryLineContext
 from .Mutations import Mutations
-from .Types import StreamingService, StreamingEvent
 from .internal.HttpEndpoint import HttpEndpoint
 from .Services import Services
 from .. import Metrics
@@ -227,8 +225,6 @@ class Lexicon:
             if round(response.code / 100) == 2:
                 logger.info(f'Subscribed!')
                 next_line = story.next_block(line)
-                se = StreamingEvent(s)
-                StoryLineContext.set(story, line, line['output'][0], se)
                 return Lexicon.next_line_or_none(next_line)
             else:
                 raise AsyncyError(
