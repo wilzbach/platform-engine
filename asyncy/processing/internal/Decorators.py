@@ -10,7 +10,8 @@ class Decorators:
     def create_service(name, command, arguments=None, output_type=None):
 
         def decorator(func):
-            Services.register_internal(name, command, arguments, output_type, func)
+            Services.register_internal(name, command, arguments,
+                                       output_type, func)
 
             @wraps(func)
             def decorated_function(*args, **kwargs):

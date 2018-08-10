@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-from tornado.web import RequestHandler
-
-from ..processing import Story
-from ..constants import ContextConstants
 from tornado import web
+
 import ujson
 
 from .BaseHandler import BaseHandler
 from .. import Metrics
+from ..constants import ContextConstants
+from ..processing import Story
 
 
 class StoryEventHandler(BaseHandler):

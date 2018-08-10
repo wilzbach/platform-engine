@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
-from collections import namedtuple
-
-from collections import deque
 import json
+from collections import deque, namedtuple
 
 from tornado.httpclient import AsyncHTTPClient
 
-from asyncy.utils.HttpUtils import HttpUtils
 from ..Containers import Containers
-from ..constants.LineConstants import LineConstants
-
 from ..Exceptions import AsyncyError
+from ..constants.LineConstants import LineConstants
+from ..utils.HttpUtils import HttpUtils
 
 InternalCommand = namedtuple('InternalCommand',
                              ['arguments', 'output_type', 'handler'])
