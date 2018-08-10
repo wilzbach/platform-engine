@@ -6,7 +6,7 @@ class HttpUtils:
 
     @staticmethod
     async def fetch_with_retry(tries, logger, url, http_client, kwargs):
-        kwargs['raise_error'] = False
+        kwargs['raise_error'] = True
         attempts = 0
         while attempts < tries:
             attempts = attempts + 1

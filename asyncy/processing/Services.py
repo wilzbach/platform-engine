@@ -82,8 +82,7 @@ class Services:
         service = line[LineConstants.service]
         chain = cls.resolve_chain(story, line)
         command_conf = cls.get_command_conf(story, chain)
-        if command_conf.get('command') is not None:
-            # TODO the following line is incorrect, for sure, or not?
+        if command_conf.get('format') is not None:
             return await Containers.exec(story.logger, story, line,
                                          service, line['command'])
         elif command_conf.get('http') is not None:
