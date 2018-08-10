@@ -11,7 +11,6 @@ from .Types import StreamingService
 from .internal.HttpEndpoint import HttpEndpoint
 from .Services import Services
 from .. import Metrics
-from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError, AsyncyError
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
@@ -78,7 +77,7 @@ class Lexicon:
                 when client grep:'bar' as result
                     # do something with result
             """
-            output = await Containers.start(story, line)
+            output = await Services.start_container(story, line)
             Metrics.container_start_seconds_total.labels(
                 story_name=story.name, service=service
             ).observe(time.time() - start)

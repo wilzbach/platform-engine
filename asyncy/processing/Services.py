@@ -203,6 +203,10 @@ class Services:
         return f'http code {response.code}'
 
     @classmethod
+    async def start_container(cls, story, line):
+        return await Containers.start(story, line)
+
+    @classmethod
     def init(cls, logger):
         cls.logger = logger
 

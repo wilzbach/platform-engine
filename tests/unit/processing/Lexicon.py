@@ -2,14 +2,13 @@
 from unittest.mock import MagicMock, Mock
 
 from asyncy import Exceptions
-from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
-from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.processing.Services import Services
+from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 
 import pytest
 from pytest import fixture, mark
@@ -34,12 +33,10 @@ def story(patch, story):
 async def test_lexicon_execute(patch, logger, story, line, async_mock):
     line['enter'] = None
     output = MagicMock()
-    patch.object(Containers, 'exec', new=async_mock(return_value=output))
+    patch.object(Services, 'execute', new=async_mock(return_value=output))
     patch.object(Lexicon, 'next_line_or_none')
     result = await Lexicon.execute(logger, story, line)
-    c = line[LineConstants.service]
-    Containers.exec.mock.assert_called_with(logger, story, line, c,
-                                            line['command'])
+    Services.execute.mock.assert_called_with(story, line)
     story.end_line.assert_called_with(line['ln'],
                                       output=output,
                                       assign=None)
@@ -48,28 +45,10 @@ async def test_lexicon_execute(patch, logger, story, line, async_mock):
 
 
 @mark.asyncio
-async def test_lexicon_execute_internal_functions(patch, logger,
-                                                  story, line, async_mock):
-    line['output'] = 'assign'
-    patch.object(Services, 'is_internal', return_value=True)
-    patch.object(Services, 'execute', new=async_mock())
-    patch.object(Lexicon, 'next_line_or_none')
-    result = await Lexicon.execute(logger, story, line)
-
-    Services.is_internal.assert_called_with(line[LineConstants.service])
-    Services.execute.mock.assert_called_with(story, line)
-    output = await Services.execute()
-    story.end_line.assert_called_with(line['ln'], output=output,
-                                      assign='assign')
-
-    assert result == Lexicon.next_line_or_none()
-
-
-@mark.asyncio
 async def test_lexicon_execute_none(patch, logger, story, line, async_mock):
     line['enter'] = None
     story.line.return_value = None
-    patch.object(Containers, 'exec', new=async_mock())
+    patch.object(Services, 'execute', new=async_mock())
     result = await Lexicon.execute(logger, story, line)
     assert result is None
 
