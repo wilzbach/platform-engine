@@ -7,6 +7,7 @@ from urllib import parse
 from tornado.httpclient import AsyncHTTPClient
 
 from .Mutations import Mutations
+from .Types import StreamingService
 from .internal.HttpEndpoint import HttpEndpoint
 from .Services import Services
 from .. import Metrics
