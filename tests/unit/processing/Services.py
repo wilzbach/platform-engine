@@ -10,7 +10,7 @@ from pytest import mark
 
 
 @mark.asyncio
-async def test_services_execute(story, async_mock):
+async def test_services_execute_internal(story, async_mock):
     handler = async_mock(return_value='output')
 
     Services.register_internal('my_service', 'my_command', {}, 'any', handler)
@@ -22,6 +22,19 @@ async def test_services_execute(story, async_mock):
     }
 
     assert await Services.execute(story, line) == 'output'
+
+
+@mark.asyncio
+async def test_services_execute_external(patch, story, async_mock):
+    patch.object(Services, 'execute_external', new=async_mock())
+    assert Services.is_internal('foo_service') is False
+    line = {
+        Line.service: 'foo_service',
+        Line.command: 'foo_command'
+    }
+
+    assert await Services.execute(story, line) \
+        == await Services.execute_external()
 
 
 @mark.asyncio
