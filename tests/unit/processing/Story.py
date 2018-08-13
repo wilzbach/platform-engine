@@ -273,3 +273,14 @@ async def test_story_destroy(patch, app, logger, http_line, story, async_mock):
     )
 
     story.next_block.assert_called_once()
+
+
+@mark.asyncio
+async def test_story_execute_does_not_wrap(patch, story, async_mock):
+    def exc(*args):
+        raise AsyncyError()
+
+    patch.object(Lexicon, 'execute', new=async_mock(side_effect=exc))
+    patch.object(story, 'line', return_value={'method': 'execute'})
+    with pytest.raises(AsyncyError):
+        await Story.execute_line(story.logger, story, '10')
