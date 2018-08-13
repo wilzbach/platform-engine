@@ -7,8 +7,8 @@ from tornado.httpclient import AsyncHTTPClient, HTTPError
 import ujson
 
 from .Exceptions import ContainerSpecNotRegisteredError, DockerError
+from .Types import StreamingService
 from .constants.ServiceConstants import ServiceConstants
-from .processing.Types import StreamingService
 from .utils.HttpUtils import HttpUtils
 
 MAX_RETRIES = 3

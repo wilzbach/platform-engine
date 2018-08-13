@@ -10,7 +10,7 @@ from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
 from asyncy.processing.Services import Services
-from asyncy.processing.Types import StreamingService
+from asyncy.Types import StreamingService
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.utils.HttpUtils import HttpUtils
 

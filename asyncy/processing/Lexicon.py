@@ -8,10 +8,10 @@ from tornado.httpclient import AsyncHTTPClient
 
 from .Mutations import Mutations
 from .Services import Services
-from .Types import StreamingService
 from .internal.HttpEndpoint import HttpEndpoint
 from .. import Metrics
 from ..Exceptions import ArgumentNotFoundError, AsyncyError
+from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.ServiceConstants import ServiceConstants
