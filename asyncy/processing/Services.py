@@ -87,7 +87,9 @@ class Services:
         elif command_conf.get('http') is not None:
             return await cls.execute_http(story, line, chain, command_conf)
         else:
-            raise AsyncyError()  # TODO
+            raise AsyncyError(message=f'Service {service}/{line["command"]} '
+                                      f'has neither http nor format sections!',
+                              story=story, line=line)
 
     @classmethod
     def resolve_chain(cls, story, line):
@@ -111,10 +113,7 @@ class Services:
             service = line[LineConstants.service]
             while True:
                 parent = line.get(LineConstants.parent)
-                if parent is None:
-                    # In a perfect scenario, this is impossible.
-                    # If this does occur, there's something wrong upstream.
-                    return None
+                assert parent is not None
 
                 line = story.line(parent)
                 output = line.get(LineConstants.output)
@@ -140,13 +139,9 @@ class Services:
                 chain.appendleft(Service(service))
                 break
 
-            if parent_line.get(LineConstants.parent) is not None:
-                parent_line = get_owner(parent_line)
-            else:
-                parent_line = None
-
-            if parent_line is None:
-                raise AsyncyError()  # TODO
+            assert parent_line.get(LineConstants.parent) is not None
+            parent_line = get_owner(parent_line)
+            assert parent_line is not None
 
         story.logger.debug(f'Chain resolved - {chain}')
         return chain
