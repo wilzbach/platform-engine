@@ -4,6 +4,8 @@ from collections import deque, namedtuple
 
 from tornado.httpclient import AsyncHTTPClient
 
+import ujson
+
 from ..Containers import Containers
 from ..Exceptions import AsyncyError
 from ..constants.LineConstants import LineConstants
@@ -177,7 +179,6 @@ class Services:
 
         kwargs = {
             'method': command_conf['http'].get('method', 'post').upper(),
-            # TODO support get params somehow
             'body': json.dumps(body),
             'headers': {
                 'Content-Type': 'application/json; charset=utf-8'
@@ -194,9 +195,16 @@ class Services:
         response = await HttpUtils.fetch_with_retry(
             3, story.logger, url, client, kwargs)
 
-        story.logger.debug(f'HTTP code {response.code}')
-
-        return f'http code {response.code}'
+        story.logger.debug(f'HTTP response code is {response.code}')
+        if round(response.code / 100) == 2:
+            content_type = response.headers.get('Content-Type')
+            if content_type and 'application/json' in content_type:
+                return ujson.loads(response.body)
+            else:
+                return response.body
+        else:
+            raise AsyncyError(message=f'Failed to invoke service!',
+                              story=story, line=line)
 
     @classmethod
     async def start_container(cls, story, line):

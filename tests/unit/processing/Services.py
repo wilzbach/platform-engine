@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
+import json
 from collections import deque
+from io import StringIO
 
+
+from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants.LineConstants import LineConstants as Line
 from asyncy.processing.Services import Command, Event, Service, Services
+from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
 from pytest import mark
+
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 
 @mark.asyncio
@@ -154,3 +161,68 @@ def test_resolve_chain(story):
     assert Services.resolve_chain(story, story.tree['5']) \
         == deque([Service(name='alpine'), Command(name='echo'),
                   Event(name='foo'), Command(name='sonar')])
+
+
+@mark.asyncio
+async def test_services_execute_http(patch, story, async_mock):
+    chain = deque([Service(name='service'), Command(name='cmd')])
+    patch.object(Containers, 'get_hostname',
+                 new=async_mock(return_value='container_host'))
+
+    command_conf = {
+        'http': {
+            'method': 'post',
+            'port': 2771,
+            'path': '/invoke'
+        },
+        'arguments': {
+            'foo': {}
+        }
+    }
+
+    expected_url = 'http://container_host:2771/invoke'
+
+    patch.object(story, 'argument_by_name', return_value='bar')
+
+    expected_kwargs = {
+        'method': 'POST',
+        'body': json.dumps({'foo': 'bar'}),
+        'headers': {'Content-Type': 'application/json; charset=utf-8'}
+    }
+
+    line = {
+        'ln': '1'
+    }
+
+    patch.init(AsyncHTTPClient)
+    client = AsyncHTTPClient()
+    response = HTTPResponse(HTTPRequest(url=expected_url), 200,
+                            buffer=StringIO('{"foo": "\U0001f44d"}'),
+                            headers={'Content-Type': 'application/json'})
+
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(return_value=response))
+
+    ret = await Services.execute_http(story, line, chain, command_conf)
+    assert ret == {'foo': '\U0001f44d'}
+
+    HttpUtils.fetch_with_retry.mock.assert_called_with(
+        3, story.logger, expected_url, client, expected_kwargs)
+
+    # Additionally, test for other scenarios.
+    response = HTTPResponse(HTTPRequest(url=expected_url), 200,
+                            buffer=StringIO('foo'), headers={})
+
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(return_value=response))
+
+    ret = await Services.execute_http(story, line, chain, command_conf)
+    assert ret == 'foo'
+
+    response = HTTPResponse(HTTPRequest(url=expected_url), 500)
+
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(return_value=response))
+
+    with pytest.raises(AsyncyError):
+        await Services.execute_http(story, line, chain, command_conf)
