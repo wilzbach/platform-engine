@@ -72,7 +72,8 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='for', lexicon_name='for_loop', async_mock=True),
     Method(name='execute', lexicon_name='execute', async_mock=True),
     Method(name='set', lexicon_name='set', async_mock=True),
-    Method(name='function', lexicon_name='function', async_mock=True)
+    Method(name='function', lexicon_name='function', async_mock=True),
+    Method(name='when', lexicon_name='when', async_mock=True)
 ])
 @mark.asyncio
 async def test_story_execute_line_generic(patch, logger, story,
