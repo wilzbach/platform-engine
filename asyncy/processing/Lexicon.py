@@ -206,7 +206,7 @@ class Lexicon:
             body = {
                 'endpoint': f'http://{engine}/story/event?{query_params}',
                 'data': data,
-                'event': service
+                'event': command
             }
 
             kwargs = {

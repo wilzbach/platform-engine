@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
+import json
 from unittest.mock import MagicMock, Mock
 
 from asyncy import Exceptions, Metrics
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
 from asyncy.processing.Services import Services
+from asyncy.processing.Types import StreamingService
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
+from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
 from pytest import fixture, mark
+
+from tornado.httpclient import AsyncHTTPClient
 
 
 @fixture
@@ -228,15 +234,115 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
         'enter': '10',
         'ln': '9',
         LineConstants.service: 'foo',
-        'output': 'output'
+        'output': 'output',
+        'next': '11'
     }
 
     patch.object(Services, 'start_container', new=async_mock())
     patch.object(Lexicon, 'next_line_or_none')
-    patch.object(story, 'end_line')
+    patch.many(story, ['end_line', 'line'])
     Metrics.container_start_seconds_total = Mock()
-    await Lexicon.execute(story.logger, story, line)
+    ret = await Lexicon.execute(story.logger, story, line)
     Services.start_container.mock.assert_called_with(story, line)
     story.end_line.assert_called_with(
         line['ln'], output=Services.start_container.mock.return_value,
         assign={'paths': line.get('output')})
+    Metrics.container_start_seconds_total.labels().observe.assert_called_once()
+    story.line.assert_called_with(line['next'])
+    Lexicon.next_line_or_none.assert_called_with(story.line())
+    assert ret == Lexicon.next_line_or_none()
+
+
+@mark.asyncio
+async def test_lexicon_when(patch, story, async_mock):
+    line = {
+        'ln': '10',
+        LineConstants.service: 'time-client',
+        LineConstants.command: 'updates',
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': 'bar'
+                }
+            }
+        ]
+    }
+    story.context = {
+        'time-client': StreamingService('alpine', 'time-server',
+                                        'asyncy--foo-1', 'foo.com')
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'commands': {
+                    'time-server': {
+                        'events': {
+                            'updates': {
+                                'http': {
+                                    'port': 2000,
+                                    'subscribe': {
+                                        'method': 'post',
+                                        'path': '/sub'
+                                    }
+                                },
+                                'arguments': {
+                                    'foo': 'bar'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    story.name = 'my_event_driven_story.story'
+    story.app.config.engine_host = 'localhost'
+    story.app.config.engine_port = 8000
+
+    expected_url = 'http://foo.com:2000/sub'
+
+    expected_body = {
+        'endpoint': f'http://localhost:8000/story/event?'
+                    f'story={story.name}&block={line["ln"]}',
+        'data': {
+            'foo': 'bar'
+        },
+        'event': 'updates'
+    }
+
+    expected_kwargs = {
+        'method': 'POST',
+        'body': json.dumps(expected_body),
+        'headers': {'Content-Type': 'application/json; charset=utf-8'}
+    }
+
+    patch.init(AsyncHTTPClient)
+    patch.object(Lexicon, 'next_line_or_none')
+    patch.object(story, 'next_block')
+    patch.object(story, 'argument_by_name', return_value='bar')
+    http_res = Mock()
+    http_res.code = 204
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(return_value=http_res))
+    ret = await Lexicon.when(story.logger, story, line)
+    client = AsyncHTTPClient()
+    HttpUtils.fetch_with_retry.mock.assert_called_with(
+        3, story.logger, expected_url, client, expected_kwargs)
+    assert ret == Lexicon.next_line_or_none()
+    story.next_block.assert_called_with(line)
+
+    http_res.code = 400
+    with pytest.raises(AsyncyError):
+        await Lexicon.when(story.logger, story, line)
+
+
+@mark.asyncio
+async def test_lexicon_when_invalid(story):
+    line = {'service': 'foo', 'command': 'bar'}
+    with pytest.raises(AsyncyError):
+        await Lexicon.when(story.logger, story, line)
