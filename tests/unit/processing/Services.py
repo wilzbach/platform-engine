@@ -17,7 +17,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 
 @mark.asyncio
-async def test_services_execute_internal(story, async_mock):
+async def test_services_execute_execute_internal(story, async_mock):
     handler = async_mock(return_value='output')
 
     Services.register_internal('my_service', 'my_command', {}, 'any', handler)
@@ -32,7 +32,7 @@ async def test_services_execute_internal(story, async_mock):
 
 
 @mark.asyncio
-async def test_services_execute_external(patch, story, async_mock):
+async def test_services_execute_execute_external(patch, story, async_mock):
     patch.object(Services, 'execute_external', new=async_mock())
     assert Services.is_internal('foo_service') is False
     line = {
