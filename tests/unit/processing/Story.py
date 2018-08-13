@@ -128,7 +128,9 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     patch.object(story, 'next_block', return_value=story.tree['6'])
 
     line = story.line
-    story.context = {}
+    story.context = {
+        ContextConstants.service_event: {'data': {'foo': 'bar'}}
+    }
 
     def proxy_line(*args):
         return line(*args)
@@ -138,6 +140,8 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     await Story.execute_block(logger, story, story.tree['2'])
 
     assert story.context[ContextConstants.service_output] == 'foo_client'
+    assert story.context['foo_client'] \
+        == story.context[ContextConstants.service_event]['data']
 
     story.next_block.assert_called_with(story.tree['4'])
     assert [
