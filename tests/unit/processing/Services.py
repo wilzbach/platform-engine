@@ -317,3 +317,42 @@ async def test_services_execute_external_unknown(patch, story, async_mock):
 
     with pytest.raises(AsyncyError):
         await Services.execute_external(story, line)
+
+
+def test_service_get_command_conf_simple(story):
+    chain = deque([Service('service'), Command('cmd')])
+    story.app.services = {
+        'service': {
+            'configuration': {
+                'commands': {
+                    'cmd': {'x': 'y'}
+                }
+            }
+        }
+    }
+    assert Services.get_command_conf(story, chain) == {'x': 'y'}
+
+
+def test_service_get_command_conf_events(story):
+    chain = deque(
+        [Service('service'), Command('cmd'), Event('foo'), Command('bar')])
+    story.app.services = {
+        'service': {
+            'configuration': {
+                'commands': {
+                    'cmd': {
+                        'events': {
+                            'foo': {
+                                'output': {
+                                    'commands': {
+                                        'bar': {'a': 'b'}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert Services.get_command_conf(story, chain) == {'a': 'b'}
