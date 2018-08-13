@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock, Mock
 
-from asyncy import Exceptions
+from asyncy import Exceptions, Metrics
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
@@ -220,3 +220,23 @@ async def test_lexicon_execute_http_functions(patch, logger, story):
 
     HttpEndpoint.run.assert_called_with(story, http_object_line)
     story.end_line.assert_called()
+
+
+@mark.asyncio
+async def test_lexicon_execute_streaming_container(patch, story, async_mock):
+    line = {
+        'enter': '10',
+        'ln': '9',
+        LineConstants.service: 'foo',
+        'output': 'output'
+    }
+
+    patch.object(Services, 'start_container', new=async_mock())
+    patch.object(Lexicon, 'next_line_or_none')
+    patch.object(story, 'end_line')
+    Metrics.container_start_seconds_total = Mock()
+    await Lexicon.execute(story.logger, story, line)
+    Services.start_container.mock.assert_called_with(story, line)
+    story.end_line.assert_called_with(
+        line['ln'], output=Services.start_container.mock.return_value,
+        assign={'paths': line.get('output')})
