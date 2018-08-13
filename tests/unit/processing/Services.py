@@ -226,3 +226,12 @@ async def test_services_execute_http(patch, story, async_mock):
 
     with pytest.raises(AsyncyError):
         await Services.execute_http(story, line, chain, command_conf)
+
+
+@mark.asyncio
+async def test_services_start_container(patch, story, async_mock):
+    line = {'ln': '10'}
+    patch.object(Containers, 'start', new=async_mock())
+    ret = await Services.start_container(story, line)
+    Containers.start.mock.assert_called_with(story, line)
+    assert ret == Containers.start.mock.return_value
