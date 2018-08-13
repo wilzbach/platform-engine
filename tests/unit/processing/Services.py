@@ -3,10 +3,10 @@ import json
 from collections import deque
 from io import StringIO
 
-
 from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
 from asyncy.constants.LineConstants import LineConstants as Line
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing.Services import Command, Event, Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
 
@@ -235,3 +235,85 @@ async def test_services_start_container(patch, story, async_mock):
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_called_with(story, line)
     assert ret == Containers.start.mock.return_value
+
+
+@mark.asyncio
+async def test_services_execute_external_format(patch, story, async_mock):
+    line = {
+        Line.service: 'cups',
+        Line.command: 'print',
+        Line.method: 'execute'
+    }
+
+    story.app.services = {
+        'cups': {
+            ServiceConstants.config: {
+                'commands': {
+                    'print': {
+                        'format': {}
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'exec', new=async_mock())
+
+    ret = await Services.execute_external(story, line)
+    Containers.exec.mock.assert_called_with(
+        story.logger, story, line, 'cups', 'print')
+    assert ret == await Containers.exec()
+
+
+@mark.asyncio
+async def test_services_execute_external_http(patch, story, async_mock):
+    line = {
+        Line.service: 'cups',
+        Line.command: 'print',
+        Line.method: 'execute'
+    }
+
+    story.app.services = {
+        'cups': {
+            ServiceConstants.config: {
+                'commands': {
+                    'print': {
+                        'http': {}
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Services, 'execute_http', new=async_mock())
+
+    ret = await Services.execute_external(story, line)
+    Services.execute_http.mock.assert_called_with(
+        story, line,
+        deque([Service(name='cups'), Command(name='print')]),
+        {'http': {}})
+    assert ret == await Services.execute_http()
+
+
+@mark.asyncio
+async def test_services_execute_external_unknown(patch, story, async_mock):
+    line = {
+        Line.service: 'cups',
+        Line.command: 'print',
+        Line.method: 'execute'
+    }
+
+    story.app.services = {
+        'cups': {
+            ServiceConstants.config: {
+                'commands': {
+                    'print': {
+                        'unix': {}
+                    }
+                }
+            }
+        }
+    }
+
+    with pytest.raises(AsyncyError):
+        await Services.execute_external(story, line)
