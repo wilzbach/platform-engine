@@ -20,6 +20,23 @@ def line():
 
 
 @mark.asyncio
+async def test_containers_start_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 204
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+    await Containers._start_container(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo/start', data='', method='POST')
+
+    response.code = 304
+    
+    with pytest.raises(DockerError):
+        response.code = 500
+        await Containers._start_container(story, line, 'foo')
+
+
+@mark.asyncio
 async def test_container_exec(patch, story, app, logger, async_mock, line):
     create_response = MagicMock()
     create_response.body = '{"Id": "exec_id"}'
