@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
+import json
 import time
+import urllib
+from urllib import parse
+
+from tornado.httpclient import AsyncHTTPClient
 
 from .Mutations import Mutations
+from .Services import Services
 from .internal.HttpEndpoint import HttpEndpoint
 from .. import Metrics
-from ..Containers import Containers
 from ..Exceptions import ArgumentNotFoundError, AsyncyError
+from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
-from ..processing.internal.Services import Services
+from ..constants.ServiceConstants import ServiceConstants
+from ..utils import Dict
+from ..utils.HttpUtils import HttpUtils
 
 
 class Lexicon:
@@ -25,12 +33,9 @@ class Lexicon:
         service_output_name = story.context.get(
             ContextConstants.service_output)
 
-        if Services.is_internal(service):
-            output = await Services.execute(story, line)
-            story.end_line(line['ln'], output=output,
-                           assign=line.get('output'))
-            return Lexicon.next_line_or_none(story.line(line.get('next')))
-        elif service == 'http-endpoint':
+        start = time.time()
+
+        if service == 'http-endpoint':
             """
             If the service is http-endpoint (a special service),
             then register the http method along with the path with the Server
@@ -61,11 +66,28 @@ class Lexicon:
             story.end_line(line['ln'], output=output,
                            assign=line.get('output'))
             return Lexicon.next_line_or_none(story.line(line.get('next')))
+        elif line.get('enter') is not None:
+            """
+            When a service to be executed has an 'enter' line number,
+            it's a streaming service. Let's bring up the service and
+            update the context with the output name.
+
+            Example:
+            foo stream as client
+                when client grep:'bar' as result
+                    # do something with result
+            """
+            output = await Services.start_container(story, line)
+            Metrics.container_start_seconds_total.labels(
+                story_name=story.name, service=service
+            ).observe(time.time() - start)
+
+            story.end_line(line['ln'], output=output,
+                           assign={'paths': line.get('output')})
+
+            return Lexicon.next_line_or_none(story.line(line.get('next')))
         else:
-            service = line[LineConstants.service]
-            start = time.time()
-            output = await Containers.exec(logger, story, line,
-                                           service, line['command'])
+            output = await Services.execute(story, line)
             Metrics.container_exec_seconds_total.labels(
                 story_name=story.name, service=service
             ).observe(time.time() - start)
@@ -145,3 +167,71 @@ class Lexicon:
     @staticmethod
     def argument_by_name(story, line, argument_name):
         return story.argument_by_name(line, argument_name)
+
+    @staticmethod
+    async def when(logger, story, line):
+        service = line[LineConstants.service]
+        command = line[LineConstants.command]
+        # Does this service belong to a streaming service?
+        s = story.context.get(service)
+        if isinstance(s, StreamingService):
+            # Yes, we need to subscribe to an event with the service.
+            conf = story.app.services[s.name][ServiceConstants.config]
+            conf_event = Dict.find(
+                conf, f'commands.{s.command}.events.{command}')
+
+            port = Dict.find(conf_event, f'http.port', 80)
+            subscribe_path = Dict.find(conf_event, 'http.subscribe.path')
+            subscribe_method = Dict.find(conf_event,
+                                         'http.subscribe.method', 'post')
+
+            event_args = Dict.find(conf_event, 'arguments', {})
+
+            data = {}
+            for key in event_args:
+                data[key] = story.argument_by_name(line, key)
+
+            url = f'http://{s.hostname}:{port}{subscribe_path}'
+
+            logger.debug(f'Sending subscription request to {url}')
+
+            engine = f'{story.app.config.engine_host}:' \
+                     f'{story.app.config.engine_port}'
+
+            query_params = urllib.parse.urlencode({
+                'story': story.name,
+                'block': line['ln']
+            })
+
+            body = {
+                'endpoint': f'http://{engine}/story/event?{query_params}',
+                'data': data,
+                'event': command
+            }
+
+            kwargs = {
+                'method': subscribe_method.upper(),
+                'body': json.dumps(body),
+                'headers': {
+                    'Content-Type': 'application/json; charset=utf-8'
+                }
+            }
+
+            client = AsyncHTTPClient()
+            logger.info(f'Subscribing to {service} from {s.command}...')
+
+            response = await HttpUtils.fetch_with_retry(3, logger, url,
+                                                        client, kwargs)
+            if round(response.code / 100) == 2:
+                logger.info(f'Subscribed!')
+                next_line = story.next_block(line)
+                return Lexicon.next_line_or_none(next_line)
+            else:
+                raise AsyncyError(
+                    message=f'Failed to subscribe to {service} from '
+                            f'{s.command} in {s.container_name}! '
+                            f'http err={response.error}; code={response.code}',
+                    story=story, line=line)
+        else:
+            raise AsyncyError(message=f'Unknown service {service} for when!',
+                              story=story, line=line)

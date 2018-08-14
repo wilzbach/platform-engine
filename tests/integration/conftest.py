@@ -17,7 +17,13 @@ def config():
 
 @fixture
 def app(magic):
-    return magic()
+    asset_dir = examples.__path__[0]
+    app = magic()
+
+    with open(asset_dir + '/services.json', 'r') as file:
+        app.services = ujson.loads(file.read())
+
+    return app
 
 
 @fixture

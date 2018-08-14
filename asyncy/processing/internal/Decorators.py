@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from functools import wraps
 
-from .Services import Services
+from ..Services import Services
 
 
 class Decorators:
@@ -10,7 +10,8 @@ class Decorators:
     def create_service(name, command, arguments=None, output_type=None):
 
         def decorator(func):
-            Services.register(name, command, arguments, output_type, func)
+            Services.register_internal(name, command, arguments,
+                                       output_type, func)
 
             @wraps(func)
             def decorated_function(*args, **kwargs):

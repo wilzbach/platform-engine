@@ -59,6 +59,8 @@ class Story:
                 return await Story.execute_function(logger, story, line)
             elif method == 'function':
                 return await Lexicon.function(logger, story, line)
+            elif method == 'when':
+                return await Lexicon.when(logger, story, line)
             else:
                 raise NotImplementedError(
                     f'Unknown method to execute: {method}'
@@ -99,6 +101,10 @@ class Story:
         if parent_line.get('output') is not None:
             story.context[ContextConstants.service_output] = \
                 parent_line['output'][0]
+
+            if story.context.get(ContextConstants.service_event) is not None:
+                story.context[parent_line['output'][0]] = \
+                    story.context[ContextConstants.service_event].get('data')
 
         while next_line is not None and \
                 next_line['parent'] == parent_line['ln']:

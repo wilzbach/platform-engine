@@ -7,12 +7,15 @@ class Config:
     defaults = {
         'gateway_url': 'gateway:8889',
         'logger_name': 'asyncy',
-        'logger_level': 'warning',
+        'logger_level': 'debug',
         'DOCKER_HOST': 'http://localhost:2375',
         'DOCKER_TLS_VERIFY': '0',
         'DOCKER_CERT_PATH': '',
         'DOCKER_MACHINE_NAME': ''
     }
+
+    engine_host = None
+    engine_port = None
 
     def __init__(self):
         self.apply()

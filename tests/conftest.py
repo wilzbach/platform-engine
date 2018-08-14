@@ -66,6 +66,7 @@ def echo_line():
     return {
         'ln': '1',
         LineConstants.service: 'alpine',
+        LineConstants.command: 'echo',
         'args': [
             {
                 '$OBJECT': 'argument',

@@ -72,7 +72,8 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='for', lexicon_name='for_loop', async_mock=True),
     Method(name='execute', lexicon_name='execute', async_mock=True),
     Method(name='set', lexicon_name='set', async_mock=True),
-    Method(name='function', lexicon_name='function', async_mock=True)
+    Method(name='function', lexicon_name='function', async_mock=True),
+    Method(name='when', lexicon_name='when', async_mock=True)
 ])
 @mark.asyncio
 async def test_story_execute_line_generic(patch, logger, story,
@@ -127,7 +128,9 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     patch.object(story, 'next_block', return_value=story.tree['6'])
 
     line = story.line
-    story.context = {}
+    story.context = {
+        ContextConstants.service_event: {'data': {'foo': 'bar'}}
+    }
 
     def proxy_line(*args):
         return line(*args)
@@ -137,6 +140,8 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     await Story.execute_block(logger, story, story.tree['2'])
 
     assert story.context[ContextConstants.service_output] == 'foo_client'
+    assert story.context['foo_client'] \
+        == story.context[ContextConstants.service_event]['data']
 
     story.next_block.assert_called_with(story.tree['4'])
     assert [
@@ -272,3 +277,14 @@ async def test_story_destroy(patch, app, logger, http_line, story, async_mock):
     )
 
     story.next_block.assert_called_once()
+
+
+@mark.asyncio
+async def test_story_execute_does_not_wrap(patch, story, async_mock):
+    def exc(*args):
+        raise AsyncyError()
+
+    patch.object(Lexicon, 'execute', new=async_mock(side_effect=exc))
+    patch.object(story, 'line', return_value={'method': 'execute'})
+    with pytest.raises(AsyncyError):
+        await Story.execute_line(story.logger, story, '10')

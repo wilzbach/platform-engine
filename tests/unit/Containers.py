@@ -20,6 +20,99 @@ def line():
 
 
 @mark.asyncio
+async def test_containers_start_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 204
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+    await Containers._start_container(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo/start', data='', method='POST')
+
+    response.code = 304
+    await Containers._start_container(story, line, 'foo')
+
+    with pytest.raises(DockerError):
+        response.code = 500
+        await Containers._start_container(story, line, 'foo')
+
+
+@mark.asyncio
+async def test_containers_inspect_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 200
+    response.body = '{"foo": "bar"}'
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+
+    ret = await Containers.inspect_container(story, line, 'foo')
+
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo/json')
+
+    assert ret == {'foo': 'bar'}
+
+    response.code = 500
+    ret = await Containers.inspect_container(story, line, 'foo')
+
+    assert ret is None
+
+
+@mark.asyncio
+async def test_containers_stop_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 204
+    response.body = '{"foo":"bar"}'
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+    ret = await Containers.stop_container(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo/stop')
+    assert ret == {'foo': 'bar'}
+
+    response.code = 304
+    ret = await Containers.stop_container(story, line, 'foo')
+    assert ret == {'foo': 'bar'}
+
+    with pytest.raises(DockerError):
+        response.code = 500
+        await Containers.stop_container(story, line, 'foo')
+
+
+@mark.asyncio
+async def test_containers_remove_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 204
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+    await Containers.remove_container(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo?force=false', method='DELETE')
+
+    response.code = 304
+    await Containers.remove_container(story, line, 'foo', force=True)
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo?force=true', method='DELETE')
+
+    response.code = 404
+    await Containers.remove_container(story, line, 'foo')
+
+    with pytest.raises(DockerError):
+        response.code = 500
+        await Containers.remove_container(story, line, 'foo')
+
+
+@mark.asyncio
+async def test_container_get_hostname(patch, story, line, async_mock):
+    patch.object(Containers, 'inspect_container',
+                 new=async_mock(
+                     return_value={'Config': {'Hostname': 'foo.com'}}
+                 ))
+    ret = await Containers.get_hostname(story, line, 'foo')
+    assert ret == 'foo.com'
+
+
+@mark.asyncio
 async def test_container_exec(patch, story, app, logger, async_mock, line):
     create_response = MagicMock()
     create_response.body = '{"Id": "exec_id"}'
@@ -69,7 +162,7 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
 
 @mark.asyncio
 async def test_fetch_with_retry(patch, story, line):
-    def raise_error(url):
+    def raise_error(url, **kwargs):
         raise HTTPError(500)
 
     patch.object(AsyncHTTPClient, 'fetch', side_effect=raise_error)

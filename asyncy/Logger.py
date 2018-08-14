@@ -55,3 +55,12 @@ class Logger:
 
     def log_raw(self, lvl, message):
         getattr(self.frustum.logger, lvl)(message)
+
+    def info(self, message):
+        getattr(self.frustum.logger, 'info')(message)
+
+    def debug(self, message):
+        getattr(self.frustum.logger, 'debug')(message)
+
+    def error(self, message, exc=None):
+        getattr(self.frustum.logger, 'error')(message, exc_info=exc)

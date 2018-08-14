@@ -1,17 +1,15 @@
 {
-  "services": {
-    "asyncy/twitter": {
-      "tag": "latest",
-      "environment": {},
-      "configuration": {
-        "commands": {
-          "echo": {
-            "help": "Echoes stuff",
-            "format": "echo '{message}'",
-            "arguments": {
-              "message": {
-                "type": "string"
-              }
+  "alpine-echo": {
+    "tag": "latest",
+    "environment": {},
+    "configuration": {
+      "commands": {
+        "echo": {
+          "help": "Echoes stuff",
+          "format": "echo '{message}'",
+          "arguments": {
+            "message": {
+              "type": "string"
             }
           }
         }

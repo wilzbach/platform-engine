@@ -35,7 +35,13 @@ story_run_total = Summary(
 )
 
 container_exec_seconds_total = Summary(
-    'asyncy_engine_container_run_seconds',
+    'asyncy_engine_container_exec_seconds',
+    'Time spent executing commands in containers',
+    ['story_name', 'service']
+)
+
+container_start_seconds_total = Summary(
+    'asyncy_engine_container_start_seconds',
     'Time spent executing commands in containers',
     ['story_name', 'service']
 )
