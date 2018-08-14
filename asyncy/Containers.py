@@ -100,7 +100,8 @@ class Containers:
             return ujson.loads(response.body)
 
         story.logger.info(f'Failed to stop container {container}')
-        return None
+        raise DockerError(story=story, line=line,
+                          message=f'Failed to stop container {container}')
 
     @classmethod
     async def remove_container(cls, story, line, container, force=False):
