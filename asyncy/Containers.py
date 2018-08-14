@@ -106,7 +106,7 @@ class Containers:
     @classmethod
     async def remove_container(cls, story, line, container, force=False):
         response = await cls._make_docker_request(
-            story, line, f'/containers/{container}?force={force}',
+            story, line, f'/containers/{container}?force={ujson.dumps(force)}',
             method='DELETE')
         if response.code == 204 \
                 or response.code == 304 \
@@ -115,7 +115,8 @@ class Containers:
             return None
 
         story.logger.info(f'Failed to remove container {container}')
-        return None
+        raise DockerError(story=story, line=line,
+                          message=f'Failed to remove container {container}')
 
     @classmethod
     async def get_hostname(cls, story, line, service_alias):
