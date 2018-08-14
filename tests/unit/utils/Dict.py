@@ -36,11 +36,27 @@ def test_dict_find_deep():
     assert Dict.find(a, 'foo.foo1.foo2') == 28
 
 
+def test_dict_find_object():
+    a = {'foo': {'foo1': {}}}
+    assert Dict.find(a, 'foo.foo1') == {}
+
+
+def test_dict_find_root_none():
+    assert Dict.find(None, 'foo.foo1') is None
+    assert Dict.find(None, 'foo.foo1', 90) == 90
+
+
 def test_dict_find_missing():
     a = {'foo': {'foo1': {}}}
-    assert Dict.find(a, 'foo.foo1') is None
+    assert Dict.find(a, 'foo.foo1.foo2') is None
+    assert Dict.find(a, 'foo.foo1.foo2', 900) == 900
 
 
-def test_dict_find_missing_default():
-    a = {'foo': {'foo1': {}}}
+def test_dict_find_missing_default_1():
+    a = {'foo': {'foo10': {}}}
     assert Dict.find(a, 'foo.foo1', 900) == 900
+
+
+def test_dict_find_missing_default_2():
+    a = {'foo': {'foo1': None}}
+    assert Dict.find(a, 'foo.foo1') is None
