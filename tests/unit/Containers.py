@@ -80,6 +80,29 @@ async def test_containers_stop_container(patch, story, line, async_mock):
 
 
 @mark.asyncio
+async def test_containers_remove_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 204
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+    await Containers.remove_container(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo?force=false', method='DELETE')
+
+    response.code = 304
+    await Containers.remove_container(story, line, 'foo', force=True)
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo?force=true', method='DELETE')
+
+    response.code = 404
+    await Containers.remove_container(story, line, 'foo')
+
+    with pytest.raises(DockerError):
+        response.code = 500
+        await Containers.stop_container(story, line, 'foo')
+
+
+@mark.asyncio
 async def test_container_exec(patch, story, app, logger, async_mock, line):
     create_response = MagicMock()
     create_response.body = '{"Id": "exec_id"}'
