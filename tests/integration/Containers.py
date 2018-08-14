@@ -30,12 +30,9 @@ async def clean_container(story, line):
     except DockerError:
         pass
 
-    try:
-        await Containers.remove_container(
-            story, line, Containers.get_container_name(line['service']),
-            force=True)
-    except DockerError:
-        pass
+    await Containers.remove_container(
+        story, line, Containers.get_container_name(line['service']),
+        force=True)
 
 
 @mark.asyncio
