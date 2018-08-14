@@ -30,10 +30,31 @@ async def test_containers_start_container(patch, story, line, async_mock):
         story, line, '/containers/foo/start', data='', method='POST')
 
     response.code = 304
-    
+
     with pytest.raises(DockerError):
         response.code = 500
         await Containers._start_container(story, line, 'foo')
+
+
+@mark.asyncio
+async def test_containers_inspect_container(patch, story, line, async_mock):
+    response = MagicMock()
+    response.code = 200
+    response.body = '{"foo": "bar"}'
+    patch.object(Containers, '_make_docker_request',
+                 new=async_mock(return_value=response))
+
+    ret = await Containers.inspect_container(story, line, 'foo')
+
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/containers/foo/json')
+
+    assert ret == {'foo': 'bar'}
+
+    response.code = 500
+    ret = await Containers.inspect_container(story, line, 'foo')
+
+    assert ret is None
 
 
 @mark.asyncio
