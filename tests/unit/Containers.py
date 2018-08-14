@@ -99,7 +99,7 @@ async def test_containers_remove_container(patch, story, line, async_mock):
 
     with pytest.raises(DockerError):
         response.code = 500
-        await Containers.stop_container(story, line, 'foo')
+        await Containers.remove_container(story, line, 'foo')
 
 
 @mark.asyncio
