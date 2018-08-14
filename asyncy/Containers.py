@@ -20,6 +20,7 @@ class Containers:
 
     @classmethod
     async def _create_container(cls, story, line, image_name, container):
+        # TODO Match this code with that of app.py in platform-bootstrap.
         # If services.json specifies a different image other than the name,
         # use that.
         image = story.app.services[image_name].get('image', image_name)
