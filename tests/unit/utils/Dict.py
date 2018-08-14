@@ -24,3 +24,23 @@ def test_dict_set_many_override():
     a = {'foo': 'string'}
     Dict.set(a, ['foo', 'bar'], 'string')
     assert a == {'foo': {'bar': 'string'}}
+
+
+def test_dict_find_simple():
+    a = {'foo': 'string'}
+    assert Dict.find(a, 'foo') == 'string'
+
+
+def test_dict_find_deep():
+    a = {'foo': {'foo1': {'foo2': 28}}}
+    assert Dict.find(a, 'foo.foo1.foo2') == 28
+
+
+def test_dict_find_missing():
+    a = {'foo': {'foo1': {}}}
+    assert Dict.find(a, 'foo.foo1') is None
+
+
+def test_dict_find_missing_default():
+    a = {'foo': {'foo1': {}}}
+    assert Dict.find(a, 'foo.foo1', 900) == 900
