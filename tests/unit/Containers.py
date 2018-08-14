@@ -103,6 +103,16 @@ async def test_containers_remove_container(patch, story, line, async_mock):
 
 
 @mark.asyncio
+async def test_container_get_hostname(patch, story, line, async_mock):
+    patch.object(Containers, 'inspect_container',
+                 new=async_mock(
+                     return_value={'Config': {'Hostname': 'foo.com'}}
+                 ))
+    ret = await Containers.get_hostname(story, line, 'foo')
+    assert ret == 'foo.com'
+
+
+@mark.asyncio
 async def test_container_exec(patch, story, app, logger, async_mock, line):
     create_response = MagicMock()
     create_response.body = '{"Id": "exec_id"}'
