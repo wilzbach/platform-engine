@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from asyncy.App import App
 from asyncy.Containers import Containers
+from asyncy.Exceptions import DockerError
 from asyncy.constants.ServiceConstants import ServiceConstants
 
 from pytest import mark
@@ -23,12 +24,18 @@ async def test_exec(logger, config, story, echo_service, echo_line):
 
 
 async def clean_container(story, line):
-    await Containers.stop_container(
-        story, line, Containers.get_container_name(line['service']))
+    try:
+        await Containers.stop_container(
+            story, line, Containers.get_container_name(line['service']))
+    except DockerError:
+        pass
 
-    await Containers.remove_container(
-        story, line, Containers.get_container_name(line['service']),
-        force=True)
+    try:
+        await Containers.remove_container(
+            story, line, Containers.get_container_name(line['service']),
+            force=True)
+    except DockerError:
+        pass
 
 
 @mark.asyncio
