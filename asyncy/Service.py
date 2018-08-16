@@ -2,6 +2,7 @@
 import asyncio
 import os
 import socket
+import signal
 
 import click
 
@@ -23,6 +24,7 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 config = Config()
 app = None
+server = None
 logger = Logger(config)
 logger.start()
 
@@ -54,7 +56,7 @@ class Service:
                   help='The Asyncy User ID',
                   default=os.getenv('BETA_USER_ID'))
     def start(port, debug, sentry_dsn, release, user_id, prometheus_port):
-        global app
+        global app, server
         app = App(config, logger, beta_user_id=user_id,
                   sentry_dsn=sentry_dsn, release=release)
 
@@ -67,6 +69,8 @@ class Service:
         Services.log_internal()
 
         logger.log('service-init', Version.version)
+        signal.signal(signal.SIGTERM, Service.sig_handler)
+        signal.signal(signal.SIGINT, Service.sig_handler)
 
         web_app = tornado.web.Application([
 
@@ -81,7 +85,9 @@ class Service:
         config.engine_host = socket.gethostname()
         config.engine_port = port
 
-        web_app.listen(port)
+        server = tornado.httpserver.HTTPServer(web_app)
+        server.listen(port)
+        
         prometheus_client.start_http_server(port=int(prometheus_port))
 
         logger.log('http-init', port)
@@ -89,10 +95,29 @@ class Service:
         loop = asyncio.get_event_loop()
         loop.create_task(app.bootstrap())
 
-        try:
-            tornado.ioloop.IOLoop.current().start()
-        except KeyboardInterrupt:
-            logger.log_raw('info', 'Shutdown!')
+        tornado.ioloop.IOLoop.current().start()
 
+        logger.log_raw('info', 'Shutdown complete!')
+
+    @staticmethod
+    def sig_handler(*args, **kwargs):
+        logger.log_raw('info', f'Signal {args[0]} received.')
+        tornado.ioloop.IOLoop.instance().add_callback(Service.shutdown)
+
+    @classmethod
+    async def shutdown_app(cls):
         logger.log_raw('info', 'Unregistering with the gateway...')
-        loop.run_until_complete(app.destroy())
+        await app.destroy()
+
+        io_loop = tornado.ioloop.IOLoop.instance()
+        io_loop.stop()
+        loop = asyncio.get_event_loop()
+        loop.stop()
+
+    @classmethod
+    def shutdown(cls):
+        logger.log_raw('info', 'Shutting down...')
+
+        server.stop()
+        loop = asyncio.get_event_loop()
+        loop.create_task(cls.shutdown_app())

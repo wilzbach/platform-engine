@@ -10,4 +10,4 @@ RUN           python setup.py install
 ENV           ASSET_DIR /asyncy
 ENV           logger_level info
 
-ENTRYPOINT    /app/entrypoint.sh
+ENTRYPOINT    ["/app/entrypoint.sh"]
