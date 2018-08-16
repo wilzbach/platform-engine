@@ -50,9 +50,6 @@ def test_service_shutdown(patch):
 
 @mark.asyncio
 async def test_service_shutdown_app(patch, async_mock):
-    async def destroy():
-        pass
-
     from asyncy import Service as ServiceWrapper
     ServiceWrapper.app.destroy = async_mock()
 
