@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
-import socket
 import signal
+import socket
 
 import click
 
@@ -87,7 +87,7 @@ class Service:
 
         server = tornado.httpserver.HTTPServer(web_app)
         server.listen(port)
-        
+
         prometheus_client.start_http_server(port=int(prometheus_port))
 
         logger.log('http-init', port)
