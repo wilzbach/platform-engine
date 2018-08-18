@@ -67,6 +67,8 @@ class App:
         if self.entrypoint is None:
             return
 
+        # TODO also shutdown auto spawned services
+
         for story_name in self.entrypoint:
             try:
                 await Story.destroy(self, self.logger, story_name)
