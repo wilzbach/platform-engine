@@ -47,14 +47,32 @@ class Containers:
         return name
 
     @classmethod
-    async def remove_volume(cls, name):
-        # TODO
-        pass
+    async def format_volume_name(cls, story, line, name):
+        """
+        Returns a derived volume name from the story and line if
+        the container in question cannot be reused. Otherwise, this returns
+        the same name passed in as is.
+        """
+        if not cls.is_service_reusable(story, line):
+            name = f'{name}-{cls.hash_story_line(story, line)}'
+
+        return name
 
     @classmethod
-    async def create_volume(cls, name):
-        # TODO
-        pass
+    async def remove_volume(cls, story, line, name):
+        await cls._make_docker_request(story, line, f'/volumes/{name}',
+                                       method='DELETE')
+
+    @classmethod
+    async def create_volume(cls, story, line, name):
+        data = {
+            'Name': name
+        }
+        resp = await cls._make_docker_request(story, line, f'/volumes/create',
+                                              method='POST', data=data)
+        if resp.code != 201:
+            raise DockerError(story=story, line=line,
+                              message=f'Failed to create volume {name}')
 
     @classmethod
     async def _create_container(cls, story, line, service,
@@ -70,9 +88,10 @@ class Containers:
         if omg.get('volumes'):
             for name, data in omg['volumes'].items():
                 vol_name = f'asyncy--{service}-{name}'
+                vol_name = cls.format_volume_name(story, line, vol_name)
                 if not data.get('persist'):
-                    await cls.remove_volume(vol_name)
-                await cls.create_volume(vol_name)
+                    await cls.remove_volume(story, line, vol_name)
+                await cls.create_volume(story, line, vol_name)
                 binds.append(f'{name}:{data["target"]}')
                 targets[data['target']] = {}
 
@@ -168,8 +187,19 @@ class Containers:
 
     @classmethod
     def is_service_reusable(cls, story, line):
-        # TODO use chain
-        return False
+        """
+        A service is reusable when it doesn't need to execute a lifecycle
+        command. If there's a run section in the command's config, then
+        cannot be reused. Reusable commands do not have a run in their config,
+        and are started via the global lifecycle config.
+        """
+        service = line[LineConstants.service]
+        command = line[LineConstants.command]
+
+        run = Dict.find(story.app.services,
+                        f'{service}.configuration.commands.{command}.run')
+
+        return run is None
 
     @classmethod
     async def get_hostname(cls, story, line, service_alias):
@@ -272,9 +302,13 @@ class Containers:
         if cls.is_service_reusable(story, line):
             return f'asyncy--{name}-1'
 
-        h = hashlib.sha1(f'{story.name}-{line["ln"]}'
-                         .encode('utf-8')).hexdigest()
+        h = cls.hash_story_line(story, line)
         return f'asyncy--{h}-1'
+
+    @classmethod
+    def hash_story_line(cls, story, line):
+        return hashlib.sha1(f'{story.name}-{line["ln"]}'
+                            .encode('utf-8')).hexdigest()
 
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):
