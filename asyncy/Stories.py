@@ -46,10 +46,6 @@ class Stories:
         return self.tree[line_number]
 
     def first_line(self):
-        """
-        Returns the first line of a story. The tree can start at lines other
-        than '1' so the first line is not obvious.
-        """
         return self.entrypoint
 
     def line_has_parent(self, parent_line_number, line):
