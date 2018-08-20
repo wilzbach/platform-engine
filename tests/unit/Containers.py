@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import hashlib
 from io import BytesIO, StringIO
 from unittest.mock import MagicMock
 
@@ -272,6 +273,15 @@ def test_format_volume_name_not_reusable(patch, story, line):
     patch.object(Containers, 'hash_story_line', return_value='hash')
     assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
         'asyncy--alpine-1-hash'
+
+
+def test_hash_story_line(patch, story):
+    patch.object(hashlib, 'sha1')
+    story.name = 'story_name'
+    ret = Containers.hash_story_line(story, {'ln': '1'})
+
+    hashlib.sha1.assert_called_with('story_name-1'.encode('utf-8'))
+    assert ret == hashlib.sha1().hexdigest()
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
