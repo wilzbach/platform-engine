@@ -24,6 +24,8 @@ class Containers:
 
     @classmethod
     async def get_network_name(cls, story, line):
+        # We can't filter down by networks because of a bug in Docker.
+        # See https://github.com/moby/moby/issues/37673.
         resp = await cls._make_docker_request(story, line, '/networks')
         if resp.code != 200:
             raise DockerError(
