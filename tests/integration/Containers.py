@@ -26,12 +26,14 @@ async def test_exec(logger, config, story, echo_service, echo_line):
 async def clean_container(story, line):
     try:
         await Containers.stop_container(
-            story, line, Containers.get_container_name(line['service']))
+            story, line, Containers.get_container_name(story, line,
+                                                       line['service']))
     except DockerError:
         pass
 
     await Containers.remove_container(
-        story, line, Containers.get_container_name(line['service']),
+        story, line, Containers.get_container_name(story, line,
+                                                   line['service']),
         force=True)
 
 
@@ -45,8 +47,8 @@ async def test_start(logger, config, story, echo_service, echo_line):
     await clean_container(story, echo_line)
 
     result = await Containers.start(story, echo_line)
-    assert result.container_name == Containers.get_container_name(
-        echo_line['service'])
+    assert result.container_name == Containers\
+        .get_container_name(story, echo_line, echo_line['service'])
     assert result.name == echo_line['service']
     assert result.command == echo_line['command']
     assert result.hostname is not None

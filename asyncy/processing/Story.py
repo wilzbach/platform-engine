@@ -2,12 +2,15 @@
 import time
 
 from .. import Metrics
+from ..Containers import Containers
 from ..Exceptions import AsyncyError
 from ..Stories import Stories
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
+from ..constants.ServiceConstants import ServiceConstants
 from ..processing import Lexicon
 from ..processing.internal.HttpEndpoint import HttpEndpoint
+from ..utils import Dict
 
 
 class Story:
@@ -149,18 +152,29 @@ class Story:
     @classmethod
     async def destroy(cls, app, logger, story_name):
         """
-        Finds all http-endpoint calls in a story and
-        unregisters then with the gateway.
+        Finds all services in a story and potentially stops their
+        associated containers. http-endpoint being a special service,
+        is handled with the gateway correctly.
         """
         story = cls.story(app, logger, story_name)
         line = story.line(story.first_line())
         while line is not None:
-            if line['method'] == 'execute':
-                if line[LineConstants.service] == 'http-endpoint':
+            if line[LineConstants.method] == 'execute':
+                service = line[LineConstants.service]
+                if service == 'http-endpoint':
                     method = story.argument_by_name(line, 'method')
                     path = story.argument_by_name(line, 'path')
                     await HttpEndpoint.unregister_http_endpoint(
                         story, line, method, path, line['ln']
                     )
+                elif app.services.get(service) is not None:
+                    command = line[LineConstants.command]
+                    run = Dict.find(app.services,
+                                    f'{service}.{ServiceConstants.config}.'
+                                    f'commands.{command}.run')
+                    if run is not None:
+                        c_name = Containers.get_container_name(story, line,
+                                                               service)
+                        await Containers.stop_container(story, line, c_name)
 
-            line = story.next_block(line)
+            line = story.line(line.get('next'))

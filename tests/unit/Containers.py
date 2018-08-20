@@ -1,22 +1,34 @@
 # -*- coding: utf-8 -*-
-from io import BytesIO
+import hashlib
+from io import BytesIO, StringIO
+from unittest import mock
 from unittest.mock import MagicMock
 
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
-from asyncy.Exceptions import DockerError
+from asyncy.Exceptions import AsyncyError, DockerError
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 
 import pytest
 from pytest import fixture, mark
 
-from tornado.httpclient import AsyncHTTPClient, HTTPError
+from tornado.httpclient import AsyncHTTPClient, HTTPError, HTTPRequest, \
+    HTTPResponse
 
 
 @fixture
 def line():
     return MagicMock()
+
+
+@fixture
+def http_response():
+    def build(url, code, body=None):
+        return HTTPResponse(HTTPRequest(url=url), code, buffer=StringIO(body))
+
+    return build
 
 
 @mark.asyncio
@@ -132,11 +144,17 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
     app.config = Config()
 
     story.app = app
+    story.app.services = {}
     story.prepare()
 
     patch.object(Containers, 'format_command', return_value=['pwd'])
 
-    result = await Containers.exec(logger, story, None, 'alpine', 'pwd')
+    line = {
+        'service': 'alpine',
+        'command': 'pwd'
+    }
+
+    result = await Containers.exec(logger, story, line, 'alpine', 'pwd')
 
     assert result == 'asyncy'
 
@@ -175,12 +193,285 @@ async def test_fetch_with_retry(patch, story, line):
     assert client.fetch.call_count == MAX_RETRIES
 
 
+@mark.asyncio
+async def test_get_network_name(patch, story, line, async_mock, http_response):
+    patch.object(
+        Containers, '_make_docker_request',
+        new=async_mock(
+            return_value=http_response('/networks', 200,
+                                       '[{"Name": "foo"},'
+                                       '{"Name":"90_asyncy-backend"}]')))
+
+    name = await Containers.get_network_name(story, line)
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/networks')
+    assert name == '90_asyncy-backend'
+
+
+@mark.asyncio
+async def test_get_network_name_exc(patch, story, line,
+                                    async_mock, http_response):
+    patch.object(
+        Containers, '_make_docker_request',
+        new=async_mock(
+            return_value=http_response('/networks', 200,
+                                       '[{"Name": "92_asyncy-backend"},'
+                                       '{"Name":"90_asyncy-backend"}]')))
+
+    with pytest.raises(AsyncyError):
+        await Containers.get_network_name(story, line)
+
+    patch.object(
+        Containers, '_make_docker_request',
+        new=async_mock(
+            return_value=http_response('/networks', 500)))
+
+    with pytest.raises(DockerError):
+        await Containers.get_network_name(story, line)
+
+
 def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
 
     cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
     assert ['echo', '{"msg":"foo"}'] == cmd
+
+
+def test_format_volume_name(patch, story, line):
+    patch.object(Containers, 'is_service_reusable', return_value=True)
+    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
+        'asyncy--alpine-1'
+
+
+@mark.asyncio
+async def test_remove_volume(patch, story, line, async_mock):
+    patch.object(Containers, '_make_docker_request', new=async_mock())
+    await Containers.remove_volume(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/volumes/foo', method='DELETE')
+
+
+@mark.asyncio
+async def test_create_volume(patch, story, line, async_mock, http_response):
+    patch.object(Containers, '_make_docker_request', new=async_mock(
+        return_value=http_response('/foo', 201)))
+    await Containers.create_volume(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/volumes/create', method='POST', data={'Name': 'foo'})
+
+
+@mark.asyncio
+async def test_create_volume_exc(patch, story, line,
+                                 async_mock, http_response):
+    patch.object(Containers, '_make_docker_request', new=async_mock(
+        return_value=http_response('/foo', 400)))
+    with pytest.raises(DockerError):
+        await Containers.create_volume(story, line, 'foo')
+
+
+def test_format_volume_name_not_reusable(patch, story, line):
+    patch.object(Containers, 'is_service_reusable', return_value=False)
+    patch.object(Containers, 'hash_story_line', return_value='hash')
+    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
+        'asyncy--alpine-1-hash'
+
+
+def test_hash_story_line(patch, story):
+    patch.object(hashlib, 'sha1')
+    story.name = 'story_name'
+    ret = Containers.hash_story_line(story, {'ln': '1'})
+
+    hashlib.sha1.assert_called_with('story_name-1'.encode('utf-8'))
+    assert ret == hashlib.sha1().hexdigest()
+
+
+@mark.parametrize('create_status_code', [201, 500])
+@mark.asyncio
+async def test_create_container(patch, story, line, async_mock, http_response,
+                                create_status_code):
+    patch.object(Containers, '_make_docker_request', new=async_mock(
+        return_value=http_response('/foo', create_status_code)))
+    patch.object(Containers, 'inspect_container', new=async_mock(
+        return_value={}))
+    patch.object(Containers, 'remove_volume', new=async_mock())
+    patch.object(Containers, 'create_volume', new=async_mock())
+
+    omg = {
+        ServiceConstants.config: {
+            'image': 'alpine:v1.2.3',
+            'volumes': {
+                'db': {
+                    'persist': True,
+                    'target': '/var/db'
+                },
+                'cache': {
+                    'target': '/var/cache'
+                }
+            }
+        }
+    }
+
+    story.app.environment = {
+        'DEBUG_ALL': 'yes',
+        'alpine': {
+            'ALP_ONLY_1': 'true',
+            'ALP_ONLY_2': 'ok'
+        }
+    }
+
+    patch.object(Containers, 'get_network_name', new=async_mock(
+        return_value='my_network_1'))
+
+    expected_date = {
+        'AttachStdout': False,
+        'AttachStderr': False,
+        'Env': ['DEBUG_ALL=yes', 'ALP_ONLY_1=true', 'ALP_ONLY_2=ok'],
+        'Image': 'alpine:v1.2.3',
+        'Volumes': {'/asyncy': {}, '/var/db': {}, '/var/cache': {}},
+        'HostConfig': {
+            'Binds': ['application-volume:/asyncy', 'db:/var/db',
+                      'cache:/var/cache'],
+            'NetworkMode': 'my_network_1'
+        },
+        'Entrypoint': ['my_service', '-d']
+    }
+
+    story.app.services = {'alpine': omg}
+
+    if create_status_code == 500:
+        with pytest.raises(DockerError):
+            await Containers._create_container(story, line, 'alpine',
+                                               'asyncy--alpine-1',
+                                               ['my_service', '-d'])
+    else:
+        await Containers._create_container(story, line, 'alpine',
+                                           'asyncy--alpine-1',
+                                           ['my_service', '-d'])
+
+        Containers._make_docker_request.mock.assert_called_with(
+            story, line, '/containers/create?name=asyncy--alpine-1',
+            expected_date, method='POST')
+
+        Containers.remove_volume.mock.assert_called_once()
+        Containers.remove_volume.mock.assert_called_with(
+            story, line, 'asyncy--alpine-cache')
+
+        assert Containers.create_volume.mock.mock_calls == \
+            [
+                mock.call(story, line, 'asyncy--alpine-db'),
+                mock.call(story, line, 'asyncy--alpine-cache')
+            ]
+
+
+@mark.asyncio
+async def test_start_local_command_create_start(patch, story, async_mock):
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'commands': {
+                    'echo': {
+                        'run': {
+                            'command': ['foo']
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'get_container_name',
+                 return_value='asyncy-alpine')
+    inspect_ret = MagicMock()
+    patch.object(Containers, 'inspect_container', new=async_mock(
+        side_effect=[None, inspect_ret]))
+    patch.object(Containers, '_create_container', new=async_mock())
+    patch.object(Containers, '_start_container', new=async_mock())
+    ret = await Containers.start(story, line)
+
+    Containers._start_container.mock.assert_called_with(story, line,
+                                                        'asyncy-alpine')
+    Containers._create_container.mock.assert_called_with(
+        story, line, 'alpine', 'asyncy-alpine', ['foo'])
+
+    assert ret.name == 'alpine'
+    assert ret.command == 'echo'
+    assert ret.container_name == 'asyncy-alpine'
+    assert ret.hostname == inspect_ret['Config']['Hostname']
+    assert ret.name == 'alpine'
+
+
+@mark.asyncio
+async def test_start_no_command(patch, story, async_mock):
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'commands': {
+                    'echo': {
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'get_container_name',
+                 return_value='asyncy-alpine')
+    with pytest.raises(AsyncyError):
+        await Containers.start(story, line)
+
+
+@mark.asyncio
+async def test_start_global_command_paused(patch, story, async_mock):
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'lifecycle': {
+                    'startup': {
+                        'command': ['foo', '-d']
+                    }
+                },
+                'commands': {
+                    'echo': {
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'get_container_name',
+                 return_value='asyncy-alpine')
+    patch.object(Containers, 'inspect_container', new=async_mock(
+        side_effect=[
+            {'State': {'Running': False}, 'Config': {'Hostname': 'my_host'}}
+        ]))
+
+    patch.object(Containers, '_start_container', new=async_mock())
+
+    ret = await Containers.start(story, line)
+
+    Containers._start_container.mock.assert_called_with(story, line,
+                                                        'asyncy-alpine')
+
+    assert ret.name == 'alpine'
+    assert ret.command == 'echo'
+    assert ret.container_name == 'asyncy-alpine'
+    assert ret.hostname == 'my_host'
+    assert ret.name == 'alpine'
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
