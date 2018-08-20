@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
 from asyncy.Exceptions import AsyncyError, DockerError
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 
@@ -361,6 +362,116 @@ async def test_create_container(patch, story, line, async_mock, http_response,
                 mock.call(story, line, 'asyncy--alpine-db'),
                 mock.call(story, line, 'asyncy--alpine-cache')
             ]
+
+
+@mark.asyncio
+async def test_start_local_command_create_start(patch, story, async_mock):
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'commands': {
+                    'echo': {
+                        'run': {
+                            'command': ['foo']
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'get_container_name',
+                 return_value='asyncy-alpine')
+    inspect_ret = MagicMock()
+    patch.object(Containers, 'inspect_container', new=async_mock(
+        side_effect=[None, inspect_ret]))
+    patch.object(Containers, '_create_container', new=async_mock())
+    patch.object(Containers, '_start_container', new=async_mock())
+    ret = await Containers.start(story, line)
+
+    Containers._start_container.mock.assert_called_with(story, line,
+                                                        'asyncy-alpine')
+    Containers._create_container.mock.assert_called_with(
+        story, line, 'alpine', 'asyncy-alpine', ['foo'])
+
+    assert ret.name == 'alpine'
+    assert ret.command == 'echo'
+    assert ret.container_name == 'asyncy-alpine'
+    assert ret.hostname == inspect_ret['Config']['Hostname']
+    assert ret.name == 'alpine'
+
+
+@mark.asyncio
+async def test_start_no_command(patch, story, async_mock):
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'commands': {
+                    'echo': {
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'get_container_name',
+                 return_value='asyncy-alpine')
+    with pytest.raises(AsyncyError):
+        await Containers.start(story, line)
+
+
+@mark.asyncio
+async def test_start_global_command_paused(patch, story, async_mock):
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    story.app.services = {
+        'alpine': {
+            ServiceConstants.config: {
+                'lifecycle': {
+                    'startup': {
+                        'command': ['foo', '-d']
+                    }
+                },
+                'commands': {
+                    'echo': {
+                    }
+                }
+            }
+        }
+    }
+
+    patch.object(Containers, 'get_container_name',
+                 return_value='asyncy-alpine')
+    patch.object(Containers, 'inspect_container', new=async_mock(
+        side_effect=[
+            {'State': {'Running': False}, 'Config': {'Hostname': 'my_host'}}
+        ]))
+
+    patch.object(Containers, '_start_container', new=async_mock())
+
+    ret = await Containers.start(story, line)
+
+    Containers._start_container.mock.assert_called_with(story, line,
+                                                        'asyncy-alpine')
+
+    assert ret.name == 'alpine'
+    assert ret.command == 'echo'
+    assert ret.container_name == 'asyncy-alpine'
+    assert ret.hostname == 'my_host'
+    assert ret.name == 'alpine'
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):

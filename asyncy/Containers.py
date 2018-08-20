@@ -217,15 +217,14 @@ class Containers:
         service = line[LineConstants.service]
         story.logger.info(f'Starting container {service}')
 
-        omg = story.app.services[service]
-        command_conf = Dict.find(omg, f'{ServiceConstants.config}.commands.'
+        omg = story.app.services[service][ServiceConstants.config]
+        command_conf = Dict.find(omg, f'commands.'
                                       f'{line[LineConstants.command]}')
 
         if command_conf.get('run'):
             command = Dict.find(command_conf, 'run.command')
         else:
-            command = Dict.find(omg, f'{ServiceConstants.config}.'
-                                     f'lifecycle.startup.command')
+            command = Dict.find(omg, f'lifecycle.startup.command')
 
         container_name = cls.get_container_name(story, line, service)
 
