@@ -241,6 +241,32 @@ def test_format_volume_name(patch, story, line):
         'asyncy--alpine-1'
 
 
+@mark.asyncio
+async def test_remove_volume(patch, story, line, async_mock):
+    patch.object(Containers, '_make_docker_request', new=async_mock())
+    await Containers.remove_volume(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/volumes/foo', method='DELETE')
+
+
+@mark.asyncio
+async def test_create_volume(patch, story, line, async_mock, http_response):
+    patch.object(Containers, '_make_docker_request', new=async_mock(
+        return_value=http_response('/foo', 201)))
+    await Containers.create_volume(story, line, 'foo')
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/volumes/create', method='POST', data={'Name': 'foo'})
+
+
+@mark.asyncio
+async def test_create_volume_exc(patch, story, line,
+                                 async_mock, http_response):
+    patch.object(Containers, '_make_docker_request', new=async_mock(
+        return_value=http_response('/foo', 400)))
+    with pytest.raises(DockerError):
+        await Containers.create_volume(story, line, 'foo')
+
+
 def test_format_volume_name_not_reusable(patch, story, line):
     patch.object(Containers, 'is_service_reusable', return_value=False)
     patch.object(Containers, 'hash_story_line', return_value='hash')
