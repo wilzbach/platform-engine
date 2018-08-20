@@ -23,11 +23,26 @@ API_VERSION = 'v1.37'
 class Containers:
 
     @classmethod
-    async def get_network_stack(cls):
-        # docker.networks.list(filters={'name': 'asyncy-backend'})
-        # note: if more than one networks are returned, throw an error
-        # TODO
-        pass
+    async def get_network_name(cls, story, line):
+        resp = await cls._make_docker_request(story, line, '/networks')
+        if resp.code != 200:
+            raise DockerError(
+                story=story, line=line,
+                message=f'Failed to list networks! error={resp.error}')
+        network_list = ujson.loads(resp.body)
+
+        name = None
+        for network in network_list:
+            if 'asyncy-backend' in network['Name']:
+                if name is not None:
+                    raise AsyncyError(
+                        story=story, line=line,
+                        message=f'There are two or more networks tagged as '
+                                f'asyncy-backend. Please stop the others '
+                                f'before continuing.')
+                name = network['Name']
+
+        return name
 
     @classmethod
     async def remove_volume(cls, name):
@@ -77,7 +92,7 @@ class Containers:
             'Volumes': targets,
             'HostConfig': {
                 'Binds': binds,
-                'NetworkMode': cls.get_network_stack()
+                'NetworkMode': cls.get_network_name(story, line)
             },
             'Entrypoint': entrypoint
         }
