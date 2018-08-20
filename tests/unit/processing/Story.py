@@ -4,11 +4,13 @@ import time
 from unittest import mock
 
 from asyncy import Metrics
+from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
 from asyncy.Stories import Stories
 from asyncy.constants import ContextConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
+from asyncy.utils import Dict
 
 import pytest
 from pytest import mark
@@ -264,17 +266,62 @@ async def test_story_run_prepare(patch, app, logger, async_mock):
 
 
 @mark.asyncio
-async def test_story_destroy(patch, app, logger, http_line, story, async_mock):
+async def test_story_destroy(patch, app, logger, story, async_mock):
     patch.object(HttpEndpoint, 'unregister_http_endpoint', new=async_mock())
+    patch.object(Containers, 'stop_container', new=async_mock())
     patch.object(Story, 'story', return_value=story)
-    patch.object(story, 'line', side_effect=[http_line, None])
-    story.tree = {'1': http_line}
+    story.tree = {
+        '1': {
+            'ln': '1',
+            'method': 'execute',
+            'service': 'http-endpoint',
+            'args': [
+                {
+                    '$OBJECT': 'argument',
+                    'name': 'method',
+                    'argument': {'$OBJECT': 'string', 'string': 'get'}
+                },
+                {
+                    '$OBJECT': 'argument',
+                    'name': 'path',
+                    'argument': {'$OBJECT': 'string', 'string': '/foo'}
+                }
+            ],
+            'next': '2'
+        },
+        '2': {
+            'ln': '2',
+            'method': 'execute',
+            'service': 'alpine',
+            'command': 'echo',
+            'next': '3'
+        },
+        '3': {
+            'ln': '3',
+            'method': 'execute',
+            'service': 'not_a_service',
+            'command': 'foo'
+        }
+    }
+
+    app.services = {
+        'alpine': {
+            'configuration': {
+                'commands': {'echo': {'run': {'command': 'foo'}}}
+            }
+        }
+    }
+
     story.entrypoint = '1'
     app.entrypoint = ['hello.story']
     await Story.destroy(app, logger, 'foo')
     HttpEndpoint.unregister_http_endpoint.mock.assert_called_with(
-        story, http_line, 'get', '/foo', http_line['ln']
+        story, story.tree['1'], 'get', '/foo', '1'
     )
+    c_name = Containers.get_container_name(
+        story, story.tree['2'], story.tree['2']['service'])
+    assert Containers.stop_container.mock.mock_calls == \
+        [mock.call(story, story.tree['2'], c_name)]
 
 
 @mark.asyncio
