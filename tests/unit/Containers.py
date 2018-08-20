@@ -4,15 +4,15 @@ from unittest.mock import MagicMock
 
 from asyncy.Config import Config
 from asyncy.Containers import Containers, MAX_RETRIES
-from asyncy.Exceptions import DockerError, AsyncyError
+from asyncy.Exceptions import AsyncyError, DockerError
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 
 import pytest
 from pytest import fixture, mark
 
-from tornado.httpclient import AsyncHTTPClient, HTTPError, HTTPResponse, \
-    HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPError, HTTPRequest, \
+    HTTPResponse
 
 
 @fixture
@@ -194,10 +194,10 @@ async def test_fetch_with_retry(patch, story, line):
 async def test_get_network_name(patch, story, line, async_mock, http_response):
     patch.object(
         Containers, '_make_docker_request',
-        new=async_mock(return_value=
-                       http_response('/networks', 200,
-                                     '[{"Name": "foo"},'
-                                     '{"Name":"90_asyncy-backend"}]')))
+        new=async_mock(
+            return_value=http_response('/networks', 200,
+                                       '[{"Name": "foo"},'
+                                       '{"Name":"90_asyncy-backend"}]')))
 
     name = await Containers.get_network_name(story, line)
     assert name == '90_asyncy-backend'
@@ -208,13 +208,12 @@ async def test_get_network_name_exc(patch, story, line,
                                     async_mock, http_response):
     patch.object(
         Containers, '_make_docker_request',
-        new=async_mock(return_value=
-                       http_response('/networks', 200,
-                                     '[{"Name": "92_asyncy-backend"},'
-                                     '{"Name":"90_asyncy-backend"}]')))
+        new=async_mock(
+            return_value=http_response('/networks', 200,
+                                       '[{"Name": "92_asyncy-backend"},'
+                                       '{"Name":"90_asyncy-backend"}]')))
     with pytest.raises(AsyncyError):
         await Containers.get_network_name(story, line)
-
 
 
 def test_format_command(logger, app, echo_service, echo_line):
