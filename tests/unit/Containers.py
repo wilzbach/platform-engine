@@ -235,6 +235,19 @@ def test_format_command(logger, app, echo_service, echo_line):
     assert ['echo', '{"msg":"foo"}'] == cmd
 
 
+def test_format_volume_name(patch, story, line):
+    patch.object(Containers, 'is_service_reusable', return_value=True)
+    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
+        'asyncy--alpine-1'
+
+
+def test_format_volume_name_not_reusable(patch, story, line):
+    patch.object(Containers, 'is_service_reusable', return_value=False)
+    patch.object(Containers, 'hash_story_line', return_value='hash')
+    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
+        'asyncy--alpine-1-hash'
+
+
 def test_format_command_no_format(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
