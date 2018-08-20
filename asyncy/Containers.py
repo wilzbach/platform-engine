@@ -79,7 +79,7 @@ class Containers:
                                 container_name, entrypoint):
         # Note: 'image' is inserted by platform-bootstrap, and NOT a part of
         # microservice.yml/omg.yml.
-        omg = story.app.services[service]
+        omg = story.app.services[service][ServiceConstants.config]
         image = omg.get('image', service)
         path = f'/containers/create?name={container_name}'
         targets = {'/asyncy': {}}

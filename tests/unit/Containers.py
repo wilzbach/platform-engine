@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 from io import BytesIO, StringIO
+from unittest import mock
 from unittest.mock import MagicMock
 
 from asyncy.Config import Config
@@ -282,6 +283,84 @@ def test_hash_story_line(patch, story):
 
     hashlib.sha1.assert_called_with('story_name-1'.encode('utf-8'))
     assert ret == hashlib.sha1().hexdigest()
+
+
+@mark.parametrize('create_status_code', [201, 500])
+@mark.asyncio
+async def test_create_container(patch, story, line, async_mock, http_response,
+                                create_status_code):
+    patch.object(Containers, '_make_docker_request', new=async_mock(
+        return_value=http_response('/foo', create_status_code)))
+    patch.object(Containers, 'inspect_container', new=async_mock(
+        return_value={}))
+    patch.object(Containers, 'remove_volume', new=async_mock())
+    patch.object(Containers, 'create_volume', new=async_mock())
+
+    omg = {
+        ServiceConstants.config: {
+            'image': 'alpine:v1.2.3',
+            'volumes': {
+                'db': {
+                    'persist': True,
+                    'target': '/var/db'
+                },
+                'cache': {
+                    'target': '/var/cache'
+                }
+            }
+        }
+    }
+
+    story.app.environment = {
+        'DEBUG_ALL': 'yes',
+        'alpine': {
+            'ALP_ONLY_1': 'true',
+            'ALP_ONLY_2': 'ok'
+        }
+    }
+
+    patch.object(Containers, 'get_network_name', new=async_mock(
+        return_value='my_network_1'))
+
+    expected_date = {
+        'AttachStdout': False,
+        'AttachStderr': False,
+        'Env': ['DEBUG_ALL=yes', 'ALP_ONLY_1=true', 'ALP_ONLY_2=ok'],
+        'Image': 'alpine:v1.2.3',
+        'Volumes': {'/asyncy': {}, '/var/db': {}, '/var/cache': {}},
+        'HostConfig': {
+            'Binds': ['application-volume:/asyncy', 'db:/var/db',
+                      'cache:/var/cache'],
+            'NetworkMode': 'my_network_1'
+        },
+        'Entrypoint': ['my_service', '-d']
+    }
+
+    story.app.services = {'alpine': omg}
+
+    if create_status_code == 500:
+        with pytest.raises(DockerError):
+            await Containers._create_container(story, line, 'alpine',
+                                               'asyncy--alpine-1',
+                                               ['my_service', '-d'])
+    else:
+        await Containers._create_container(story, line, 'alpine',
+                                           'asyncy--alpine-1',
+                                           ['my_service', '-d'])
+
+        Containers._make_docker_request.mock.assert_called_with(
+            story, line, '/containers/create?name=asyncy--alpine-1',
+            expected_date, method='POST')
+
+        Containers.remove_volume.mock.assert_called_once()
+        Containers.remove_volume.mock.assert_called_with(
+            story, line, 'asyncy--alpine-cache')
+
+        assert Containers.create_volume.mock.mock_calls == \
+            [
+                mock.call(story, line, 'asyncy--alpine-db'),
+                mock.call(story, line, 'asyncy--alpine-cache')
+            ]
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
