@@ -9,7 +9,6 @@ def http_line():
     return {
         'ln': '1',
         LineConstants.service: 'http-endpoint',
-        'next': '2',
         'method': 'execute',
         'args': [
             {
