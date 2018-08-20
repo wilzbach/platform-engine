@@ -47,7 +47,7 @@ class Containers:
         return name
 
     @classmethod
-    async def format_volume_name(cls, story, line, name):
+    def format_volume_name(cls, story, line, name):
         """
         Returns a derived volume name from the story and line if
         the container in question cannot be reused. Otherwise, this returns
