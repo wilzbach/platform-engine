@@ -113,7 +113,7 @@ class Containers:
             'Volumes': targets,
             'HostConfig': {
                 'Binds': binds,
-                'NetworkMode': cls.get_network_name(story, line)
+                'NetworkMode': await cls.get_network_name(story, line)
             },
             'Entrypoint': entrypoint
         }
@@ -218,12 +218,14 @@ class Containers:
         story.logger.info(f'Starting container {service}')
 
         omg = story.app.services[service]
-        command_conf = omg['commands'][line[LineConstants.command]]
+        command_conf = Dict.find(omg, f'{ServiceConstants.config}.commands.'
+                                      f'{line[LineConstants.command]}')
 
         if command_conf.get('run'):
             command = Dict.find(command_conf, 'run.command')
         else:
-            command = Dict.find(omg, 'lifecycle.startup.command')
+            command = Dict.find(omg, f'{ServiceConstants.config}.'
+                                     f'lifecycle.startup.command')
 
         container_name = cls.get_container_name(story, line, service)
 

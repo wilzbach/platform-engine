@@ -132,11 +132,17 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
     app.config = Config()
 
     story.app = app
+    story.app.services = {}
     story.prepare()
 
     patch.object(Containers, 'format_command', return_value=['pwd'])
 
-    result = await Containers.exec(logger, story, None, 'alpine', 'pwd')
+    line = {
+        'service': 'alpine',
+        'command': 'pwd'
+    }
+
+    result = await Containers.exec(logger, story, line, 'alpine', 'pwd')
 
     assert result == 'asyncy'
 

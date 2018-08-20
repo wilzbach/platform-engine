@@ -85,6 +85,11 @@ def echo_service():
     return {
         'alpine': {
             ServiceConstants.config: {
+                'lifecycle': {
+                    'startup': {
+                        'command': ['tail', '-f', '/dev/null']
+                    }
+                },
                 'commands': {
                     'echo': {
                         'arguments': {
