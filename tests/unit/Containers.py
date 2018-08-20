@@ -22,7 +22,7 @@ def line():
 
 @fixture
 def http_response():
-    def build(url, code, body):
+    def build(url, code, body=None):
         return HTTPResponse(HTTPRequest(url=url), code, buffer=StringIO(body))
 
     return build
@@ -200,6 +200,8 @@ async def test_get_network_name(patch, story, line, async_mock, http_response):
                                        '{"Name":"90_asyncy-backend"}]')))
 
     name = await Containers.get_network_name(story, line)
+    Containers._make_docker_request.mock.assert_called_with(
+        story, line, '/networks')
     assert name == '90_asyncy-backend'
 
 
@@ -212,7 +214,16 @@ async def test_get_network_name_exc(patch, story, line,
             return_value=http_response('/networks', 200,
                                        '[{"Name": "92_asyncy-backend"},'
                                        '{"Name":"90_asyncy-backend"}]')))
+
     with pytest.raises(AsyncyError):
+        await Containers.get_network_name(story, line)
+
+    patch.object(
+        Containers, '_make_docker_request',
+        new=async_mock(
+            return_value=http_response('/networks', 500)))
+
+    with pytest.raises(DockerError):
         await Containers.get_network_name(story, line)
 
 
