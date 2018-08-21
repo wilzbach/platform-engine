@@ -35,17 +35,28 @@ def story(patch, story):
     return story
 
 
+@mark.parametrize('name', ['foo_var', None])
 @mark.asyncio
-async def test_lexicon_execute(patch, logger, story, line, async_mock):
+async def test_lexicon_execute(patch, logger, story, line, async_mock, name):
     line['enter'] = None
+
+    if name is not None:
+        line['name'] = [name]
+
     output = MagicMock()
     patch.object(Services, 'execute', new=async_mock(return_value=output))
     patch.object(Lexicon, 'next_line_or_none')
     result = await Lexicon.execute(logger, story, line)
     Services.execute.mock.assert_called_with(story, line)
-    story.end_line.assert_called_with(line['ln'],
-                                      output=output,
-                                      assign=None)
+
+    if name is not None:
+        story.end_line.assert_called_with(line['ln'],
+                                          output=output,
+                                          assign={'paths': [name]})
+    else:
+        story.end_line.assert_called_with(line['ln'],
+                                          output=output,
+                                          assign=None)
     story.line.assert_called_with(line['next'])
     assert result == Lexicon.next_line_or_none()
 

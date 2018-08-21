@@ -92,8 +92,12 @@ class Lexicon:
                 story_name=story.name, service=service
             ).observe(time.time() - start)
 
-            story.end_line(line['ln'], output=output,
-                           assign=line.get('output'))
+            if line.get('name') and len(line['name']) == 1:
+                story.end_line(line['ln'], output=output,
+                               assign={'paths': line['name']})
+            else:
+                story.end_line(line['ln'], output=output,
+                               assign=line.get('output'))
 
             return Lexicon.next_line_or_none(story.line(line.get('next')))
 
