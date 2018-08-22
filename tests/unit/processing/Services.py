@@ -230,7 +230,7 @@ async def test_services_execute_http(patch, story, async_mock):
 
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
-    line = {'ln': '10'}
+    line = {'ln': '10', 'service': 'alpine'}
     patch.object(Containers, 'start', new=async_mock())
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_called_with(story, line)

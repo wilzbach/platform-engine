@@ -11,7 +11,6 @@ from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
 from asyncy.processing.Services import Services
-from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
@@ -189,54 +188,6 @@ async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
     Story.execute_block.mock.assert_called_with(logger, story, line)
     assert story.context['element'] == 'one'
     assert result == line['exit']
-
-
-@mark.asyncio
-async def test_lexicon_execute_http_endpoint(patch, logger, story,
-                                             http_line, async_mock):
-    return_values = Mock()
-    return_values.side_effect = ['get', '/']
-    patch.object(HttpEndpoint, 'register_http_endpoint', new=async_mock())
-    story.resolve.side_effect = return_values
-
-    await Lexicon.execute(logger, story, http_line)
-
-    HttpEndpoint.register_http_endpoint.mock.assert_called_with(
-        block=http_line['ln'], line=http_line, method='get', path='/',
-        story=story)
-
-
-@mark.parametrize('args', [[None, '/'], ['get', None]])
-@mark.asyncio
-async def test_lexicon_execute_http_endpoint_no_method(patch, logger, story,
-                                                       http_line, args):
-    with pytest.raises(Exceptions.ArgumentNotFoundError):
-        return_values = Mock()
-        return_values.side_effect = args
-        story.resolve.side_effect = return_values
-
-        await Lexicon.execute(logger, story, http_line)
-
-
-@mark.asyncio
-async def test_lexicon_execute_http_functions(patch, logger, story):
-    http_object_line = {
-        'ln': '1',
-        LineConstants.service: 'client',
-        LineConstants.command: 'body'
-    }
-
-    story.context = {
-        ContextConstants.server_request: 'foo',
-        ContextConstants.service_output: 'client'
-    }
-
-    patch.object(HttpEndpoint, 'run')
-
-    await Lexicon.execute(logger, story, http_object_line)
-
-    HttpEndpoint.run.assert_called_with(story, http_object_line)
-    story.end_line.assert_called()
 
 
 @mark.asyncio

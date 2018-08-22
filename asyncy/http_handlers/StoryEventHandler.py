@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import tornado
 from tornado import web
 
 import ujson
@@ -12,8 +13,11 @@ from ..processing import Story
 class StoryEventHandler(BaseHandler):
 
     async def run_story(self, story_name, block, event_body):
+        io_loop = tornado.ioloop.IOLoop.current()
         context = {
-            ContextConstants.service_event: event_body
+            ContextConstants.service_event: event_body,
+            ContextConstants.server_io_loop: io_loop,
+            ContextConstants.server_request: self
         }
 
         await Story.run(self.app, self.logger,
@@ -37,7 +41,7 @@ class StoryEventHandler(BaseHandler):
             self.logger.info(f'Running story {story_name} @ {block} for '
                              f'event {event_body}')
             await self.run_story(story_name, block, event_body)
-            self.set_status(204)
+            self.set_status(200)
             self.finish()
         except BaseException as e:
             self.handle_story_exc(story_name, e)

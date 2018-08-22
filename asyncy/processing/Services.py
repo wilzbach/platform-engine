@@ -8,6 +8,8 @@ import ujson
 
 from ..Containers import Containers
 from ..Exceptions import AsyncyError
+from ..Types import StreamingService
+from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..utils.HttpUtils import HttpUtils
 
@@ -86,6 +88,9 @@ class Services:
                                          service, line['command'])
         elif command_conf.get('http') is not None:
             return await cls.execute_http(story, line, chain, command_conf)
+        # TODO fix command_stream here and in microservice.yml
+        elif command_conf.get('command_stream') is not None:
+            return await cls.execute_inline(story, line, chain, command_conf)
         else:
             raise AsyncyError(message=f'Service {service}/{line["command"]} '
                                       f'has neither http nor format sections!',
@@ -160,7 +165,29 @@ class Services:
             elif isinstance(entry, Event):
                 next = next['events'][entry.name]['output']['commands']
 
-        return next
+        return next or {}
+
+    @classmethod
+    async def execute_inline(cls, story, line, chain, command_conf):
+        assert isinstance(chain, deque)
+        command = chain[len(chain) - 1]
+        assert isinstance(command, Command)
+
+        args = command_conf.get('arguments', {})
+        body = {'command': command.name, 'data': {}}
+
+        for arg in args:
+            body['data'][arg] = story.argument_by_name(line, arg)
+
+        req = story.context[ContextConstants.server_request]
+        req.write(ujson.dumps(body) + '\n')
+
+        # HTTP hack
+        io_loop = story.context[ContextConstants.server_io_loop]
+        if chain[0].name == 'http' and command.name == 'finish':
+            server_req = story.context[ContextConstants.server_request]
+            io_loop.add_callback(server_req.finish)
+        # HTTP hack
 
     @classmethod
     async def execute_http(cls, story, line, chain, command_conf):
@@ -203,6 +230,13 @@ class Services:
 
     @classmethod
     async def start_container(cls, story, line):
+        if cls.is_internal(line[LineConstants.service]):
+            return StreamingService(
+                name='http',
+                command=line[LineConstants.command],
+                container_name='gateway_1',
+                hostname=story.app.config.ASYNCY_HTTP_GW_HOST)
+
         return await Containers.start(story, line)
 
     @classmethod

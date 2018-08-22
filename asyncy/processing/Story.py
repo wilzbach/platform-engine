@@ -9,7 +9,6 @@ from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.ServiceConstants import ServiceConstants
 from ..processing import Lexicon
-from ..processing.internal.HttpEndpoint import HttpEndpoint
 from ..utils import Dict
 
 
@@ -161,13 +160,7 @@ class Story:
         while line is not None:
             if line[LineConstants.method] == 'execute':
                 service = line[LineConstants.service]
-                if service == 'http-endpoint':
-                    method = story.argument_by_name(line, 'method')
-                    path = story.argument_by_name(line, 'path')
-                    await HttpEndpoint.unregister_http_endpoint(
-                        story, line, method, path, line['ln']
-                    )
-                elif app.services.get(service) is not None:
+                if app.services.get(service) is not None:
                     command = line[LineConstants.command]
                     run = Dict.find(app.services,
                                     f'{service}.{ServiceConstants.config}.'
