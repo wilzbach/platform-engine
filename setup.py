@@ -36,7 +36,8 @@ setup(
         'frustum==0.0.6',
         'raven==6.9.0',
         'storyscript>=0.0.7',
-        'ujson==1.35'
+        'ujson==1.35',
+        'certifi>=2018.8.24'
     ],
     classifiers=[
         'Environment :: Console',
