@@ -135,10 +135,6 @@ class Lexicon:
         return line['exit']
 
     @staticmethod
-    def argument_by_name(story, line, argument_name):
-        return story.argument_by_name(line, argument_name)
-
-    @staticmethod
     async def when(logger, story, line):
         service = line[LineConstants.service]
         command = line[LineConstants.command]
