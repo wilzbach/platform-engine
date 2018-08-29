@@ -87,10 +87,11 @@ class Services:
             return await Containers.exec(story.logger, story, line,
                                          service, line['command'])
         elif command_conf.get('http') is not None:
-            return await cls.execute_http(story, line, chain, command_conf)
-        # TODO fix command_stream here and in microservice.yml
-        elif command_conf.get('command_stream') is not None:
-            return await cls.execute_inline(story, line, chain, command_conf)
+            if command_conf['http'].get('use_event_conn', False):
+                return await cls.execute_inline(story, line,
+                                                chain, command_conf)
+            else:
+                return await cls.execute_http(story, line, chain, command_conf)
         else:
             raise AsyncyError(message=f'Service {service}/{line["command"]} '
                                       f'has neither http nor format sections!',
