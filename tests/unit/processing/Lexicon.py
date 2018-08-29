@@ -303,6 +303,12 @@ async def test_lexicon_when(patch, story, async_mock):
         await Lexicon.when(story.logger, story, line)
 
 
+def test_next_line_or_none():
+    line = {'ln': '10'}
+    assert Lexicon.next_line_or_none(line) == '10'
+    assert Lexicon.next_line_or_none(None) is None
+
+
 @mark.asyncio
 async def test_lexicon_when_invalid(story):
     line = {'service': 'foo', 'command': 'bar'}
