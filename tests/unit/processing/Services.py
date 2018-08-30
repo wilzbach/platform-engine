@@ -328,6 +328,16 @@ def test_service_get_command_conf_simple(story):
     assert Services.get_command_conf(story, chain) == {'x': 'y'}
 
 
+@mark.asyncio
+async def test_start_container_http(story):
+    line = {Line.command: 'server', Line.service: 'http'}
+    ret = await Services.start_container(story, line)
+    assert ret.name == 'http'
+    assert ret.command == 'server'
+    assert ret.container_name == 'gateway_1'
+    assert ret.hostname == story.app.config.ASYNCY_HTTP_GW_HOST
+
+
 def test_service_get_command_conf_events(story):
     chain = deque(
         [Service('service'), Command('cmd'), Event('foo'), Command('bar')])
