@@ -1,5 +1,5 @@
 Asyncy platform engine
-#######################
+######################
 The engine powering Asyncy and executing stories.
 
 
