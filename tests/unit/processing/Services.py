@@ -2,9 +2,11 @@
 import json
 from collections import deque
 from io import StringIO
+from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
+from asyncy.constants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants as Line
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing.Services import Command, Event, Service, Services
@@ -14,6 +16,8 @@ import pytest
 from pytest import mark
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
+
+import ujson
 
 
 @mark.asyncio
@@ -336,6 +340,47 @@ async def test_start_container_http(story):
     assert ret.command == 'server'
     assert ret.container_name == 'gateway_1'
     assert ret.hostname == story.app.config.ASYNCY_HTTP_GW_HOST
+
+
+@mark.parametrize('command', ['write', 'finish'])
+@mark.asyncio
+async def test_execute_inline(patch, story, command):
+    chain = deque([Service('http'), Event('server'), Command(command)])
+    req = MagicMock()
+    io_loop = MagicMock()
+    story.context = {
+        ContextConstants.server_request: req,
+        ContextConstants.server_io_loop: io_loop
+    }
+
+    command_conf = {
+        'arguments': {
+            'content': {
+                'type': 'string',
+                'in': 'responseBody',
+                'required': True
+            }
+        }
+    }
+
+    patch.object(story, 'argument_by_name', return_value='hello world!')
+
+    expected_body = {
+        'command': command,
+        'data': {
+            'content': 'hello world!'
+        }
+    }
+
+    line = {}
+
+    await Services.execute_inline(story, line, chain, command_conf)
+
+    req.write.assert_called_with(ujson.dumps(expected_body) + '\n')
+    if command == 'finish':
+        io_loop.add_callback.assert_called_with(req.finish)
+    else:
+        io_loop.add_callback.assert_not_called()
 
 
 def test_service_get_command_conf_events(story):

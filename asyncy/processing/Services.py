@@ -181,14 +181,15 @@ class Services:
     @classmethod
     async def execute_inline(cls, story, line, chain, command_conf):
         assert isinstance(chain, deque)
-        command = chain[len(chain) - 1]
+        command = cls.last(chain)
         assert isinstance(command, Command)
 
         args = command_conf.get('arguments', {})
         body = {'command': command.name, 'data': {}}
 
         for arg in args:
-            body['data'][arg] = story.argument_by_name(line, arg)
+            arg_val = story.argument_by_name(line, arg)
+            body['data'][arg] = arg_val
 
         req = story.context[ContextConstants.server_request]
         req.write(ujson.dumps(body) + '\n')
@@ -196,8 +197,7 @@ class Services:
         # HTTP hack
         io_loop = story.context[ContextConstants.server_io_loop]
         if chain[0].name == 'http' and command.name == 'finish':
-            server_req = story.context[ContextConstants.server_request]
-            io_loop.add_callback(server_req.finish)
+            io_loop.add_callback(req.finish)
         # HTTP hack
 
     @classmethod
