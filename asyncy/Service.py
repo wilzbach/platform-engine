@@ -15,7 +15,6 @@ from . import Version
 from .App import App
 from .Config import Config
 from .Logger import Logger
-from .http_handlers.RunStoryHandler import RunStoryHandler
 from .http_handlers.StoryEventHandler import StoryEventHandler
 from .processing.Services import Services
 from .processing.internal import File, Http, Log
@@ -73,13 +72,8 @@ class Service:
         signal.signal(signal.SIGINT, Service.sig_handler)
 
         web_app = tornado.web.Application([
-
-            (r'/story/run', RunStoryHandler,
-             {'app': app, 'logger': logger}),
-
             (r'/story/event', StoryEventHandler,
              {'app': app, 'logger': logger})
-
         ], debug=debug)
 
         config.engine_host = socket.gethostname()

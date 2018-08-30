@@ -26,7 +26,7 @@ class StoryEventHandler(BaseHandler):
                         block=block)
 
     @web.asynchronous
-    @Metrics.story_request.time()  # TODO change event name
+    @Metrics.story_request.time()
     async def post(self):
         self.app.sentry_client.context.clear()
         self.app.sentry_client.user_context({
