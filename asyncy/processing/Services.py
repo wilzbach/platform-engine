@@ -63,13 +63,6 @@ class Services:
         service = cls.internal_services[line['service']]
         command = service.commands.get(line['command'])
 
-        if command is None:
-            raise AsyncyError(
-                message=f'No command {line["command"]} '
-                        f'for service {line["service"]}',
-                story=story,
-                line=line)
-
         resolved_args = {}
 
         if command.arguments:
