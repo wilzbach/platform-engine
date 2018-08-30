@@ -9,7 +9,6 @@ from asyncy.Exceptions import AsyncyError
 from asyncy.Stories import Stories
 from asyncy.constants import ContextConstants
 from asyncy.processing import Lexicon, Story
-from asyncy.processing.internal.HttpEndpoint import HttpEndpoint
 from asyncy.utils import Dict
 
 import pytest
@@ -267,28 +266,9 @@ async def test_story_run_prepare(patch, app, logger, async_mock):
 
 @mark.asyncio
 async def test_story_destroy(patch, app, logger, story, async_mock):
-    patch.object(HttpEndpoint, 'unregister_http_endpoint', new=async_mock())
     patch.object(Containers, 'stop_container', new=async_mock())
     patch.object(Story, 'story', return_value=story)
     story.tree = {
-        '1': {
-            'ln': '1',
-            'method': 'execute',
-            'service': 'http-endpoint',
-            'args': [
-                {
-                    '$OBJECT': 'argument',
-                    'name': 'method',
-                    'argument': {'$OBJECT': 'string', 'string': 'get'}
-                },
-                {
-                    '$OBJECT': 'argument',
-                    'name': 'path',
-                    'argument': {'$OBJECT': 'string', 'string': '/foo'}
-                }
-            ],
-            'next': '2'
-        },
         '2': {
             'ln': '2',
             'method': 'execute',
@@ -312,12 +292,9 @@ async def test_story_destroy(patch, app, logger, story, async_mock):
         }
     }
 
-    story.entrypoint = '1'
+    story.entrypoint = '2'
     app.entrypoint = ['hello.story']
     await Story.destroy(app, logger, 'foo')
-    HttpEndpoint.unregister_http_endpoint.mock.assert_called_with(
-        story, story.tree['1'], 'get', '/foo', '1'
-    )
     c_name = Containers.get_container_name(
         story, story.tree['2'], story.tree['2']['service'])
     assert Containers.stop_container.mock.mock_calls == \

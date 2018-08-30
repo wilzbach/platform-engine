@@ -8,6 +8,8 @@ import ujson
 
 from ..Containers import Containers
 from ..Exceptions import AsyncyError
+from ..Types import StreamingService
+from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..utils.HttpUtils import HttpUtils
 
@@ -36,12 +38,22 @@ class Services:
                                                     handler=handler)
 
     @classmethod
-    def is_internal(cls, service):
-        return cls.internal_services.get(service) is not None
+    def is_internal(cls, service, command):
+        service = cls.internal_services.get(service)
+        return service is not None \
+            and service.commands.get(command) is not None
+
+    @classmethod
+    def last(cls, chain):
+        return chain[len(chain) - 1]
 
     @classmethod
     async def execute(cls, story, line):
-        if cls.is_internal(line[LineConstants.service]):
+        chain = cls.resolve_chain(story, line)
+        assert isinstance(chain, deque)
+        assert isinstance(chain[0], Service)
+
+        if cls.is_internal(chain[0].name, cls.last(chain).name):
             return await cls.execute_internal(story, line)
         else:
             return await cls.execute_external(story, line)
@@ -50,13 +62,6 @@ class Services:
     async def execute_internal(cls, story, line):
         service = cls.internal_services[line['service']]
         command = service.commands.get(line['command'])
-
-        if command is None:
-            raise AsyncyError(
-                message=f'No command {line["command"]} '
-                        f'for service {line["service"]}',
-                story=story,
-                line=line)
 
         resolved_args = {}
 
@@ -85,7 +90,11 @@ class Services:
             return await Containers.exec(story.logger, story, line,
                                          service, line['command'])
         elif command_conf.get('http') is not None:
-            return await cls.execute_http(story, line, chain, command_conf)
+            if command_conf['http'].get('use_event_conn', False):
+                return await cls.execute_inline(story, line,
+                                                chain, command_conf)
+            else:
+                return await cls.execute_http(story, line, chain, command_conf)
         else:
             raise AsyncyError(message=f'Service {service}/{line["command"]} '
                                       f'has neither http nor format sections!',
@@ -160,7 +169,29 @@ class Services:
             elif isinstance(entry, Event):
                 next = next['events'][entry.name]['output']['commands']
 
-        return next
+        return next or {}
+
+    @classmethod
+    async def execute_inline(cls, story, line, chain, command_conf):
+        assert isinstance(chain, deque)
+        command = cls.last(chain)
+        assert isinstance(command, Command)
+
+        args = command_conf.get('arguments', {})
+        body = {'command': command.name, 'data': {}}
+
+        for arg in args:
+            arg_val = story.argument_by_name(line, arg)
+            body['data'][arg] = arg_val
+
+        req = story.context[ContextConstants.server_request]
+        req.write(ujson.dumps(body) + '\n')
+
+        # HTTP hack
+        io_loop = story.context[ContextConstants.server_io_loop]
+        if chain[0].name == 'http' and command.name == 'finish':
+            io_loop.add_callback(req.finish)
+        # HTTP hack
 
     @classmethod
     async def execute_http(cls, story, line, chain, command_conf):
@@ -203,6 +234,14 @@ class Services:
 
     @classmethod
     async def start_container(cls, story, line):
+        if line[LineConstants.command] == 'server' \
+                and line[LineConstants.service] == 'http':
+            return StreamingService(
+                name='http',
+                command=line[LineConstants.command],
+                container_name='gateway_1',
+                hostname=story.app.config.ASYNCY_HTTP_GW_HOST)
+
         return await Containers.start(story, line)
 
     @classmethod

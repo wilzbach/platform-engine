@@ -8,7 +8,6 @@ from tornado.httpclient import AsyncHTTPClient
 
 from .Mutations import Mutations
 from .Services import Services
-from .internal.HttpEndpoint import HttpEndpoint
 from .. import Metrics
 from ..Exceptions import ArgumentNotFoundError, AsyncyError
 from ..Types import StreamingService
@@ -30,43 +29,10 @@ class Lexicon:
         Runs a service with the resolution values as commands
         """
         service = line[LineConstants.service]
-        service_output_name = story.context.get(
-            ContextConstants.service_output)
 
         start = time.time()
 
-        if service == 'http-endpoint':
-            """
-            If the service is http-endpoint (a special service),
-            then register the http method along with the path with the Server
-            (also line). The Server will then make a HTTP call back to engine
-            on an actual HTTP request, passing along the line to
-            start executing from.
-            """
-            method = Lexicon.argument_by_name(story, line, 'method')
-            if isinstance(method, str) is False:
-                raise ArgumentNotFoundError(name='method',
-                                            story=story, line=line)
-
-            path = Lexicon.argument_by_name(story, line, 'path')
-            if isinstance(path, str) is False:
-                raise ArgumentNotFoundError(name='path',
-                                            story=story, line=line)
-
-            await HttpEndpoint.register_http_endpoint(
-                story=story, line=line, method=method,
-                path=path, block=line['ln']
-            )
-
-            next_line = story.next_block(line)
-            return Lexicon.next_line_or_none(next_line)
-        elif story.context.get(ContextConstants.server_request) is not None \
-                and service == service_output_name:
-            output = HttpEndpoint.run(story, line)
-            story.end_line(line['ln'], output=output,
-                           assign=line.get('output'))
-            return Lexicon.next_line_or_none(story.line(line.get('next')))
-        elif line.get('enter') is not None:
+        if line.get('enter') is not None:
             """
             When a service to be executed has an 'enter' line number,
             it's a streaming service. Let's bring up the service and
@@ -167,10 +133,6 @@ class Lexicon:
             story.context[output] = item
             await Story.execute_block(logger, story, line)
         return line['exit']
-
-    @staticmethod
-    def argument_by_name(story, line, argument_name):
-        return story.argument_by_name(line, argument_name)
 
     @staticmethod
     async def when(logger, story, line):

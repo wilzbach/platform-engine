@@ -2,9 +2,11 @@
 import json
 from collections import deque
 from io import StringIO
+from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
+from asyncy.constants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants as Line
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing.Services import Command, Event, Service, Services
@@ -15,6 +17,8 @@ from pytest import mark
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
+import ujson
+
 
 @mark.asyncio
 async def test_services_execute_execute_internal(story, async_mock):
@@ -22,10 +26,11 @@ async def test_services_execute_execute_internal(story, async_mock):
 
     Services.register_internal('my_service', 'my_command', {}, 'any', handler)
 
-    assert Services.is_internal('my_service') is True
+    assert Services.is_internal('my_service', 'my_command') is True
     line = {
         Line.service: 'my_service',
-        Line.command: 'my_command'
+        Line.command: 'my_command',
+        Line.method: 'execute'
     }
 
     assert await Services.execute(story, line) == 'output'
@@ -34,10 +39,11 @@ async def test_services_execute_execute_internal(story, async_mock):
 @mark.asyncio
 async def test_services_execute_execute_external(patch, story, async_mock):
     patch.object(Services, 'execute_external', new=async_mock())
-    assert Services.is_internal('foo_service') is False
+    assert Services.is_internal('foo_service', 'blah') is False
     line = {
         Line.service: 'foo_service',
-        Line.command: 'foo_command'
+        Line.command: 'foo_command',
+        Line.method: 'execute'
     }
 
     assert await Services.execute(story, line) \
@@ -45,16 +51,19 @@ async def test_services_execute_execute_external(patch, story, async_mock):
 
 
 @mark.asyncio
-async def test_services_execute_invalid_command(story):
-    Services.register_internal('my_service', 'my_command', {}, 'any', None)
-
+async def test_services_execute_execute_external_inline(patch, story,
+                                                        async_mock):
+    patch.object(Services, 'execute_inline', new=async_mock())
+    patch.object(Services, 'get_command_conf',
+                 return_value={'http': {'use_event_conn': True}})
     line = {
-        Line.service: 'my_service',
-        Line.command: 'foo_command'
+        Line.service: 'foo_service',
+        Line.command: 'foo_command',
+        Line.method: 'execute'
     }
 
-    with pytest.raises(AsyncyError):
-        await Services.execute(story, line)
+    assert await Services.execute(story, line) \
+        == await Services.execute_inline()
 
 
 @mark.asyncio
@@ -65,10 +74,11 @@ async def test_services_execute_args(story, async_mock):
                                {'arg1': {'type': 'string'}},
                                'any', handler)
 
-    assert Services.is_internal('my_service') is True
+    assert Services.is_internal('my_service', 'my_command') is True
     line = {
         Line.service: 'my_service',
         Line.command: 'my_command',
+        Line.method: 'execute',
         'args': [
             {
                 '$OBJECT': 'argument',
@@ -230,7 +240,12 @@ async def test_services_execute_http(patch, story, async_mock):
 
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
-    line = {'ln': '10'}
+    line = {
+        'ln': '10',
+        Line.service: 'alpine',
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
     patch.object(Containers, 'start', new=async_mock())
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_called_with(story, line)
@@ -331,6 +346,57 @@ def test_service_get_command_conf_simple(story):
         }
     }
     assert Services.get_command_conf(story, chain) == {'x': 'y'}
+
+
+@mark.asyncio
+async def test_start_container_http(story):
+    line = {Line.command: 'server', Line.service: 'http'}
+    ret = await Services.start_container(story, line)
+    assert ret.name == 'http'
+    assert ret.command == 'server'
+    assert ret.container_name == 'gateway_1'
+    assert ret.hostname == story.app.config.ASYNCY_HTTP_GW_HOST
+
+
+@mark.parametrize('command', ['write', 'finish'])
+@mark.asyncio
+async def test_execute_inline(patch, story, command):
+    chain = deque([Service('http'), Event('server'), Command(command)])
+    req = MagicMock()
+    io_loop = MagicMock()
+    story.context = {
+        ContextConstants.server_request: req,
+        ContextConstants.server_io_loop: io_loop
+    }
+
+    command_conf = {
+        'arguments': {
+            'content': {
+                'type': 'string',
+                'in': 'responseBody',
+                'required': True
+            }
+        }
+    }
+
+    patch.object(story, 'argument_by_name', return_value='hello world!')
+
+    expected_body = {
+        'command': command,
+        'data': {
+            'content': 'hello world!'
+        }
+    }
+
+    line = {}
+
+    await Services.execute_inline(story, line, chain, command_conf)
+
+    req.write.assert_called_with(ujson.dumps(expected_body) + '\n')
+    if command == 'finish':
+        io_loop.add_callback.assert_called_with(req.finish)
+    else:
+        io_loop.add_callback.assert_not_called()
 
 
 def test_service_get_command_conf_events(story):
