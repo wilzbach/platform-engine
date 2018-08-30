@@ -22,10 +22,11 @@ async def test_services_execute_execute_internal(story, async_mock):
 
     Services.register_internal('my_service', 'my_command', {}, 'any', handler)
 
-    assert Services.is_internal('my_service') is True
+    assert Services.is_internal('my_service', 'my_command') is True
     line = {
         Line.service: 'my_service',
-        Line.command: 'my_command'
+        Line.command: 'my_command',
+        Line.method: 'execute'
     }
 
     assert await Services.execute(story, line) == 'output'
@@ -34,27 +35,15 @@ async def test_services_execute_execute_internal(story, async_mock):
 @mark.asyncio
 async def test_services_execute_execute_external(patch, story, async_mock):
     patch.object(Services, 'execute_external', new=async_mock())
-    assert Services.is_internal('foo_service') is False
+    assert Services.is_internal('foo_service', 'blah') is False
     line = {
         Line.service: 'foo_service',
-        Line.command: 'foo_command'
+        Line.command: 'foo_command',
+        Line.method: 'execute'
     }
 
     assert await Services.execute(story, line) \
         == await Services.execute_external()
-
-
-@mark.asyncio
-async def test_services_execute_invalid_command(story):
-    Services.register_internal('my_service', 'my_command', {}, 'any', None)
-
-    line = {
-        Line.service: 'my_service',
-        Line.command: 'foo_command'
-    }
-
-    with pytest.raises(AsyncyError):
-        await Services.execute(story, line)
 
 
 @mark.asyncio
@@ -65,10 +54,11 @@ async def test_services_execute_args(story, async_mock):
                                {'arg1': {'type': 'string'}},
                                'any', handler)
 
-    assert Services.is_internal('my_service') is True
+    assert Services.is_internal('my_service', 'my_command') is True
     line = {
         Line.service: 'my_service',
         Line.command: 'my_command',
+        Line.method: 'execute',
         'args': [
             {
                 '$OBJECT': 'argument',
@@ -230,7 +220,12 @@ async def test_services_execute_http(patch, story, async_mock):
 
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
-    line = {'ln': '10', 'service': 'alpine'}
+    line = {
+        'ln': '10',
+        Line.service: 'alpine',
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
     patch.object(Containers, 'start', new=async_mock())
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_called_with(story, line)

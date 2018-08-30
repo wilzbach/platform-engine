@@ -38,12 +38,22 @@ class Services:
                                                     handler=handler)
 
     @classmethod
-    def is_internal(cls, service):
-        return cls.internal_services.get(service) is not None
+    def is_internal(cls, service, command):
+        service = cls.internal_services.get(service)
+        return service is not None \
+            and service.commands.get(command) is not None
+
+    @classmethod
+    def last(cls, chain):
+        return chain[len(chain) - 1]
 
     @classmethod
     async def execute(cls, story, line):
-        if cls.is_internal(line[LineConstants.service]):
+        chain = cls.resolve_chain(story, line)
+        assert isinstance(chain, deque)
+        assert isinstance(chain[0], Service)
+
+        if cls.is_internal(chain[0].name, cls.last(chain).name):
             return await cls.execute_internal(story, line)
         else:
             return await cls.execute_external(story, line)
@@ -231,7 +241,8 @@ class Services:
 
     @classmethod
     async def start_container(cls, story, line):
-        if cls.is_internal(line[LineConstants.service]):
+        if line[LineConstants.command] == 'server' \
+                and line[LineConstants.service] == 'http':
             return StreamingService(
                 name='http',
                 command=line[LineConstants.command],
