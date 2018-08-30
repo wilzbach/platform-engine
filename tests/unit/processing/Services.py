@@ -51,6 +51,22 @@ async def test_services_execute_execute_external(patch, story, async_mock):
 
 
 @mark.asyncio
+async def test_services_execute_execute_external_inline(patch, story,
+                                                        async_mock):
+    patch.object(Services, 'execute_inline', new=async_mock())
+    patch.object(Services, 'get_command_conf',
+                 return_value={'http': {'use_event_conn': True}})
+    line = {
+        Line.service: 'foo_service',
+        Line.command: 'foo_command',
+        Line.method: 'execute'
+    }
+
+    assert await Services.execute(story, line) \
+        == await Services.execute_inline()
+
+
+@mark.asyncio
 async def test_services_execute_args(story, async_mock):
     handler = async_mock(return_value='output')
 
