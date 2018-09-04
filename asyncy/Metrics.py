@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from prometheus_client import Summary
 
+# TODO: Update all metrics to accept app ID
+
 story_request = Summary(
     'asyncy_engine_http_run_story_processing_seconds',
     'Time spent processing story run requests'
