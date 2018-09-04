@@ -143,8 +143,9 @@ class Services:
                 chain.appendleft(Command(parent_line[LineConstants.command]))
 
             # Is this a concrete service?
-            resolved = story.app.services.get(service)
-            if resolved is not None:
+            resolved = story.app.services.get(service) is not None \
+                or cls.is_internal(service, parent_line['command'])
+            if resolved:
                 chain.appendleft(Service(service))
                 break
 
