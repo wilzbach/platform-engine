@@ -166,7 +166,8 @@ class Lexicon:
 
             query_params = urllib.parse.urlencode({
                 'story': story.name,
-                'block': line['ln']
+                'block': line['ln'],
+                'app': story.app.app_id
             })
 
             body = {

@@ -11,6 +11,7 @@ import prometheus_client
 import tornado
 from tornado import web
 
+from asyncy.Apps import Apps
 from . import Version
 from .App import App
 from .Config import Config
@@ -22,7 +23,6 @@ from .processing.internal import File, Http, Log
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 config = Config()
-app = None
 server = None
 logger = Logger(config)
 logger.start()
@@ -45,21 +45,10 @@ class Service:
     @click.option('--debug',
                   help='Sets the engine into debug mode',
                   default=False)
-    @click.option('--sentry_dsn',
-                  help='Sentry DNS for bug collection.',
-                  default=os.getenv('SENTRY_DSN'))
-    @click.option('--release',
-                  help='The version being released (provide a Git commit ID)',
-                  default=os.getenv('RELEASE_VER'))
-    @click.option('--user_id',
-                  help='The Asyncy User ID',
-                  default=os.getenv('BETA_USER_ID'))
-    def start(port, debug, sentry_dsn, release, user_id, prometheus_port):
-        global app, server
-        app = App(config, logger, beta_user_id=user_id,
-                  sentry_dsn=sentry_dsn, release=release)
+    def start(port, debug, prometheus_port):
+        global server
 
-        Services.logger = logger
+        Services.set_logger(logger)
 
         # Init internal services.
         File.init()
@@ -72,8 +61,7 @@ class Service:
         signal.signal(signal.SIGINT, Service.sig_handler)
 
         web_app = tornado.web.Application([
-            (r'/story/event', StoryEventHandler,
-             {'app': app, 'logger': logger})
+            (r'/story/event', StoryEventHandler)
         ], debug=debug)
 
         config.engine_host = socket.gethostname()
@@ -87,7 +75,7 @@ class Service:
         logger.log('http-init', port)
 
         loop = asyncio.get_event_loop()
-        loop.create_task(app.bootstrap())
+        loop.create_task(Apps.init_all(config, logger))
 
         tornado.ioloop.IOLoop.current().start()
 

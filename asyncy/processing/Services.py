@@ -8,6 +8,7 @@ import ujson
 
 from ..Containers import Containers
 from ..Exceptions import AsyncyError
+from ..Logger import Logger
 from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
@@ -25,6 +26,10 @@ Event = namedtuple('Event', ['name'])
 class Services:
     internal_services = {}
     logger = None
+
+    @classmethod
+    def set_logger(cls, logger: Logger):
+        cls.logger = logger
 
     @classmethod
     def register_internal(cls, name, command, arguments, output_type, handler):
