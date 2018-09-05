@@ -6,8 +6,8 @@ class Config:
 
     defaults = {
         'ASYNCY_HTTP_GW_HOST': 'gateway',
-        'logger_name': 'asyncy',
-        'logger_level': 'debug',
+        'LOGGER_NAME': 'asyncy',
+        'LOGGER_LEVEL': 'debug',
         'DOCKER_HOST': 'http://localhost:2375',
         'DOCKER_TLS_VERIFY': '0',
         'DOCKER_CERT_PATH': '',
