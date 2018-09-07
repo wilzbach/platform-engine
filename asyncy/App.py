@@ -13,10 +13,15 @@ class App:
 
     entrypoint = []
     sentry_client = None
+    """
+    This is the sentry_client for the engine, and not for reporting 
+    errors of the app to the user (user's sentry account).
+    For that, Storyscript stack traces must be generated and reported. 
+    """
 
     def __init__(self, app_id: str, config: Config, logger: Logger,
                  stories: dict, services: dict, environment: dict,
-                 beta_user_id=None, sentry_dsn=None, release=None):
+                 beta_user_id=None, sentry_client=None):
         self.app_id = app_id
         self.config = config
         self.beta_user_id = beta_user_id
@@ -24,11 +29,7 @@ class App:
         self.environment = environment
         self.stories = stories
         self.services = services
-
-        self.sentry_client = AsyncSentryClient(
-            dsn=sentry_dsn,
-            release=release
-        )
+        self.sentry_client = sentry_client
 
     async def bootstrap(self):
         """

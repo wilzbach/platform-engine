@@ -11,9 +11,8 @@ import prometheus_client
 import tornado
 from tornado import web
 
-from asyncy.Apps import Apps
+from .Apps import Apps
 from . import Version
-from .App import App
 from .Config import Config
 from .Logger import Logger
 from .http_handlers.StoryEventHandler import StoryEventHandler
@@ -42,10 +41,16 @@ class Service:
     @click.option('--prometheus_port',
                   help='Set the port on which metrics are exposed',
                   default=os.getenv('METRICS_PORT', '8085'))
+    @click.option('--sentry_dsn',
+                  help='Sentry DNS for bug collection.',
+                  default=os.getenv('SENTRY_DSN'))
+    @click.option('--release',
+                  help='The version being released (provide a Git commit ID)',
+                  default=os.getenv('RELEASE_VER'))
     @click.option('--debug',
                   help='Sets the engine into debug mode',
                   default=False)
-    def start(port, debug, prometheus_port):
+    def start(port, debug, sentry_dsn, release, prometheus_port):
         global server
 
         Services.set_logger(logger)
@@ -75,7 +80,7 @@ class Service:
         logger.log('http-init', port)
 
         loop = asyncio.get_event_loop()
-        loop.create_task(Apps.init_all(config, logger))
+        loop.create_task(Apps.init_all(sentry_dsn, release, config, logger))
 
         tornado.ioloop.IOLoop.current().start()
 

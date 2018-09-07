@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
+from raven.contrib.tornado import AsyncSentryClient
 
 from asyncy.Config import Config
 from asyncy.Logger import Logger
@@ -11,7 +11,13 @@ class Apps:
     apps = {}
 
     @classmethod
-    async def init_all(cls, config: Config, logger: Logger):
+    async def init_all(cls, sentry_dsn: str, release: str,
+                       config: Config, logger: Logger):
+        cls.sentry_client = AsyncSentryClient(
+            dsn=sentry_dsn,
+            release=release
+        )
+
         app_ids = []  # TODO: read from db
         for app_id in app_ids:
             # TODO:  validate in the db if this app is active
@@ -19,12 +25,9 @@ class Apps:
             environment = {}  # TODO:
             services = {}  # TODO:
             user_id = 'judepereira'  # TODO:
-            sentry_dsn = ''  # TODO:
-            release = '0.1'  # TODO:
             app = App(app_id, config, logger,
                       stories, services, environment,
-                      beta_user_id=user_id, sentry_dsn=sentry_dsn,
-                      release=release)
+                      beta_user_id=user_id, sentry_client=cls.sentry_client)
 
             cls.apps[app_id] = app
 
