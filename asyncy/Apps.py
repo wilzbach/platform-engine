@@ -57,6 +57,7 @@ class Apps:
             environment = release[2]
             stories = release[3]
             maintenance = release[4]
+            logger.info(f'Deploying app {app_id}@{version}')
             if maintenance:
                 continue
 
@@ -74,6 +75,7 @@ class Apps:
                 await app.bootstrap()
 
                 cls.apps[app_id] = app
+                logger.info(f'Successfully deployed app {app_id}@{version}')
             except BaseException as e:
                 logger.error(
                     f'Failed to bootstrap app {app_id}@{version}', exc=e)
@@ -212,3 +214,15 @@ class Apps:
             res['pullUrl'],
             res['serviceTags']['nodes'][0]['configuration']
         )
+
+    @classmethod
+    async def destroy_app(cls, app: App):
+        app.logger.info(f'Destroying app {app.app_id}')
+        await app.destroy()
+        app.logger.info(f'Completed destroying app {app.app_id}')
+        cls.apps[app.app_id] = None
+
+    @classmethod
+    async def destroy_all(cls):
+        for app in cls.apps.values():
+            await cls.destroy_app(app)

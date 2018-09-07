@@ -101,7 +101,7 @@ class Service:
     @classmethod
     async def shutdown_app(cls):
         logger.log_raw('info', 'Unregistering with the gateway...')
-        await app.destroy()
+        await Apps.destroy_all()
 
         io_loop = tornado.ioloop.IOLoop.instance()
         io_loop.stop()
