@@ -2,16 +2,18 @@
 import json
 
 import certifi
+
 import psycopg2
 
 from raven.contrib.tornado import AsyncSentryClient
+
 from tornado.httpclient import AsyncHTTPClient
 
-from .Sentry import Sentry
-from .utils.HttpUtils import HttpUtils
+from .App import App
 from .Config import Config
 from .Logger import Logger
-from .App import App
+from .Sentry import Sentry
+from .utils.HttpUtils import HttpUtils
 
 
 class Apps:
@@ -33,7 +35,7 @@ class Apps:
         cur = conn.cursor()
 
         query = """
-        with latest as (select app_uuid, max(id) as id 
+        with latest as (select app_uuid, max(id) as id
             from releases group by app_uuid)
         select app_uuid, id, config, payload, maintenance
         from latest

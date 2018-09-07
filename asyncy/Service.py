@@ -11,8 +11,8 @@ import prometheus_client
 import tornado
 from tornado import web
 
-from .Apps import Apps
 from . import Version
+from .Apps import Apps
 from .Config import Config
 from .Logger import Logger
 from .http_handlers.StoryEventHandler import StoryEventHandler
