@@ -11,34 +11,49 @@ from .App import App
 class Apps:
 
     apps = {}
+    sentry_client = None
+
+    @classmethod
+    def _init_sentry(cls, sentry_dsn: str, release: str):
+        cls.sentry_client = AsyncSentryClient(
+            dsn=sentry_dsn,
+            release=release
+        )
+
+    @classmethod
+    def get_releases(cls):
+        conn = psycopg2.connect(database='asyncy', user='postgres',
+                                options=f'-c search_path=app_public')
+        cur = conn.cursor()
+
+        query = """
+        with latest as (select app_uuid, max(id) as id 
+            from releases group by app_uuid)
+        select app_uuid, id, config, payload, maintenance
+        from latest
+            inner join releases using (app_uuid, id)
+            inner join apps on (releases.app_uuid = apps.uuid);
+        """
+        cur.execute(query)
+
+        return cur.fetchall()
 
     @classmethod
     async def init_all(cls, sentry_dsn: str, release: str,
                        config: Config, logger: Logger):
         try:
-            cls.sentry_client = AsyncSentryClient(
-                dsn=sentry_dsn,
-                release=release
-            )
+            cls._init_sentry(sentry_dsn, release)
 
-            conn = psycopg2.connect(database='asyncy', user='postgres',
-                                    options=f'-c search_path=app_public')
-            cur = conn.cursor()
-            cur.execute(
-                'with latest as (select app_uuid, max(id) as id '
-                'from releases group by app_uuid) '
-                'select app_uuid, id, config, payload '
-                'from latest inner join releases '
-                'using (app_uuid, id);')
-
-            releases = cur.fetchall()
+            releases = cls.get_releases()
 
             for release in releases:
-                # TODO:  validate in the db if this app is active
                 app_id = release[0]
                 version = release[1]
                 environment = release[2]
                 stories = release[3]
+                maintenance = release[4]
+                if maintenance:
+                    continue
 
                 services = {}  # TODO: loop through stories.services and gather intel from the db
 
