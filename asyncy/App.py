@@ -19,11 +19,12 @@ class App:
     For that, Storyscript stack traces must be generated and reported. 
     """
 
-    def __init__(self, app_id: str, config: Config, logger: Logger,
+    def __init__(self, app_id: str, version: int, config: Config, logger: Logger,
                  stories: dict, services: dict, environment: dict,
                  sentry_client=None):
         self.app_id = app_id
         self.config = config
+        self.version = version
         self.logger = logger
         self.environment = environment
         self.stories = stories

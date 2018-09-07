@@ -80,11 +80,18 @@ class Service:
         logger.log('http-init', port)
 
         loop = asyncio.get_event_loop()
-        loop.create_task(Apps.init_all(sentry_dsn, release, config, logger))
+        loop.create_task(Service.init_wrapper(sentry_dsn, release))
 
         tornado.ioloop.IOLoop.current().start()
 
         logger.log_raw('info', 'Shutdown complete!')
+
+    @staticmethod
+    async def init_wrapper(sentry_dsn: str, release: str):
+        try:
+            await Apps.init_all(sentry_dsn, release, config, logger)
+        except BaseException as e:
+            logger.error(f'Failed to init apps!', exc=e)
 
     @staticmethod
     def sig_handler(*args, **kwargs):

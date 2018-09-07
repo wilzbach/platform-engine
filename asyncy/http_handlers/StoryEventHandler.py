@@ -4,9 +4,10 @@ from tornado import web
 
 import ujson
 
-from ..Apps import Apps
 from .BaseHandler import BaseHandler
 from .. import Metrics
+from ..Apps import Apps
+from ..Sentry import Sentry
 from ..constants import ContextConstants
 from ..processing import Story
 
@@ -31,10 +32,8 @@ class StoryEventHandler(BaseHandler):
     @web.asynchronous
     @Metrics.story_request.time()
     async def post(self):
-        self.app.sentry_client.context.clear()
-        self.app.sentry_client.user_context({
-            'app_uuid': self.app.app_id,
-        })
+        Sentry.clear_and_set_context(self.app.sentry_client,
+                                     self.app.app_id, self.app.version)
 
         story_name = self.get_argument('story')
         block = self.get_argument('block')
