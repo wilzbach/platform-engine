@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import psycopg2
+
 from raven.contrib.tornado import AsyncSentryClient
 
-from asyncy.Config import Config
-from asyncy.Logger import Logger
+from .Config import Config
+from .Logger import Logger
 from .App import App
 
 
@@ -13,23 +15,42 @@ class Apps:
     @classmethod
     async def init_all(cls, sentry_dsn: str, release: str,
                        config: Config, logger: Logger):
-        cls.sentry_client = AsyncSentryClient(
-            dsn=sentry_dsn,
-            release=release
-        )
+        try:
+            cls.sentry_client = AsyncSentryClient(
+                dsn=sentry_dsn,
+                release=release
+            )
 
-        app_ids = []  # TODO: read from db
-        for app_id in app_ids:
-            # TODO:  validate in the db if this app is active
-            stories = {}  # TODO:
-            environment = {}  # TODO:
-            services = {}  # TODO:
-            user_id = 'judepereira'  # TODO:
-            app = App(app_id, config, logger,
-                      stories, services, environment,
-                      beta_user_id=user_id, sentry_client=cls.sentry_client)
+            conn = psycopg2.connect(database='asyncy', user='postgres',
+                                    options=f'-c search_path=app_public')
+            cur = conn.cursor()
+            cur.execute(
+                'with latest as (select app_uuid, max(id) as id '
+                'from releases group by app_uuid) '
+                'select app_uuid, id, config, payload '
+                'from latest inner join releases '
+                'using (app_uuid, id);')
 
-            cls.apps[app_id] = app
+            releases = cur.fetchall()
+
+            for release in releases:
+                # TODO:  validate in the db if this app is active
+                app_id = release[0]
+                version = release[1]
+                environment = release[2]
+                stories = release[3]
+
+                services = {}  # TODO: loop through stories.services and gather intel from the db
+
+                app = App(app_id, config, logger,
+                          stories, services, environment,
+                          sentry_client=cls.sentry_client)
+
+                await app.bootstrap()
+            
+                cls.apps[app_id] = app
+        except BaseException as e:
+            logger.error('Failed to init!', exc=e)
 
     @classmethod
     def get(cls, app_id):

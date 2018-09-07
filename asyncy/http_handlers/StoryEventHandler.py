@@ -33,7 +33,7 @@ class StoryEventHandler(BaseHandler):
     async def post(self):
         self.app.sentry_client.context.clear()
         self.app.sentry_client.user_context({
-            'id': self.app.beta_user_id,
+            'app_uuid': self.app.app_id,
         })
 
         story_name = self.get_argument('story')

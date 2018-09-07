@@ -21,10 +21,9 @@ class App:
 
     def __init__(self, app_id: str, config: Config, logger: Logger,
                  stories: dict, services: dict, environment: dict,
-                 beta_user_id=None, sentry_client=None):
+                 sentry_client=None):
         self.app_id = app_id
         self.config = config
-        self.beta_user_id = beta_user_id
         self.logger = logger
         self.environment = environment
         self.stories = stories
