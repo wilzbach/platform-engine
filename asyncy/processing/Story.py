@@ -138,14 +138,17 @@ class Story:
                 await cls.execute(logger, story)
 
             logger.log('story-end', story_name, story_id)
-            Metrics.story_run_success.labels(story_name=story_name) \
+            Metrics.story_run_success.labels(app_id=app.app_id,
+                                             story_name=story_name) \
                 .observe(time.time() - start)
         except BaseException as err:
-            Metrics.story_run_failure.labels(story_name=story_name) \
+            Metrics.story_run_failure.labels(app_id=app.app_id,
+                                             story_name=story_name) \
                 .observe(time.time() - start)
             raise err
         finally:
-            Metrics.story_run_total.labels(story_name=story_name) \
+            Metrics.story_run_total.labels(app_id=app.app_id,
+                                           story_name=story_name) \
                 .observe(time.time() - start)
 
     @classmethod

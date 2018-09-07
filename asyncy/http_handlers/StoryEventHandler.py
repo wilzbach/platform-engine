@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+
 import tornado
 from tornado import web
 
@@ -30,8 +32,8 @@ class StoryEventHandler(BaseHandler):
                         block=block)
 
     @web.asynchronous
-    @Metrics.story_request.time()
     async def post(self):
+        start = time.time()
         Sentry.clear_and_set_context(self.app.sentry_client,
                                      self.app.app_id, self.app.version)
 
@@ -49,3 +51,8 @@ class StoryEventHandler(BaseHandler):
             self.finish()
         except BaseException as e:
             self.handle_story_exc(story_name, e)
+        finally:
+            Metrics.story_request.labels(
+                app_id=app_id,
+                story_name=story_name
+            ).observe(time.time() - start)
