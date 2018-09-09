@@ -17,6 +17,7 @@ def config():
 
 
 def test_config():
+    # TODO: These constants are now upper cased
     assert Config.defaults['logger_name'] == 'asyncy'
     assert Config.defaults['logger_level'] == 'debug'
 
