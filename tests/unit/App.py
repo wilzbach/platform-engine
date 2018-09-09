@@ -30,6 +30,7 @@ def test_app_init(patch, config, logger):
     assert app.config == config
     assert app.logger == logger
     # TODO: beta_user_id is no longer required
+    # TODO: Cleanup kwargs.
     assert app.beta_user_id == 'beta_id'
 
 
