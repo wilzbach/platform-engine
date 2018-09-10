@@ -265,13 +265,13 @@ async def test_lexicon_when(patch, story, async_mock):
     story.name = 'my_event_driven_story.story'
     story.app.config.engine_host = 'localhost'
     story.app.config.engine_port = 8000
+    story.app.app_id = 'my_fav_app'
 
     expected_url = 'http://foo.com:2000/sub'
 
     expected_body = {
-        # TODO: The url below includes app_id now.
         'endpoint': f'http://localhost:8000/story/event?'
-                    f'story={story.name}&block={line["ln"]}',
+                    f'story={story.name}&block={line["ln"]}&app=my_fav_app',
         'data': {
             'foo': 'bar'
         },
