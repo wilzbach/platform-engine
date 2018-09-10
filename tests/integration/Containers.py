@@ -11,9 +11,10 @@ from storyscript.parser import Parser
 
 
 @mark.asyncio
-async def test_exec(logger, config, story, echo_service, echo_line):
-    story.app = App(config, logger)
-    story.app.services = echo_service
+async def test_exec(logger, config, story, echo_service, echo_line, magic):
+    story.app = App('app_id', 1, config, logger,
+                    {'stories': {}, 'entrypoint': []},
+                    echo_service, {}, magic())
     echo_line['service'] = 'alpine-echo'
     echo_service['alpine-echo'] = echo_service['alpine']
 
@@ -38,9 +39,10 @@ async def clean_container(story, line):
 
 
 @mark.asyncio
-async def test_start(logger, config, story, echo_service, echo_line):
-    story.app = App(config, logger)
-    story.app.services = echo_service
+async def test_start(logger, config, story, echo_service, echo_line, magic):
+    story.app = App('app_id', 1, config, logger,
+                    {'stories': {}, 'entrypoint': []},
+                    echo_service, {}, magic())
 
     story.prepare()
 
