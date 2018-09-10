@@ -30,7 +30,7 @@ def test_adapter_process_reset():
     assert result == ('foobar::test.story => message', {})
 
 
-def test_logger_init(config):
+def test_logger_init(logger, config):
     name = config.LOGGER_NAME
     level = config.LOGGER_LEVEL
     Frustum.__init__.assert_called_with(name, level)
