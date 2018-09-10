@@ -17,9 +17,8 @@ def config():
 
 
 def test_config():
-    # TODO: These constants are now upper cased
-    assert Config.defaults['logger_name'] == 'asyncy'
-    assert Config.defaults['logger_level'] == 'debug'
+    assert Config.defaults['LOGGER_NAME'] == 'asyncy'
+    assert Config.defaults['LOGGER_LEVEL'] == 'debug'
 
 
 def test_config_init(patch):
