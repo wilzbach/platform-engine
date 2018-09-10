@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
-from asyncy.App import App
+from asyncy.Apps import Apps
 from asyncy.Service import Service
 
 from click.testing import CliRunner
@@ -40,7 +40,8 @@ def test_service_sig_handler(patch):
 
 
 def test_service_shutdown(patch):
-    Service.server = MagicMock()
+    import asyncy.Service as ServiceFile
+    ServiceFile.server = MagicMock()
     patch.object(asyncio, 'get_event_loop')
     patch.object(Service, 'shutdown_app')
     Service.shutdown()
@@ -50,14 +51,12 @@ def test_service_shutdown(patch):
 
 @mark.asyncio
 async def test_service_shutdown_app(patch, async_mock):
-    from asyncy import Service as ServiceWrapper
-    ServiceWrapper.app.destroy = async_mock()
-
     patch.object(asyncio, 'get_event_loop')
     patch.object(tornado, 'ioloop')
+    patch.object(Apps, 'destroy_all', new=async_mock())
     await Service.shutdown_app()
 
-    ServiceWrapper.app.destroy.mock.assert_called_once()
+    Apps.destroy_all.mock.assert_called_once()
 
     tornado.ioloop.IOLoop.instance() \
         .stop.assert_called_once()
