@@ -17,19 +17,33 @@ def runner():
     return CliRunner()
 
 
-def test_server(patch, runner):
-    patch.many(App, ['bootstrap', 'destroy'])
+@mark.asyncio
+async def test_server(patch, runner):
+    patch.object(Service, 'init_wrapper')
     patch.many(tornado, ['web', 'ioloop'])
     patch.object(asyncio, 'get_event_loop')
 
     result = runner.invoke(Service.start)
 
-    App.bootstrap.assert_called()
+    Service.init_wrapper.assert_called()
 
     tornado.ioloop.IOLoop.current.assert_called()
     tornado.ioloop.IOLoop.current.return_value.start.assert_called()
 
     assert result.exit_code == 0
+
+
+@mark.asyncio
+async def test_init_wrapper(patch, async_mock):
+    patch.object(Apps, 'init_all', new=async_mock())
+    import asyncy.Service as ServiceFile
+    ServiceFile.config = MagicMock()
+    ServiceFile.logger = MagicMock()
+    sentry = 'sentry_dsn'
+    release = 'release_ver'
+    await Service.init_wrapper(sentry, release)
+    Apps.init_all.mock.assert_called_with(
+        sentry, release, ServiceFile.config, ServiceFile.logger)
 
 
 def test_service_sig_handler(patch):
