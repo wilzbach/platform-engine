@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
-from json import load
-
-from raven.contrib.tornado import AsyncSentryClient
-
 from .Config import Config
 from .Logger import Logger
 from .processing import Story
@@ -11,7 +6,6 @@ from .processing import Story
 
 class App:
 
-    entrypoint = []
     sentry_client = None
     """
     This is the sentry_client for the engine, and not for reporting
@@ -27,7 +21,8 @@ class App:
         self.version = version
         self.logger = logger
         self.environment = environment
-        self.stories = stories
+        self.stories = stories['stories']
+        self.entrypoint = stories['entrypoint']
         self.services = services
         self.sentry_client = sentry_client
 
@@ -37,8 +32,6 @@ class App:
         This enables the story to listen to pub/sub,
         register with the gateway, and queue cron jobs.
         """
-        self.entrypoint = self.stories['entrypoint']
-        self.stories = self.stories['stories']
         await self.run_stories()
 
     async def run_stories(self):
