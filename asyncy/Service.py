@@ -92,6 +92,7 @@ class Service:
             await Apps.init_all(sentry_dsn, release, config, logger)
         except BaseException as e:
             logger.error(f'Failed to init apps!', exc=e)
+            raise e
 
     @staticmethod
     def sig_handler(*args, **kwargs):

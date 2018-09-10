@@ -7,6 +7,7 @@ from asyncy.Service import Service
 
 from click.testing import CliRunner
 
+import pytest
 from pytest import fixture, mark
 
 import tornado
@@ -44,6 +45,16 @@ async def test_init_wrapper(patch, async_mock):
     await Service.init_wrapper(sentry, release)
     Apps.init_all.mock.assert_called_with(
         sentry, release, ServiceFile.config, ServiceFile.logger)
+
+
+@mark.asyncio
+async def test_init_wrapper_exc(patch, async_mock, magic):
+    def exc(*args, **kwargs):
+        raise Exception()
+
+    patch.object(Apps, 'init_all', new=async_mock(side_effect=exc))
+    with pytest.raises(Exception):
+        await Service.init_wrapper(magic(), magic())
 
 
 def test_service_sig_handler(patch):
