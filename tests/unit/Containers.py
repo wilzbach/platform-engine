@@ -153,6 +153,7 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
         'service': 'alpine',
         'command': 'pwd'
     }
+    story.app.app_id = 'app_id'
 
     result = await Containers.exec(logger, story, line, 'alpine', 'pwd')
 
@@ -165,10 +166,11 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
         endpoint = endpoint.replace('http://', 'https://')
 
     assert fetch.mock_calls[0][1][1] == \
-        '{0}/v1.37/containers/asyncy--alpine-1/exec'.format(endpoint)
+        f'{endpoint}/v1.37/containers/asyncy--app_id-alpine-1/exec'
     assert fetch.mock_calls[0][2]['method'] == 'POST'
     assert fetch.mock_calls[0][2]['body'] == \
-        '{"Container":"asyncy--alpine-1","User":"root","Privileged":false,' \
+        '{"Container":"asyncy--app_id-alpine-1",' \
+        '"User":"root","Privileged":false,' \
         '"Cmd":["pwd"],"AttachStdin":false,' \
         '"AttachStdout":true,"AttachStderr":true,"Tty":false}'
 
