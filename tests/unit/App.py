@@ -18,8 +18,7 @@ def exc(patch):
 
 @fixture
 def app(config, logger, magic):
-    return App('app_id', logger, config, magic(), magic(), magic(), magic(),
-               sentry_client=magic())
+    return App('app_id', logger, config, magic(), magic(), magic(), magic())
 
 
 def test_app_init(magic, config, logger):
@@ -27,15 +26,13 @@ def test_app_init(magic, config, logger):
     environment = magic()
     stories = magic()
     sentry = magic()
-    app = App('app_id', logger, config, logger, stories, services, environment,
-              sentry_client=sentry)
+    app = App('app_id', logger, config, logger, stories, services, environment)
     assert app.app_id == 'app_id'
     assert app.config == config
     assert app.logger == logger
     assert app.stories == stories['stories']
     assert app.services == services
     assert app.environment == environment
-    assert app.sentry_client == sentry
     assert app.entrypoint == stories['entrypoint']
 
 
