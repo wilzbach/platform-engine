@@ -169,11 +169,12 @@ async def test_story_run(patch, app, logger, async_mock, magic):
     Story.story.return_value.prepare.assert_called_with(None)
     Story.execute.mock.assert_called_with(logger, Story.story())
 
-    Metrics.story_run_total.labels.assert_called_with(story_name='story_name')
+    Metrics.story_run_total.labels.assert_called_with(app_id=app.app_id,
+                                                      story_name='story_name')
     Metrics.story_run_total.labels.return_value.observe.assert_called_once()
 
     Metrics.story_run_success.labels \
-        .assert_called_with(story_name='story_name')
+        .assert_called_with(app_id=app.app_id, story_name='story_name')
     Metrics.story_run_success.labels.return_value.observe.assert_called_once()
 
 
@@ -196,11 +197,12 @@ async def test_story_run_metrics_exc(patch, app, logger, async_mock, magic):
     Story.story.return_value.prepare.assert_called_with(None)
     Story.execute.mock.assert_called_with(logger, Story.story())
 
-    Metrics.story_run_total.labels.assert_called_with(story_name='story_name')
+    Metrics.story_run_total.labels.assert_called_with(app_id=app.app_id,
+                                                      story_name='story_name')
     Metrics.story_run_total.labels.return_value.observe.assert_called_once()
 
     Metrics.story_run_failure.labels\
-        .assert_called_with(story_name='story_name')
+        .assert_called_with(app_id=app.app_id, story_name='story_name')
     Metrics.story_run_failure.labels.return_value.observe.assert_called_once()
 
 

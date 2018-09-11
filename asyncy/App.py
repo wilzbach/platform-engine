@@ -1,38 +1,22 @@
 # -*- coding: utf-8 -*-
-import os
-from json import load
-
-from raven.contrib.tornado import AsyncSentryClient
-
+from .Config import Config
+from .Logger import Logger
 from .processing import Story
 
 
 class App:
 
-    environment = {}
-    entrypoint = []
-    stories = {}
-    services = {}
-    sentry_client = None
-
-    def __init__(self, config, logger, beta_user_id=None,
-                 sentry_dsn=None, release=None):
+    def __init__(self, app_id: str, version: int, config: Config,
+                 logger: Logger, stories: dict, services: dict,
+                 environment: dict):
+        self.app_id = app_id
         self.config = config
-        self.beta_user_id = beta_user_id
+        self.version = version
         self.logger = logger
-
-        self.sentry_client = AsyncSentryClient(
-            dsn=sentry_dsn,
-            release=release
-        )
-
-    @staticmethod
-    def load_file(filepath):
-        datapath = os.getenv('ASSET_DIR', os.getcwd())
-        path = os.path.join(datapath, filepath)
-        if os.path.exists(path):
-            with open(path, 'r') as file:
-                return load(file)
+        self.environment = environment
+        self.stories = stories['stories']
+        self.entrypoint = stories['entrypoint']
+        self.services = services
 
     async def bootstrap(self):
         """
@@ -40,11 +24,6 @@ class App:
         This enables the story to listen to pub/sub,
         register with the gateway, and queue cron jobs.
         """
-        self.environment = self.load_file('config/environment.json')
-        meta = self.load_file('config/stories.json')
-        self.stories = meta['stories']
-        self.entrypoint = meta['entrypoint']
-        self.services = self.load_file('config/services.json')
         await self.run_stories()
 
     async def run_stories(self):

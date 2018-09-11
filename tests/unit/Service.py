@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
-from asyncy.App import App
+from asyncy.Apps import Apps
 from asyncy.Service import Service
 
 from click.testing import CliRunner
 
+import pytest
 from pytest import fixture, mark
 
 import tornado
@@ -17,19 +18,43 @@ def runner():
     return CliRunner()
 
 
-def test_server(patch, runner):
-    patch.many(App, ['bootstrap', 'destroy'])
+@mark.asyncio
+async def test_server(patch, runner):
+    patch.object(Service, 'init_wrapper')
     patch.many(tornado, ['web', 'ioloop'])
     patch.object(asyncio, 'get_event_loop')
 
     result = runner.invoke(Service.start)
 
-    App.bootstrap.assert_called()
+    Service.init_wrapper.assert_called()
 
     tornado.ioloop.IOLoop.current.assert_called()
     tornado.ioloop.IOLoop.current.return_value.start.assert_called()
 
     assert result.exit_code == 0
+
+
+@mark.asyncio
+async def test_init_wrapper(patch, async_mock):
+    patch.object(Apps, 'init_all', new=async_mock())
+    import asyncy.Service as ServiceFile
+    ServiceFile.config = MagicMock()
+    ServiceFile.logger = MagicMock()
+    sentry = 'sentry_dsn'
+    release = 'release_ver'
+    await Service.init_wrapper(sentry, release)
+    Apps.init_all.mock.assert_called_with(
+        sentry, release, ServiceFile.config, ServiceFile.logger)
+
+
+@mark.asyncio
+async def test_init_wrapper_exc(patch, async_mock, magic):
+    def exc(*args, **kwargs):
+        raise Exception()
+
+    patch.object(Apps, 'init_all', new=async_mock(side_effect=exc))
+    with pytest.raises(Exception):
+        await Service.init_wrapper(magic(), magic())
 
 
 def test_service_sig_handler(patch):
@@ -40,7 +65,8 @@ def test_service_sig_handler(patch):
 
 
 def test_service_shutdown(patch):
-    Service.server = MagicMock()
+    import asyncy.Service as ServiceFile
+    ServiceFile.server = MagicMock()
     patch.object(asyncio, 'get_event_loop')
     patch.object(Service, 'shutdown_app')
     Service.shutdown()
@@ -50,14 +76,12 @@ def test_service_shutdown(patch):
 
 @mark.asyncio
 async def test_service_shutdown_app(patch, async_mock):
-    from asyncy import Service as ServiceWrapper
-    ServiceWrapper.app.destroy = async_mock()
-
     patch.object(asyncio, 'get_event_loop')
     patch.object(tornado, 'ioloop')
+    patch.object(Apps, 'destroy_all', new=async_mock())
     await Service.shutdown_app()
 
-    ServiceWrapper.app.destroy.mock.assert_called_once()
+    Apps.destroy_all.mock.assert_called_once()
 
     tornado.ioloop.IOLoop.instance() \
         .stop.assert_called_once()

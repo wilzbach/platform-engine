@@ -82,8 +82,8 @@ class Containers:
         omg = story.app.services[service][ServiceConstants.config]
         image = omg.get('image', service)
         path = f'/containers/create?name={container_name}'
-        targets = {'/asyncy': {}}
-        binds = ['application-volume:/asyncy']
+        targets = {}
+        binds = []
 
         if omg.get('volumes'):
             for name, data in omg['volumes'].items():
@@ -295,16 +295,17 @@ class Containers:
         """
         If a container can be reused (where reuse is defined as a command
         without a run section in it's config), it'll return a generic name
-        like asyncy--foo-1, otherwise something cryptic: asyncy--sha1(foo)-1.
+        like asyncy--app_id-foo-1, otherwise something cryptic:
+        asyncy--app_id-sha1(foo)-1.
 
         Why a hash? Story names can have Docker reserved characters in them,
         and hence to normalise it, we need to create a hash here.
         """
         if cls.is_service_reusable(story, line):
-            return f'asyncy--{name}-1'
+            return f'asyncy--{story.app.app_id}-{name}-1'
 
         h = cls.hash_story_line(story, line)
-        return f'asyncy--{h}-1'
+        return f'asyncy--{story.app.app_id}-{h}-1'
 
     @classmethod
     def hash_story_line(cls, story, line):

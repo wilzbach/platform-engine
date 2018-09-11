@@ -45,6 +45,7 @@ class Lexicon:
             """
             output = await Services.start_container(story, line)
             Metrics.container_start_seconds_total.labels(
+                app_id=story.app.app_id,
                 story_name=story.name, service=service
             ).observe(time.time() - start)
 
@@ -55,6 +56,7 @@ class Lexicon:
         else:
             output = await Services.execute(story, line)
             Metrics.container_exec_seconds_total.labels(
+                app_id=story.app.app_id,
                 story_name=story.name, service=service
             ).observe(time.time() - start)
 
@@ -166,7 +168,8 @@ class Lexicon:
 
             query_params = urllib.parse.urlencode({
                 'story': story.name,
-                'block': line['ln']
+                'block': line['ln'],
+                'app': story.app.app_id
             })
 
             body = {

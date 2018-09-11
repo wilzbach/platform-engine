@@ -12,9 +12,10 @@ import tornado
 from tornado import web
 
 from . import Version
-from .App import App
+from .Apps import Apps
 from .Config import Config
 from .Logger import Logger
+from .Sentry import Sentry
 from .http_handlers.StoryEventHandler import StoryEventHandler
 from .processing.Services import Services
 from .processing.internal import File, Http, Log
@@ -22,7 +23,6 @@ from .processing.internal import File, Http, Log
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 config = Config()
-app = None
 server = None
 logger = Logger(config)
 logger.start()
@@ -42,24 +42,19 @@ class Service:
     @click.option('--prometheus_port',
                   help='Set the port on which metrics are exposed',
                   default=os.getenv('METRICS_PORT', '8085'))
-    @click.option('--debug',
-                  help='Sets the engine into debug mode',
-                  default=False)
     @click.option('--sentry_dsn',
                   help='Sentry DNS for bug collection.',
                   default=os.getenv('SENTRY_DSN'))
     @click.option('--release',
                   help='The version being released (provide a Git commit ID)',
                   default=os.getenv('RELEASE_VER'))
-    @click.option('--user_id',
-                  help='The Asyncy User ID',
-                  default=os.getenv('BETA_USER_ID'))
-    def start(port, debug, sentry_dsn, release, user_id, prometheus_port):
-        global app, server
-        app = App(config, logger, beta_user_id=user_id,
-                  sentry_dsn=sentry_dsn, release=release)
+    @click.option('--debug',
+                  help='Sets the engine into debug mode',
+                  default=False)
+    def start(port, debug, sentry_dsn, release, prometheus_port):
+        global server
 
-        Services.logger = logger
+        Services.set_logger(logger)
 
         # Init internal services.
         File.init()
@@ -72,8 +67,7 @@ class Service:
         signal.signal(signal.SIGINT, Service.sig_handler)
 
         web_app = tornado.web.Application([
-            (r'/story/event', StoryEventHandler,
-             {'app': app, 'logger': logger})
+            (r'/story/event', StoryEventHandler, {'logger': logger})
         ], debug=debug)
 
         config.engine_host = socket.gethostname()
@@ -87,11 +81,20 @@ class Service:
         logger.log('http-init', port)
 
         loop = asyncio.get_event_loop()
-        loop.create_task(app.bootstrap())
+        loop.create_task(Service.init_wrapper(sentry_dsn, release))
 
         tornado.ioloop.IOLoop.current().start()
 
         logger.log_raw('info', 'Shutdown complete!')
+
+    @staticmethod
+    async def init_wrapper(sentry_dsn: str, release: str):
+        try:
+            await Apps.init_all(sentry_dsn, release, config, logger)
+        except BaseException as e:
+            Sentry.capture_exc(e)
+            logger.error(f'Failed to init apps!', exc=e)
+            raise e
 
     @staticmethod
     def sig_handler(*args, **kwargs):
@@ -101,7 +104,7 @@ class Service:
     @classmethod
     async def shutdown_app(cls):
         logger.log_raw('info', 'Unregistering with the gateway...')
-        await app.destroy()
+        await Apps.destroy_all()  # All exceptions are handled inside.
 
         io_loop = tornado.ioloop.IOLoop.instance()
         io_loop.stop()

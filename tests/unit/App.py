@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
-import traceback
 from unittest import mock
 
 from asyncy.App import App
-from asyncy.Logger import Logger
 from asyncy.processing import Story
 
 import pytest
@@ -20,43 +17,32 @@ def exc(patch):
 
 
 @fixture
-def app(config, logger):
-    return App(config, logger)
+def app(config, logger, magic):
+    return App('app_id', logger, config, magic(), magic(), magic(), magic())
 
 
-def test_app_init(patch, config, logger):
-    app = App(config, logger, beta_user_id='beta_id',
-              sentry_dsn=None, release=None)
+def test_app_init(magic, config, logger):
+    services = magic()
+    environment = magic()
+    stories = magic()
+    app = App('app_id', logger, config, logger, stories, services, environment)
+    assert app.app_id == 'app_id'
     assert app.config == config
     assert app.logger == logger
-    assert app.beta_user_id == 'beta_id'
+    assert app.stories == stories['stories']
+    assert app.services == services
+    assert app.environment == environment
+    assert app.entrypoint == stories['entrypoint']
 
 
 @mark.asyncio
 async def test_app_bootstrap(patch, app, async_mock):
     patch.object(app, 'run_stories', new=async_mock())
     stories = {'entrypoint': ['foo'], 'stories': {'foo': {}}}
-    env = {'env': {}}
-    services = {'services': []}
-    patch.object(app, 'load_file', side_effect=[env, stories, services])
+    app.stories = stories
     await app.bootstrap()
 
-    assert app.stories == stories['stories']
-    assert app.entrypoint == stories['entrypoint']
-    assert app.services == services
-    assert app.environment == env
-
     assert app.run_stories.mock.call_count == 1
-
-
-def test_app_load_file(patch, app):
-    import asyncy
-    patch.many(asyncy.App, ['open', 'load'])
-    patch.object(os.path, 'exists', return_value=True)
-    path = '/config/stories.json'
-    result = app.load_file(path)
-    asyncy.App.open.assert_called_with(path, 'r')
-    assert asyncy.App.load() == result
 
 
 @mark.asyncio

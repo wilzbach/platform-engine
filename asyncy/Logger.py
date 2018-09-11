@@ -37,7 +37,7 @@ class Logger:
     ]
 
     def __init__(self, config):
-        self.frustum = Frustum(config.logger_name, config.logger_level)
+        self.frustum = Frustum(config.LOGGER_NAME, config.LOGGER_LEVEL)
 
     def adapter(self, app, story):
         return Adapter(self.frustum.logger, {'app': app, 'story': story})

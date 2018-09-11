@@ -31,8 +31,8 @@ def test_adapter_process_reset():
 
 
 def test_logger_init(logger, config):
-    name = config.logger_name
-    level = config.logger_level
+    name = config.LOGGER_NAME
+    level = config.LOGGER_LEVEL
     Frustum.__init__.assert_called_with(name, level)
 
 

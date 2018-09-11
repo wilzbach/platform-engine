@@ -153,6 +153,7 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
         'service': 'alpine',
         'command': 'pwd'
     }
+    story.app.app_id = 'app_id'
 
     result = await Containers.exec(logger, story, line, 'alpine', 'pwd')
 
@@ -165,10 +166,11 @@ async def test_container_exec(patch, story, app, logger, async_mock, line):
         endpoint = endpoint.replace('http://', 'https://')
 
     assert fetch.mock_calls[0][1][1] == \
-        '{0}/v1.37/containers/asyncy--alpine-1/exec'.format(endpoint)
+        f'{endpoint}/v1.37/containers/asyncy--app_id-alpine-1/exec'
     assert fetch.mock_calls[0][2]['method'] == 'POST'
     assert fetch.mock_calls[0][2]['body'] == \
-        '{"Container":"asyncy--alpine-1","User":"root","Privileged":false,' \
+        '{"Container":"asyncy--app_id-alpine-1",' \
+        '"User":"root","Privileged":false,' \
         '"Cmd":["pwd"],"AttachStdin":false,' \
         '"AttachStdout":true,"AttachStderr":true,"Tty":false}'
 
@@ -323,14 +325,14 @@ async def test_create_container(patch, story, line, async_mock, http_response,
     patch.object(Containers, 'get_network_name', new=async_mock(
         return_value='my_network_1'))
 
-    expected_date = {
+    expected_data = {
         'AttachStdout': False,
         'AttachStderr': False,
         'Env': ['DEBUG_ALL=yes', 'ALP_ONLY_1=true', 'ALP_ONLY_2=ok'],
         'Image': 'alpine:v1.2.3',
-        'Volumes': {'/asyncy': {}, '/var/db': {}, '/var/cache': {}},
+        'Volumes': {'/var/db': {}, '/var/cache': {}},
         'HostConfig': {
-            'Binds': ['application-volume:/asyncy', 'db:/var/db',
+            'Binds': ['db:/var/db',
                       'cache:/var/cache'],
             'NetworkMode': 'my_network_1'
         },
@@ -351,7 +353,7 @@ async def test_create_container(patch, story, line, async_mock, http_response,
 
         Containers._make_docker_request.mock.assert_called_with(
             story, line, '/containers/create?name=asyncy--alpine-1',
-            expected_date, method='POST')
+            expected_data, method='POST')
 
         Containers.remove_volume.mock.assert_called_once()
         Containers.remove_volume.mock.assert_called_with(
