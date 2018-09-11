@@ -104,7 +104,9 @@ class GraphQLAPI:
             raise Exception(f'Failed to get config for {image}:{tag}')
 
         graph_result = json.loads(res.body)
-        res = graph_result['data']['allOwners'][0]['repos'][0]['services'][0]
+        res = \
+            graph_result['data']['allOwners']['nodes'][0]['repos']['nodes'][0][
+                'services']['nodes'][0]
         assert res, 'Not found in Asyncy Hub'
 
         return (
