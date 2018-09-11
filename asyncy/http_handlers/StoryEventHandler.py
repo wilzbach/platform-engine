@@ -31,7 +31,6 @@ class StoryEventHandler(BaseHandler):
                         context=context,
                         block=block)
 
-    @web.asynchronous
     async def post(self):
         start = time.time()
         story_name = self.get_argument('story')
