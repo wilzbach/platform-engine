@@ -39,10 +39,10 @@ async def clean_container(story, line):
 
 
 @mark.asyncio
-async def test_start(logger, config, story, echo_service, echo_line, magic):
+async def test_start(logger, config, story, echo_service, echo_line):
     story.app = App('app_id', 1, config, logger,
                     {'stories': {}, 'entrypoint': []},
-                    echo_service, {}, magic())
+                    echo_service, {})
 
     story.prepare()
 
