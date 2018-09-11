@@ -3,13 +3,11 @@ from tornado.web import RequestHandler
 
 from ..Exceptions import AsyncyError
 from ..Sentry import Sentry
-from ..Stories import Stories
 
 
 class BaseHandler(RequestHandler):
 
     logger = None
-    app = None
 
     # noinspection PyMethodOverriding
     def initialize(self, logger):
@@ -20,7 +18,6 @@ class BaseHandler(RequestHandler):
         self.set_status(500, 'Story execution failed')
         self.finish()
         if isinstance(e, AsyncyError):
-            assert isinstance(e.story, Stories)
             Sentry.capture_exc(e, e.story, e.line)
         else:
             if story_name is None:
