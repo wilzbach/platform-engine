@@ -170,7 +170,8 @@ class Apps:
 
     @classmethod
     async def destroy_all(cls):
-        for app in cls.apps.values():
+        copy = cls.apps.copy()
+        for app in copy.values():
             try:
                 await cls.destroy_app(app)
             except BaseException as e:
@@ -188,7 +189,7 @@ class Apps:
 
         while True:
             if select.select([conn], [], [], 5) == ([], [], []):
-                pass
+                continue
             else:
                 conn.poll()
                 while conn.notifies:
