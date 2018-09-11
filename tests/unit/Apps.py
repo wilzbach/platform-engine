@@ -3,6 +3,8 @@ import asyncio
 import select
 from threading import Thread
 
+from asyncy.GraphQLAPI import GraphQLAPI
+
 from asyncy.App import App
 from asyncy.Sentry import Sentry
 import psycopg2
@@ -176,6 +178,38 @@ async def test_deploy_release(config, logger, magic, patch,
             Sentry.capture_exc.assert_called()
         else:
             assert Apps.apps.get('app_id') is not None
+
+
+@mark.asyncio
+async def test_get_services(patch, logger, async_mock):
+    patch.object(GraphQLAPI, 'get_by_slug',
+                 new=async_mock(return_value=('slug_pull', {'slug': True})))
+    patch.object(GraphQLAPI, 'get_by_alias',
+                 new=async_mock(return_value=('alias_pull', {'alias': True})))
+
+    asyncy_yaml = {
+        'services': {'slack': {'image': 'asyncy/slack', 'tag': 'v1'}}
+    }
+    stories = {
+        'services': ['slack', 'log', 'lastfm']
+    }
+    ret = await Apps.get_services(asyncy_yaml, logger, stories)
+    assert ret == {
+        'slack': {
+            'tag': 'v1',
+            'configuration': {
+                'slug': True,
+                'image': 'slug_pull:v1'
+            }
+        },
+        'lastfm': {
+            'tag': 'latest',
+            'configuration': {
+                'alias': True,
+                'image': 'alias_pull:latest'
+            }
+        }
+    }
 
 
 @mark.parametrize('silent', [False, True])
