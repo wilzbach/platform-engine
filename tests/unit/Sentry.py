@@ -6,6 +6,7 @@ from raven import Client
 
 
 def test_init(patch):
+    # noinspection PyTypeChecker
     Sentry.init(None, None)  # No-op.
     patch.init(Client)
     Sentry.init('sentry_dsn', 'release_ver')
