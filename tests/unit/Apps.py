@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import select
+from threading import Thread
 
 from asyncy.Sentry import Sentry
 import psycopg2
@@ -60,6 +61,38 @@ async def test_destroy_all(patch, async_mock, magic):
     await Apps.destroy_all()
     app.destroy.mock.assert_called()
     assert Apps.apps['app_id'] is None
+
+
+@mark.asyncio
+async def test_init_all(patch, magic, async_mock, config, logger, db):
+    db()
+    patch.object(Sentry, 'init')
+    patch.init(Thread)
+    patch.object(Thread, 'start')
+
+    releases = [
+        ['app_id', 'version', 'env', 'stories', 'maintenance']
+    ]
+    patch.object(Apps, 'get_releases', return_value=releases)
+    patch.object(Apps, 'deploy_release', new=async_mock())
+
+    await Apps.init_all('sentry_dsn', 'release_ver', config, logger)
+    Apps.deploy_release.mock.assert_called_with(
+        config, logger, 'app_id', 'version', 'env', 'stories', 'maintenance')
+
+    Sentry.init.assert_called_with('sentry_dsn', 'release_ver')
+
+    loop = asyncio.get_event_loop()
+    Thread.__init__.assert_called_with(target=Apps.listen_to_releases,
+                                       args=[config, logger, loop],
+                                       daemon=True)
+    Thread.start.assert_called()
+
+
+def test_get(magic):
+    app = magic()
+    Apps.apps['app_id'] = app
+    assert Apps.get('app_id') == app
 
 
 @mark.parametrize('raise_error', [True, False])
