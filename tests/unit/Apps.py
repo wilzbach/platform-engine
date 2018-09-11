@@ -3,16 +3,15 @@ import asyncio
 import select
 from threading import Thread
 
-from asyncy.GraphQLAPI import GraphQLAPI
-
 from asyncy.App import App
-from asyncy.Sentry import Sentry
-import psycopg2
-import pytest
-
-from pytest import fixture, mark
-
 from asyncy.Apps import Apps
+from asyncy.GraphQLAPI import GraphQLAPI
+from asyncy.Sentry import Sentry
+
+import psycopg2
+
+import pytest
+from pytest import fixture, mark
 
 
 @fixture
@@ -21,6 +20,7 @@ def exc():
         raise Exception()
 
     return foo
+
 
 @fixture
 def db(patch, magic):
