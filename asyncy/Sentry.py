@@ -10,12 +10,14 @@ class Sentry:
 
     @classmethod
     def init(cls, dsn: str, release: str):
+        """
+        Initialises Sentry without breadcrumbs, logging hook, and
+        hook libraries as Sentry relies on a thread local for it's context,
+        which is not feasible in an asyncio context.
+        """
         if dsn is None:
             return
 
-        # Breadcrumbs, logging hook, hook libraries are disabled
-        # because Sentry relies on a thread local for it's context,
-        # which is not feasible in an asyncio context.
         cls._sentry_client = Client(
             dsn=dsn,
             enable_breadcrumbs=False,
@@ -27,7 +29,7 @@ class Sentry:
     def capture_exc(cls, exc_info: BaseException,
                     story: Stories = None, line: dict = None,
                     extra: dict = None):
-        if not cls._sentry_client:
+        if cls._sentry_client is None:
             return
 
         cls._sentry_client.context.clear()
