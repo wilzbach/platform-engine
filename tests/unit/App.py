@@ -25,7 +25,6 @@ def test_app_init(magic, config, logger):
     services = magic()
     environment = magic()
     stories = magic()
-    sentry = magic()
     app = App('app_id', logger, config, logger, stories, services, environment)
     assert app.app_id == 'app_id'
     assert app.config == config
