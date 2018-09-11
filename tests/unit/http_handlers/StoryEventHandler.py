@@ -25,7 +25,6 @@ async def test_post(patch, logger, magic, async_mock, throw_exc):
     e = Exception()
 
     def exc(*args, **kwargs):
-        print('called')
         raise e
 
     if throw_exc:
