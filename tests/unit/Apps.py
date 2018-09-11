@@ -128,6 +128,22 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         logger.error.assert_not_called()
 
 
+def test_get_releases(patch, magic):
+    conn = magic()
+    patch.object(Apps, 'new_pg_conn', return_value=conn)
+    query = """
+        with latest as (select app_uuid, max(id) as id
+            from releases group by app_uuid)
+        select app_uuid, id, config, payload, maintenance
+        from latest
+            inner join releases using (app_uuid, id)
+            inner join apps on (releases.app_uuid = apps.uuid);
+        """
+    ret = Apps.get_releases()
+    conn.cursor().execute.assert_called_with(query)
+    assert ret == conn.cursor().fetchall()
+
+
 @mark.parametrize('silent', [False, True])
 @mark.asyncio
 async def test_destroy_app_exc(patch, async_mock, magic, exc, silent):
