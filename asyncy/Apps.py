@@ -140,6 +140,7 @@ class Apps:
         logger.info(f'Reloading app {app_id}')
         if cls.apps.get(app_id) is not None:
             await cls.destroy_app(cls.apps[app_id], silent=True)
+
         try:
             conn = cls.new_pg_conn()
 
@@ -155,7 +156,6 @@ class Apps:
             """
             curs.execute(query, (app_id,))
             release = curs.fetchone()
-            app_id = release[0]
             version = release[1]
             environment = release[2]
             stories = release[3]
