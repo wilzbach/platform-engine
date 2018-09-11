@@ -2,14 +2,12 @@
 import time
 
 import tornado
-from tornado import web
 
 import ujson
 
 from .BaseHandler import BaseHandler
 from .. import Metrics
 from ..Apps import Apps
-from ..Sentry import Sentry
 from ..constants import ContextConstants
 from ..processing import Story
 
