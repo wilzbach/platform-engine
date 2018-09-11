@@ -44,12 +44,12 @@ class Apps:
                              maintenance):
         logger.info(f'Deploying app {app_id}@{version}')
         if maintenance:
-            logger.info(f'Deployment halted {app_id}@{version}')
+            logger.warn(f'Deployment halted {app_id}@{version}')
             return
 
         try:
 
-            services = await cls._prepare_services(
+            services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
             app = App(app_id, version, config, logger,
@@ -91,8 +91,8 @@ class Apps:
         return cls.apps[app_id]
 
     @classmethod
-    async def _prepare_services(cls, asyncy_yaml, logger: Logger,
-                                stories: dict):
+    async def get_services(cls, asyncy_yaml, logger: Logger,
+                           stories: dict):
         services = {}
 
         for service in stories.get('services', []):

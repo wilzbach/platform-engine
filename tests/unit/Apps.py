@@ -3,6 +3,7 @@ import asyncio
 import select
 from threading import Thread
 
+from asyncy.App import App
 from asyncy.Sentry import Sentry
 import psycopg2
 import pytest
@@ -142,6 +143,39 @@ def test_get_releases(patch, magic):
     ret = Apps.get_releases()
     conn.cursor().execute.assert_called_with(query)
     assert ret == conn.cursor().fetchall()
+
+
+@mark.parametrize('raise_exc', [True, False])
+@mark.parametrize('maintenance', [True, False])
+@mark.asyncio
+async def test_deploy_release(config, logger, magic, patch,
+                              async_mock, raise_exc, exc, maintenance):
+    patch.object(Sentry, 'capture_exc')
+    Apps.apps = {}
+    services = magic()
+    patch.object(Apps, 'get_services', new=async_mock(return_value=services))
+    patch.init(App)
+    if raise_exc:
+        patch.object(App, 'bootstrap', new=async_mock(side_effect=exc))
+    else:
+        patch.object(App, 'bootstrap', new=async_mock())
+
+    await Apps.deploy_release(
+        config, logger, 'app_id', 'version', 'env',
+        {'stories': True}, maintenance)
+
+    if maintenance:
+        logger.warn.assert_called()
+    else:
+        App.__init__.assert_called_with(
+            'app_id', 'version', config, logger,
+            {'stories': True}, services, 'env')
+        App.bootstrap.mock.assert_called()
+        if raise_exc:
+            assert Apps.apps.get('app_id') is None
+            Sentry.capture_exc.assert_called()
+        else:
+            assert Apps.apps.get('app_id') is not None
 
 
 @mark.parametrize('silent', [False, True])
