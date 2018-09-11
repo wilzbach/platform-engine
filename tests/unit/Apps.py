@@ -11,6 +11,13 @@ from asyncy.Apps import Apps
 
 
 @fixture
+def exc():
+    def foo(*args, **kwargs):
+        raise Exception()
+
+    return foo
+
+@fixture
 def db(patch, magic):
     def get():
         db = magic()
@@ -20,11 +27,8 @@ def db(patch, magic):
     return get
 
 
-def test_listen_to_releases(patch, db, magic, config, logger):
+def test_listen_to_releases(patch, db, magic, config, logger, exc):
     conn = db()
-
-    def exc(*args, **kwargs):
-        raise Exception()
 
     patch.object(asyncio, 'run_coroutine_threadsafe', side_effect=exc)
     patch.object(select, 'select', return_value=[([], [], []), ([], [], []),
@@ -55,3 +59,18 @@ async def test_destroy_all(patch, async_mock, magic):
     await Apps.destroy_all()
     app.destroy.mock.assert_called()
     assert Apps.apps['app_id'] is None
+
+
+@mark.parametrize('silent', [False, True])
+@mark.asyncio
+async def test_destroy_app_exc(patch, async_mock, magic, exc, silent):
+    app = magic()
+    app.destroy = async_mock(side_effect=exc)
+
+    if silent:
+        await Apps.destroy_app(app, silent)
+    else:
+        with pytest.raises(Exception):
+            await Apps.destroy_app(app, silent)
+
+    app.destroy.mock.assert_called()
