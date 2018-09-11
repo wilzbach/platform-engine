@@ -14,7 +14,7 @@ from storyscript.parser import Parser
 async def test_exec(logger, config, story, echo_service, echo_line, magic):
     story.app = App('app_id', 1, config, logger,
                     {'stories': {}, 'entrypoint': []},
-                    echo_service, {}, magic())
+                    echo_service, {})
     echo_line['service'] = 'alpine-echo'
     echo_service['alpine-echo'] = echo_service['alpine']
 
