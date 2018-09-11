@@ -2,6 +2,7 @@
 from tornado.web import RequestHandler
 
 from ..Exceptions import AsyncyError
+from ..Sentry import Sentry
 from ..Stories import Stories
 
 
@@ -11,8 +12,7 @@ class BaseHandler(RequestHandler):
     app = None
 
     # noinspection PyMethodOverriding
-    def initialize(self, app, logger):
-        self.app = app
+    def initialize(self, logger):
         self.logger = logger
 
     def handle_story_exc(self, story_name, e):
@@ -21,21 +21,14 @@ class BaseHandler(RequestHandler):
         self.finish()
         if isinstance(e, AsyncyError):
             assert isinstance(e.story, Stories)
-            self.app.sentry_client.capture(
-                'raven.events.Exception',
-                extra={
-                    'story_name': e.story.name,
-                    'story_line': e.line['ln']
-                })
+            Sentry.capture_exc(e, e.story, e.line)
         else:
             if story_name is None:
-                self.app.sentry_client.capture('raven.events.Exception')
+                Sentry.capture_exc(e)
             else:
-                self.app.sentry_client.capture(
-                    'raven.events.Exception',
-                    extra={
-                        'story_name': story_name
-                    })
+                Sentry.capture_exc(e, extra={
+                    'story_name': story_name
+                })
 
     def is_finished(self):
         return self._finished

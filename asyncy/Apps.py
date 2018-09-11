@@ -5,8 +5,6 @@ import threading
 
 import psycopg2
 
-from raven.contrib.tornado import AsyncSentryClient
-
 from .App import App
 from .Config import Config
 from .GraphQLAPI import GraphQLAPI
@@ -17,19 +15,11 @@ from .Sentry import Sentry
 class Apps:
     internal_services = ['http', 'log', 'crontab', 'file', 'event']
     apps = {}
-    sentry_client = None
 
     @classmethod
     def new_pg_conn(cls):
         return psycopg2.connect(database='asyncy', user='postgres',
                                 options=f'-c search_path=app_public')
-
-    @classmethod
-    def _init_sentry(cls, sentry_dsn: str, release: str):
-        cls.sentry_client = AsyncSentryClient(
-            dsn=sentry_dsn,
-            release=release
-        )
 
     @classmethod
     def get_releases(cls):
@@ -58,15 +48,12 @@ class Apps:
             return
 
         try:
-            Sentry.clear_and_set_context(cls.sentry_client,
-                                         app_id, version)
 
             services = await cls._prepare_services(
                 stories.get('yaml', {}), logger, stories)
 
             app = App(app_id, version, config, logger,
-                      stories, services, environment,
-                      sentry_client=cls.sentry_client)
+                      stories, services, environment)
 
             await app.bootstrap()
 
@@ -75,12 +62,12 @@ class Apps:
         except BaseException as e:
             logger.error(
                 f'Failed to bootstrap app {app_id}@{version}', exc=e)
-            cls.sentry_client.capture('raven.events.Exception')
+            Sentry.capture_exc(e)
 
     @classmethod
     async def init_all(cls, sentry_dsn: str, release: str,
                        config: Config, logger: Logger):
-        cls._init_sentry(sentry_dsn, release)
+        Sentry.init(sentry_dsn, release)
 
         releases = cls.get_releases()
 
@@ -179,12 +166,15 @@ class Apps:
         except BaseException as e:
             logger.error(
                 f'Failed to reload app {app_id}', exc=e)
-            cls.sentry_client.capture('raven.events.Exception')
+            Sentry.capture_exc(e)
 
     @classmethod
     async def destroy_all(cls):
         for app in cls.apps.values():
-            await cls.destroy_app(app)
+            try:
+                await cls.destroy_app(app)
+            except BaseException as e:
+                Sentry.capture_exc(e)
 
     @classmethod
     def listen_to_releases(cls, config: Config, logger: Logger, loop):

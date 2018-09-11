@@ -123,11 +123,6 @@ class Stories:
 
         self.logger.log('story-resolve', arg, result)
 
-        self.app.sentry_client.context.breadcrumbs.record(
-            message=f'Resolved {arg} to {result}',
-            category='resolver', level='debug'
-        )
-
         # encode and escape then format for shell
         if encode:
             return self.encode(result)

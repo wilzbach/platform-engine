@@ -34,9 +34,6 @@ class StoryEventHandler(BaseHandler):
     @web.asynchronous
     async def post(self):
         start = time.time()
-        Sentry.clear_and_set_context(self.app.sentry_client,
-                                     self.app.app_id, self.app.version)
-
         story_name = self.get_argument('story')
         block = self.get_argument('block')
         app_id = self.get_argument('app')

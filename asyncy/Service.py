@@ -15,6 +15,7 @@ from . import Version
 from .Apps import Apps
 from .Config import Config
 from .Logger import Logger
+from .Sentry import Sentry
 from .http_handlers.StoryEventHandler import StoryEventHandler
 from .processing.Services import Services
 from .processing.internal import File, Http, Log
@@ -66,7 +67,7 @@ class Service:
         signal.signal(signal.SIGINT, Service.sig_handler)
 
         web_app = tornado.web.Application([
-            (r'/story/event', StoryEventHandler)
+            (r'/story/event', StoryEventHandler, {'logger': logger})
         ], debug=debug)
 
         config.engine_host = socket.gethostname()
@@ -91,6 +92,7 @@ class Service:
         try:
             await Apps.init_all(sentry_dsn, release, config, logger)
         except BaseException as e:
+            Sentry.capture_exc(e)
             logger.error(f'Failed to init apps!', exc=e)
             raise e
 
@@ -102,7 +104,7 @@ class Service:
     @classmethod
     async def shutdown_app(cls):
         logger.log_raw('info', 'Unregistering with the gateway...')
-        await Apps.destroy_all()
+        await Apps.destroy_all()  # All exceptions are handled inside.
 
         io_loop = tornado.ioloop.IOLoop.instance()
         io_loop.stop()
