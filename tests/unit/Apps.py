@@ -191,7 +191,7 @@ async def test_get_services(patch, logger, async_mock):
         'services': {'slack': {'image': 'asyncy/slack', 'tag': 'v1'}}
     }
     stories = {
-        'services': ['slack', 'log', 'lastfm']
+        'services': ['slack', 'http', 'lastfm']
     }
     ret = await Apps.get_services(asyncy_yaml, logger, stories)
     assert ret == {
@@ -208,6 +208,13 @@ async def test_get_services(patch, logger, async_mock):
                 'alias': True,
                 'image': 'alias_pull:latest'
             }
+        },
+        'http': {
+            'configuration': {
+                'alias': True,
+                'image': 'alias_pull:latest'
+            },
+            'tag': 'latest'
         }
     }
 
