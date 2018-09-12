@@ -154,9 +154,8 @@ class Story:
     @classmethod
     async def destroy(cls, app, logger, story_name):
         """
-        Finds all services in a story and potentially stops their
-        associated containers. http-endpoint being a special service,
-        is handled with the gateway correctly.
+        Destroys all containers that were created.
+        For destroying subscriptions, see App#destroy.
         """
         story = cls.story(app, logger, story_name)
         line = story.line(story.first_line())
