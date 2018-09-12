@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from unittest.mock import MagicMock, Mock
+import uuid
 
 from asyncy import Exceptions, Metrics
 from asyncy.Exceptions import AsyncyError
@@ -275,8 +276,11 @@ async def test_lexicon_when(patch, story, async_mock):
         'data': {
             'foo': 'bar'
         },
-        'event': 'updates'
+        'event': 'updates',
+        'id': 'my_guid_here'
     }
+
+    patch.object(uuid, 'uuid4', return_value='my_guid_here')
 
     expected_kwargs = {
         'method': 'POST',
