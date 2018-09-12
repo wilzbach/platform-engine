@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
-from unittest.mock import MagicMock, Mock
 import uuid
+from unittest.mock import MagicMock, Mock
 
-from asyncy import Exceptions, Metrics
+from asyncy import Metrics
 from asyncy.Exceptions import AsyncyError
 from asyncy.Types import StreamingService
-from asyncy.constants.ContextConstants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Lexicon, Story
