@@ -290,15 +290,23 @@ async def test_lexicon_when(patch, story, async_mock):
     patch.init(AsyncHTTPClient)
     patch.object(Lexicon, 'next_line_or_none')
     patch.object(story, 'next_block')
+    patch.object(story.app, 'add_subscription')
     patch.object(story, 'argument_by_name', return_value='bar')
     http_res = Mock()
     http_res.code = 204
     patch.object(HttpUtils, 'fetch_with_retry',
                  new=async_mock(return_value=http_res))
     ret = await Lexicon.when(story.logger, story, line)
+
     client = AsyncHTTPClient()
+
     HttpUtils.fetch_with_retry.mock.assert_called_with(
         3, story.logger, expected_url, client, expected_kwargs)
+
+    story.app.add_subscription.assert_called_with(
+        'my_guid_here', story.context['time-client'],
+        'updates', expected_body)
+
     assert ret == Lexicon.next_line_or_none()
     story.next_block.assert_called_with(line)
 
