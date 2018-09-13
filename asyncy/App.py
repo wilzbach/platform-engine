@@ -17,11 +17,11 @@ Subscription = namedtuple('Subscription',
 
 
 class App:
-    _subscriptions = {}
 
     def __init__(self, app_id: str, version: int, config: Config,
                  logger: Logger, stories: dict, services: dict,
                  environment: dict):
+        self._subscriptions = {}
         self.app_id = app_id
         self.config = config
         self.version = version
@@ -57,6 +57,12 @@ class App:
                          event: str, payload: dict):
         self._subscriptions[sub_id] = Subscription(streaming_service,
                                                    sub_id, payload, event)
+
+    def get_subscription(self, sub_id: str):
+        return self._subscriptions.get(sub_id)
+
+    def remove_subscription(self, sub_id: str):
+        self._subscriptions.pop(sub_id)
 
     async def unsubscribe_all(self):
         for sub_id, sub in self._subscriptions.items():
