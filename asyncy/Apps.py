@@ -48,7 +48,6 @@ class Apps:
             return
 
         try:
-
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
@@ -96,9 +95,6 @@ class Apps:
         services = {}
 
         for service in stories.get('services', []):
-            if service in cls.internal_services:
-                continue
-
             conf = asyncy_yaml.get('services', {}).get(service, {})
             # query the Hub for the OMG
             tag = conf.get('tag', 'latest')

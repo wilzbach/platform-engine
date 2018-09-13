@@ -2,6 +2,7 @@
 import json
 import time
 import urllib
+import uuid
 from urllib import parse
 
 from tornado.httpclient import AsyncHTTPClient
@@ -9,9 +10,8 @@ from tornado.httpclient import AsyncHTTPClient
 from .Mutations import Mutations
 from .Services import Services
 from .. import Metrics
-from ..Exceptions import ArgumentNotFoundError, AsyncyError
+from ..Exceptions import AsyncyError
 from ..Types import StreamingService
-from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.ServiceConstants import ServiceConstants
 from ..utils import Dict
@@ -172,10 +172,13 @@ class Lexicon:
                 'app': story.app.app_id
             })
 
+            sub_id = str(uuid.uuid4())
+
             body = {
                 'endpoint': f'http://{engine}/story/event?{query_params}',
                 'data': data,
-                'event': command
+                'event': command,
+                'id': sub_id
             }
 
             kwargs = {
@@ -187,12 +190,13 @@ class Lexicon:
             }
 
             client = AsyncHTTPClient()
-            logger.info(f'Subscribing to {service} from {s.command}...')
+            logger.debug(f'Subscribing to {service} from {s.command}...')
 
             response = await HttpUtils.fetch_with_retry(3, logger, url,
                                                         client, kwargs)
             if round(response.code / 100) == 2:
                 logger.info(f'Subscribed!')
+                story.app.add_subscription(sub_id, s, command, body)
                 next_line = story.next_block(line)
                 return Lexicon.next_line_or_none(next_line)
             else:
