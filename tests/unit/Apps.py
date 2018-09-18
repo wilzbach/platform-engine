@@ -131,7 +131,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         logger.error.assert_not_called()
 
 
-def test_get_releases(patch, magic):
+def test_get_releases(patch, magic, config):
     conn = magic()
     patch.object(Apps, 'new_pg_conn', return_value=conn)
     query = """
@@ -142,7 +142,7 @@ def test_get_releases(patch, magic):
             inner join releases using (app_uuid, id)
             inner join apps on (releases.app_uuid = apps.uuid);
         """
-    ret = Apps.get_releases()
+    ret = Apps.get_releases(config)
     conn.cursor().execute.assert_called_with(query)
     assert ret == conn.cursor().fetchall()
 

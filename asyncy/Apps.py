@@ -17,13 +17,12 @@ class Apps:
     apps = {}
 
     @classmethod
-    def new_pg_conn(cls):
-        return psycopg2.connect(database='asyncy', user='postgres',
-                                options=f'-c search_path=app_public')
+    def new_pg_conn(cls, config: Config):
+        return psycopg2.connect(config.POSTGRES)
 
     @classmethod
-    def get_releases(cls):
-        conn = cls.new_pg_conn()
+    def get_releases(cls, config: Config):
+        conn = cls.new_pg_conn(config)
         cur = conn.cursor()
 
         query = """
@@ -68,7 +67,7 @@ class Apps:
                        config: Config, logger: Logger):
         Sentry.init(sentry_dsn, release)
 
-        releases = cls.get_releases()
+        releases = cls.get_releases(config)
 
         for release in releases:
             app_id = release[0]
@@ -138,7 +137,7 @@ class Apps:
             await cls.destroy_app(cls.apps[app_id], silent=True)
 
         try:
-            conn = cls.new_pg_conn()
+            conn = cls.new_pg_conn(config)
 
             curs = conn.cursor()
             query = """
@@ -176,7 +175,7 @@ class Apps:
     @classmethod
     def listen_to_releases(cls, config: Config, logger: Logger, loop):
         logger.info('Listening for new releases...')
-        conn = cls.new_pg_conn()
+        conn = cls.new_pg_conn(config)
         conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 

@@ -11,7 +11,10 @@ class Config:
         'DOCKER_HOST': 'http://localhost:2375',
         'DOCKER_TLS_VERIFY': '0',
         'DOCKER_CERT_PATH': '',
-        'DOCKER_MACHINE_NAME': ''
+        'DOCKER_MACHINE_NAME': '',
+        'POSTGRES': 'options='
+                    '--search_path=app_public,app_hidden,app_private,public '
+                    'dbname=postgres user=postgres'
     }
 
     engine_host = None
