@@ -263,8 +263,8 @@ async def test_lexicon_when(patch, story, async_mock):
     }
 
     story.name = 'my_event_driven_story.story'
-    story.app.config.engine_host = 'localhost'
-    story.app.config.engine_port = 8000
+    story.app.config.ENGINE_HOST = 'localhost'
+    story.app.config.ENGINE_PORT = 8000
     story.app.app_id = 'my_fav_app'
 
     expected_url = 'http://foo.com:2000/sub'
