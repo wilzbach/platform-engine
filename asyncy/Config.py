@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import socket
 
 
 class Config:
@@ -14,11 +15,11 @@ class Config:
         'DOCKER_MACHINE_NAME': '',
         'POSTGRES': 'options='
                     '--search_path=app_public,app_hidden,app_private,public '
-                    'dbname=postgres user=postgres'
+                    'dbname=postgres user=postgres',
+        'ENGINE_HOST': socket.gethostname()
     }
 
-    engine_host = None
-    engine_port = None
+    ENGINE_PORT = None
 
     def __init__(self):
         self.apply()

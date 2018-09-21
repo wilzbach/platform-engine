@@ -163,8 +163,8 @@ class Lexicon:
 
             logger.debug(f'Sending subscription request to {url}')
 
-            engine = f'{story.app.config.engine_host}:' \
-                     f'{story.app.config.engine_port}'
+            engine = f'{story.app.config.ENGINE_HOST}:' \
+                     f'{story.app.config.ENGINE_PORT}'
 
             query_params = urllib.parse.urlencode({
                 'story': story.name,

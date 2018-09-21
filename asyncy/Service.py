@@ -2,7 +2,6 @@
 import asyncio
 import os
 import signal
-import socket
 
 import click
 
@@ -70,8 +69,7 @@ class Service:
             (r'/story/event', StoryEventHandler, {'logger': logger})
         ], debug=debug)
 
-        config.engine_host = socket.gethostname()
-        config.engine_port = port
+        config.ENGINE_PORT = port
 
         server = tornado.httpserver.HTTPServer(web_app)
         server.listen(port)
