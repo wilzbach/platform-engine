@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from tornado.httpclient import AsyncHTTPClient
 
+from asyncy.Containers import Containers
 from .Config import Config
 from .Logger import Logger
 from .Types import StreamingService
@@ -108,6 +109,7 @@ class App:
         Destroys all stories, one at a time.
         """
         await self.unsubscribe_all()
+        await Containers.clean_app(self)
 
         for story_name in self.entrypoint or []:
             try:

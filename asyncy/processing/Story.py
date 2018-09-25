@@ -170,6 +170,6 @@ class Story:
                     if run is not None:
                         c_name = Containers.get_container_name(story, line,
                                                                service)
-                        await Containers.stop_container(story, line, c_name)
+                        await Containers.clean(story, line, c_name)
 
             line = story.line(line.get('next'))

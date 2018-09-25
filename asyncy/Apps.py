@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import select
+import sys
 import threading
 
 import psycopg2
 
+from asyncy.Containers import Containers
 from .App import App
 from .Config import Config
 from .GraphQLAPI import GraphQLAPI
@@ -52,6 +54,8 @@ class Apps:
 
             app = App(app_id, version, config, logger,
                       stories, services, environment)
+
+            await Containers.clean_app(app)
 
             await app.bootstrap()
 
@@ -187,6 +191,8 @@ class Apps:
                 continue
             else:
                 conn.poll()
+                # TODO: poll throws an exception when the db connection breaks
+                # TODO: We MUST terminate the engine so that it can restart.
                 while conn.notifies:
                     notify = conn.notifies.pop(0)
                     asyncio.run_coroutine_threadsafe(
