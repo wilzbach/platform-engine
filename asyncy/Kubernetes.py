@@ -110,7 +110,11 @@ class Kubernetes:
         if res.code == 404:
             return
 
-        cls.raise_if_not_2xx(res, None, None)
+        # Sometimes, the API will throw a 409, indicating that a
+        # deletion is in progress. Don't assert that the status code
+        # is 2xx in this case.
+        if res.code != 409:
+            cls.raise_if_not_2xx(res, None, None)
 
         # Wait until the namespace has actually been killed.
         while True:
@@ -130,28 +134,52 @@ class Kubernetes:
 
     @classmethod
     def get_hostname(cls, story, line, container_name):
-        # See
-        # https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
-        return f'{container_name}.default-subdomain.' \
+        return f'{container_name}.' \
                f'{story.app.app_id}.svc.cluster.local'
 
     @classmethod
-    async def create_pod(cls, story: Stories, line: dict, image: str,
-                         container_name: str, start_command: [] or str,
-                         env: dict):
-        # TODO:  wait until the pod has actually started
-        # TODO: create a deployment instead of just a pod
-        await cls.create_namespace_if_required(story, line)
-        res = await cls.make_k8s_call(
-            story.app,
-            f'/api/v1/namespaces/{story.app.app_id}/pods/{container_name}')
+    async def create_service(cls, story: Stories, line: dict,
+                             container_name: str):
+        payload = {
+            'apiVersion': 'v1',
+            'kind': 'Service',
+            'metadata': {
+                'name': container_name,
+                'namespace': story.app.app_id,
+                'labels': {
+                    'app': container_name
+                }
+            },
+            'spec': {
+                'ports': [
+                    {
+                        'port': 5000,  # todo
+                        'protocol': 'TCP',
+                        'targetPort': 5000
+                    }
+                ],
+                'selector': {
+                    'app': container_name
+                }
+            }
+        }
 
-        if res.code == 200:
-            story.logger.debug(f'Pod {container_name} '
-                               f'already exists, reusing')
-            return
+        path = f'/api/v1/namespaces/{story.app.app_id}/services'
+        res = await cls.make_k8s_call(story.app, path, payload)
+        cls.raise_if_not_2xx(res, story, line)
+        path = f'/api/v1/namespaces/{story.app.app_id}' \
+               f'/services/{container_name}'
+        res = await cls.make_k8s_call(story.app, path)
+        cls.raise_if_not_2xx(res, story, line)
+        story.logger.debug(f'Service created: {res.body}')
+        await asyncio.sleep(2)  # todo: find a way to reliably decipher this.
 
-        env_k8s = []
+    @classmethod
+    async def create_deployment(cls, story: Stories, line: dict, image: str,
+                                container_name: str, start_command: [] or str,
+                                env: dict):
+        env_k8s = []  # Must container {name:'foo', value:'bar'}.
+        ports_k8s = []  # Must contain {name:'foo',containerPort:8080}.
 
         if env:
             for k, v in env.items():
@@ -159,35 +187,48 @@ class Kubernetes:
                     'name': k,
                     'value': v
                 })
+
         payload = {
-            'apiVersion': 'v1',
-            'kind': 'Pod',
+            'apiVersion': 'apps/v1beta1',
+            'kind': 'Deployment',
             'metadata': {
                 'name': container_name,
                 'namespace': story.app.app_id
             },
             'spec': {
-                'hostname': container_name,
-                'subdomain': 'default-subdomain',
-                'containers': [
-                    {
-                        'name': container_name,
-                        'image': image,
-                        'command': start_command,
-                        'env': env_k8s,
-                        'lifecycle': {
-                            'preStop': {
-                                'exec': {
-                                    'command': ['echo', 'todo']
+                'replicas': 1,
+                'strategy': {
+                    'type': 'RollingUpdate'
+                },
+                'template': {
+                    'metadata': {
+                        'labels': {
+                            'app': container_name
+                        }
+                    },
+                    'spec': {
+                        'containers': [
+                            {
+                                'name': container_name,
+                                'image': image,
+                                'imagePullPolicy': 'Always',
+                                'ports': ports_k8s,
+                                'env': env_k8s,
+                                'lifecycle': {
+                                    'preStop': {
+                                        'exec': {
+                                            'command': ['echo', 'todo']  # todo
+                                        }
+                                    }
                                 }
                             }
-                        }
+                        ]
                     }
-                ]
+                }
             }
         }
 
-        path = f'/api/v1/namespaces/{story.app.app_id}/pods'
+        path = f'/apis/apps/v1beta1/namespaces/{story.app.app_id}/deployments'
 
         # When a namespace is created for the first time, K8s needs to perform
         # some sort of preparation. Pods creation fails sporadically for new
@@ -200,7 +241,41 @@ class Kubernetes:
             if cls.is_2xx(res):
                 break
 
-            story.logger.debug(f'Failed to create pod, retrying...')
+            story.logger.debug(f'Failed to create deployment, retrying...')
             await asyncio.sleep(1)
 
         cls.raise_if_not_2xx(res, story, line)
+
+        path = f'/apis/apps/v1beta1/namespaces/{story.app.app_id}' \
+               f'/deployments/{container_name}'
+
+        # Wait until the deployment is ready.
+        while True:
+            res = await cls.make_k8s_call(story.app, path)
+            cls.raise_if_not_2xx(res, story, line)
+            body = json.loads(res.body, encoding='utf-8')
+            if body['status'].get('readyReplicas', 0) > 0:
+                break
+
+            story.logger.debug('Waiting for deployment to be ready...')
+            await asyncio.sleep(1)
+
+    @classmethod
+    async def create_pod(cls, story: Stories, line: dict, image: str,
+                         container_name: str, start_command: [] or str,
+                         env: dict):
+        await cls.create_namespace_if_required(story, line)
+        res = await cls.make_k8s_call(
+            story.app,
+            f'/apis/apps/v1/namespaces/{story.app.app_id}'
+            f'/deployments/{container_name}')
+
+        if res.code == 200:
+            story.logger.debug(f'Deployment {container_name} '
+                               f'already exists, reusing')
+            return
+
+        await cls.create_deployment(story, line, image, container_name,
+                                    start_command, env)
+
+        await cls.create_service(story, line, container_name)
