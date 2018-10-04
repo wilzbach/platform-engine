@@ -34,12 +34,6 @@ class InvalidCommandError(AsyncyError):
         super().__init__(message, story=story, line=line)
 
 
-class DockerError(AsyncyError):
-
-    def __init__(self, story=None, line=None, message=None):
-        super().__init__(message, story=story, line=line)
-
-
 class K8sError(AsyncyError):
 
     def __init__(self, story=None, line=None, message=None):
