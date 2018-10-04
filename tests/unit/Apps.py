@@ -6,6 +6,7 @@ from threading import Thread
 from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.GraphQLAPI import GraphQLAPI
+from asyncy.Kubernetes import Kubernetes
 from asyncy.Sentry import Sentry
 
 import psycopg2
@@ -153,6 +154,7 @@ def test_get_releases(patch, magic, config):
 async def test_deploy_release(config, logger, magic, patch,
                               async_mock, raise_exc, exc, maintenance):
     patch.object(Sentry, 'capture_exc')
+    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     Apps.apps = {}
     services = magic()
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
