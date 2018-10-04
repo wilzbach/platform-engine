@@ -7,6 +7,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
 from .Exceptions import K8sError
 from .Stories import Stories
+from .constants.LineConstants import LineConstants
 from .utils.HttpUtils import HttpUtils
 
 
@@ -137,8 +138,31 @@ class Kubernetes:
                f'{story.app.app_id}.svc.cluster.local'
 
     @classmethod
+    def find_all_ports(cls, service_config: dict, inside_http=False) -> set:
+        ports = set()
+        for key, value in service_config.items():
+            if isinstance(value, dict):
+                http = key == 'http' or inside_http
+                ports.update(cls.find_all_ports(value, inside_http=http))
+            elif inside_http and key == 'port':
+                assert isinstance(value, int)
+                ports.add(value)
+
+        return ports
+
+    @classmethod
     async def create_service(cls, story: Stories, line: dict,
                              container_name: str):
+        service = line[LineConstants.service]
+        ports = cls.find_all_ports(story.app.services[service])
+        port_list = []
+        for port in ports:
+            port_list.append({
+                'port': port,
+                'protocol': 'TCP',
+                'targetPort': port
+            })
+
         payload = {
             'apiVersion': 'v1',
             'kind': 'Service',
@@ -150,13 +174,7 @@ class Kubernetes:
                 }
             },
             'spec': {
-                'ports': [
-                    {
-                        'port': 5000,  # todo
-                        'protocol': 'TCP',
-                        'targetPort': 5000
-                    }
-                ],
+                'ports': port_list,
                 'selector': {
                     'app': container_name
                 }
