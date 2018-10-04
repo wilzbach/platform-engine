@@ -268,7 +268,7 @@ async def test_story_run_prepare(patch, app, logger, async_mock):
 
 @mark.asyncio
 async def test_story_destroy(patch, app, logger, story, async_mock):
-    patch.object(Containers, 'stop_container', new=async_mock())
+    patch.object(Containers, 'clean', new=async_mock())
     patch.object(Story, 'story', return_value=story)
     story.tree = {
         '2': {
@@ -299,7 +299,7 @@ async def test_story_destroy(patch, app, logger, story, async_mock):
     await Story.destroy(app, logger, 'foo')
     c_name = Containers.get_container_name(
         story, story.tree['2'], story.tree['2']['service'])
-    assert Containers.stop_container.mock.mock_calls == \
+    assert Containers.clean.mock.mock_calls == \
         [mock.call(story, story.tree['2'], c_name)]
 
 
