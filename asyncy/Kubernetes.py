@@ -60,7 +60,6 @@ class Kubernetes:
 
         context = ssl.SSLContext()
 
-        # TODO: probably better to use the cafile here instead of doing this
         cert = config.CLUSTER_CERT
         cert = cert.replace('\\n', '\n')
         context.load_verify_locations(cadata=cert)
