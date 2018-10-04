@@ -3,6 +3,7 @@ import json
 from unittest import mock
 
 from asyncy.App import App
+from asyncy.Kubernetes import Kubernetes
 from asyncy.Types import StreamingService
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
@@ -146,8 +147,9 @@ async def test_app_run_stories(patch, app, async_mock):
 
 
 @mark.asyncio
-async def test_app_destroy_no_stories(app):
+async def test_app_destroy_no_stories(patch, async_mock, app):
     app.stories = None
+    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     assert await app.destroy() is None
 
 
@@ -177,6 +179,7 @@ async def test_app_destroy_exc(patch, app, async_mock, exc):
     app.entrypoint = ['foo', 'bar']
 
     patch.object(Story, 'destroy', new=async_mock(side_effect=exc))
+    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(app, 'unsubscribe_all', new=async_mock())
 
     with pytest.raises(Exception):
@@ -193,6 +196,7 @@ async def test_app_destroy(patch, app, async_mock):
     }
     app.entrypoint = ['foo', 'bar']
     patch.object(Story, 'destroy', new=async_mock())
+    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(app, 'unsubscribe_all', new=async_mock())
     await app.destroy()
 
