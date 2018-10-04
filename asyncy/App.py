@@ -4,8 +4,8 @@ from collections import namedtuple
 
 from tornado.httpclient import AsyncHTTPClient
 
-from asyncy.Containers import Containers
 from .Config import Config
+from .Containers import Containers
 from .Logger import Logger
 from .Types import StreamingService
 from .constants.ServiceConstants import ServiceConstants

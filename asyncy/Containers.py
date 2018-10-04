@@ -4,8 +4,8 @@ import struct
 
 import ujson
 
-from .Kubernetes import Kubernetes
 from .Exceptions import ContainerSpecNotRegisteredError
+from .Kubernetes import Kubernetes
 from .Types import StreamingService
 from .constants.LineConstants import LineConstants
 from .constants.ServiceConstants import ServiceConstants

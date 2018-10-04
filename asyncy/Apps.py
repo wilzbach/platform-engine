@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import select
-import sys
 import threading
 
 import psycopg2
 
-from asyncy.Containers import Containers
 from .App import App
 from .Config import Config
+from .Containers import Containers
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
