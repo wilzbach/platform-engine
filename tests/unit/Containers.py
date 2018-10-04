@@ -4,7 +4,7 @@ from io import StringIO
 from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError
+from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
@@ -73,6 +73,8 @@ async def test_start_no_command(patch, story, async_mock):
         LineConstants.command: 'echo'
     }
 
+    patch.object(Kubernetes, 'create_pod', new=async_mock())
+
     story.app.services = {
         'alpine': {
             ServiceConstants.config: {
@@ -86,8 +88,11 @@ async def test_start_no_command(patch, story, async_mock):
 
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
-    with pytest.raises(AsyncyError):
-        await Containers.start(story, line)
+
+    await Containers.start(story, line)
+    Kubernetes.create_pod.mock.assert_called_with(
+        story, line, 'alpine', 'asyncy-alpine',
+        ['tail', '-f', '/dev/null'], {})
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
