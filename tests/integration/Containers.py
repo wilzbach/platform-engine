@@ -1,61 +1,9 @@
 # -*- coding: utf-8 -*-
-from asyncy.App import App
 from asyncy.Containers import Containers
-from asyncy.Exceptions import DockerError
 from asyncy.constants.ServiceConstants import ServiceConstants
-
-from pytest import mark
 
 from storyscript.compiler import Compiler
 from storyscript.parser import Parser
-
-
-@mark.asyncio
-async def test_exec(logger, config, story, echo_service, echo_line, magic):
-    story.app = App('app_id', 1, config, logger,
-                    {'stories': {}, 'entrypoint': []},
-                    echo_service, {})
-    echo_line['service'] = 'alpine-echo'
-    echo_service['alpine-echo'] = echo_service['alpine']
-
-    story.prepare()
-    result = await Containers.exec(logger, story, echo_line,
-                                   'alpine-echo', 'echo')
-    assert result == '{"msg":"foo"}'
-
-
-async def clean_container(story, line):
-    try:
-        await Containers.stop_container(
-            story, line, Containers.get_container_name(story, line,
-                                                       line['service']))
-    except DockerError:
-        pass
-
-    await Containers.remove_container(
-        story, line, Containers.get_container_name(story, line,
-                                                   line['service']),
-        force=True)
-
-
-@mark.asyncio
-async def test_start(logger, config, story, echo_service, echo_line):
-    story.app = App('app_id', 1, config, logger,
-                    {'stories': {}, 'entrypoint': []},
-                    echo_service, {})
-
-    story.prepare()
-
-    await clean_container(story, echo_line)
-
-    result = await Containers.start(story, echo_line)
-    assert result.container_name == Containers\
-        .get_container_name(story, echo_line, echo_line['service'])
-    assert result.name == echo_line['service']
-    assert result.command == echo_line['command']
-    assert result.hostname is not None
-
-    await clean_container(story, echo_line)
 
 
 def test_containers_format_command(story):
