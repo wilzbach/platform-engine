@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import hashlib
-import struct
 
 import ujson
 
-from .Exceptions import ContainerSpecNotRegisteredError
+from .Exceptions import ContainerSpecNotRegisteredError, K8sError
 from .Kubernetes import Kubernetes
 from .Types import StreamingService
 from .constants.LineConstants import LineConstants
@@ -196,7 +195,7 @@ class Containers:
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):
         """
-        Executes a command asynchronously in the given container.
+        Executes a command in the given container.
 
         Returns:
         Output of the process (stdout).
@@ -205,68 +204,4 @@ class Containers:
         asyncy.Exceptions.K8sError:
             If the execution failed for an unknown reason.
         """
-        # TODO: k8s
-        logger.log('container-start', container_name)
-        container = cls.get_container_name(story, line, container_name)
-        exec_create_post_data = {
-            'Container': container,
-            'User': 'root',
-            'Privileged': False,
-            'Cmd': cls.format_command(story, line, container_name, command),
-            'AttachStdin': False,
-            'AttachStdout': True,
-            'AttachStderr': True,
-            'Tty': False
-        }
-
-        logger.debug('Creating exec...')
-
-        response = await cls._make_docker_request(
-            story, line, f'/containers/{container}/exec',
-            exec_create_post_data, method='POST')
-
-        create_result = ujson.loads(response.body)
-        logger.debug(f'Exec creation result {create_result}')
-
-        exec_id = create_result['Id']
-        exec_start_url = f'/exec/{exec_id}/start'
-        exec_start_post_data = {
-            'Tty': False,
-            'Detach': False
-        }
-
-        logger.debug('Starting exec...')
-        response = await cls._make_docker_request(
-            story, line, exec_start_url,
-            exec_start_post_data, method='POST')
-
-        logger.debug('Exec has a response! Parsing...')
-
-        # Read our stdin/stdout multiplexed stream.
-        # https://docs.docker.com/engine/api/v1.32/#operation/ContainerAttach
-        stdout = ''
-        stderr = ''
-
-        while True:
-            header = response.buffer.read(8)
-
-            if header is b'':  # EOS.
-                break
-
-            length = struct.unpack('>I', header[4:])  # Big endian.
-
-            output = response.buffer.read(length[0]).decode('utf-8')
-
-            if header[0] == 1:
-                stdout += output
-            elif header[0] == 2:
-                stderr += output
-            else:
-                raise Exception('Don\'t know what {0} in the header means'
-                                .format(header[0]))
-
-        logger.log('container-end', container_name)
-
-        logger.debug(f'Exec response - stdout {stdout}, stderr {stderr}')
-
-        return stdout[:-1]  # Truncate the leading \n from the console.
+        raise K8sError(story=story, line=line, message='Not implemented')
