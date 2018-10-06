@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import json
+import ssl
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -169,6 +170,10 @@ async def test_make_k8s_call(patch, story, async_mock):
 
     # Notice the \n. \\n MUST be converted to \n in Kubernetes#make_k8s_call.
     context.load_verify_locations.assert_called_with(cadata='this_is\nmy_cert')
+
+
+def test_new_ssl_context():
+    assert isinstance(Kubernetes.new_ssl_context(), ssl.SSLContext)
 
 
 @mark.parametrize('res_code', [200, 400])
