@@ -169,6 +169,41 @@ async def test_make_k8s_call(patch, story, async_mock):
     context.load_verify_locations.assert_called_with(cadata='this_is\nmy_cert')
 
 
+@mark.parametrize('res_code', [200, 400])
+@mark.asyncio
+async def test_create_pod_existing(patch, async_mock, story, line, res_code):
+    res = MagicMock()
+    res.code = res_code
+    patch.object(Kubernetes, 'create_namespace_if_required', new=async_mock())
+    patch.object(Kubernetes, 'create_deployment', new=async_mock())
+    patch.object(Kubernetes, 'create_service', new=async_mock())
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
+
+    image = 'alpine/alpine:latest'
+    start_command = ['/bin/sleep', '1d']
+    container_name = 'asyncy--alpine-1'
+    env = {'token': 'foo'}
+
+    story.app.app_id = 'my_app'
+
+    await Kubernetes.create_pod(
+        story, line, image, container_name, start_command, env)
+
+    Kubernetes.make_k8s_call.mock.assert_called_with(
+        story.app,
+        '/apis/apps/v1/namespaces/my_app/deployments/asyncy--alpine-1')
+    Kubernetes.create_namespace_if_required.mock.assert_called_once()
+
+    if res_code == 200:
+        assert Kubernetes.create_deployment.mock.called is False
+        assert Kubernetes.create_service.mock.called is False
+    else:
+        Kubernetes.create_deployment.mock.assert_called_with(
+            story, line, image, container_name, start_command, env)
+        Kubernetes.create_service.mock.assert_called_with(
+            story, line, container_name)
+
+
 def test_is_2xx():
     res = MagicMock()
     res.code = 200
