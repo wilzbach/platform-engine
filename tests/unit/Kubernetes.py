@@ -178,7 +178,7 @@ def test_new_ssl_context():
 
 @mark.parametrize('res_code', [200, 400])
 @mark.asyncio
-async def test_create_pod_existing(patch, async_mock, story, line, res_code):
+async def test_create_pod(patch, async_mock, story, line, res_code):
     res = MagicMock()
     res.code = res_code
     patch.object(Kubernetes, 'create_namespace_if_required', new=async_mock())
