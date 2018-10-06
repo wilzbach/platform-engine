@@ -53,12 +53,16 @@ class Kubernetes:
         story.logger.debug(f'k8s namespace {story.app.app_id} created')
 
     @classmethod
+    def new_ssl_context(cls):
+        return ssl.SSLContext()
+
+    @classmethod
     async def make_k8s_call(cls, app, path: str,
                             payload: dict = None,
                             method: str = 'get') -> HTTPResponse:
         config = app.config
 
-        context = ssl.SSLContext()
+        context = cls.new_ssl_context()
 
         cert = config.CLUSTER_CERT
         cert = cert.replace('\\n', '\n')

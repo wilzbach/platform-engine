@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
+import json
 from unittest import mock
 from unittest.mock import MagicMock
 
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
+from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
 from pytest import fixture, mark
+
+from tornado.httpclient import AsyncHTTPClient
 
 
 @fixture
@@ -113,6 +117,49 @@ async def test_create_namespace_if_required(patch, story,
     ]
 
     assert Kubernetes.raise_if_not_2xx.called_with(res_create, story, line)
+
+
+@mark.asyncio
+async def test_make_k8s_call(patch, story, async_mock):
+    patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
+
+    context = MagicMock()
+    patch.object(Kubernetes, 'new_ssl_context', return_value=context)
+    context.load_verify_locations = MagicMock()
+
+    patch.init(AsyncHTTPClient)
+
+    client = AsyncHTTPClient()
+
+    story.app.config.CLUSTER_CERT = 'this_is\\nmy_cert'  # Notice the \\n.
+    story.app.config.CLUSTER_AUTH_TOKEN = 'my_token'
+    story.app.config.CLUSTER_HOST = 'k8s.local'
+
+    path = '/hello_world'
+
+    payload = {
+        'foo': 'bar'
+    }
+
+    expected_kwargs = {
+        'ssl_options': context,
+        'headers': {
+            'Authorization': 'bearer my_token',
+            'Content-Type': 'application/json; charset=utf-8'
+        },
+        'method': 'POST',
+        'body': json.dumps(payload)
+    }
+
+    assert await Kubernetes.make_k8s_call(story.app, path, payload) \
+        == HttpUtils.fetch_with_retry.mock.return_value
+
+    HttpUtils.fetch_with_retry.mock.assert_called_with(
+        3, story.app.logger, 'https://k8s.local/hello_world', client,
+        expected_kwargs)
+
+    # Notice the \n. \\n MUST be converted to \n in Kubernetes#make_k8s_call.
+    context.load_verify_locations.assert_called_with(cadata='this_is\nmy_cert')
 
 
 def test_is_2xx():
