@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from unittest import mock
 from unittest.mock import MagicMock
 
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 
 import pytest
-from pytest import fixture
+from pytest import fixture, mark
 
 
 @fixture
@@ -65,6 +66,53 @@ def test_raise_if_not_2xx(story, line):
 
     res.code = 200
     assert Kubernetes.raise_if_not_2xx(res, story, line) is None
+
+
+@mark.asyncio
+async def test_create_namespace_if_required_existing(patch, story,
+                                                     line, async_mock):
+    res = MagicMock()
+    res.code = 200
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
+
+    story.app.app_id = 'my_app'
+    await Kubernetes.create_namespace_if_required(story, line)
+
+    Kubernetes.make_k8s_call.mock.assert_called_once()
+    Kubernetes.make_k8s_call.mock.assert_called_with(
+        story.app, '/api/v1/namespaces/my_app')
+
+
+@mark.asyncio
+async def test_create_namespace_if_required(patch, story,
+                                            line, async_mock):
+    res_check = MagicMock()
+    res_check.code = 400
+
+    res_create = MagicMock()
+    res_create.code = 200
+
+    story.app.app_id = 'my_app'
+
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(side_effect=[res_check, res_create]))
+    patch.object(Kubernetes, 'raise_if_not_2xx')
+    await Kubernetes.create_namespace_if_required(story, line)
+
+    expected_payload = {
+        'apiVersion': 'v1',
+        'kind': 'Namespace',
+        'metadata': {
+            'name': 'my_app'
+        }
+    }
+
+    assert Kubernetes.make_k8s_call.mock.mock_calls == [
+        mock.call(story.app, '/api/v1/namespaces/my_app'),
+        mock.call(story.app, '/api/v1/namespaces', payload=expected_payload)
+    ]
+
+    assert Kubernetes.raise_if_not_2xx.called_with(res_create, story, line)
 
 
 def test_is_2xx():
