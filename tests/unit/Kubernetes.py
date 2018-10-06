@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import json
 from unittest import mock
 from unittest.mock import MagicMock
 
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
+from asyncy.constants.LineConstants import LineConstants
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
@@ -202,6 +204,50 @@ async def test_create_pod_existing(patch, async_mock, story, line, res_code):
             story, line, image, container_name, start_command, env)
         Kubernetes.create_service.mock.assert_called_with(
             story, line, container_name)
+
+
+@mark.asyncio
+async def test_create_service(patch, story, async_mock):
+    container_name = 'asyncy--alpine-1'
+    line = {
+        LineConstants.service: 'alpine'
+    }
+    patch.object(Kubernetes, 'find_all_ports', return_value={10, 20, 30})
+    patch.object(Kubernetes, 'raise_if_not_2xx')
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock())
+    patch.object(asyncio, 'sleep', new=async_mock())
+    story.app.app_id = 'my_app'
+
+    expected_payload = {
+        'apiVersion': 'v1',
+        'kind': 'Service',
+        'metadata': {
+            'name': container_name,
+            'namespace': story.app.app_id,
+            'labels': {
+                'app': container_name
+            }
+        },
+        'spec': {
+            'ports': [
+                {'port': 10, 'protocol': 'TCP', 'targetPort': 10},
+                {'port': 20, 'protocol': 'TCP', 'targetPort': 20},
+                {'port': 30, 'protocol': 'TCP', 'targetPort': 30}
+            ],
+            'selector': {
+                'app': container_name
+            }
+        }
+    }
+
+    expected_path = f'/api/v1/namespaces/{story.app.app_id}/services'
+    await Kubernetes.create_service(story, line, container_name)
+    Kubernetes.make_k8s_call.mock.assert_called_with(
+        story.app, expected_path, expected_payload)
+
+    Kubernetes.raise_if_not_2xx.assert_called_with(
+        Kubernetes.make_k8s_call.mock.return_value, story, line)
+    asyncio.sleep.mock.assert_called()
 
 
 def test_is_2xx():
