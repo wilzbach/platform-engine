@@ -189,11 +189,6 @@ class Kubernetes:
         path = f'/api/v1/namespaces/{story.app.app_id}/services'
         res = await cls.make_k8s_call(story.app, path, payload)
         cls.raise_if_not_2xx(res, story, line)
-        path = f'/api/v1/namespaces/{story.app.app_id}' \
-               f'/services/{container_name}'
-        res = await cls.make_k8s_call(story.app, path)
-        cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(f'Service created: {res.body}')
         await asyncio.sleep(2)  # todo: find a way to reliably decipher this.
 
     @classmethod
