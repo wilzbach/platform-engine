@@ -55,8 +55,7 @@ class Kubernetes:
     @classmethod
     async def make_k8s_call(cls, app, path: str,
                             payload: dict = None,
-                            method: str = 'get',
-                            allow_nonstandard_methods=False) -> HTTPResponse:
+                            method: str = 'get') -> HTTPResponse:
         config = app.config
 
         context = ssl.SSLContext()
@@ -71,7 +70,6 @@ class Kubernetes:
                 'Authorization': f'bearer {config.CLUSTER_AUTH_TOKEN}',
                 'Content-Type': 'application/json; charset=utf-8'
             },
-            'allow_nonstandard_methods': allow_nonstandard_methods,
             'method': method.upper()
         }
 
