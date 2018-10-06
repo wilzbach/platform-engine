@@ -158,6 +158,9 @@ class Kubernetes:
     @classmethod
     async def create_service(cls, story: Stories, line: dict,
                              container_name: str):
+        # Note: We don't check if this service exists because if it did,
+        # then we'd not get here. create_pod checks it. During beta, we tie
+        # 1:1 between a pod and a service.
         service = line[LineConstants.service]
         ports = cls.find_all_ports(story.app.services[service])
         port_list = []
@@ -195,6 +198,10 @@ class Kubernetes:
     async def create_deployment(cls, story: Stories, line: dict, image: str,
                                 container_name: str, start_command: [] or str,
                                 env: dict):
+        # Note: We don't check if this deployment exists because if it did,
+        # then we'd not get here. create_pod checks it. During beta, we tie
+        # 1:1 between a pod and a deployment.
+
         env_k8s = []  # Must container {name:'foo', value:'bar'}.
         ports_k8s = []  # Must contain {name:'foo',containerPort:8080}.
 
