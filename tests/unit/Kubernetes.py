@@ -129,6 +129,47 @@ def test_get_hostname(story, line):
     assert ret == 'alpine.my_app.svc.cluster.local'
 
 
+def _create_response(code: int):
+    res = MagicMock()
+    res.code = code
+    return res
+
+
+@mark.parametrize('first_res', [200, 409])
+@mark.asyncio
+async def test_clean_namespace(patch, story, async_mock, first_res):
+    story.app.app_id = 'my_app'
+    api_responses = [
+        _create_response(first_res),
+        _create_response(200),
+        _create_response(200),
+        _create_response(404),
+    ]
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(side_effect=api_responses))
+    patch.object(asyncio, 'sleep', new=async_mock())
+    await Kubernetes.clean_namespace(story.app)
+
+    assert Kubernetes.make_k8s_call.mock.mock_calls == [
+        mock.call(story.app,
+                  '/api/v1/namespaces/my_app?PropagationPolicy=Foreground',
+                  method='delete'),
+        mock.call(story.app, '/api/v1/namespaces/my_app'),
+        mock.call(story.app, '/api/v1/namespaces/my_app'),
+        mock.call(story.app, '/api/v1/namespaces/my_app'),
+    ]
+
+
+@mark.asyncio
+async def test_clean_namespace_already_deleted(patch, story, async_mock):
+    story.app.app_id = 'my_app'
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(return_value=_create_response(404)))
+    await Kubernetes.clean_namespace(story.app)
+
+    assert len(Kubernetes.make_k8s_call.mock.mock_calls) == 1
+
+
 @mark.asyncio
 async def test_make_k8s_call(patch, story, async_mock):
     patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
