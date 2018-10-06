@@ -119,6 +119,13 @@ async def test_create_namespace_if_required(patch, story,
     assert Kubernetes.raise_if_not_2xx.called_with(res_create, story, line)
 
 
+def test_get_hostname(story, line):
+    story.app.app_id = 'my_app'
+    container_name = 'alpine'
+    ret = Kubernetes.get_hostname(story, line, container_name)
+    assert ret == 'alpine.my_app.svc.cluster.local'
+
+
 @mark.asyncio
 async def test_make_k8s_call(patch, story, async_mock):
     patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
