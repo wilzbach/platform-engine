@@ -209,7 +209,7 @@ class Kubernetes:
                 })
 
         payload = {
-            'apiVersion': 'apps/v1beta1',
+            'apiVersion': 'apps/v1',
             'kind': 'Deployment',
             'metadata': {
                 'name': container_name,
@@ -219,6 +219,11 @@ class Kubernetes:
                 'replicas': 1,
                 'strategy': {
                     'type': 'RollingUpdate'
+                },
+                'selector': {
+                    'matchLabels': {
+                        'app': container_name
+                    }
                 },
                 'template': {
                     'metadata': {
@@ -248,7 +253,7 @@ class Kubernetes:
             }
         }
 
-        path = f'/apis/apps/v1beta1/namespaces/{story.app.app_id}/deployments'
+        path = f'/apis/apps/v1/namespaces/{story.app.app_id}/deployments'
 
         # When a namespace is created for the first time, K8s needs to perform
         # some sort of preparation. Pods creation fails sporadically for new
@@ -266,7 +271,7 @@ class Kubernetes:
 
         cls.raise_if_not_2xx(res, story, line)
 
-        path = f'/apis/apps/v1beta1/namespaces/{story.app.app_id}' \
+        path = f'/apis/apps/v1/namespaces/{story.app.app_id}' \
                f'/deployments/{container_name}'
 
         # Wait until the deployment is ready.
