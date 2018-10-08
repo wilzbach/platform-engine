@@ -129,9 +129,11 @@ def test_get_hostname(story, line):
     assert ret == 'alpine.my_app.svc.cluster.local'
 
 
-def _create_response(code: int):
+def _create_response(code: int, body: dict = None):
     res = MagicMock()
     res.code = code
+    if body:
+        res.body = json.dumps(body)
     return res
 
 
@@ -152,7 +154,7 @@ async def test_clean_namespace(patch, story, async_mock, first_res):
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
         mock.call(story.app,
-                  '/api/v1/namespaces/my_app?PropagationPolicy=Foreground'
+                  '/api/v1/namespaces/my_app?PropagationPolicy=Background'
                   '&gracePeriodSeconds=3',
                   method='delete'),
         mock.call(story.app, '/api/v1/namespaces/my_app'),
@@ -251,6 +253,79 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
             story, line, image, container_name, start_command, env)
         Kubernetes.create_service.mock.assert_called_with(
             story, line, container_name)
+
+
+@mark.asyncio
+async def test_create_deployment(patch, async_mock, story):
+    container_name = 'asyncy--alpine-1'
+    story.app.app_id = 'my_app'
+    image = 'alpine:latest'
+
+    env = {'token': 'asyncy-19920', 'username': 'asyncy'}
+    start_command = ['/bin/bash', 'sleep', '10000']
+
+    expected_payload = {
+        'apiVersion': 'apps/v1',
+        'kind': 'Deployment',
+        'metadata': {
+            'name': container_name,
+            'namespace': story.app.app_id
+        },
+        'spec': {
+            'replicas': 1,
+            'strategy': {
+                'type': 'RollingUpdate'
+            },
+            'selector': {
+                'matchLabels': {
+                    'app': container_name
+                }
+            },
+            'template': {
+                'metadata': {
+                    'labels': {
+                        'app': container_name
+                    }
+                },
+                'spec': {
+                    'containers': [
+                        {
+                            'name': container_name,
+                            'image': image,
+                            'command': start_command,
+                            'imagePullPolicy': 'Always',
+                            'env': [{'name': 'token', 'value': 'asyncy-19920'},
+                                    {'name': 'username', 'value': 'asyncy'}],
+                            'lifecycle': {
+                                'preStop': {
+                                    'exec': {
+                                        'command': ['echo', 'todo']
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    expected_create_path = f'/apis/apps/v1/namespaces/' \
+                           f'{story.app.app_id}/deployments'
+    expected_verify_path = f'/apis/apps/v1/namespaces/{story.app.app_id}' \
+                           f'/deployments/{container_name}'
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock(side_effect=[
+        _create_response(201),
+        _create_response(200, {'status': {'readyReplicas': 1}})
+    ]))
+    line = {}
+
+    await Kubernetes.create_deployment(story, line, image, container_name,
+                                       start_command, env)
+
+    assert Kubernetes.make_k8s_call.mock.mock_calls == [
+        mock.call(story.app, expected_create_path, expected_payload),
+        mock.call(story.app, expected_verify_path)
+    ]
 
 
 @mark.asyncio
