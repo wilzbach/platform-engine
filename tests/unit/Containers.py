@@ -28,6 +28,31 @@ def http_response():
     return build
 
 
+def test_is_service_reusable(story):
+    story.app.services = {
+        'alpine': {
+            'configuration': {
+                'commands': {
+                    'echo': {
+                        'run': 'foo'
+                    }
+                }
+            }
+        }
+    }
+
+    line = {
+        LineConstants.service: 'alpine',
+        LineConstants.command: 'echo'
+    }
+
+    assert Containers.is_service_reusable(story, line) is False
+    story.app.services['alpine']['configuration']['commands']['echo'][
+        'run'] = None
+
+    assert Containers.is_service_reusable(story, line) is True
+
+
 @mark.asyncio
 async def test_container_get_hostname(patch, story, line):
     story.app.app_id = 'my_app'
