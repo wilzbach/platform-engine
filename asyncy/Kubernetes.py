@@ -198,7 +198,7 @@ class Kubernetes:
     @classmethod
     async def create_deployment(cls, story: Stories, line: dict, image: str,
                                 container_name: str, start_command: [] or str,
-                                env: dict):
+                                shutdown_command: [] or str, env: dict):
         # Note: We don't check if this deployment exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a deployment.
@@ -244,11 +244,6 @@ class Kubernetes:
                                 'imagePullPolicy': 'Always',
                                 'env': env_k8s,
                                 'lifecycle': {
-                                    'preStop': {
-                                        'exec': {
-                                            'command': ['echo', 'todo']  # todo
-                                        }
-                                    }
                                 }
                             }
                         ]
@@ -256,6 +251,14 @@ class Kubernetes:
                 }
             }
         }
+
+        if shutdown_command is not None:
+            payload['spec']['template']['spec']['containers'][0]['lifecycle'][
+                'preStop'] = {
+                'exec': {
+                    'command': shutdown_command
+                }
+            }
 
         path = f'/apis/apps/v1/namespaces/{story.app.app_id}/deployments'
 
@@ -292,7 +295,7 @@ class Kubernetes:
     @classmethod
     async def create_pod(cls, story: Stories, line: dict, image: str,
                          container_name: str, start_command: [] or str,
-                         env: dict):
+                         shutdown_command: [] or str, env: dict):
         await cls.create_namespace_if_required(story, line)
         res = await cls.make_k8s_call(
             story.app,
@@ -305,6 +308,6 @@ class Kubernetes:
             return
 
         await cls.create_deployment(story, line, image, container_name,
-                                    start_command, env)
+                                    start_command, shutdown_command, env)
 
         await cls.create_service(story, line, container_name)

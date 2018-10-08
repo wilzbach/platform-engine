@@ -238,7 +238,7 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
     story.app.app_id = 'my_app'
 
     await Kubernetes.create_pod(
-        story, line, image, container_name, start_command, env)
+        story, line, image, container_name, start_command, None, env)
 
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app,
@@ -250,7 +250,7 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
         assert Kubernetes.create_service.mock.called is False
     else:
         Kubernetes.create_deployment.mock.assert_called_with(
-            story, line, image, container_name, start_command, env)
+            story, line, image, container_name, start_command, None, env)
         Kubernetes.create_service.mock.assert_called_with(
             story, line, container_name)
 
@@ -263,6 +263,7 @@ async def test_create_deployment(patch, async_mock, story):
 
     env = {'token': 'asyncy-19920', 'username': 'asyncy'}
     start_command = ['/bin/bash', 'sleep', '10000']
+    shutdown_command = ['wall', 'Shutdown']
 
     expected_payload = {
         'apiVersion': 'apps/v1',
@@ -299,7 +300,7 @@ async def test_create_deployment(patch, async_mock, story):
                             'lifecycle': {
                                 'preStop': {
                                     'exec': {
-                                        'command': ['echo', 'todo']
+                                        'command': shutdown_command
                                     }
                                 }
                             }
@@ -327,7 +328,7 @@ async def test_create_deployment(patch, async_mock, story):
     line = {}
 
     await Kubernetes.create_deployment(story, line, image, container_name,
-                                       start_command, env)
+                                       start_command, shutdown_command, env)
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
         mock.call(story.app, expected_create_path, expected_payload),

@@ -47,7 +47,7 @@ class Containers:
         command_conf = Dict.find(omg, f'commands.'
                                       f'{line[LineConstants.command]}')
 
-        # TODO: add shutdown command as well, k8s supports it ootb
+        shutdown_command = Dict.find(omg, f'lifecycle.shutdown.command')
 
         if command_conf.get('run'):
             start_command = Dict.find(command_conf, 'run.command')
@@ -82,7 +82,7 @@ class Containers:
 
         # TODO: add volumes
         await Kubernetes.create_pod(story, line, image, container_name,
-                                    start_command, env)
+                                    start_command, shutdown_command, env)
 
     @classmethod
     async def clean_app(cls, app):
