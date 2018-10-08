@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 import select
+import signal
 from threading import Thread
 
 from asyncy.App import App
@@ -33,20 +35,23 @@ def db(patch, magic):
     return get
 
 
-def test_listen_to_releases(patch, db, magic, config, logger, exc):
+def test_listen_to_releases(patch, db, magic, config, logger):
     conn = db()
 
+    def exc(*args, **kwargs):
+        raise psycopg2.InterfaceError()
+
     patch.object(asyncio, 'run_coroutine_threadsafe', side_effect=exc)
-    patch.object(select, 'select', return_value=[([], [], []), ([], [], []),
-                                                 False])
+    patch.object(select, 'select', side_effect=[([], [], []), ([], [], []),
+                                                False])
     patch.object(Apps, 'reload_app')
+    patch.many(os, ['kill', 'getpid'])
     notif = magic()
     notif.payload = 'app_id'
     conn.notifies = [notif]
     loop = magic()
 
-    with pytest.raises(Exception):
-        Apps.listen_to_releases(config, logger, loop)
+    Apps.listen_to_releases(config, logger, loop)
 
     conn.cursor().execute.assert_called_with('listen release;')
     Apps.reload_app.assert_called_with(config, logger, 'app_id')
@@ -54,6 +59,8 @@ def test_listen_to_releases(patch, db, magic, config, logger, exc):
         psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     asyncio.run_coroutine_threadsafe.assert_called_with(
         Apps.reload_app(), loop)
+
+    os.kill.assert_called_with(os.getpid.return_value, signal.SIGINT)
 
 
 @mark.asyncio
