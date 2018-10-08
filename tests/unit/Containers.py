@@ -61,6 +61,14 @@ async def test_container_get_hostname(patch, story, line):
     assert ret == 'foo.my_app.svc.cluster.local'
 
 
+@mark.asyncio
+async def test_clean_app(patch, async_mock):
+    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
+    app = MagicMock()
+    await Containers.clean_app(app)
+    Kubernetes.clean_namespace.mock.assert_called_with(app)
+
+
 def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
