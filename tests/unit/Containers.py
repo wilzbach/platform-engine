@@ -2,15 +2,14 @@
 import hashlib
 from unittest.mock import MagicMock
 
-from asyncy.Exceptions import K8sError
-import pytest
-
 from asyncy.Containers import Containers
+from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 
+import pytest
 from pytest import fixture, mark
 
 
