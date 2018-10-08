@@ -3,7 +3,7 @@ import hashlib
 from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
-from asyncy.Exceptions import K8sError
+from asyncy.Exceptions import ContainerSpecNotRegisteredError, K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
@@ -167,3 +167,34 @@ def test_format_command_no_format(logger, app, echo_service, echo_line):
 
     cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
     assert ['echo', '{"msg":"foo"}'] == cmd
+
+
+def test_format_command_no_spec(logger, app, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    app.services = {}
+    with pytest.raises(ContainerSpecNotRegisteredError):
+        Containers.format_command(story, echo_line, 'alpine', 'echo')
+
+
+def test_format_command_no_args(logger, app, echo_service, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    app.services = echo_service
+
+    echo_service['alpine'][ServiceConstants.config]['commands']['echo'][
+        'arguments'] = None
+
+    cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
+    assert ['echo'] == cmd
+
+
+def test_format_command_with_format(patch, logger, app,
+                                    echo_service, echo_line):
+    story = Story.story(app, logger, 'echo.story')
+    patch.object(story, 'argument_by_name', return_value='asyncy')
+    app.services = echo_service
+
+    config = app.services['alpine'][ServiceConstants.config]
+    config['commands']['echo']['format'] = 'echo {msg}'
+
+    cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
+    assert ['echo', 'asyncy'] == cmd
