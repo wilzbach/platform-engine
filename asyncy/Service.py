@@ -2,6 +2,7 @@
 import asyncio
 import os
 import signal
+import sys
 
 import click
 
@@ -92,7 +93,7 @@ class Service:
         except BaseException as e:
             Sentry.capture_exc(e)
             logger.error(f'Failed to init apps!', exc=e)
-            raise e
+            sys.exit(1)
 
     @staticmethod
     def sig_handler(*args, **kwargs):

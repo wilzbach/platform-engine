@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import sys
 from unittest.mock import MagicMock
 
 from asyncy.Apps import Apps
@@ -53,8 +54,9 @@ async def test_init_wrapper_exc(patch, async_mock, magic):
         raise Exception()
 
     patch.object(Apps, 'init_all', new=async_mock(side_effect=exc))
-    with pytest.raises(Exception):
-        await Service.init_wrapper(magic(), magic())
+    patch.object(sys, 'exit')
+    await Service.init_wrapper(magic(), magic())
+    sys.exit.assert_called()
 
 
 def test_service_sig_handler(patch):

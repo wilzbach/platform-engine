@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 import select
+import signal
 import threading
 
 import psycopg2
 
 from .App import App
 from .Config import Config
+from .Containers import Containers
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
@@ -52,6 +55,8 @@ class Apps:
 
             app = App(app_id, version, config, logger,
                       stories, services, environment)
+
+            await Containers.clean_app(app)
 
             await app.bootstrap()
 
@@ -183,11 +188,18 @@ class Apps:
         curs.execute('listen release;')
 
         while True:
-            if select.select([conn], [], [], 5) == ([], [], []):
-                continue
-            else:
-                conn.poll()
-                while conn.notifies:
-                    notify = conn.notifies.pop(0)
-                    asyncio.run_coroutine_threadsafe(
-                        cls.reload_app(config, logger, notify.payload), loop)
+            try:
+                if select.select([conn], [], [], 5) == ([], [], []):
+                    continue
+                else:
+                    conn.poll()
+                    while conn.notifies:
+                        notify = conn.notifies.pop(0)
+                        asyncio.run_coroutine_threadsafe(
+                            cls.reload_app(config, logger, notify.payload),
+                            loop)
+            except (psycopg2.InterfaceError, psycopg2.OperationalError):
+                logger.error('Connection to the DB has failed. Exiting.')
+                # Because _thread.interrupt_main() doesn't work.
+                os.kill(os.getpid(), signal.SIGINT)
+                break

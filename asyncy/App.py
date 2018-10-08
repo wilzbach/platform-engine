@@ -5,6 +5,7 @@ from collections import namedtuple
 from tornado.httpclient import AsyncHTTPClient
 
 from .Config import Config
+from .Containers import Containers
 from .Logger import Logger
 from .Types import StreamingService
 from .constants.ServiceConstants import ServiceConstants
@@ -105,13 +106,8 @@ class App:
 
     async def destroy(self):
         """
-        Destroys all stories, one at a time.
+        Unsubscribe from all existing subscriptions,
+        and delete the namespace.
         """
         await self.unsubscribe_all()
-
-        for story_name in self.entrypoint or []:
-            try:
-                await Story.destroy(self, self.logger, story_name)
-            except Exception as e:
-                self.logger.error('Failed to destroy story', exc=e)
-                raise e
+        await Containers.clean_app(self)
