@@ -57,18 +57,18 @@ class Containers:
         if start_command is None:
             start_command = ['tail', '-f', '/dev/null']
 
-        targets = {}
-        binds = []
+        # targets = {}
+        # binds = []
 
-        if omg.get('volumes'):
-            for name, data in omg['volumes'].items():
-                vol_name = f'asyncy--{service}-{name}'
-                vol_name = cls.format_volume_name(story, line, vol_name)
-                if not data.get('persist'):
-                    await cls.remove_volume(story, line, vol_name)
-                await cls.create_volume(story, line, vol_name)
-                binds.append(f'{name}:{data["target"]}')
-                targets[data['target']] = {}
+        # if omg.get('volumes'):
+        #     for name, data in omg['volumes'].items():
+        #         vol_name = f'asyncy--{service}-{name}'
+        #         vol_name = cls.format_volume_name(story, line, vol_name)
+        #         if not data.get('persist'):
+        #             await cls.remove_volume(story, line, vol_name)
+        #         await cls.create_volume(story, line, vol_name)
+        #         binds.append(f'{name}:{data["target"]}')
+        #         targets[data['target']] = {}
 
         env = {}
         for key, val in story.app.environment.items():

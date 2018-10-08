@@ -129,8 +129,9 @@ def test_hash_story_line(patch, story):
     assert ret == hashlib.sha1().hexdigest()
 
 
+@mark.parametrize('run_command', [None, ['/bin/bash', 'sleep', '10000']])
 @mark.asyncio
-async def test_start_no_command(patch, story, async_mock):
+async def test_start_no_command(patch, story, async_mock, run_command):
     line = {
         LineConstants.service: 'alpine',
         LineConstants.command: 'echo'
@@ -149,13 +150,25 @@ async def test_start_no_command(patch, story, async_mock):
         }
     }
 
+    if run_command is not None:
+        story.app.services['alpine'][ServiceConstants.config]['commands'][
+            'echo'] = {'run': {'command': run_command}}
+
+    story.app.environment = {
+        'alpine': {
+            'alpine_only': True
+        },
+        'global': 'yes'
+    }
+
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
     await Containers.start(story, line)
     Kubernetes.create_pod.mock.assert_called_with(
         story, line, 'alpine', 'asyncy-alpine',
-        ['tail', '-f', '/dev/null'], None, {})
+        run_command or ['tail', '-f', '/dev/null'], None,
+        {'alpine_only': True, 'global': 'yes'})
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
