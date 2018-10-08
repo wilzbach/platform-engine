@@ -68,6 +68,24 @@ async def test_destroy_all(patch, async_mock, magic):
 
 
 @mark.asyncio
+async def test_destroy_all_exc(patch, async_mock, magic):
+    app = magic()
+    patch.object(Sentry, 'capture_exc')
+
+    err = BaseException()
+
+    async def exc():
+        raise err
+
+    app.destroy = exc
+    Apps.apps = {'app_id': app}
+    app.app_id = 'app_id'
+    await Apps.destroy_all()
+
+    Sentry.capture_exc.assert_called_with(err)
+
+
+@mark.asyncio
 async def test_init_all(patch, magic, async_mock, config, logger, db):
     db()
     patch.object(Sentry, 'init')
