@@ -31,7 +31,7 @@ class Containers:
 
     @classmethod
     async def prepare_for_deployment(cls, story):
-        await Kubernetes.clean_namespace(story)
+        await Kubernetes.clean_namespace(story.app)
 
     @classmethod
     async def create_volume(cls, story, line, name):

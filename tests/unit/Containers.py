@@ -69,6 +69,28 @@ async def test_clean_app(patch, async_mock):
     Kubernetes.clean_namespace.mock.assert_called_with(app)
 
 
+@mark.asyncio
+async def test_remove_volume(patch, story, line, async_mock):
+    patch.object(Kubernetes, 'remove_volume', new=async_mock())
+    await Containers.remove_volume(story, line, 'foo')
+    Kubernetes.remove_volume.mock.assert_called_with(story, line, 'foo')
+
+
+@mark.asyncio
+async def test_prepare_for_deployment(patch, async_mock):
+    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
+    story = MagicMock()
+    await Containers.prepare_for_deployment(story)
+    Kubernetes.clean_namespace.mock.assert_called_with(story.app)
+
+
+@mark.asyncio
+async def test_create_volume(patch, async_mock, story, line):
+    patch.object(Kubernetes, 'create_volume', new=async_mock())
+    await Containers.create_volume(story, line, 'foo')
+    Kubernetes.create_volume.mock.assert_called_with(story, line, 'foo')
+
+
 def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
