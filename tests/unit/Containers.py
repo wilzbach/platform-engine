@@ -92,7 +92,7 @@ async def test_start_no_command(patch, story, async_mock):
     await Containers.start(story, line)
     Kubernetes.create_pod.mock.assert_called_with(
         story, line, 'alpine', 'asyncy-alpine',
-        ['tail', '-f', '/dev/null'], {})
+        ['tail', '-f', '/dev/null'], None, {})
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
