@@ -152,7 +152,8 @@ async def test_clean_namespace(patch, story, async_mock, first_res):
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
         mock.call(story.app,
-                  '/api/v1/namespaces/my_app?PropagationPolicy=Foreground',
+                  '/api/v1/namespaces/my_app?PropagationPolicy=Foreground'
+                  '&gracePeriodSeconds=3',
                   method='delete'),
         mock.call(story.app, '/api/v1/namespaces/my_app'),
         mock.call(story.app, '/api/v1/namespaces/my_app'),
