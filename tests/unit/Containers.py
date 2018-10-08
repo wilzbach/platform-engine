@@ -2,6 +2,9 @@
 import hashlib
 from unittest.mock import MagicMock
 
+from asyncy.Exceptions import K8sError
+import pytest
+
 from asyncy.Containers import Containers
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
@@ -51,6 +54,12 @@ def test_get_container_name(patch, story, line, reusable):
     else:
         h = Containers.hash_story_line(story, line)
         assert ret == f'asyncy--{story.app.app_id}-{h}-1'
+
+
+@mark.asyncio
+async def test_exec():
+    with pytest.raises(K8sError):
+        await Containers.exec(None, None, None, None, None)
 
 
 @mark.asyncio
