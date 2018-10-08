@@ -80,7 +80,6 @@ class Containers:
 
             env[key] = val
 
-        # TODO: add volumes
         await Kubernetes.create_pod(story, line, image, container_name,
                                     start_command, shutdown_command, env)
 

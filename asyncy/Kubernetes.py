@@ -90,12 +90,10 @@ class Kubernetes:
 
     @classmethod
     async def remove_volume(cls, story, line, name):
-        # TODO:
         pass
 
     @classmethod
     async def create_volume(cls, story, line, name):
-        # TODO:
         pass
 
     @classmethod
