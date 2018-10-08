@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 import select
+import signal
 import threading
 
 import psycopg2
@@ -186,13 +188,18 @@ class Apps:
         curs.execute('listen release;')
 
         while True:
-            if select.select([conn], [], [], 5) == ([], [], []):
-                continue
-            else:
-                conn.poll()
-                # TODO: poll throws an exception when the db connection breaks
-                # TODO: We MUST terminate the engine so that it can restart.
-                while conn.notifies:
-                    notify = conn.notifies.pop(0)
-                    asyncio.run_coroutine_threadsafe(
-                        cls.reload_app(config, logger, notify.payload), loop)
+            try:
+                if select.select([conn], [], [], 5) == ([], [], []):
+                    continue
+                else:
+                    conn.poll()
+                    while conn.notifies:
+                        notify = conn.notifies.pop(0)
+                        asyncio.run_coroutine_threadsafe(
+                            cls.reload_app(config, logger, notify.payload),
+                            loop)
+            except (psycopg2.InterfaceError, psycopg2.OperationalError):
+                logger.error('Connection to the DB has failed. Exiting.')
+                # Because _thread.interrupt_main() doesn't work.
+                os.kill(os.getpid(), signal.SIGINT)
+                break
