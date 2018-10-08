@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import hashlib
-from io import StringIO
 from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
@@ -9,23 +8,12 @@ from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 
-import pytest
 from pytest import fixture, mark
-
-from tornado.httpclient import HTTPRequest, HTTPResponse
 
 
 @fixture
 def line():
     return MagicMock()
-
-
-@fixture
-def http_response():
-    def build(url, code, body=None):
-        return HTTPResponse(HTTPRequest(url=url), code, buffer=StringIO(body))
-
-    return build
 
 
 def test_is_service_reusable(story):
@@ -51,6 +39,18 @@ def test_is_service_reusable(story):
         'run'] = None
 
     assert Containers.is_service_reusable(story, line) is True
+
+
+@mark.parametrize('reusable', [False, True])
+def test_get_container_name(patch, story, line, reusable):
+    patch.object(Containers, 'is_service_reusable', return_value=reusable)
+    story.app.app_id = 'my_app'
+    ret = Containers.get_container_name(story, line, 'alpine')
+    if reusable:
+        assert ret == 'asyncy--my_app-alpine-1'
+    else:
+        h = Containers.hash_story_line(story, line)
+        assert ret == f'asyncy--{story.app.app_id}-{h}-1'
 
 
 @mark.asyncio
