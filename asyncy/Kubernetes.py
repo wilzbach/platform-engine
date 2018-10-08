@@ -152,13 +152,7 @@ class Kubernetes:
         return ports
 
     @classmethod
-    async def create_service(cls, story: Stories, line: dict,
-                             container_name: str):
-        # Note: We don't check if this service exists because if it did,
-        # then we'd not get here. create_pod checks it. During beta, we tie
-        # 1:1 between a pod and a service.
-        service = line[LineConstants.service]
-        ports = cls.find_all_ports(story.app.services[service])
+    def format_ports(cls, ports: {int}):
         port_list = []
         for port in ports:
             port_list.append({
@@ -166,6 +160,17 @@ class Kubernetes:
                 'protocol': 'TCP',
                 'targetPort': port
             })
+        return port_list
+
+    @classmethod
+    async def create_service(cls, story: Stories, line: dict,
+                             container_name: str):
+        # Note: We don't check if this service exists because if it did,
+        # then we'd not get here. create_pod checks it. During beta, we tie
+        # 1:1 between a pod and a service.
+        service = line[LineConstants.service]
+        ports = cls.find_all_ports(story.app.services[service])
+        port_list = cls.format_ports(ports)
 
         payload = {
             'apiVersion': 'v1',
@@ -199,7 +204,6 @@ class Kubernetes:
         # 1:1 between a pod and a deployment.
 
         env_k8s = []  # Must container {name:'foo', value:'bar'}.
-        ports_k8s = []  # Must contain {name:'foo',containerPort:8080}.
 
         if env:
             for k, v in env.items():
@@ -236,8 +240,8 @@ class Kubernetes:
                             {
                                 'name': container_name,
                                 'image': image,
+                                'command': start_command,
                                 'imagePullPolicy': 'Always',
-                                'ports': ports_k8s,
                                 'env': env_k8s,
                                 'lifecycle': {
                                     'preStop': {
