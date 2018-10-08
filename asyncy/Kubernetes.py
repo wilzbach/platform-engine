@@ -104,7 +104,7 @@ class Kubernetes:
 
         res = await cls.make_k8s_call(
             app,
-            f'/api/v1/namespaces/{app.app_id}?PropagationPolicy=Foreground'
+            f'/api/v1/namespaces/{app.app_id}?PropagationPolicy=Background'
             f'&gracePeriodSeconds=3',
             method='delete')
 
