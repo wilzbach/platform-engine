@@ -150,26 +150,3 @@ class Story:
             Metrics.story_run_total.labels(app_id=app.app_id,
                                            story_name=story_name) \
                 .observe(time.time() - start)
-
-    @classmethod
-    async def destroy(cls, app, logger, story_name):
-        """
-        Destroys all containers that were created.
-        For destroying subscriptions, see App#destroy.
-        """
-        story = cls.story(app, logger, story_name)
-        line = story.line(story.first_line())
-        while line is not None:
-            if line[LineConstants.method] == 'execute':
-                service = line[LineConstants.service]
-                if app.services.get(service) is not None:
-                    command = line[LineConstants.command]
-                    run = Dict.find(app.services,
-                                    f'{service}.{ServiceConstants.config}.'
-                                    f'commands.{command}.run')
-                    if run is not None:
-                        c_name = Containers.get_container_name(story, line,
-                                                               service)
-                        await Containers.clean(story, line, c_name)
-
-            line = story.line(line.get('next'))

@@ -85,10 +85,6 @@ class Containers:
                                     start_command, env)
 
     @classmethod
-    async def clean(cls, story, line, container):
-        await Kubernetes.remove_pod(story, line, container)
-
-    @classmethod
     async def clean_app(cls, app):
         await Kubernetes.clean_namespace(app)
 

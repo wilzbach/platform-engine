@@ -267,43 +267,6 @@ async def test_story_run_prepare(patch, app, logger, async_mock):
 
 
 @mark.asyncio
-async def test_story_destroy(patch, app, logger, story, async_mock):
-    patch.object(Containers, 'clean', new=async_mock())
-    patch.object(Story, 'story', return_value=story)
-    story.tree = {
-        '2': {
-            'ln': '2',
-            'method': 'execute',
-            'service': 'alpine',
-            'command': 'echo',
-            'next': '3'
-        },
-        '3': {
-            'ln': '3',
-            'method': 'execute',
-            'service': 'not_a_service',
-            'command': 'foo'
-        }
-    }
-
-    app.services = {
-        'alpine': {
-            'configuration': {
-                'commands': {'echo': {'run': {'command': 'foo'}}}
-            }
-        }
-    }
-
-    story.entrypoint = '2'
-    app.entrypoint = ['hello.story']
-    await Story.destroy(app, logger, 'foo')
-    c_name = Containers.get_container_name(
-        story, story.tree['2'], story.tree['2']['service'])
-    assert Containers.clean.mock.mock_calls == \
-        [mock.call(story, story.tree['2'], c_name)]
-
-
-@mark.asyncio
 async def test_story_execute_does_not_wrap(patch, story, async_mock):
     def exc(*args):
         raise AsyncyError()

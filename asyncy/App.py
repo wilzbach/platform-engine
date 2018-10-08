@@ -106,14 +106,8 @@ class App:
 
     async def destroy(self):
         """
-        Destroys all stories, one at a time.
+        Unsubscribe from all existing subscriptions,
+        and delete the namespace.
         """
         await self.unsubscribe_all()
         await Containers.clean_app(self)
-
-        for story_name in self.entrypoint or []:
-            try:
-                await Story.destroy(self, self.logger, story_name)
-            except Exception as e:
-                self.logger.error('Failed to destroy story', exc=e)
-                raise e

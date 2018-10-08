@@ -99,11 +99,6 @@ class Kubernetes:
         pass
 
     @classmethod
-    async def remove_pod(cls, story, line, container):
-        # TODO:
-        pass
-
-    @classmethod
     async def clean_namespace(cls, app):
         app.logger.debug(f'Clearing namespace for app {app.app_id}')
 

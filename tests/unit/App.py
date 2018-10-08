@@ -171,38 +171,15 @@ async def test_app_run_stories_exc(patch, app, async_mock, exc):
 
 
 @mark.asyncio
-async def test_app_destroy_exc(patch, app, async_mock, exc):
-    app.stories = {
-        'foo': {},
-        'bar': {}
-    }
-    app.entrypoint = ['foo', 'bar']
-
-    patch.object(Story, 'destroy', new=async_mock(side_effect=exc))
-    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
-    patch.object(app, 'unsubscribe_all', new=async_mock())
-
-    with pytest.raises(Exception):
-        await app.destroy()
-
-    app.logger.error.assert_called_once()
-
-
-@mark.asyncio
 async def test_app_destroy(patch, app, async_mock):
     app.stories = {
         'foo': {},
         'bar': {}
     }
     app.entrypoint = ['foo', 'bar']
-    patch.object(Story, 'destroy', new=async_mock())
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(app, 'unsubscribe_all', new=async_mock())
     await app.destroy()
 
     app.unsubscribe_all.mock.assert_called()
-    assert Story.destroy.mock.call_count == 2
-    assert Story.destroy.mock.mock_calls == [
-        mock.call(app, app.logger, 'foo'),
-        mock.call(app, app.logger, 'bar')
-    ]
+    Kubernetes.clean_namespace.mock.assert_called()
