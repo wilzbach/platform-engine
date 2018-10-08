@@ -309,12 +309,19 @@ async def test_create_deployment(patch, async_mock, story):
             }
         }
     }
+
+    patch.object(asyncio, 'sleep', new=async_mock())
+
     expected_create_path = f'/apis/apps/v1/namespaces/' \
                            f'{story.app.app_id}/deployments'
     expected_verify_path = f'/apis/apps/v1/namespaces/{story.app.app_id}' \
                            f'/deployments/{container_name}'
+
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(side_effect=[
+        _create_response(404),
         _create_response(201),
+        _create_response(200, {'status': {'readyReplicas': 0}}),
+        _create_response(200, {'status': {'readyReplicas': 0}}),
         _create_response(200, {'status': {'readyReplicas': 1}})
     ]))
     line = {}
@@ -324,6 +331,9 @@ async def test_create_deployment(patch, async_mock, story):
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
         mock.call(story.app, expected_create_path, expected_payload),
+        mock.call(story.app, expected_create_path, expected_payload),
+        mock.call(story.app, expected_verify_path),
+        mock.call(story.app, expected_verify_path),
         mock.call(story.app, expected_verify_path)
     ]
 
