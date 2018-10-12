@@ -87,7 +87,7 @@ class Lexicon:
 
     @staticmethod
     async def set(logger, story, line):
-        value = story.resolve(line['args'][1])
+        value = story.resolve(line['args'][0])
 
         if len(line['args']) > 2:
             # Check if args[2] is a mutation.

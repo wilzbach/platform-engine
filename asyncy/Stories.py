@@ -4,8 +4,7 @@ import time
 import uuid
 from json import JSONDecodeError, dumps, loads
 
-from storyscript.resolver import Resolver
-
+from .processing.Resolver import Resolver
 from .utils import Dict
 
 
