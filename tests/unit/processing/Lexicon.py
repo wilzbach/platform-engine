@@ -91,10 +91,8 @@ async def test_lexicon_set_mutation(patch, logger, story):
     patch.object(Mutations, 'mutate')
     line = {
         'ln': '1',
+        'name': ['out'],
         'args': [
-            {
-                'paths': ['name']
-            },
             'values',
             {
                 '$OBJECT': 'mutation'
@@ -104,12 +102,12 @@ async def test_lexicon_set_mutation(patch, logger, story):
     }
     Mutations.mutate.return_value = 'mutated_result'
     result = await Lexicon.set(logger, story, line)
-    story.resolve.assert_called_with(line['args'][1])
-    story.end_line.assert_called_with(line['ln'],
-                                      assign={'paths': ['name']},
-                                      output='mutated_result')
+    story.resolve.assert_called_with(line['args'][0])
+    story.end_line.assert_called_with(
+        line['ln'], assign={'paths': ['out'], '$OBJECT': 'path'},
+        output='mutated_result')
     story.line.assert_called_with(line['next'])
-    Mutations.mutate.assert_called_with(line['args'][2],
+    Mutations.mutate.assert_called_with(line['args'][1],
                                         story.resolve(), story, line)
     assert result == Lexicon.next_line_or_none()
 
@@ -121,9 +119,6 @@ async def test_lexicon_set_invalid_operation(patch, logger, story):
     line = {
         'ln': '1',
         'args': [
-            {
-                'paths': ['name']
-            },
             'values',
             {
                 '$OBJECT': 'foo'
