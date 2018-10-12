@@ -7,7 +7,9 @@ class Resolver:
 
     @staticmethod
     def _walk(item, index):
-        if index.isdigit():
+        if isinstance(index, dict):
+            return item[Resolver.object(index, item)]
+        elif index.isdigit():
             return item[int(index)]
         return item[index]
 
