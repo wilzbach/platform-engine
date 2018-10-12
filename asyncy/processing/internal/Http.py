@@ -20,8 +20,10 @@ async def http_post(story, line, resolved_args):
     method = resolved_args.get('method', 'get') or 'get'
     http_client = AsyncHTTPClient()
     kwargs = {'method': method.upper(), 'ca_certs': certifi.where()}
-    if resolved_args.get('headers'):
-        kwargs['headers'] = resolved_args.get('headers')
+
+    headers = resolved_args.get('headers') or {}
+    if headers.get('User-Agent') is None:
+        headers['User-Agent'] = 'Asyncy/1.0-beta'
 
     if resolved_args.get('body'):
         kwargs['body'] = resolved_args['body']
