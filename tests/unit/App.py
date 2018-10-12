@@ -25,7 +25,7 @@ def exc(patch):
 
 @fixture
 def app(config, logger, magic):
-    return App('app_id', logger, config, magic(), magic(), magic(), magic())
+    return App('app_id', logger, config, magic(), magic(), magic(), {})
 
 
 def test_add_subscription(patch, app, magic):
@@ -111,7 +111,7 @@ async def test_unsubscribe_all(patch, app, async_mock, magic, response_code):
 
 def test_app_init(magic, config, logger):
     services = magic()
-    environment = magic()
+    environment = {'env': True}
     stories = magic()
     app = App('app_id', logger, config, logger, stories, services, environment)
     assert app.app_id == 'app_id'

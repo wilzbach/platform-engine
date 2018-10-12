@@ -31,6 +31,13 @@ class App:
         self.stories = stories['stories']
         self.entrypoint = stories['entrypoint']
         self.services = services
+        secrets = {}
+        if self.environment:
+            assert isinstance(self.environment, dict)
+            for k, v in self.environment.items():
+                if not isinstance(v, dict):
+                    secrets[k.lower()] = v
+        self.app_context = {'secrets': secrets}
 
     async def bootstrap(self):
         """

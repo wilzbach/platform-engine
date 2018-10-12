@@ -201,7 +201,7 @@ def test_stories_prepare(story):
 
 def test_stories_prepare_context(story, app):
     story.app = app
-    context = {}
+    context = {'app': app.app_context}
     story.prepare(context=context)
     assert story.environment == app.environment
     assert story.context == context

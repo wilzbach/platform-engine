@@ -243,6 +243,8 @@ class Stories:
 
     def set_context(self, context):
         self.context = context or {}
+        # Optimise this later.
+        self.context['app'] = self.app.app_context.copy()
 
     def prepare(self, context=None):
         self.set_context(context)
