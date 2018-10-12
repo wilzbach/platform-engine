@@ -25,6 +25,8 @@ async def http_post(story, line, resolved_args):
     if headers.get('User-Agent') is None:
         headers['User-Agent'] = 'Asyncy/1.0-beta'
 
+    kwargs['headers'] = headers
+
     if resolved_args.get('body'):
         kwargs['body'] = resolved_args['body']
         if isinstance(kwargs['body'], dict):
