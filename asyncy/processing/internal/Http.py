@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 import certifi
 
 from tornado.httpclient import AsyncHTTPClient
@@ -23,6 +25,8 @@ async def http_post(story, line, resolved_args):
 
     if resolved_args.get('body'):
         kwargs['body'] = resolved_args['body']
+        if isinstance(kwargs['body'], dict):
+            kwargs['body'] = json.dumps(kwargs['body'])
 
     response = await HttpUtils.fetch_with_retry(1, story.logger,
                                                 resolved_args['url'],
