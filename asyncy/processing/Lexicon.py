@@ -100,7 +100,8 @@ class Lexicon:
                             f'{line["args"][2]["$OBJECT"]}',
                     story=story, line=line)
 
-        story.end_line(line['ln'], output=value, assign=line['args'][0])
+        story.end_line(line['ln'], output=value,
+                       assign={'$OBJECT': 'path', 'paths': line['name']})
         return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod

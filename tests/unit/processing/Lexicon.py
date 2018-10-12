@@ -73,13 +73,13 @@ async def test_lexicon_execute_none(patch, logger, story, line, async_mock):
 async def test_lexicon_set(patch, logger, story):
     story.context = {}
     patch.object(Lexicon, 'next_line_or_none')
-    line = {'ln': '1', 'args': [{'paths': ['name']}, 'values'], 'next': '2'}
+    line = {'ln': '1', 'name': ['out'], 'args': ['values'], 'next': '2'}
     story.resolve.return_value = 'resolved'
     result = await Lexicon.set(logger, story, line)
-    story.resolve.assert_called_with(line['args'][1])
-    story.end_line.assert_called_with(line['ln'],
-                                      assign={'paths': ['name']},
-                                      output='resolved')
+    story.resolve.assert_called_with(line['args'][0])
+    story.end_line.assert_called_with(
+        line['ln'], assign={'paths': ['out'], '$OBJECT': 'path'},
+        output='resolved')
     story.line.assert_called_with(line['next'])
     assert result == Lexicon.next_line_or_none()
 
