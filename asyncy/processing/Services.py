@@ -263,3 +263,7 @@ class Services:
 
             cls.logger.log_raw(
                 'info', f'Discovered internal service {key} - {commands}')
+
+    @classmethod
+    async def remove_all(cls, app):
+        await Containers.clean_app(app)
