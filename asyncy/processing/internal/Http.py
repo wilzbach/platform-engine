@@ -32,7 +32,7 @@ async def http_post(story, line, resolved_args):
         if isinstance(kwargs['body'], dict):
             kwargs['body'] = json.dumps(kwargs['body'])
 
-    response = await HttpUtils.fetch_with_retry(1, story.logger,
+    response = await HttpUtils.fetch_with_retry(3, story.logger,
                                                 resolved_args['url'],
                                                 http_client, kwargs)
     if round(response.code / 100) != 2:
