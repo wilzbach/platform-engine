@@ -91,6 +91,7 @@ class Services:
         service = line[LineConstants.service]
         chain = cls.resolve_chain(story, line)
         command_conf = cls.get_command_conf(story, chain)
+        await cls.start_container(story, line)
         if command_conf.get('format') is not None:
             return await Containers.exec(story.logger, story, line,
                                          service, line['command'])
@@ -240,8 +241,9 @@ class Services:
 
     @classmethod
     async def start_container(cls, story, line):
-        if line[LineConstants.command] == 'server' \
-                and line[LineConstants.service] == 'http':
+        chain = cls.resolve_chain(story, line)
+        assert isinstance(chain[0], Service)
+        if chain[0].name == 'http':
             return StreamingService(
                 name='http',
                 command=line[LineConstants.command],
