@@ -350,7 +350,11 @@ def test_service_get_command_conf_simple(story):
 
 @mark.asyncio
 async def test_start_container_http(story):
-    line = {Line.command: 'server', Line.service: 'http'}
+    line = {
+        Line.command: 'server',
+        Line.service: 'http',
+        Line.method: 'execute'
+    }
     ret = await Services.start_container(story, line)
     assert ret.name == 'http'
     assert ret.command == 'server'
