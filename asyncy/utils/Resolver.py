@@ -59,6 +59,8 @@ class Resolver:
 
     @classmethod
     def object(cls, item, data):
+        if not isinstance(item, dict):
+            return item
         object_type = item.get('$OBJECT')
         if object_type == 'string':
             if 'values' in item:
