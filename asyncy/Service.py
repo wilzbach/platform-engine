@@ -18,7 +18,7 @@ from .Logger import Logger
 from .Sentry import Sentry
 from .http_handlers.StoryEventHandler import StoryEventHandler
 from .processing.Services import Services
-from .processing.internal import File, Http, Log
+from .processing.internal import File, Http, Json, Log
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -60,6 +60,7 @@ class Service:
         File.init()
         Log.init()
         Http.init()
+        Json.init()
         Services.log_internal()
 
         logger.log('service-init', Version.version)
