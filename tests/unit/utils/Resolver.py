@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import re
 
-from pytest import mark
-import storyscript
-
 from asyncy.utils import Resolver
+
+from pytest import mark
+
+import storyscript
 
 
 # def test_resolve_list():
