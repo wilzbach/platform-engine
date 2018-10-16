@@ -135,11 +135,11 @@ def test_stories_end_line_output_as_list(patch, story):
     assert story.results['1']['output'] == ['a', 'b']
 
 
-def test_stories_end_line_output_as_json(patch, story):
+def test_stories_end_line_output_as_json_no_auto_convert(patch, story):
     patch.object(time, 'time')
     story.results = {'1': {'start': 'start'}}
     story.end_line('1', output='{"key":"value"}')
-    assert story.results['1']['output'] == {'key': 'value'}
+    assert story.results['1']['output'] == '{"key":"value"}'
 
 
 def test_stories_end_line_output_as_sting(patch, story):
@@ -201,7 +201,7 @@ def test_stories_prepare(story):
 
 def test_stories_prepare_context(story, app):
     story.app = app
-    context = {}
+    context = {'app': app.app_context}
     story.prepare(context=context)
     assert story.environment == app.environment
     assert story.context == context

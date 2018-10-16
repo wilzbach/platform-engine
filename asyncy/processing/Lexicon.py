@@ -87,20 +87,21 @@ class Lexicon:
 
     @staticmethod
     async def set(logger, story, line):
-        value = story.resolve(line['args'][1])
+        value = story.resolve(line['args'][0])
 
-        if len(line['args']) > 2:
-            # Check if args[2] is a mutation.
-            if line['args'][2]['$OBJECT'] == 'mutation':
-                value = Mutations.mutate(line['args'][2], value, story, line)
+        if len(line['args']) > 1:
+            # Check if args[1] is a mutation.
+            if line['args'][1]['$OBJECT'] == 'mutation':
+                value = Mutations.mutate(line['args'][1], value, story, line)
                 logger.log_raw('debug', f'Mutation result: {value}')
             else:
                 raise AsyncyError(
                     message=f'Unsupported argument in set: '
-                            f'{line["args"][2]["$OBJECT"]}',
+                            f'{line["args"][1]["$OBJECT"]}',
                     story=story, line=line)
 
-        story.end_line(line['ln'], output=value, assign=line['args'][0])
+        story.end_line(line['ln'], output=value,
+                       assign={'$OBJECT': 'path', 'paths': line['name']})
         return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod

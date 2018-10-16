@@ -25,7 +25,7 @@ def exc(patch):
 
 @fixture
 def app(config, logger, magic):
-    return App('app_id', logger, config, magic(), magic(), magic(), magic())
+    return App('app_id', logger, config, magic(), magic(), magic(), {})
 
 
 def test_add_subscription(patch, app, magic):
@@ -109,17 +109,24 @@ async def test_unsubscribe_all(patch, app, async_mock, magic, response_code):
         app.logger.error.assert_called_once()
 
 
-def test_app_init(magic, config, logger):
+@mark.parametrize('env', [{'env': True}, None, {'a': {'nested': '1'}}])
+def test_app_init(magic, config, logger, env):
     services = magic()
-    environment = magic()
     stories = magic()
-    app = App('app_id', logger, config, logger, stories, services, environment)
+    expected_secrets = {}
+    if env:
+        for k, v in env.items():
+            if not isinstance(v, dict):
+                expected_secrets[k.lower()] = v
+
+    app = App('app_id', logger, config, logger, stories, services, env)
     assert app.app_id == 'app_id'
     assert app.config == config
     assert app.logger == logger
     assert app.stories == stories['stories']
     assert app.services == services
-    assert app.environment == environment
+    assert app.environment == env
+    assert app.app_context['secrets'] == expected_secrets
     assert app.entrypoint == stories['entrypoint']
 
 

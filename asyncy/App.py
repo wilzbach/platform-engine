@@ -5,11 +5,11 @@ from collections import namedtuple
 from tornado.httpclient import AsyncHTTPClient
 
 from .Config import Config
-from .Containers import Containers
 from .Logger import Logger
 from .Types import StreamingService
 from .constants.ServiceConstants import ServiceConstants
 from .processing import Story
+from .processing.Services import Services
 from .utils import Dict
 from .utils.HttpUtils import HttpUtils
 
@@ -31,6 +31,13 @@ class App:
         self.stories = stories['stories']
         self.entrypoint = stories['entrypoint']
         self.services = services
+        secrets = {}
+        if self.environment:
+            assert isinstance(self.environment, dict)
+            for k, v in self.environment.items():
+                if not isinstance(v, dict):
+                    secrets[k.lower()] = v
+        self.app_context = {'secrets': secrets}
 
     async def bootstrap(self):
         """
@@ -110,4 +117,4 @@ class App:
         and delete the namespace.
         """
         await self.unsubscribe_all()
-        await Containers.clean_app(self)
+        await Services.remove_all(self)

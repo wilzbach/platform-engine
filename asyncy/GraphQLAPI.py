@@ -48,7 +48,7 @@ class GraphQLAPI:
         graph_result = json.loads(res.body)
 
         res = graph_result['data']['serviceByAlias']
-        assert res, 'Not found in Asyncy Hub'
+        assert res, f'Alias "{alias}" was not found in the Asyncy Hub'
 
         return (
             res['pullUrl'],
@@ -107,8 +107,7 @@ class GraphQLAPI:
         res = \
             graph_result['data']['allOwners']['nodes'][0]['repos']['nodes'][0][
                 'services']['nodes'][0]
-        assert res, 'Not found in Asyncy Hub'
-
+        assert res, f'Image "{image}" was not found in the Asyncy Hub'
         return (
             res['pullUrl'],
             res['serviceTags']['nodes'][0]['configuration']
