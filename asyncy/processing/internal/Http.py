@@ -40,6 +40,9 @@ async def http_post(story, line, resolved_args):
             story=story, line=line,
             message=f'Failed to make HTTP call: {response.error}')
 
+    if 'application/json' in response.headers.get('Content-Type'):
+        return json.loads(response.body.decode('utf-8'))
+
     return response.body.decode('utf-8')
 
 
