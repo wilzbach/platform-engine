@@ -54,6 +54,7 @@ async def test_services_execute_execute_external(patch, story, async_mock):
 async def test_services_execute_execute_external_inline(patch, story,
                                                         async_mock):
     patch.object(Services, 'execute_inline', new=async_mock())
+    patch.object(Services, 'start_container', new=async_mock())
     patch.object(Services, 'get_command_conf',
                  return_value={'http': {'use_event_conn': True}})
     line = {
@@ -273,11 +274,13 @@ async def test_services_execute_external_format(patch, story, async_mock):
     }
 
     patch.object(Containers, 'exec', new=async_mock())
+    patch.object(Services, 'start_container', new=async_mock())
 
     ret = await Services.execute_external(story, line)
     Containers.exec.mock.assert_called_with(
         story.logger, story, line, 'cups', 'print')
     assert ret == await Containers.exec()
+    Services.start_container.mock.assert_called()
 
 
 @mark.asyncio
@@ -301,6 +304,7 @@ async def test_services_execute_external_http(patch, story, async_mock):
     }
 
     patch.object(Services, 'execute_http', new=async_mock())
+    patch.object(Services, 'start_container', new=async_mock())
 
     ret = await Services.execute_external(story, line)
     Services.execute_http.mock.assert_called_with(
@@ -308,6 +312,7 @@ async def test_services_execute_external_http(patch, story, async_mock):
         deque([Service(name='cups'), Command(name='print')]),
         {'http': {}})
     assert ret == await Services.execute_http()
+    Services.start_container.mock.assert_called()
 
 
 @mark.asyncio
@@ -329,6 +334,8 @@ async def test_services_execute_external_unknown(patch, story, async_mock):
             }
         }
     }
+
+    patch.object(Services, 'start_container', new=async_mock())
 
     with pytest.raises(AsyncyError):
         await Services.execute_external(story, line)
