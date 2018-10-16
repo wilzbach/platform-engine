@@ -46,7 +46,10 @@ async def test_service_http_fetch(patch, story, line,
     client_kwargs = {
         'method': method[0].upper(),
         'ca_certs': 'ca_certs.pem',
-        'headers': resolved_args['headers'],
+        'headers': {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Asyncy/1.0-beta'
+        },
         'body': '{"foo":"bar"}'
     }
     fetch_mock.code = method[1]
@@ -57,7 +60,7 @@ async def test_service_http_fetch(patch, story, line,
     else:
         result = await Http.http_post(story, line, resolved_args)
         HttpUtils.fetch_with_retry.mock.assert_called_with(
-            1, story.logger, resolved_args['url'],
+            3, story.logger, resolved_args['url'],
             AsyncHTTPClient(), client_kwargs
         )
         assert result == fetch_mock.body.decode('utf-8')
