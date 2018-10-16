@@ -14,7 +14,7 @@ async def stringify(story, line, resolved_args):
 @Decorators.create_service(name='json', command='parse', arguments={
     'content': {'type': 'string'}
 }, output_type='any')
-async def stringify(story, line, resolved_args):
+async def parse(story, line, resolved_args):
     return json.loads(resolved_args['content'])
 
 
