@@ -68,7 +68,7 @@ async def test_service_http_fetch(patch, story, line, json_response,
     if not body:
         client_kwargs.pop('body')
         resolved_args.pop('body')
-        
+
     fetch_mock.code = method[1]
     if json_response:
         fetch_mock.body = '{"hello": "world"}'.encode('utf-8')
