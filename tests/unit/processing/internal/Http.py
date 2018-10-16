@@ -26,8 +26,9 @@ def line():
 
 @mark.parametrize('method', [['post', 200], ['get', 201],
                              ['post', 500], ['get', 500]])
+@mark.parametrize('json_response', [True, False])
 @mark.asyncio
-async def test_service_http_fetch(patch, story, line,
+async def test_service_http_fetch(patch, story, line, json_response,
                                   service_patch, async_mock, method):
     fetch_mock = MagicMock()
     patch.object(HttpUtils, 'fetch_with_retry',
@@ -40,7 +41,7 @@ async def test_service_http_fetch(patch, story, line,
             'Content-Type': 'application/json'
         },
         'method': method[0],
-        'body': '{"foo":"bar"}'
+        'body': {'foo': 'bar'}
     }
 
     client_kwargs = {
@@ -50,10 +51,15 @@ async def test_service_http_fetch(patch, story, line,
             'Content-Type': 'application/json',
             'User-Agent': 'Asyncy/1.0-beta'
         },
-        'body': '{"foo":"bar"}'
+        'body': '{"foo": "bar"}'
     }
     fetch_mock.code = method[1]
-    fetch_mock.body = 'hello world!'.encode('utf-8')
+    if json_response:
+        fetch_mock.body = '{"hello": "world"}'.encode('utf-8')
+        fetch_mock.headers = {'Content-Type': 'application/json'}
+    else:
+        fetch_mock.body = 'hello world!'.encode('utf-8')
+
     if round(method[1] / 100) != 2:
         with pytest.raises(AsyncyError):
             await Http.http_post(story, line, resolved_args)
@@ -63,7 +69,10 @@ async def test_service_http_fetch(patch, story, line,
             3, story.logger, resolved_args['url'],
             AsyncHTTPClient(), client_kwargs
         )
-        assert result == fetch_mock.body.decode('utf-8')
+        if json_response:
+            assert result == {'hello': 'world'}
+        else:
+            assert result == fetch_mock.body.decode('utf-8')
 
 
 def test_service_http_init():
