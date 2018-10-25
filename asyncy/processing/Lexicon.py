@@ -147,7 +147,7 @@ class Lexicon:
             # Yes, we need to subscribe to an event with the service.
             conf = story.app.services[s.name][ServiceConstants.config]
             conf_event = Dict.find(
-                conf, f'commands.{s.command}.events.{command}')
+                conf, f'actions.{s.command}.events.{command}')
 
             port = Dict.find(conf_event, f'http.port', 80)
             subscribe_path = Dict.find(conf_event, 'http.subscribe.path')

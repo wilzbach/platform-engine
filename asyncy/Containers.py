@@ -44,7 +44,7 @@ class Containers:
         omg = story.app.services[service][ServiceConstants.config]
         image = omg.get('image', service)
 
-        command_conf = Dict.find(omg, f'commands.'
+        command_conf = Dict.find(omg, f'actions.'
                                       f'{line[LineConstants.command]}')
 
         shutdown_command = Dict.find(omg, f'lifecycle.shutdown.command')
@@ -99,7 +99,7 @@ class Containers:
         command = line[LineConstants.command]
 
         run = Dict.find(story.app.services,
-                        f'{service}.configuration.commands.{command}.run')
+                        f'{service}.configuration.actions.{command}.run')
 
         return run is None
 
@@ -138,13 +138,13 @@ class Containers:
                 container_name=container_name
             )
 
-        args = spec[ServiceConstants.config]['commands'][command]\
+        args = spec[ServiceConstants.config]['actions'][command]\
             .get('arguments')
 
         if args is None:
             return [command]
 
-        command_format = spec[ServiceConstants.config]['commands'][command]\
+        command_format = spec[ServiceConstants.config]['actions'][command]\
             .get('format')
         if command_format is None:
             # Construct a dictionary of all arguments required and send them

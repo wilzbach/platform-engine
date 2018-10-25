@@ -80,7 +80,7 @@ class App:
             conf = Dict.find(
                 self.services, f'{sub.streaming_service.name}'
                                f'.{ServiceConstants.config}'
-                               f'.commands.{sub.streaming_service.command}'
+                               f'.actions.{sub.streaming_service.command}'
                                f'.events.{sub.event}.http')
 
             http_conf = conf.get('unsubscribe')

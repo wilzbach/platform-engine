@@ -15,7 +15,7 @@ def test_containers_format_command(story):
     story.app.services = {
         'alpine': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'echo': {
                         'arguments': {'msg': {'type': 'string'}}
                     }
@@ -36,7 +36,7 @@ def test_containers_format_command_no_arguments(story):
     story.app.services = {
         'alpine': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'echo': {}
                 }
             }
