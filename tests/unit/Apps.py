@@ -100,14 +100,15 @@ async def test_init_all(patch, magic, async_mock, config, logger, db):
     patch.object(Thread, 'start')
 
     releases = [
-        ['app_id', 'version', 'env', 'stories', 'maintenance']
+        ['my_app_uuid']
     ]
-    patch.object(Apps, 'get_releases', return_value=releases)
-    patch.object(Apps, 'deploy_release', new=async_mock())
+    patch.object(Apps, 'get_all_app_uuids_for_deployment',
+                 return_value=releases)
+    patch.object(Apps, 'reload_app', new=async_mock())
 
     await Apps.init_all('sentry_dsn', 'release_ver', config, logger)
-    Apps.deploy_release.mock.assert_called_with(
-        config, logger, 'app_id', 'version', 'env', 'stories', 'maintenance')
+    Apps.reload_app.mock.assert_called_with(
+        config, logger, 'my_app_uuid')
 
     Sentry.init.assert_called_with('sentry_dsn', 'release_ver')
 
@@ -131,6 +132,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
     conn = db()
     old_app = magic()
     app_id = 'app_id'
+    app_dns = 'app_dns'
     Apps.apps = {app_id: old_app}
     patch.object(Sentry, 'capture_exc')
 
@@ -140,14 +142,14 @@ async def test_reload_app(patch, config, logger, db, async_mock,
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = ['app_id', 'version', 'env', 'stories', 'maintenance']
+    release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns]
     conn.cursor().fetchone.return_value = release
 
     await Apps.reload_app(config, logger, app_id)
 
     Apps.destroy_app.mock.assert_called_with(old_app, silent=True)
     Apps.deploy_release.mock.assert_called_with(
-        config, logger, app_id,
+        config, logger, app_id, app_dns,
         release[1], release[2], release[3], release[4])
 
     if raise_error:
@@ -157,18 +159,11 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         logger.error.assert_not_called()
 
 
-def test_get_releases(patch, magic, config):
+def test_get_all_app_uuids_for_deployment(patch, magic, config):
     conn = magic()
     patch.object(Apps, 'new_pg_conn', return_value=conn)
-    query = """
-        with latest as (select app_uuid, max(id) as id
-            from releases group by app_uuid)
-        select app_uuid, id, config, payload, maintenance
-        from latest
-            inner join releases using (app_uuid, id)
-            inner join apps on (releases.app_uuid = apps.uuid);
-        """
-    ret = Apps.get_releases(config)
+    query = 'select app_uuid from releases group by app_uuid;'
+    ret = Apps.get_all_app_uuids_for_deployment(config)
     conn.cursor().execute.assert_called_with(query)
     assert ret == conn.cursor().fetchall()
 
@@ -190,14 +185,14 @@ async def test_deploy_release(config, logger, magic, patch,
         patch.object(App, 'bootstrap', new=async_mock())
 
     await Apps.deploy_release(
-        config, logger, 'app_id', 'version', 'env',
+        config, logger, 'app_id', 'app_dns', 'version', 'env',
         {'stories': True}, maintenance)
 
     if maintenance:
         logger.warn.assert_called()
     else:
         App.__init__.assert_called_with(
-            'app_id', 'version', config, logger,
+            'app_id', 'app_dns', 'version', config, logger,
             {'stories': True}, services, 'env')
         App.bootstrap.mock.assert_called()
         if raise_exc:
