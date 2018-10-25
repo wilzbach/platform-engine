@@ -19,11 +19,12 @@ Subscription = namedtuple('Subscription',
 
 class App:
 
-    def __init__(self, app_id: str, version: int, config: Config,
+    def __init__(self, app_id: str, app_dns: str, version: int, config: Config,
                  logger: Logger, stories: dict, services: dict,
                  environment: dict):
         self._subscriptions = {}
         self.app_id = app_id
+        self.app_dns = app_dns
         self.config = config
         self.version = version
         self.logger = logger

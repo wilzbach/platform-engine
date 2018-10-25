@@ -41,9 +41,8 @@ class Apps:
         return cur.fetchall()
 
     @classmethod
-    async def deploy_release(cls, config, logger, app_id, version, environment,
-                             stories,
-                             maintenance):
+    async def deploy_release(cls, config, logger, app_id, app_dns,
+                             version, environment, stories, maintenance):
         logger.info(f'Deploying app {app_id}@{version}')
         if maintenance:
             logger.warn(f'Deployment halted {app_id}@{version}')
@@ -53,7 +52,7 @@ class Apps:
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
-            app = App(app_id, version, config, logger,
+            app = App(app_id, app_dns, version, config, logger,
                       stories, services, environment)
 
             await Containers.clean_app(app)
@@ -148,10 +147,11 @@ class Apps:
             query = """
             with latest as (select app_uuid, max(id) as id
                 from releases group by app_uuid)
-            select app_uuid, id, config, payload, maintenance
+            select app_uuid, id, config, payload, maintenance, hostname
             from latest
                    inner join releases using (app_uuid, id)
                    inner join apps on (latest.app_uuid = apps.uuid)
+                   inner join app_dns using (app_uuid)
             where app_uuid = %s;
             """
             curs.execute(query, (app_id,))
@@ -160,7 +160,8 @@ class Apps:
             environment = release[2]
             stories = release[3]
             maintenance = release[4]
-            await cls.deploy_release(config, logger, app_id, version,
+            app_dns = release[5]
+            await cls.deploy_release(config, logger, app_id, app_dns, version,
                                      environment, stories, maintenance)
             logger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:
