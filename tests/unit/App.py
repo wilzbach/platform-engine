@@ -25,7 +25,8 @@ def exc(patch):
 
 @fixture
 def app(config, logger, magic):
-    return App('app_id', logger, config, magic(), magic(), magic(), {})
+    return App('app_id', 'app_dns', logger, config,
+               magic(), magic(), magic(), {})
 
 
 def test_add_subscription(patch, app, magic):
@@ -119,8 +120,10 @@ def test_app_init(magic, config, logger, env):
             if not isinstance(v, dict):
                 expected_secrets[k.lower()] = v
 
-    app = App('app_id', logger, config, logger, stories, services, env)
+    app = App('app_id', 'app_dns', logger, config, logger,
+              stories, services, env)
     assert app.app_id == 'app_id'
+    assert app.app_dns == 'app_dns'
     assert app.config == config
     assert app.logger == logger
     assert app.stories == stories['stories']

@@ -24,26 +24,18 @@ class Apps:
         return psycopg2.connect(config.POSTGRES)
 
     @classmethod
-    def get_releases(cls, config: Config):
+    def get_all_app_uuids_for_deployment(cls, config: Config):
         conn = cls.new_pg_conn(config)
         cur = conn.cursor()
 
-        query = """
-        with latest as (select app_uuid, max(id) as id
-            from releases group by app_uuid)
-        select app_uuid, id, config, payload, maintenance
-        from latest
-            inner join releases using (app_uuid, id)
-            inner join apps on (releases.app_uuid = apps.uuid);
-        """
+        query = 'select app_uuid from releases group by app_uuid;'
         cur.execute(query)
 
         return cur.fetchall()
 
     @classmethod
-    async def deploy_release(cls, config, logger, app_id, version, environment,
-                             stories,
-                             maintenance):
+    async def deploy_release(cls, config, logger, app_id, app_dns,
+                             version, environment, stories, maintenance):
         logger.info(f'Deploying app {app_id}@{version}')
         if maintenance:
             logger.warn(f'Deployment halted {app_id}@{version}')
@@ -53,7 +45,7 @@ class Apps:
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
-            app = App(app_id, version, config, logger,
+            app = App(app_id, app_dns, version, config, logger,
                       stories, services, environment)
 
             await Containers.clean_app(app)
@@ -72,16 +64,11 @@ class Apps:
                        config: Config, logger: Logger):
         Sentry.init(sentry_dsn, release)
 
-        releases = cls.get_releases(config)
+        releases = cls.get_all_app_uuids_for_deployment(config)
 
         for release in releases:
             app_id = release[0]
-            version = release[1]
-            environment = release[2]
-            stories = release[3]
-            maintenance = release[4]
-            await cls.deploy_release(config, logger, app_id, version,
-                                     environment, stories, maintenance)
+            await cls.reload_app(config, logger, app_id)
 
         loop = asyncio.get_event_loop()
         t = threading.Thread(target=cls.listen_to_releases,
@@ -148,10 +135,11 @@ class Apps:
             query = """
             with latest as (select app_uuid, max(id) as id
                 from releases group by app_uuid)
-            select app_uuid, id, config, payload, maintenance
+            select app_uuid, id, config, payload, maintenance, hostname
             from latest
                    inner join releases using (app_uuid, id)
                    inner join apps on (latest.app_uuid = apps.uuid)
+                   inner join app_dns using (app_uuid)
             where app_uuid = %s;
             """
             curs.execute(query, (app_id,))
@@ -160,7 +148,8 @@ class Apps:
             environment = release[2]
             stories = release[3]
             maintenance = release[4]
-            await cls.deploy_release(config, logger, app_id, version,
+            app_dns = release[5]
+            await cls.deploy_release(config, logger, app_id, app_dns, version,
                                      environment, stories, maintenance)
             logger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:

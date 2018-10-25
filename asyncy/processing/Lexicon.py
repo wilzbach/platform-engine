@@ -160,6 +160,11 @@ class Lexicon:
             for key in event_args:
                 data[key] = story.argument_by_name(line, key)
 
+            # HACK for http - send the DNS name of the app.
+            if s.name == 'http':
+                data['host'] = story.app.app_dns
+            # END HACK for http.
+
             url = f'http://{s.hostname}:{port}{subscribe_path}'
 
             logger.debug(f'Sending subscription request to {url}')

@@ -210,11 +210,12 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
     assert ret == Lexicon.next_line_or_none()
 
 
+@mark.parametrize('service_name', ['http', 'time-client'])
 @mark.asyncio
-async def test_lexicon_when(patch, story, async_mock):
+async def test_lexicon_when(patch, story, async_mock, service_name):
     line = {
         'ln': '10',
-        LineConstants.service: 'time-client',
+        LineConstants.service: service_name,
         LineConstants.command: 'updates',
         'args': [
             {
@@ -228,12 +229,12 @@ async def test_lexicon_when(patch, story, async_mock):
         ]
     }
     story.context = {
-        'time-client': StreamingService('alpine', 'time-server',
-                                        'asyncy--foo-1', 'foo.com')
+        service_name: StreamingService(service_name, 'time-server',
+                                       'asyncy--foo-1', 'foo.com')
     }
 
     story.app.services = {
-        'alpine': {
+        service_name: {
             ServiceConstants.config: {
                 'commands': {
                     'time-server': {
@@ -261,6 +262,7 @@ async def test_lexicon_when(patch, story, async_mock):
     story.app.config.ENGINE_HOST = 'localhost'
     story.app.config.ENGINE_PORT = 8000
     story.app.app_id = 'my_fav_app'
+    story.app.app_dns = 'my_apps_hostname'
 
     expected_url = 'http://foo.com:2000/sub'
 
@@ -273,6 +275,9 @@ async def test_lexicon_when(patch, story, async_mock):
         'event': 'updates',
         'id': 'my_guid_here'
     }
+
+    if service_name == 'http':
+        expected_body['data']['host'] = story.app.app_dns
 
     patch.object(uuid, 'uuid4', return_value='my_guid_here')
 
@@ -299,7 +304,7 @@ async def test_lexicon_when(patch, story, async_mock):
         3, story.logger, expected_url, client, expected_kwargs)
 
     story.app.add_subscription.assert_called_with(
-        'my_guid_here', story.context['time-client'],
+        'my_guid_here', story.context[service_name],
         'updates', expected_body)
 
     assert ret == Lexicon.next_line_or_none()
