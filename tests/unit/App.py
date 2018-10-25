@@ -62,7 +62,7 @@ async def test_unsubscribe_all(patch, app, async_mock, magic, response_code):
     app.services = {
         'alpine': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'echo': {
                         'events': {
                             'event_name': {

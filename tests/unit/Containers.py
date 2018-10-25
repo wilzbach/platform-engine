@@ -22,7 +22,7 @@ def test_is_service_reusable(story):
     story.app.services = {
         'alpine': {
             'configuration': {
-                'commands': {
+                'actions': {
                     'echo': {
                         'run': 'foo'
                     }
@@ -37,7 +37,7 @@ def test_is_service_reusable(story):
     }
 
     assert Containers.is_service_reusable(story, line) is False
-    story.app.services['alpine']['configuration']['commands']['echo'][
+    story.app.services['alpine']['configuration']['actions']['echo'][
         'run'] = None
 
     assert Containers.is_service_reusable(story, line) is True
@@ -142,7 +142,7 @@ async def test_start_no_command(patch, story, async_mock, run_command):
     story.app.services = {
         'alpine': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'echo': {
                     }
                 }
@@ -151,7 +151,7 @@ async def test_start_no_command(patch, story, async_mock, run_command):
     }
 
     if run_command is not None:
-        story.app.services['alpine'][ServiceConstants.config]['commands'][
+        story.app.services['alpine'][ServiceConstants.config]['actions'][
             'echo'] = {'run': {'command': run_command}}
 
     story.app.environment = {
@@ -176,7 +176,7 @@ def test_format_command_no_format(logger, app, echo_service, echo_line):
     app.services = echo_service
 
     config = app.services['alpine'][ServiceConstants.config]
-    config['commands']['echo']['format'] = None
+    config['actions']['echo']['format'] = None
 
     cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
     assert ['echo', '{"msg":"foo"}'] == cmd
@@ -193,7 +193,7 @@ def test_format_command_no_args(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
 
-    echo_service['alpine'][ServiceConstants.config]['commands']['echo'][
+    echo_service['alpine'][ServiceConstants.config]['actions']['echo'][
         'arguments'] = None
 
     cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
@@ -207,7 +207,7 @@ def test_format_command_with_format(patch, logger, app,
     app.services = echo_service
 
     config = app.services['alpine'][ServiceConstants.config]
-    config['commands']['echo']['format'] = 'echo {msg}'
+    config['actions']['echo']['format'] = 'echo {msg}'
 
     cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
     assert ['echo', 'asyncy'] == cmd

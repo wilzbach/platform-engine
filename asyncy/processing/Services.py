@@ -170,11 +170,11 @@ class Services:
         next = story.app.services
         for entry in chain:
             if isinstance(entry, Service):
-                next = next[entry.name]['configuration']['commands']
+                next = next[entry.name]['configuration']['actions']
             elif isinstance(entry, Command):
                 next = next[entry.name]
             elif isinstance(entry, Event):
-                next = next['events'][entry.name]['output']['commands']
+                next = next['events'][entry.name]['output']['actions']
 
         return next or {}
 

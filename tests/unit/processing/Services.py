@@ -264,7 +264,7 @@ async def test_services_execute_external_format(patch, story, async_mock):
     story.app.services = {
         'cups': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'print': {
                         'format': {}
                     }
@@ -294,7 +294,7 @@ async def test_services_execute_external_http(patch, story, async_mock):
     story.app.services = {
         'cups': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'print': {
                         'http': {}
                     }
@@ -326,7 +326,7 @@ async def test_services_execute_external_unknown(patch, story, async_mock):
     story.app.services = {
         'cups': {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'print': {
                         'unix': {}
                     }
@@ -346,7 +346,7 @@ def test_service_get_command_conf_simple(story):
     story.app.services = {
         'service': {
             'configuration': {
-                'commands': {
+                'actions': {
                     'cmd': {'x': 'y'}
                 }
             }
@@ -416,12 +416,12 @@ def test_service_get_command_conf_events(story):
     story.app.services = {
         'service': {
             'configuration': {
-                'commands': {
+                'actions': {
                     'cmd': {
                         'events': {
                             'foo': {
                                 'output': {
-                                    'commands': {
+                                    'actions': {
                                         'bar': {'a': 'b'}
                                     }
                                 }

@@ -90,7 +90,7 @@ def echo_service():
                         'command': ['tail', '-f', '/dev/null']
                     }
                 },
-                'commands': {
+                'actions': {
                     'echo': {
                         'arguments': {
                             'msg': {

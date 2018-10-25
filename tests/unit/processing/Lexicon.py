@@ -236,7 +236,7 @@ async def test_lexicon_when(patch, story, async_mock, service_name):
     story.app.services = {
         service_name: {
             ServiceConstants.config: {
-                'commands': {
+                'actions': {
                     'time-server': {
                         'events': {
                             'updates': {

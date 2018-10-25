@@ -3,7 +3,7 @@
     "tag": "latest",
     "environment": {},
     "configuration": {
-      "commands": {
+      "actions": {
         "echo": {
           "help": "Echoes stuff",
           "format": "echo '{message}'",
