@@ -9,7 +9,7 @@ The engine typically runs as a Pod in Kubernetes. However, during local developm
 
 To be able to do so, follow these instructions:
 
-1. Create and seed the `asyncy` database by following (this)[https://github.com/asyncy/database]
+1. Create and seed the `asyncy` database by following [this](https://github.com/asyncy/database)
 2. Create a virtualenv
     1. `$ virtualenv --python=python3.6 platform-engine/venv`
     2. `$ cd platform-engine`
