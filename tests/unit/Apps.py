@@ -125,6 +125,23 @@ def test_get(magic):
     assert Apps.get('app_id') == app
 
 
+@mark.asyncio
+async def test_reload_app_no_story(patch, config, logger, db, async_mock):
+    conn = db()
+    app_id = 'app_id'
+    app_dns = 'app_dns'
+
+    patch.object(Apps, 'destroy_app', new=async_mock())
+    patch.object(Apps, 'deploy_release', new=async_mock())
+
+    release = ['app_id', 'version', 'env', None, 'maintenance', app_dns]
+    conn.cursor().fetchone.return_value = release
+
+    await Apps.reload_app(config, logger, app_id)
+
+    Apps.deploy_release.mock.assert_not_called()
+
+
 @mark.parametrize('raise_error', [True, False])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
