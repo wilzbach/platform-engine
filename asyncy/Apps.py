@@ -149,6 +149,10 @@ class Apps:
             stories = release[3]
             maintenance = release[4]
             app_dns = release[5]
+            if stories is None:
+                logger.info(f'No story found for deployment for '
+                            f'app {app_id}@{version}. Halting deployment.')
+                return
             await cls.deploy_release(config, logger, app_id, app_dns, version,
                                      environment, stories, maintenance)
             logger.info(f'Reloaded app {app_id}@{version}')

@@ -32,10 +32,10 @@ setup(
     install_requires=[
         'prometheus-client==0.2.0',
         'tornado==5.0.2',
-        'click==6.7',
+        'click==7.0',
         'frustum==0.0.6',
         'raven==6.9.0',
-        'storyscript==0.6.0',
+        'storyscript==0.7.1',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'psycopg2==2.7.5'
