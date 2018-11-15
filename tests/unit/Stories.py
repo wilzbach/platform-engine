@@ -3,12 +3,9 @@ import pathlib
 import time
 
 from asyncy.Stories import Stories
-from asyncy.constants.LineConstants import LineConstants
-from asyncy.utils import Dict
+from asyncy.utils import Dict, Resolver
 
-from pytest import fixture, mark
-
-from storyscript.resolver import Resolver
+from pytest import mark
 
 
 def test_stories_init(app, logger, story):
