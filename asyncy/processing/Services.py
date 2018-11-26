@@ -103,7 +103,7 @@ class Services:
                 return await cls.execute_http(story, line, chain, command_conf)
         else:
             raise AsyncyError(message=f'Service {service}/{line["command"]} '
-                                      f'has neither http nor format sections!',
+                              f'has neither http nor format sections!',
                               story=story, line=line)
 
     @classmethod
@@ -207,8 +207,20 @@ class Services:
         hostname = await Containers.get_hostname(story, line, chain[0].name)
         args = command_conf.get('arguments')
         body = {}
+        query_params = {}
+        path_params = {}
+
         for arg in args:
-            body[arg] = story.argument_by_name(line, arg)
+            value = story.argument_by_name(line, arg)
+            if args[arg]['in'] == 'query':
+                query_params[arg] = value
+            elif args[arg]['in'] == 'path':
+                path_params[arg] = value
+            elif args[arg]['in'] == 'requestBody':
+                body[arg] = value
+            else:
+                story.logger.warn(f'Valid location for argument "{arg}" '
+                                  'not specified')
 
         kwargs = {
             'method': command_conf['http'].get('method', 'post').upper(),
@@ -219,7 +231,8 @@ class Services:
         }
 
         port = command_conf['http'].get('port', 5000)
-        path = command_conf['http']['path']
+        path = HttpUtils.add_params_to_url(
+            command_conf['http']['path'].format(**path_params), query_params)
         url = f'http://{hostname}:{port}{path}'
 
         story.logger.debug(f'Invoking service on {url} with payload {kwargs}')
