@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import socket
 
 from asyncy.Config import Config
 
@@ -19,6 +20,10 @@ def config():
 def test_config():
     assert Config.defaults['LOGGER_NAME'] == 'asyncy'
     assert Config.defaults['LOGGER_LEVEL'] == 'debug'
+    assert Config.defaults['ENGINE_HOST'] == socket.gethostname()
+    assert Config.defaults['ASYNCY_SYNAPSE_HOST'] == 'synapse'
+    assert Config.defaults['ASYNCY_SYNAPSE_PORT'] == 80
+    assert Config.defaults['ASYNCY_HTTP_GW_HOST'] == 'gateway'
 
 
 def test_config_init(patch):

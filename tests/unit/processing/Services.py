@@ -446,7 +446,7 @@ async def test_when(patch, story, async_mock, service_name):
                                     }
                                 },
                                 'arguments': {
-                                    'foo': 'bar'
+                                    'foo': {'required': True}
                                 }
                             }
                         }
@@ -459,6 +459,8 @@ async def test_when(patch, story, async_mock, service_name):
     story.name = 'my_event_driven_story.story'
     story.app.config.ENGINE_HOST = 'localhost'
     story.app.config.ENGINE_PORT = 8000
+    story.app.config.ASYNCY_SYNAPSE_HOST = 'localhost'
+    story.app.config.ASYNCY_SYNAPSE_PORT = 9000
     story.app.app_id = 'my_fav_app'
     story.app.app_dns = 'my_apps_hostname'
 
@@ -468,20 +470,31 @@ async def test_when(patch, story, async_mock, service_name):
         service_name: streaming_service
     }
 
-    expected_url = 'http://foo.com:2000/sub'
+    expected_sub_url = 'http://foo.com:2000/sub'
+    expected_url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
+                   f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
+                   f'/subscribe'
 
     expected_body = {
-        'endpoint': f'http://localhost:8000/story/event?'
-                    f'story={story.name}&block={line["ln"]}&app=my_fav_app',
-        'data': {
-            'foo': 'bar'
+        'sub_id': 'my_guid_here',
+        'sub_url': expected_sub_url,
+        'sub_method': 'POST',
+        'sub_body': {
+            'endpoint': f'http://localhost:8000/story/event?'
+                        f'story={story.name}&block={line["ln"]}'
+                        f'&app=my_fav_app',
+            'data': {
+                'foo': 'bar'
+            },
+            'event': 'updates',
+            'id': 'my_guid_here'
         },
-        'event': 'updates',
-        'id': 'my_guid_here'
+        'pod_name': streaming_service.container_name,
+        'app_id': story.app.app_id
     }
 
     if service_name == 'http':
-        expected_body['data']['host'] = story.app.app_dns
+        expected_body['sub_body']['data']['host'] = story.app.app_dns
 
     patch.object(uuid, 'uuid4', return_value='my_guid_here')
 

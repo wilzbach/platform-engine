@@ -73,6 +73,28 @@ class App:
     def remove_subscription(self, sub_id: str):
         self._subscriptions.pop(sub_id)
 
+    async def clear_subscriptions_synapse(self):
+        url = f'http://{self.config.ASYNCY_SYNAPSE_HOST}:' \
+              f'{self.config.ASYNCY_SYNAPSE_PORT}/clear_all'
+        kwargs = {
+            'method': 'POST',
+            'body': json.dumps({
+                'app_id': self.app_id
+            }),
+            'headers': {
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        }
+        client = AsyncHTTPClient()
+        response = await HttpUtils.fetch_with_retry(3, self.logger, url,
+                                                    client, kwargs)
+        if int(response.code / 100) == 2:
+            self.logger.debug(f'Unsubscribed all with Synapse!')
+            return True
+        else:
+            self.logger.error(f'Failed to unsubscribe with Synapse!')
+            return False
+
     async def unsubscribe_all(self):
         for sub_id, sub in self._subscriptions.items():
             assert isinstance(sub, Subscription)
@@ -99,7 +121,7 @@ class App:
 
             kwargs = {
                 'method': method.upper(),
-                'body': json.dumps(sub.payload),
+                'body': json.dumps(sub.payload['sub_body']),
                 'headers': {
                     'Content-Type': 'application/json; charset=utf-8'
                 }
@@ -117,5 +139,6 @@ class App:
         Unsubscribe from all existing subscriptions,
         and delete the namespace.
         """
+        await self.clear_subscriptions_synapse()
         await self.unsubscribe_all()
         await Services.remove_all(self)

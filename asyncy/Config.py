@@ -7,6 +7,8 @@ class Config:
 
     defaults = {
         'ASYNCY_HTTP_GW_HOST': 'gateway',
+        'ASYNCY_SYNAPSE_HOST': 'synapse',
+        'ASYNCY_SYNAPSE_PORT': 80,
         'LOGGER_NAME': 'asyncy',
         'LOGGER_LEVEL': 'debug',
         'POSTGRES': 'options='

@@ -285,9 +285,9 @@ class Services:
             data['host'] = story.app.app_dns
         # END HACK for http.
 
-        url = f'http://{s.hostname}:{port}{subscribe_path}'
+        sub_url = f'http://{s.hostname}:{port}{subscribe_path}'
 
-        story.logger.debug(f'Sending subscription request to {url}')
+        story.logger.debug(f'Subscription URL - {sub_url}')
 
         engine = f'{story.app.config.ENGINE_HOST}:' \
                  f'{story.app.config.ENGINE_PORT}'
@@ -300,11 +300,20 @@ class Services:
 
         sub_id = str(uuid.uuid4())
 
-        body = {
+        sub_body = {
             'endpoint': f'http://{engine}/story/event?{query_params}',
             'data': data,
             'event': command,
             'id': sub_id
+        }
+
+        body = {
+            'sub_id': sub_id,
+            'sub_url': sub_url,
+            'sub_method': subscribe_method.upper(),
+            'sub_body': sub_body,
+            'pod_name': s.container_name,
+            'app_id': story.app.app_id
         }
 
         kwargs = {
@@ -316,7 +325,12 @@ class Services:
         }
 
         client = AsyncHTTPClient()
-        story.logger.debug(f'Subscribing to {service} from {s.command}...')
+        story.logger.debug(f'Subscribing to {service} '
+                           f'from {s.command} via Synapse...')
+
+        url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
+              f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
+              f'/subscribe'
 
         response = await HttpUtils.fetch_with_retry(3, story.logger, url,
                                                     client, kwargs)
