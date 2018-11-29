@@ -107,7 +107,7 @@ class App:
 
             response = await HttpUtils.fetch_with_retry(3, self.logger, url,
                                                         client, kwargs)
-            if round(response.code / 100) == 2:
+            if int(response.code / 100) == 2:
                 self.logger.debug(f'Unsubscribed!')
             else:
                 self.logger.error(f'Failed to unsubscribe {sub}!')

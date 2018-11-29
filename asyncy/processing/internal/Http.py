@@ -35,7 +35,7 @@ async def http_post(story, line, resolved_args):
     response = await HttpUtils.fetch_with_retry(3, story.logger,
                                                 resolved_args['url'],
                                                 http_client, kwargs)
-    if round(response.code / 100) != 2:
+    if int(response.code / 100) != 2:
         raise AsyncyError(
             story=story, line=line,
             message=f'Failed to make HTTP call: {response.error}')

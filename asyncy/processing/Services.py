@@ -234,7 +234,7 @@ class Services:
             3, story.logger, url, client, kwargs)
 
         story.logger.debug(f'HTTP response code is {response.code}')
-        if round(response.code / 100) == 2:
+        if int(response.code / 100) == 2:
             content_type = response.headers.get('Content-Type')
             if content_type and 'application/json' in content_type:
                 return ujson.loads(response.body)
@@ -320,7 +320,7 @@ class Services:
 
         response = await HttpUtils.fetch_with_retry(3, story.logger, url,
                                                     client, kwargs)
-        if round(response.code / 100) == 2:
+        if int(response.code / 100) == 2:
             story.logger.info(f'Subscribed!')
             story.app.add_subscription(sub_id, s, command, body)
         else:
