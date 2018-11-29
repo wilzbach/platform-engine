@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
+import urllib
+import uuid
 from collections import deque, namedtuple
+from urllib import parse
 
 from tornado.httpclient import AsyncHTTPClient
 
@@ -12,6 +15,8 @@ from ..Logger import Logger
 from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
+from ..constants.ServiceConstants import ServiceConstants
+from ..utils import Dict
 from ..utils.HttpUtils import HttpUtils
 
 InternalCommand = namedtuple('InternalCommand',
@@ -242,7 +247,7 @@ class Services:
             3, story.logger, url, client, kwargs)
 
         story.logger.debug(f'HTTP response code is {response.code}')
-        if round(response.code / 100) == 2:
+        if int(response.code / 100) == 2:
             content_type = response.headers.get('Content-Type')
             if content_type and 'application/json' in content_type:
                 return ujson.loads(response.body)
@@ -260,7 +265,7 @@ class Services:
             return StreamingService(
                 name='http',
                 command=line[LineConstants.command],
-                container_name='gateway_1',
+                container_name='gateway',
                 hostname=story.app.config.ASYNCY_HTTP_GW_HOST)
 
         return await Containers.start(story, line)
@@ -268,6 +273,89 @@ class Services:
     @classmethod
     def init(cls, logger):
         cls.logger = logger
+
+    @classmethod
+    async def when(cls, s: StreamingService, story, line: dict):
+        service = line[LineConstants.service]
+        command = line[LineConstants.command]
+        conf = story.app.services[s.name][ServiceConstants.config]
+        conf_event = Dict.find(
+            conf, f'actions.{s.command}.events.{command}')
+
+        port = Dict.find(conf_event, f'http.port', 80)
+        subscribe_path = Dict.find(conf_event, 'http.subscribe.path')
+        subscribe_method = Dict.find(conf_event,
+                                     'http.subscribe.method', 'post')
+
+        event_args = Dict.find(conf_event, 'arguments', {})
+
+        data = {}
+        for key in event_args:
+            data[key] = story.argument_by_name(line, key)
+
+        # HACK for http - send the DNS name of the app.
+        if s.name == 'http':
+            data['host'] = story.app.app_dns
+        # END HACK for http.
+
+        sub_url = f'http://{s.hostname}:{port}{subscribe_path}'
+
+        story.logger.debug(f'Subscription URL - {sub_url}')
+
+        engine = f'{story.app.config.ENGINE_HOST}:' \
+                 f'{story.app.config.ENGINE_PORT}'
+
+        query_params = urllib.parse.urlencode({
+            'story': story.name,
+            'block': line['ln'],
+            'app': story.app.app_id
+        })
+
+        sub_id = str(uuid.uuid4())
+
+        sub_body = {
+            'endpoint': f'http://{engine}/story/event?{query_params}',
+            'data': data,
+            'event': command,
+            'id': sub_id
+        }
+
+        body = {
+            'sub_id': sub_id,
+            'sub_url': sub_url,
+            'sub_method': subscribe_method.upper(),
+            'sub_body': sub_body,
+            'pod_name': s.container_name,
+            'app_id': story.app.app_id
+        }
+
+        kwargs = {
+            'method': subscribe_method.upper(),
+            'body': json.dumps(body),
+            'headers': {
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        }
+
+        client = AsyncHTTPClient()
+        story.logger.debug(f'Subscribing to {service} '
+                           f'from {s.command} via Synapse...')
+
+        url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
+              f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
+              f'/subscribe'
+
+        response = await HttpUtils.fetch_with_retry(3, story.logger, url,
+                                                    client, kwargs)
+        if int(response.code / 100) == 2:
+            story.logger.info(f'Subscribed!')
+            story.app.add_subscription(sub_id, s, command, body)
+        else:
+            raise AsyncyError(
+                message=f'Failed to subscribe to {service} from '
+                        f'{s.command} in {s.container_name}! '
+                        f'http err={response.error}; code={response.code}',
+                story=story, line=line)
 
     @classmethod
     def log_internal(cls):

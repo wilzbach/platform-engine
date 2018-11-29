@@ -15,7 +15,7 @@ class Kubernetes:
 
     @classmethod
     def is_2xx(cls, res: HTTPResponse):
-        return round(res.code / 100) == 2
+        return int(res.code / 100) == 2
 
     @classmethod
     def raise_if_not_2xx(cls, res: HTTPResponse, story, line):

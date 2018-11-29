@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import json
+import uuid
 from collections import deque
 from io import StringIO
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError
+from asyncy.Types import StreamingService
 from asyncy.constants import ContextConstants
-from asyncy.constants.LineConstants import LineConstants as Line
+from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing.Services import Command, Event, Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
@@ -391,7 +393,7 @@ async def test_start_container_http(story):
     ret = await Services.start_container(story, line)
     assert ret.name == 'http'
     assert ret.command == 'server'
-    assert ret.container_name == 'gateway_1'
+    assert ret.container_name == 'gateway'
     assert ret.hostname == story.app.config.ASYNCY_HTTP_GW_HOST
 
 
@@ -434,6 +436,124 @@ async def test_execute_inline(patch, story, command):
         io_loop.add_callback.assert_called_with(req.finish)
     else:
         io_loop.add_callback.assert_not_called()
+
+
+@mark.parametrize('service_name', ['http', 'time-client'])
+@mark.asyncio
+async def test_when(patch, story, async_mock, service_name):
+    line = {
+        'ln': '10',
+        LineConstants.service: service_name,
+        LineConstants.command: 'updates',
+        'args': [
+            {
+                '$OBJECT': 'argument',
+                'name': 'foo',
+                'argument': {
+                    '$OBJECT': 'string',
+                    'string': 'bar'
+                }
+            }
+        ]
+    }
+
+    story.app.services = {
+        service_name: {
+            ServiceConstants.config: {
+                'actions': {
+                    'time-server': {
+                        'events': {
+                            'updates': {
+                                'http': {
+                                    'port': 2000,
+                                    'subscribe': {
+                                        'method': 'post',
+                                        'path': '/sub'
+                                    }
+                                },
+                                'arguments': {
+                                    'foo': {'required': True}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    story.name = 'my_event_driven_story.story'
+    story.app.config.ENGINE_HOST = 'localhost'
+    story.app.config.ENGINE_PORT = 8000
+    story.app.config.ASYNCY_SYNAPSE_HOST = 'localhost'
+    story.app.config.ASYNCY_SYNAPSE_PORT = 9000
+    story.app.app_id = 'my_fav_app'
+    story.app.app_dns = 'my_apps_hostname'
+
+    streaming_service = StreamingService(service_name, 'time-server',
+                                         'asyncy--foo-1', 'foo.com')
+    story.context = {
+        service_name: streaming_service
+    }
+
+    expected_sub_url = 'http://foo.com:2000/sub'
+    expected_url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
+                   f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
+                   f'/subscribe'
+
+    expected_body = {
+        'sub_id': 'my_guid_here',
+        'sub_url': expected_sub_url,
+        'sub_method': 'POST',
+        'sub_body': {
+            'endpoint': f'http://localhost:8000/story/event?'
+                        f'story={story.name}&block={line["ln"]}'
+                        f'&app=my_fav_app',
+            'data': {
+                'foo': 'bar'
+            },
+            'event': 'updates',
+            'id': 'my_guid_here'
+        },
+        'pod_name': streaming_service.container_name,
+        'app_id': story.app.app_id
+    }
+
+    if service_name == 'http':
+        expected_body['sub_body']['data']['host'] = story.app.app_dns
+
+    patch.object(uuid, 'uuid4', return_value='my_guid_here')
+
+    expected_kwargs = {
+        'method': 'POST',
+        'body': json.dumps(expected_body),
+        'headers': {'Content-Type': 'application/json; charset=utf-8'}
+    }
+
+    patch.init(AsyncHTTPClient)
+    patch.object(story, 'next_block')
+    patch.object(story.app, 'add_subscription')
+    patch.object(story, 'argument_by_name', return_value='bar')
+    http_res = Mock()
+    http_res.code = 204
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(return_value=http_res))
+    ret = await Services.when(streaming_service, story, line)
+
+    client = AsyncHTTPClient()
+
+    HttpUtils.fetch_with_retry.mock.assert_called_with(
+        3, story.logger, expected_url, client, expected_kwargs)
+
+    story.app.add_subscription.assert_called_with(
+        'my_guid_here', story.context[service_name],
+        'updates', expected_body)
+
+    assert ret is None
+
+    http_res.code = 400
+    with pytest.raises(AsyncyError):
+        await Services.when(streaming_service, story, line)
 
 
 def test_service_get_command_conf_events(story):

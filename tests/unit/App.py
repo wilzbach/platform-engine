@@ -12,7 +12,7 @@ from asyncy.utils.HttpUtils import HttpUtils
 import pytest
 from pytest import fixture, mark
 
-from tornado.httpclient import AsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 
 @fixture
@@ -50,7 +50,9 @@ async def test_unsubscribe_all(patch, app, async_mock, magic, response_code):
                                          'alpine.com')
 
     payload = {
-        'payload': True
+        'sub_body': {
+            'payload': True
+        }
     }
     app.add_subscription('sub_id', streaming_service, 'event_name',
                          payload)
@@ -97,7 +99,7 @@ async def test_unsubscribe_all(patch, app, async_mock, magic, response_code):
     url = 'http://alpine.com:28/unsub'
     expected_kwargs = {
         'method': 'POST',
-        'body': json.dumps(payload),
+        'body': json.dumps(payload['sub_body']),
         'headers': {
             'Content-Type': 'application/json; charset=utf-8'
         }
@@ -160,6 +162,7 @@ async def test_app_run_stories(patch, app, async_mock):
 async def test_app_destroy_no_stories(patch, async_mock, app):
     app.stories = None
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
+    patch.object(app, 'clear_subscriptions_synapse', new=async_mock())
     assert await app.destroy() is None
 
 
@@ -181,6 +184,40 @@ async def test_app_run_stories_exc(patch, app, async_mock, exc):
 
 
 @mark.asyncio
+@mark.parametrize('status_code', [200, 500])
+async def test_clear_subscriptions_synapse(patch, app, async_mock,
+                                           status_code):
+    app.app_id = 'my_cool_app'
+    app.config.ASYNCY_SYNAPSE_HOST = 'syn'
+    app.config.ASYNCY_SYNAPSE_PORT = 9000
+
+    expected_url = f'http://{app.config.ASYNCY_SYNAPSE_HOST}:' \
+                   f'{app.config.ASYNCY_SYNAPSE_PORT}/clear_all'
+
+    expected_kwargs = {
+        'method': 'POST',
+        'body': json.dumps({
+            'app_id': app.app_id
+        }),
+        'headers': {
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+    }
+    res = HTTPResponse(HTTPRequest(url=expected_url), status_code)
+    patch.object(HttpUtils, 'fetch_with_retry',
+                 new=async_mock(return_value=res))
+
+    ret = await app.clear_subscriptions_synapse()
+    HttpUtils.fetch_with_retry.mock.assert_called_with(
+        3, app.logger, expected_url, AsyncHTTPClient(), expected_kwargs)
+
+    if status_code == 200:
+        assert ret is True
+    else:
+        assert ret is False
+
+
+@mark.asyncio
 async def test_app_destroy(patch, app, async_mock):
     app.stories = {
         'foo': {},
@@ -189,7 +226,9 @@ async def test_app_destroy(patch, app, async_mock):
     app.entrypoint = ['foo', 'bar']
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(app, 'unsubscribe_all', new=async_mock())
+    patch.object(app, 'clear_subscriptions_synapse', new=async_mock())
     await app.destroy()
 
     app.unsubscribe_all.mock.assert_called()
+    app.clear_subscriptions_synapse.mock.assert_called()
     Kubernetes.clean_namespace.mock.assert_called()
