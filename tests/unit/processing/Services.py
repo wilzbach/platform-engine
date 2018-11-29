@@ -367,7 +367,7 @@ async def test_start_container_http(story):
     ret = await Services.start_container(story, line)
     assert ret.name == 'http'
     assert ret.command == 'server'
-    assert ret.container_name == 'gateway_1'
+    assert ret.container_name == 'gateway'
     assert ret.hostname == story.app.config.ASYNCY_HTTP_GW_HOST
 
 

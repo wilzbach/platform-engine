@@ -252,7 +252,7 @@ class Services:
             return StreamingService(
                 name='http',
                 command=line[LineConstants.command],
-                container_name='gateway_1',
+                container_name='gateway',
                 hostname=story.app.config.ASYNCY_HTTP_GW_HOST)
 
         return await Containers.start(story, line)
