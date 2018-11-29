@@ -12,7 +12,7 @@ from asyncy.utils.HttpUtils import HttpUtils
 import pytest
 from pytest import fixture, mark
 
-from tornado.httpclient import AsyncHTTPClient, HTTPResponse, HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 
 @fixture
@@ -210,12 +210,12 @@ async def test_clear_subscriptions_synapse(patch, app, async_mock,
     ret = await app.clear_subscriptions_synapse()
     HttpUtils.fetch_with_retry.mock.assert_called_with(
         3, app.logger, expected_url, AsyncHTTPClient(), expected_kwargs)
-    
+
     if status_code == 200:
         assert ret is True
     else:
         assert ret is False
-    
+
 
 @mark.asyncio
 async def test_app_destroy(patch, app, async_mock):
