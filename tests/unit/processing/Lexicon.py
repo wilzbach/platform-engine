@@ -210,109 +210,36 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
     assert ret == Lexicon.next_line_or_none()
 
 
-@mark.parametrize('service_name', ['http', 'time-client'])
+@mark.parametrize('service_name', ['http', 'unknown_service'])
 @mark.asyncio
 async def test_lexicon_when(patch, story, async_mock, service_name):
+    ss = StreamingService(name='name', command='command',
+                          container_name='container_name', hostname='hostname')
+    if service_name == 'unknown_service':
+        ss = 'foo'
+
     line = {
-        'ln': '10',
-        LineConstants.service: service_name,
-        LineConstants.command: 'updates',
-        'args': [
-            {
-                '$OBJECT': 'argument',
-                'name': 'foo',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': 'bar'
-                }
-            }
-        ]
+        LineConstants.service: 'http'
     }
+
     story.context = {
-        service_name: StreamingService(service_name, 'time-server',
-                                       'asyncy--foo-1', 'foo.com')
+        'http': ss
     }
 
-    story.app.services = {
-        service_name: {
-            ServiceConstants.config: {
-                'actions': {
-                    'time-server': {
-                        'events': {
-                            'updates': {
-                                'http': {
-                                    'port': 2000,
-                                    'subscribe': {
-                                        'method': 'post',
-                                        'path': '/sub'
-                                    }
-                                },
-                                'arguments': {
-                                    'foo': 'bar'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    story.name = 'my_event_driven_story.story'
-    story.app.config.ENGINE_HOST = 'localhost'
-    story.app.config.ENGINE_PORT = 8000
-    story.app.app_id = 'my_fav_app'
-    story.app.app_dns = 'my_apps_hostname'
-
-    expected_url = 'http://foo.com:2000/sub'
-
-    expected_body = {
-        'endpoint': f'http://localhost:8000/story/event?'
-                    f'story={story.name}&block={line["ln"]}&app=my_fav_app',
-        'data': {
-            'foo': 'bar'
-        },
-        'event': 'updates',
-        'id': 'my_guid_here'
-    }
-
-    if service_name == 'http':
-        expected_body['data']['host'] = story.app.app_dns
-
-    patch.object(uuid, 'uuid4', return_value='my_guid_here')
-
-    expected_kwargs = {
-        'method': 'POST',
-        'body': json.dumps(expected_body),
-        'headers': {'Content-Type': 'application/json; charset=utf-8'}
-    }
-
-    patch.init(AsyncHTTPClient)
-    patch.object(Lexicon, 'next_line_or_none')
     patch.object(story, 'next_block')
-    patch.object(story.app, 'add_subscription')
-    patch.object(story, 'argument_by_name', return_value='bar')
-    http_res = Mock()
-    http_res.code = 204
-    patch.object(HttpUtils, 'fetch_with_retry',
-                 new=async_mock(return_value=http_res))
-    ret = await Lexicon.when(story.logger, story, line)
 
-    client = AsyncHTTPClient()
+    patch.object(Services, 'when', new=async_mock())
+    patch.object(Lexicon, 'next_line_or_none')
 
-    HttpUtils.fetch_with_retry.mock.assert_called_with(
-        3, story.logger, expected_url, client, expected_kwargs)
-
-    story.app.add_subscription.assert_called_with(
-        'my_guid_here', story.context[service_name],
-        'updates', expected_body)
-
-    assert ret == Lexicon.next_line_or_none()
-    story.next_block.assert_called_with(line)
-
-    http_res.code = 400
-    with pytest.raises(AsyncyError):
-        await Lexicon.when(story.logger, story, line)
+    if service_name == 'unknown_service':
+        with pytest.raises(AsyncyError):
+            await Lexicon.when(story.logger, story, line)
+    else:
+        ret = await Lexicon.when(story.logger, story, line)
+        story.next_block.assert_called_with(line)
+        Lexicon.next_line_or_none.assert_called_with(
+            story.next_block.return_value)
+        assert ret == Lexicon.next_line_or_none.return_value
 
 
 def test_next_line_or_none():

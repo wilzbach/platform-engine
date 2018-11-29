@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import time
-import urllib
-import uuid
-from urllib import parse
-
-from tornado.httpclient import AsyncHTTPClient
 
 from .Mutations import Mutations
 from .Services import Services
@@ -140,77 +135,14 @@ class Lexicon:
     @staticmethod
     async def when(logger, story, line):
         service = line[LineConstants.service]
-        command = line[LineConstants.command]
+
         # Does this service belong to a streaming service?
         s = story.context.get(service)
         if isinstance(s, StreamingService):
             # Yes, we need to subscribe to an event with the service.
-            conf = story.app.services[s.name][ServiceConstants.config]
-            conf_event = Dict.find(
-                conf, f'actions.{s.command}.events.{command}')
-
-            port = Dict.find(conf_event, f'http.port', 80)
-            subscribe_path = Dict.find(conf_event, 'http.subscribe.path')
-            subscribe_method = Dict.find(conf_event,
-                                         'http.subscribe.method', 'post')
-
-            event_args = Dict.find(conf_event, 'arguments', {})
-
-            data = {}
-            for key in event_args:
-                data[key] = story.argument_by_name(line, key)
-
-            # HACK for http - send the DNS name of the app.
-            if s.name == 'http':
-                data['host'] = story.app.app_dns
-            # END HACK for http.
-
-            url = f'http://{s.hostname}:{port}{subscribe_path}'
-
-            logger.debug(f'Sending subscription request to {url}')
-
-            engine = f'{story.app.config.ENGINE_HOST}:' \
-                     f'{story.app.config.ENGINE_PORT}'
-
-            query_params = urllib.parse.urlencode({
-                'story': story.name,
-                'block': line['ln'],
-                'app': story.app.app_id
-            })
-
-            sub_id = str(uuid.uuid4())
-
-            body = {
-                'endpoint': f'http://{engine}/story/event?{query_params}',
-                'data': data,
-                'event': command,
-                'id': sub_id
-            }
-
-            kwargs = {
-                'method': subscribe_method.upper(),
-                'body': json.dumps(body),
-                'headers': {
-                    'Content-Type': 'application/json; charset=utf-8'
-                }
-            }
-
-            client = AsyncHTTPClient()
-            logger.debug(f'Subscribing to {service} from {s.command}...')
-
-            response = await HttpUtils.fetch_with_retry(3, logger, url,
-                                                        client, kwargs)
-            if round(response.code / 100) == 2:
-                logger.info(f'Subscribed!')
-                story.app.add_subscription(sub_id, s, command, body)
-                next_line = story.next_block(line)
-                return Lexicon.next_line_or_none(next_line)
-            else:
-                raise AsyncyError(
-                    message=f'Failed to subscribe to {service} from '
-                            f'{s.command} in {s.container_name}! '
-                            f'http err={response.error}; code={response.code}',
-                    story=story, line=line)
+            await Services.when(s, story, line)
+            next_line = story.next_block(line)
+            return Lexicon.next_line_or_none(next_line)
         else:
             raise AsyncyError(message=f'Unknown service {service} for when!',
                               story=story, line=line)
