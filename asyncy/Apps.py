@@ -89,14 +89,19 @@ class Apps:
             conf = asyncy_yaml.get('services', {}).get(service, {})
             # query the Hub for the OMG
             tag = conf.get('tag', 'latest')
-            if conf.get('image'):
+
+            if '/' in service:
                 pull_url, omg = await GraphQLAPI.get_by_slug(
-                    logger, conf['image'], tag)
+                    logger, service, tag)
             else:
                 pull_url, omg = await GraphQLAPI.get_by_alias(
                     logger, service, tag)
 
-            image = f'{pull_url}:{tag}'
+            if conf.get('image') is not None:
+                image = f'{conf.get("image")}:{tag}'
+            else:
+                image = f'{pull_url}:{tag}'
+
             omg['image'] = image
 
             services[service] = {

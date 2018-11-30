@@ -57,21 +57,17 @@ class GraphQLAPI:
 
     @classmethod
     async def get_by_slug(cls, logger, image, tag):
-        owner, repo = image.split('/')
+        owner, service = image.split('/')
         query = """
-        query GetAlias($owner: Username! $repo: Username! $tag: String!){
-          allOwners(condition: {username: $owner}, first: 1){
-            nodes{
-              repos(condition: {name: $repo}, first: 1){
-                nodes{
-                  services(first:1){
-                    nodes{
-                      pullUrl
-                      serviceTags(condition: {tag: $tag}, first: 1){
-                        nodes{
-                         configuration
-                        }
-                      }
+        query GetAlias($owner: Username!, $service: Alias!, $tag: String!) {
+          allOwners(condition: {username: $owner}, first: 1) {
+            nodes {
+              services(condition: {name: $service}, first: 1) {
+                nodes {
+                  pullUrl
+                  serviceTags(condition: {tag: $tag}, first: 1) {
+                    nodes {
+                      configuration
                     }
                   }
                 }
@@ -90,7 +86,7 @@ class GraphQLAPI:
                 'query': query,
                 'variables': {
                     'owner': owner,
-                    'repo': repo,
+                    'service': service,
                     'tag': tag
                 }
             }),
@@ -105,9 +101,9 @@ class GraphQLAPI:
 
         graph_result = json.loads(res.body)
         res = \
-            graph_result['data']['allOwners']['nodes'][0]['repos']['nodes'][0][
+            graph_result['data']['allOwners']['nodes'][0][
                 'services']['nodes'][0]
-        assert res, f'Image "{image}" was not found in the Asyncy Hub'
+        assert res, f'Slug "{image}" was not found in the Asyncy Hub'
         return (
             res['pullUrl'],
             res['serviceTags']['nodes'][0]['configuration']
