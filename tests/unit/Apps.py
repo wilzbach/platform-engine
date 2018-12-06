@@ -4,12 +4,14 @@ import os
 import select
 import signal
 from threading import Thread
+from unittest import mock
 
 from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Sentry import Sentry
+from asyncy.enums.ReleaseState import ReleaseState
 
 import psycopg2
 
@@ -126,6 +128,19 @@ def test_get(magic):
 
 
 @mark.asyncio
+async def test_reload_app_ongoing_deployment(config, logger, patch):
+    app_id = 'my_app'
+    patch.object(Apps, 'new_pg_conn')
+
+    await Apps.deployment_lock.try_acquire(app_id)
+
+    await Apps.reload_app(config, logger, app_id)
+
+    logger.warn.assert_called()
+    Apps.new_pg_conn.assert_not_called()
+
+
+@mark.asyncio
 async def test_reload_app_no_story(patch, config, logger, db, async_mock):
     conn = db()
     app_id = 'app_id'
@@ -143,9 +158,10 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 
 
 @mark.parametrize('raise_error', [True, False])
+@mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
-                          magic, exc, raise_error):
+                          magic, exc, raise_error, previous_state):
     conn = db()
     old_app = magic()
     app_id = 'app_id'
@@ -159,12 +175,20 @@ async def test_reload_app(patch, config, logger, db, async_mock,
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns]
+    release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns,
+               previous_state]
     conn.cursor().fetchone.return_value = release
 
     await Apps.reload_app(config, logger, app_id)
 
-    Apps.destroy_app.mock.assert_called_with(old_app, silent=True)
+    Apps.destroy_app.mock.assert_called_with(old_app, silent=True,
+                                             update_db_state=True)
+    if previous_state == 'FAILED':
+        Apps.deploy_release.mock.assert_not_called()
+        logger.warn.assert_called()
+        logger.error.assert_not_called()
+        return
+
     Apps.deploy_release.mock.assert_called_with(
         config, logger, app_id, app_dns,
         release[1], release[2], release[3], release[4])
@@ -192,6 +216,7 @@ async def test_deploy_release(config, logger, magic, patch,
                               async_mock, raise_exc, exc, maintenance):
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
+    patch.object(Apps, 'update_release_state')
     Apps.apps = {}
     services = magic()
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
@@ -207,7 +232,12 @@ async def test_deploy_release(config, logger, magic, patch,
 
     if maintenance:
         logger.warn.assert_called()
+        Apps.update_release_state.assert_called_with(
+            logger, config, 'app_id', 'version', ReleaseState.NO_DEPLOY)
     else:
+        assert Apps.update_release_state.mock_calls[0] == mock.call(
+            logger, config, 'app_id', 'version', ReleaseState.DEPLOYING)
+
         App.__init__.assert_called_with(
             'app_id', 'app_dns', 'version', config, logger,
             {'stories': True}, services, 'env')
@@ -215,8 +245,33 @@ async def test_deploy_release(config, logger, magic, patch,
         if raise_exc:
             assert Apps.apps.get('app_id') is None
             Sentry.capture_exc.assert_called()
+            assert Apps.update_release_state.mock_calls[1] == mock.call(
+                logger, config, 'app_id', 'version', ReleaseState.FAILED)
         else:
+            assert Apps.update_release_state.mock_calls[1] == mock.call(
+                logger, config, 'app_id', 'version', ReleaseState.DEPLOYED)
             assert Apps.apps.get('app_id') is not None
+
+
+@mark.asyncio
+async def test_update_release_state(patch, logger, config):
+    patch.object(Apps, 'new_pg_conn')
+    expected_query = 'update releases ' \
+                     'set state = %s ' \
+                     'where app_uuid = %s and id = %s;'
+
+    Apps.update_release_state(logger, config, 'app_id', 'version',
+                              ReleaseState.DEPLOYED)
+
+    Apps.new_pg_conn.assert_called_with(config)
+    Apps.new_pg_conn.return_value.cursor.assert_called()
+    Apps.new_pg_conn.return_value.cursor \
+        .return_value.execute.assert_called_with(
+            expected_query, (ReleaseState.DEPLOYED.value, 'app_id', 'version'))
+
+    Apps.new_pg_conn.return_value.commit.assert_called()
+    Apps.new_pg_conn.return_value.cursor.return_value.close.assert_called()
+    Apps.new_pg_conn.return_value.close.assert_called()
 
 
 @mark.asyncio
@@ -262,15 +317,26 @@ async def test_get_services(patch, logger, async_mock):
 
 
 @mark.parametrize('silent', [False, True])
+@mark.parametrize('update_db', [False, True])
 @mark.asyncio
-async def test_destroy_app_exc(patch, async_mock, magic, exc, silent):
+async def test_destroy_app_exc(patch, async_mock, magic, exc,
+                               silent, update_db):
     app = magic()
     app.destroy = async_mock(side_effect=exc)
+    patch.object(Apps, 'update_release_state')
 
     if silent:
-        await Apps.destroy_app(app, silent)
+        await Apps.destroy_app(app, silent, update_db_state=update_db)
     else:
         with pytest.raises(Exception):
-            await Apps.destroy_app(app, silent)
+            await Apps.destroy_app(app, silent, update_db_state=update_db)
+
+    if update_db:
+        assert Apps.update_release_state.mock_calls == [
+            mock.call(app.logger, app.config, app.app_id, app.version,
+                      ReleaseState.TERMINATING),
+            mock.call(app.logger, app.config, app.app_id, app.version,
+                      ReleaseState.TERMINATED)
+        ]
 
     app.destroy.mock.assert_called()
