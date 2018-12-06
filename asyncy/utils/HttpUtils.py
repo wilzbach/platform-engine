@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import urllib
-from urllib import parse
+from urllib.parse import urlencode
 
 from tornado.httpclient import HTTPError
 
@@ -34,5 +33,8 @@ class HttpUtils:
             from last_exception
 
     @staticmethod
-    def add_params_to_url(url, params):
-        return f'{url}?{urllib.parse.urlencode(params)}'
+    def add_params_to_url(url, params: dict):
+        if len(params) == 0:
+            return url
+
+        return f'{url}?{urlencode(params)}'

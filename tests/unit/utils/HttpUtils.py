@@ -42,3 +42,12 @@ async def test_fetch_with_retry_fail(patch, logger):
         await HttpUtils.fetch_with_retry(10, logger, 'asyncy.com', client, {})
 
     assert len(fetch.mock_calls) == 10
+
+
+def test_add_params_to_url():
+    assert HttpUtils.add_params_to_url('asyncy.com', {}) == 'asyncy.com'
+    assert HttpUtils.add_params_to_url('asyncy.com',
+                                       {'1': '2'}) == 'asyncy.com?1=2'
+    assert HttpUtils.add_params_to_url('asyncy.com', {
+        'a': 1, 'b': 'c'
+    }) == 'asyncy.com?a=1&b=c'
