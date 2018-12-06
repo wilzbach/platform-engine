@@ -155,6 +155,12 @@ def test_logger_log_debug(patch, logger):
     logger.frustum.logger.debug.assert_called_with('my-event')
 
 
+def test_logger_log_warn(patch, logger):
+    patch.object(logger, 'frustum')
+    logger.warn('my-event')
+    logger.frustum.logger.warn.assert_called_with('my-event')
+
+
 def test_logger_log_error(patch, logger):
     patch.object(logger, 'frustum')
     logger.error('my-event')
