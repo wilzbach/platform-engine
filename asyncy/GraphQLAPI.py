@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import json
 
 import certifi
 
-from tornado.httpclient import AsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 from .utils.HttpUtils import HttpUtils
 
@@ -39,11 +40,7 @@ class GraphQLAPI:
             'ca_certs': certifi.where()
         }
 
-        res = await HttpUtils.fetch_with_retry(
-            3, logger, 'https://api.asyncy.com/graphql', client, kwargs)
-
-        if res.code != 200:
-            raise Exception(f'Failed to get config for {alias}:{tag}')
+        res = await cls._fetch_res_with_infinite_retry(logger, client, kwargs)
 
         graph_result = json.loads(res.body)
 
@@ -93,11 +90,7 @@ class GraphQLAPI:
             'ca_certs': certifi.where()
         }
 
-        res = await HttpUtils.fetch_with_retry(
-            3, logger, 'https://api.asyncy.com/graphql', client, kwargs)
-
-        if res.code != 200:
-            raise Exception(f'Failed to get config for {image}:{tag}')
+        res = await cls._fetch_res_with_infinite_retry(logger, client, kwargs)
 
         graph_result = json.loads(res.body)
         res = \
@@ -108,3 +101,25 @@ class GraphQLAPI:
             res['pullUrl'],
             res['serviceTags']['nodes'][0]['configuration']
         )
+
+    @classmethod
+    async def _fetch_res_with_infinite_retry(cls, logger,
+                                             client, kwargs):
+        res = None
+        while res is None:
+            try:
+                res = await HttpUtils.fetch_with_retry(
+                    10, logger, 'https://api.asyncy.com/graphql', client,
+                    kwargs)
+            except HTTPError as e:
+                await asyncio.sleep(0.5)
+                logger.debug(f'Retrying GraphQL endpoint; err={str(e)}')
+                continue
+
+            if res.code != 200:
+                await asyncio.sleep(0.5)
+                logger.debug(f'Retrying GraphQL endpoint; status: {res.code}; '
+                             f'error: {res.error}')
+                res = None
+
+        return res
