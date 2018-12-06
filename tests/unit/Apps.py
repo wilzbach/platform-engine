@@ -149,7 +149,8 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
     patch.object(Apps, 'destroy_app', new=async_mock())
     patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = ['app_id', 'version', 'env', None, 'maintenance', app_dns]
+    release = ['app_id', 'version', 'env', None, 'maintenance', app_dns,
+               'QUEUED']
     conn.cursor().fetchone.return_value = release
 
     await Apps.reload_app(config, logger, app_id)
