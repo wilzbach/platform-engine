@@ -32,7 +32,9 @@ async def test_fetch_with_retry_fail(patch, logger):
 
     async def exc(*args, **kwargs):
         fetch(*args, **kwargs)
-        raise HTTPError(599)
+        res = MagicMock()
+        res.code = 599
+        return res
 
     patch.object(client, 'fetch', side_effect=exc)
 
