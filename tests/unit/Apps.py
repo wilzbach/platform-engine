@@ -177,7 +177,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         patch.object(Apps, 'deploy_release', new=async_mock())
 
     release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns,
-               previous_state]
+               previous_state, False]
     conn.cursor().fetchone.return_value = release
 
     await Apps.reload_app(config, logger, app_id)
@@ -192,7 +192,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     Apps.deploy_release.mock.assert_called_with(
         config, logger, app_id, app_dns,
-        release[1], release[2], release[3], release[4])
+        release[1], release[2], release[3], release[4], release[7])
 
     if raise_error:
         logger.error.assert_called()
@@ -212,8 +212,9 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
 
 @mark.parametrize('raise_exc', [True, False])
 @mark.parametrize('maintenance', [True, False])
+@mark.parametrize('deleted', [True, False])
 @mark.asyncio
-async def test_deploy_release(config, logger, magic, patch,
+async def test_deploy_release(config, logger, magic, patch, deleted,
                               async_mock, raise_exc, exc, maintenance):
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
@@ -229,9 +230,9 @@ async def test_deploy_release(config, logger, magic, patch,
 
     await Apps.deploy_release(
         config, logger, 'app_id', 'app_dns', 'version', 'env',
-        {'stories': True}, maintenance)
+        {'stories': True}, maintenance, deleted)
 
-    if maintenance:
+    if maintenance or deleted:
         logger.warn.assert_called()
         Apps.update_release_state.assert_called_with(
             logger, config, 'app_id', 'version', ReleaseState.NO_DEPLOY)

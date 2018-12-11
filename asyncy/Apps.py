@@ -60,12 +60,14 @@ class Apps:
 
     @classmethod
     async def deploy_release(cls, config, logger: Logger, app_id, app_dns,
-                             version, environment, stories, maintenance):
+                             version, environment, stories,
+                             maintenance: bool, deleted: bool):
         logger.info(f'Deploying app {app_id}@{version}')
-        if maintenance:
+        if maintenance or deleted:
             cls.update_release_state(logger, config, app_id, version,
                                      ReleaseState.NO_DEPLOY)
-            logger.warn(f'Deployment halted {app_id}@{version}')
+            logger.warn(f'Deployment halted {app_id}@{version}; '
+                        f'deleted={deleted}; maintenance={maintenance}')
             logger.warn(f'State changed to NO_DEPLOY for {app_id}@{version}')
             return
 
@@ -200,7 +202,8 @@ class Apps:
                             from releases
                             where state != 'NO_DEPLOY'::release_state
                             group by app_uuid)
-            select app_uuid, id, config, payload, maintenance, hostname, state
+            select app_uuid, id, config, payload, maintenance,
+                   hostname, state, deleted
             from latest
                    inner join releases using (app_uuid, id)
                    inner join apps on (latest.app_uuid = apps.uuid)
@@ -215,6 +218,7 @@ class Apps:
             maintenance = release[4]
             app_dns = release[5]
             state = release[6]
+            deleted = release[7]
             if state == ReleaseState.FAILED.value:
                 logger.warn(f'Cowardly refusing to deploy app '
                             f'{app_id}@{version} as it\'s '
@@ -225,8 +229,9 @@ class Apps:
                 logger.info(f'No story found for deployment for '
                             f'app {app_id}@{version}. Halting deployment.')
                 return
-            await cls.deploy_release(config, logger, app_id, app_dns, version,
-                                     environment, stories, maintenance)
+            await cls.deploy_release(
+                config, logger, app_id, app_dns, version,
+                environment, stories, maintenance, deleted)
             logger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:
             logger.error(
