@@ -10,6 +10,7 @@ from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
+from asyncy.Logger import Logger
 from asyncy.Sentry import Sentry
 from asyncy.enums.ReleaseState import ReleaseState
 
@@ -218,7 +219,7 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
                               async_mock, raise_exc, exc, maintenance):
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
-    patch.object(Apps, 'update_release_state')
+    patch.many(Apps, ['update_release_state', 'make_logger_for_app'])
     Apps.apps = {}
     services = magic()
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
@@ -241,7 +242,8 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
             logger, config, 'app_id', 'version', ReleaseState.DEPLOYING)
 
         App.__init__.assert_called_with(
-            'app_id', 'app_dns', 'version', config, logger,
+            'app_id', 'app_dns', 'version', config,
+            Apps.make_logger_for_app.return_value,
             {'stories': True}, services, 'env')
         App.bootstrap.mock.assert_called()
         if raise_exc:
@@ -253,6 +255,13 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
             assert Apps.update_release_state.mock_calls[1] == mock.call(
                 logger, config, 'app_id', 'version', ReleaseState.DEPLOYED)
             assert Apps.apps.get('app_id') is not None
+
+
+def test_make_logger_for_app(patch, config):
+    patch.many(Logger, ['start', 'adapt'])
+    logger = Apps.make_logger_for_app(config, 'my_awesome_app', '17.1')
+    logger.start.assert_called()
+    logger.adapt.assert_called_with('my_awesome_app', '17.1')
 
 
 @mark.asyncio

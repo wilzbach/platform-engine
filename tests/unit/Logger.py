@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+import logging
 from logging import LoggerAdapter
 
 from asyncy.Logger import Adapter, Logger
 
 from frustum import Frustum
 
-from pytest import fixture
+from pytest import fixture, mark
 
 
 @fixture
@@ -18,16 +19,41 @@ def test_adapter():
     assert issubclass(Adapter, LoggerAdapter)
 
 
-def test_adapter_process():
-    adapter = Adapter('logger', {'story': 'test.story', 'app': 'foobar'})
-    result = adapter.process('message', {})
-    assert result == ('foobar::test.story => message', {})
+@mark.parametrize('enabled', [True, False])
+@mark.parametrize('cloud_logger_enabled', [True, False])
+def test_adapter_log(patch, magic, enabled, cloud_logger_enabled):
+    adapter = Adapter('logger', {'app_id': 'foo', 'version': '1.0'})
 
+    cloud_logger = magic()
 
-def test_adapter_process_reset():
-    adapter = Adapter('logger', {'story': 'test.story', 'app': 'foobar'})
-    result = adapter.process('1::old.story => message', {})
-    assert result == ('foobar::test.story => message', {})
+    if cloud_logger_enabled:
+        import asyncy.Logger as LoggerFile
+        LoggerFile.cloud_logger = cloud_logger
+
+    adapter.logger = magic()
+    patch.object(adapter, 'isEnabledFor', return_value=enabled)
+    patch.object(adapter, 'process',
+                 return_value=('formatted_message', {'k': 'v'}))
+    adapter.log(logging.INFO, 'this is my message', k='v')
+
+    if not enabled:
+        adapter.logger.log.assert_not_called()
+        cloud_logger.log_struct.assert_not_called()
+        return
+
+    if cloud_logger_enabled:
+        cloud_logger.log_struct.assert_called_with({
+            'app_id': 'foo',
+            'version': '1.0',
+            'message': 'formatted_message',
+            'level': 'INFO'
+        })
+    else:
+        cloud_logger.log_struct.assert_not_called()
+
+    adapter.process.assert_called_with('this is my message', {'k': 'v'})
+    adapter.logger.log.assert_called_with(
+        logging.INFO, 'foo::1.0 => formatted_message', k='v')
 
 
 def test_logger_init(logger, config):
@@ -104,9 +130,9 @@ def test_logger_events_http_run_story(logger):
 def test_logger_adapter(patch, magic, logger):
     patch.init(Adapter)
     logger.frustum = magic()
-    adapter = logger.adapter(1, 'name.story')
+    adapter = logger.adapter('my_app', '1.0')
     assert isinstance(adapter, Adapter)
-    extra = {'app': 1, 'story': 'name.story'}
+    extra = {'app_id': 'my_app', 'version': '1.0'}
     Adapter.__init__.assert_called_with(logger.frustum.logger, extra)
 
 
@@ -129,12 +155,6 @@ def test_logger_log(patch, logger):
     patch.object(Frustum, 'log')
     logger.log('my-event')
     Frustum.log.assert_called_with('my-event')
-
-
-def test_logger_log_raw(patch, logger):
-    patch.object(logger, 'frustum')
-    logger.log_raw('info', 'my-event')
-    logger.frustum.logger.info.assert_called_with('my-event')
 
 
 def test_logger_log_args(patch, logger):

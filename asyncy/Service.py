@@ -26,6 +26,7 @@ config = Config()
 server = None
 logger = Logger(config)
 logger.start()
+logger.adapt('engine', Version.version)
 
 
 class Service:
@@ -85,7 +86,7 @@ class Service:
 
         tornado.ioloop.IOLoop.current().start()
 
-        logger.log_raw('info', 'Shutdown complete!')
+        logger.info('Shutdown complete!')
 
     @staticmethod
     async def init_wrapper(sentry_dsn: str, release: str):
@@ -98,12 +99,12 @@ class Service:
 
     @staticmethod
     def sig_handler(*args, **kwargs):
-        logger.log_raw('info', f'Signal {args[0]} received.')
+        logger.info(f'Signal {args[0]} received.')
         tornado.ioloop.IOLoop.instance().add_callback(Service.shutdown)
 
     @classmethod
     async def shutdown_app(cls):
-        logger.log_raw('info', 'Unregistering with the gateway...')
+        logger.info('Unregistering with the gateway...')
         await Apps.destroy_all()  # All exceptions are handled inside.
 
         io_loop = tornado.ioloop.IOLoop.instance()
@@ -113,7 +114,7 @@ class Service:
 
     @classmethod
     def shutdown(cls):
-        logger.log_raw('info', 'Shutting down...')
+        logger.info('Shutting down...')
 
         server.stop()
         loop = asyncio.get_event_loop()

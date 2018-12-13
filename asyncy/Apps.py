@@ -18,6 +18,9 @@ from .enums.ReleaseState import ReleaseState
 
 
 class Apps:
+    """
+    Globals used: glogger - the global logger (used for the engine)
+    """
     internal_services = ['http', 'log', 'crontab', 'file', 'event']
 
     deployment_lock = DeploymentLock()
@@ -43,7 +46,7 @@ class Apps:
         return cur.fetchall()
 
     @classmethod
-    def update_release_state(cls, logger, config, app_id, version,
+    def update_release_state(cls, glogger, config, app_id, version,
                              state: ReleaseState):
         conn = cls.new_pg_conn(config)
         cur = conn.cursor()
@@ -56,27 +59,29 @@ class Apps:
         cur.close()
         conn.close()
 
-        logger.info(f'Updated state for {app_id}@{version} to {state.name}')
+        glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
 
     @classmethod
-    async def deploy_release(cls, config, logger: Logger, app_id, app_dns,
+    async def deploy_release(cls, config, glogger: Logger, app_id, app_dns,
                              version, environment, stories,
                              maintenance: bool, deleted: bool):
-        logger.info(f'Deploying app {app_id}@{version}')
+        glogger.info(f'Deploying app {app_id}@{version}')
         if maintenance or deleted:
-            cls.update_release_state(logger, config, app_id, version,
+            cls.update_release_state(glogger, config, app_id, version,
                                      ReleaseState.NO_DEPLOY)
-            logger.warn(f'Deployment halted {app_id}@{version}; '
-                        f'deleted={deleted}; maintenance={maintenance}')
-            logger.warn(f'State changed to NO_DEPLOY for {app_id}@{version}')
+            glogger.warn(f'Deployment halted {app_id}@{version}; '
+                         f'deleted={deleted}; maintenance={maintenance}')
+            glogger.warn(f'State changed to NO_DEPLOY for {app_id}@{version}')
             return
 
-        cls.update_release_state(logger, config, app_id, version,
+        cls.update_release_state(glogger, config, app_id, version,
                                  ReleaseState.DEPLOYING)
 
         try:
             services = await cls.get_services(
-                stories.get('yaml', {}), logger, stories)
+                stories.get('yaml', {}), glogger, stories)
+
+            logger = cls.make_logger_for_app(config, app_id, version)
 
             app = App(app_id, app_dns, version, config, logger,
                       stories, services, environment)
@@ -86,20 +91,27 @@ class Apps:
             await app.bootstrap()
 
             cls.apps[app_id] = app
-            cls.update_release_state(logger, config, app_id, version,
+            cls.update_release_state(glogger, config, app_id, version,
                                      ReleaseState.DEPLOYED)
 
-            logger.info(f'Successfully deployed app {app_id}@{version}')
+            glogger.info(f'Successfully deployed app {app_id}@{version}')
         except BaseException as e:
-            cls.update_release_state(logger, config, app_id, version,
+            cls.update_release_state(glogger, config, app_id, version,
                                      ReleaseState.FAILED)
-            logger.error(
+            glogger.error(
                 f'Failed to bootstrap app {app_id}@{version}', exc=e)
             Sentry.capture_exc(e)
 
     @classmethod
+    def make_logger_for_app(cls, config, app_id, version):
+        logger = Logger(config)
+        logger.start()
+        logger.adapt(app_id, version)
+        return logger
+
+    @classmethod
     async def init_all(cls, sentry_dsn: str, release: str,
-                       config: Config, logger: Logger):
+                       config: Config, glogger: Logger):
         Sentry.init(sentry_dsn, release)
 
         releases = cls.get_all_app_uuids_for_deployment(config)
@@ -110,20 +122,20 @@ class Apps:
         # then we might miss some notifications about releases.
         loop = asyncio.get_event_loop()
         t = threading.Thread(target=cls.listen_to_releases,
-                             args=[config, logger, loop],
+                             args=[config, glogger, loop],
                              daemon=True)
         t.start()
 
         for release in releases:
             app_id = release[0]
-            await cls.reload_app(config, logger, app_id)
+            await cls.reload_app(config, glogger, app_id)
 
     @classmethod
     def get(cls, app_id: str):
         return cls.apps[app_id]
 
     @classmethod
-    async def get_services(cls, asyncy_yaml, logger: Logger,
+    async def get_services(cls, asyncy_yaml, glogger: Logger,
                            stories: dict):
         services = {}
 
@@ -134,10 +146,10 @@ class Apps:
 
             if '/' in service:
                 pull_url, omg = await GraphQLAPI.get_by_slug(
-                    logger, service, tag)
+                    glogger, service, tag)
             else:
                 pull_url, omg = await GraphQLAPI.get_by_alias(
-                    logger, service, tag)
+                    glogger, service, tag)
 
             if conf.get('image') is not None:
                 image = f'{conf.get("image")}:{tag}'
@@ -180,8 +192,8 @@ class Apps:
         cls.apps[app.app_id] = None
 
     @classmethod
-    async def reload_app(cls, config: Config, logger: Logger, app_id: str):
-        logger.info(f'Reloading app {app_id}')
+    async def reload_app(cls, config: Config, glogger: Logger, app_id: str):
+        glogger.info(f'Reloading app {app_id}')
         if cls.apps.get(app_id) is not None:
             await cls.destroy_app(cls.apps[app_id], silent=True,
                                   update_db_state=True)
@@ -191,8 +203,8 @@ class Apps:
         try:
             can_deploy = await cls.deployment_lock.try_acquire(app_id)
             if not can_deploy:
-                logger.warn(f'Another deployment for app {app_id} is in '
-                            f'progress. Will not reload.')
+                glogger.warn(f'Another deployment for app {app_id} is in '
+                             f'progress. Will not reload.')
                 return
             conn = cls.new_pg_conn(config)
 
@@ -220,21 +232,21 @@ class Apps:
             state = release[6]
             deleted = release[7]
             if state == ReleaseState.FAILED.value:
-                logger.warn(f'Cowardly refusing to deploy app '
-                            f'{app_id}@{version} as it\'s '
-                            f'last state is FAILED')
+                glogger.warn(f'Cowardly refusing to deploy app '
+                             f'{app_id}@{version} as it\'s '
+                             f'last state is FAILED')
                 return
 
             if stories is None:
-                logger.info(f'No story found for deployment for '
-                            f'app {app_id}@{version}. Halting deployment.')
+                glogger.info(f'No story found for deployment for '
+                             f'app {app_id}@{version}. Halting deployment.')
                 return
             await cls.deploy_release(
-                config, logger, app_id, app_dns, version,
+                config, glogger, app_id, app_dns, version,
                 environment, stories, maintenance, deleted)
-            logger.info(f'Reloaded app {app_id}@{version}')
+            glogger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:
-            logger.error(
+            glogger.error(
                 f'Failed to reload app {app_id}', exc=e)
             Sentry.capture_exc(e)
         finally:
@@ -252,8 +264,8 @@ class Apps:
                 Sentry.capture_exc(e)
 
     @classmethod
-    def listen_to_releases(cls, config: Config, logger: Logger, loop):
-        logger.info('Listening for new releases...')
+    def listen_to_releases(cls, config: Config, glogger: Logger, loop):
+        glogger.info('Listening for new releases...')
         conn = cls.new_pg_conn(config)
         conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
@@ -270,10 +282,10 @@ class Apps:
                     while conn.notifies:
                         notify = conn.notifies.pop(0)
                         asyncio.run_coroutine_threadsafe(
-                            cls.reload_app(config, logger, notify.payload),
+                            cls.reload_app(config, glogger, notify.payload),
                             loop)
             except (psycopg2.InterfaceError, psycopg2.OperationalError):
-                logger.error('Connection to the DB has failed. Exiting.')
+                glogger.error('Connection to the DB has failed. Exiting.')
                 # Because _thread.interrupt_main() doesn't work.
                 os.kill(os.getpid(), signal.SIGINT)
                 break
