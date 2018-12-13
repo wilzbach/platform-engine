@@ -33,7 +33,7 @@ class Stories:
 
         path = self.get_tmp_dir()
         pathlib.Path(path).mkdir(parents=True, mode=0o700, exist_ok=True)
-        self.logger.log_raw('debug', f'Created tmp dir {path} (on-demand)')
+        self.logger.debug(f'Created tmp dir {path} (on-demand)')
 
     def get_tmp_dir(self):
         return f'/tmp/story.{self.execution_id}'

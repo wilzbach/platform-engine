@@ -88,7 +88,7 @@ class Lexicon:
             # Check if args[1] is a mutation.
             if line['args'][1]['$OBJECT'] == 'mutation':
                 value = Mutations.mutate(line['args'][1], value, story, line)
-                logger.log_raw('debug', f'Mutation result: {value}')
+                logger.debug(f'Mutation result: {value}')
             else:
                 raise AsyncyError(
                     message=f'Unsupported argument in set: '
