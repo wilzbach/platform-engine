@@ -24,7 +24,7 @@ class StoryEventHandler(BaseHandler):
 
         app = Apps.get(app_id)
 
-        await Story.run(app, self.logger,
+        await Story.run(app, app.logger,
                         story_name=story_name,
                         context=context,
                         block=block)
