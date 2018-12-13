@@ -34,10 +34,10 @@ class Kubernetes:
                                       f'/api/v1/namespaces/{story.app.app_id}')
 
         if res.code == 200:
-            story.logger.debug(f'k8s namespace {story.app.app_id} exists')
+            story.logger.debug(f'k8s namespace exists')
             return
 
-        story.logger.debug(f'k8s namespace {story.app.app_id} does not exist')
+        story.logger.debug(f'k8s namespace does not exist')
         payload = {
             'apiVersion': 'v1',
             'kind': 'Namespace',
@@ -50,7 +50,7 @@ class Kubernetes:
                                       payload=payload)
 
         cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(f'k8s namespace {story.app.app_id} created')
+        story.logger.debug(f'k8s namespace created')
 
     @classmethod
     def new_ssl_context(cls):
@@ -98,7 +98,7 @@ class Kubernetes:
 
     @classmethod
     async def clean_namespace(cls, app):
-        app.logger.debug(f'Clearing namespace for app {app.app_id}')
+        app.logger.debug(f'Clearing namespace')
 
         res = await cls.make_k8s_call(
             app,
@@ -123,13 +123,11 @@ class Kubernetes:
             if res.code == 404:
                 break
 
-            app.logger.debug(
-                f'Namespace for app {app.app_id} is still terminating...')
+            app.logger.debug(f'Namespace is still terminating...')
 
             await asyncio.sleep(0.7)
 
-        app.logger.debug(
-            f'Cleared namespace for app {app.app_id} successfully')
+        app.logger.debug(f'Cleared namespace successfully')
 
     @classmethod
     def get_hostname(cls, story, line, container_name):

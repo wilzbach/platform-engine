@@ -19,5 +19,5 @@ async def test_service_log_all(patch, service_patch, story, level):
     }
 
     await getattr(Log, level)(story, None, resolved_args)
-    story.app.logger.log_raw.assert_called_with(level,
-                                                f'{story.name}: Hello world!')
+    getattr(story.app.logger, level)\
+        .assert_called_with(f'{story.name}: Hello world!')

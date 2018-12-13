@@ -364,8 +364,7 @@ class Services:
             for command in cls.internal_services[key].commands:
                 commands.append(command)
 
-            cls.logger.log_raw(
-                'info', f'Discovered internal service {key} - {commands}')
+            cls.logger.info(f'Discovered internal service {key} - {commands}')
 
     @classmethod
     async def remove_all(cls, app):

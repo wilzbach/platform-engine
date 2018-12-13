@@ -103,8 +103,8 @@ def test_services_log_registry(logger):
     Services.init(logger)
     Services.register_internal('my_service', 'my_command', {}, 'any', None)
     Services.log_internal()
-    logger.log_raw.assert_called_with(
-        'info', 'Discovered internal service my_service - [\'my_command\']')
+    logger.info.assert_called_with(
+        'Discovered internal service my_service - [\'my_command\']')
 
 
 def test_resolve_chain(story):
