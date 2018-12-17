@@ -44,7 +44,7 @@ class StoryEventHandler(BaseHandler):
             self.set_status(200)
             self.finish()
         except BaseException as e:
-            self.handle_story_exc(story_name, e)
+            self.handle_story_exc(app_id, story_name, e)
         finally:
             Metrics.story_request.labels(
                 app_id=app_id,
