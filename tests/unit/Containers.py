@@ -49,10 +49,10 @@ def test_get_container_name(patch, story, line, reusable):
     story.app.app_id = 'my_app'
     ret = Containers.get_container_name(story, line, 'alpine')
     if reusable:
-        assert ret == 'asyncy--my_app-alpine-1'
+        assert ret == f'alpine-{Containers.hash_service_name("alpine")}'
     else:
-        h = Containers.hash_story_line(story, line)
-        assert ret == f'asyncy--{story.app.app_id}-{h}-1'
+        h = Containers.hash_service_name_and_story_line(story, line, 'alpine')
+        assert ret == f'alpine-{h}'
 
 
 @mark.asyncio
@@ -115,17 +115,27 @@ def test_format_volume_name(patch, story, line):
 
 def test_format_volume_name_not_reusable(patch, story, line):
     patch.object(Containers, 'is_service_reusable', return_value=False)
-    patch.object(Containers, 'hash_story_line', return_value='hash')
+    patch.object(Containers, 'hash_service_name_and_story_line',
+                 return_value='hash')
     assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
         'asyncy--alpine-1-hash'
 
 
-def test_hash_story_line(patch, story):
+def test_service_name_and_story_line(patch, story):
     patch.object(hashlib, 'sha1')
     story.name = 'story_name'
-    ret = Containers.hash_story_line(story, {'ln': '1'})
+    ret = Containers.hash_service_name_and_story_line(
+        story, {'ln': '1'}, 'alpine')
 
-    hashlib.sha1.assert_called_with('story_name-1'.encode('utf-8'))
+    hashlib.sha1.assert_called_with(f'alpine-{story.name}-1'.encode('utf-8'))
+    assert ret == hashlib.sha1().hexdigest()
+
+
+def test_service_name(patch):
+    patch.object(hashlib, 'sha1')
+    ret = Containers.hash_service_name('alpine')
+
+    hashlib.sha1.assert_called_with(f'alpine'.encode('utf-8'))
     assert ret == hashlib.sha1().hexdigest()
 
 
