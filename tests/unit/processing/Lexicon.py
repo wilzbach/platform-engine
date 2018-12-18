@@ -140,9 +140,10 @@ async def test_lexicon_function(patch, logger, story, line):
 
 @mark.parametrize('method', ['if', 'elif', 'else'])
 @mark.parametrize('args', [[True], [1, 2, 3]])
+@mark.parametrize('no_more_blocks', [True, False])
 @mark.asyncio
 async def test_lexicon_if(patch, logger, story, async_mock,
-                          method, args):
+                          method, args, no_more_blocks):
     line = {
         'method': method,
         'args': args
@@ -150,14 +151,17 @@ async def test_lexicon_if(patch, logger, story, async_mock,
 
     patch.object(Story, 'execute_block', new=async_mock())
     patch.object(story, 'resolve', return_value=True)
-    patch.object(story, 'next_block', side_effect=[
+    side_effect = [
         {'method': 'elif', 'ln': '1'},  # This is just to test the while loop,
         {'method': 'elif', 'ln': '2'},  # and that we're jumping blocks.
         {'method': 'elif', 'ln': '3'},
         {'method': 'else', 'ln': '4'},
         {'method': 'execute', 'ln': '5'},
         {'method': 'execute', 'ln': '5'},  # Only because it's called twice.
-    ])
+    ]
+    if no_more_blocks:
+        side_effect = [None]
+    patch.object(story, 'next_block', side_effect=side_effect)
 
     story.context = {}
 
@@ -173,7 +177,10 @@ async def test_lexicon_if(patch, logger, story, async_mock,
             story.resolve.assert_called_with(line['args'][0], encode=False)
         Story.execute_block.mock.assert_called_with(logger, story, line)
 
-        assert result == '5'
+        if no_more_blocks:
+            assert result is None
+        else:
+            assert result == '5'
 
 
 @mark.parametrize('method', ['if', 'elif'])
