@@ -44,7 +44,8 @@ async def test_post(patch, logger, magic, async_mock, throw_exc):
 
     await handler.post()
     if throw_exc:
-        handler.handle_story_exc.assert_called_with('hello.story', e)
+        handler.handle_story_exc.assert_called_with('app_id',
+                                                    'hello.story', e)
     else:
         Story.run.mock.assert_called_with(
             Apps.get('app_id'), Apps.get('app_id').logger,

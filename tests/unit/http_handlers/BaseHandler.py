@@ -32,7 +32,7 @@ def test_handle_story_exc(patch, magic, logger, exception, story_name):
     handler = BaseHandler(magic(), magic(), logger=logger)
     patch.object(Sentry, 'capture_exc')
     patch.many(handler, ['set_status', 'finish'])
-    handler.handle_story_exc(story_name, exception)
+    handler.handle_story_exc('app_id', story_name, exception)
     handler.set_status.assert_called_with(500, 'Story execution failed')
     handler.finish.assert_called()
     logger.error.assert_called()

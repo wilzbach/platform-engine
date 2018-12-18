@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import hashlib
+import re
 
 import ujson
 
@@ -21,7 +22,8 @@ class Containers:
         the same name passed in as is.
         """
         if not cls.is_service_reusable(story, line):
-            name = f'{name}-{cls.hash_story_line(story, line)}'
+            h = cls.hash_service_name_and_story_line(story, line, name)
+            name = f'{name}-{h}'
 
         return name
 
@@ -170,22 +172,31 @@ class Containers:
         """
         If a container can be reused (where reuse is defined as a command
         without a run section in it's config), it'll return a generic name
-        like asyncy--app_id-foo-1, otherwise something cryptic:
-        asyncy--app_id-sha1(foo)-1.
+        like twitter-hash(twitter), otherwise something derived:
+        twitter-hash(twitter, story name, line number).
 
         Why a hash? Story names can have DNS reserved characters in them,
         and hence to normalise it, we need to create a hash here.
         """
+        # simple_name is included in the container name to aid debugging only.
+        # It's 20 chars at max because 41 chars consists
+        # of the hash and a hyphen. K8s names must be < 63 chars.
+        simple_name = re.sub('\W', '', name)[:20]
         if cls.is_service_reusable(story, line):
-            return f'asyncy--{story.app.app_id}-{name}-1'
+            h = cls.hash_service_name(name)
+        else:
+            h = cls.hash_service_name_and_story_line(story, line, name)
 
-        h = cls.hash_story_line(story, line)
-        return f'asyncy--{story.app.app_id}-{h}-1'
+        return f'{simple_name}-{h}'
 
     @classmethod
-    def hash_story_line(cls, story, line):
-        return hashlib.sha1(f'{story.name}-{line["ln"]}'
+    def hash_service_name_and_story_line(cls, story, line, name):
+        return hashlib.sha1(f'{name}-{story.name}-{line["ln"]}'
                             .encode('utf-8')).hexdigest()
+
+    @classmethod
+    def hash_service_name(cls, name):
+        return hashlib.sha1(f'{name}'.encode('utf-8')).hexdigest()
 
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):
