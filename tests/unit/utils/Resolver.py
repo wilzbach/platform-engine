@@ -34,13 +34,33 @@ import storyscript
     [{}, '[0, 1, 2]', [0, 1, 2]],
     [{}, '/foo/', re.compile('/foo/')],
     [{}, '[true]', [True]],
+    [{'i': 1}, 'if i == 1\n  echo', True, False],
+    [{'i': 2}, 'if i == 1\n  echo', False, False],
+    [{'i': 2}, 'if i != 1\n  echo', True, False],
+    [{'i': 1}, 'if i != 1\n  echo', False, False],
+    [{'i': 5}, 'if i >= 1\n  echo', True, False],
+    [{'i': 5}, 'if i >= 5\n  echo', True, False],
+    [{'i': 5}, 'if i >= 6\n  echo', False, False],
+    [{'i': 5}, 'if i > 5\n  echo', False, False],
+    [{'i': 5}, 'if i > 4\n  echo', True, False],
+    [{'i': 5}, 'if i < 5\n  echo', False, False],
+    [{'i': 5}, 'if i < 6\n  echo', True, False],
+    [{'i': 5}, 'if i <= 5\n  echo', True, False],
+    [{'i': 5}, 'if i <= 4\n  echo', False, False],
+    [{'i': 5}, 'if i <= 6\n  echo', True, False],
 ])
 def test_resolve_all_objects(cases):
     data = cases[0]
     statement = cases[1]
     expected_return = cases[2]
+    prepend_var = True
+    if len(cases) >= 4:
+        prepend_var = cases[3]
 
-    tree = storyscript.Api.loads(f'a = {statement}')
+    if prepend_var:
+        statement = f'a = {statement}'
+
+    tree = storyscript.Api.loads(statement)
     item = tree['tree']['1']['args'][0]
 
     assert Resolver.resolve(item, data) == expected_return

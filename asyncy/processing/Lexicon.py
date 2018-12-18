@@ -102,14 +102,36 @@ class Lexicon:
     @staticmethod
     async def if_condition(logger, story, line):
         """
-        Evaluates the resolution value to decide wheter to enter
+        Evaluates the resolution value to decide whether to enter
         inside an if-block.
         """
         logger.log('lexicon-if', line, story.context)
-        result = story.resolve(line['args'][0], encode=False)
+        if line['method'] == 'else':
+            result = True
+        else:
+            if len(line['args']) != 1:
+                raise AsyncyError(message=f'Complex if condition found! '
+                                          f'len={len(line["args"])}',
+                                  story=story, line=line)
+
+            result = story.resolve(line['args'][0], encode=False)
         if result:
-            return line['enter']
-        return line['exit']
+            from . import Story
+            await Story.execute_block(logger, story, line)
+
+            while True:
+                next_line = story.next_block(line)
+                if next_line is None:
+                    return None
+
+                if next_line['method'] == 'else' or \
+                        next_line['method'] == 'elif':
+                    line = next_line
+                    continue
+                else:
+                    break
+
+        return Lexicon.next_line_or_none(story.next_block(line))
 
     @staticmethod
     def unless_condition(logger, story, line):

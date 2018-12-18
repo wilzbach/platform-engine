@@ -49,7 +49,7 @@ class Story:
         story.start_line(line_number)
         try:
             method = line['method']
-            if method == 'if':
+            if method == 'if' or method == 'else' or method == 'elif':
                 return await Lexicon.if_condition(logger, story, line)
             elif method == 'for':
                 return await Lexicon.for_loop(logger, story, line)
@@ -92,7 +92,7 @@ class Story:
             story.set_context(current_context)
 
     @staticmethod
-    async def execute_block(logger, story, parent_line):
+    async def execute_block(logger, story, parent_line: dict):
         """
         Executes all the lines whose parent is parent_line.
         """
