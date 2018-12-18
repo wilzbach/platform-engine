@@ -18,7 +18,7 @@ class BaseHandler(RequestHandler):
         # Always prefer the app logger if the app is available.
         try:
             logger = Apps.get(app_id).logger
-        except:
+        except BaseException:
             logger = self.logger
         logger.error(f'Story execution failed; cause={str(e)}', exc=e)
         self.set_status(500, 'Story execution failed')
