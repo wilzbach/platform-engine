@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from tornado.web import RequestHandler
 
-from asyncy.Apps import Apps
+from ..Apps import Apps
 from ..Exceptions import AsyncyError
 from ..Sentry import Sentry
 
