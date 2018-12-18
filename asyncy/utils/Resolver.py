@@ -76,7 +76,42 @@ class Resolver:
             return dict(cls.dict(item['items'], data))
         elif object_type == 'list':
             return list(cls.list_object(item['items'], data))
+        elif object_type == 'assertion':
+            return cls.assertion(item, data)
         return cls.dictionary(item, data)
+
+    @classmethod
+    def assertion(cls, item, data):
+        """
+        Handles assertions where item['assertion'] is one of the following:
+        - equals
+        - not_equal
+        - greater
+        - greater_equal
+        - less
+        - less_equal
+        """
+        a = item['assertion']
+        values = item['values']
+        assert len(values) == 2, \
+            f'Only simple assertions are supported. Found {len(values)}'
+
+        left = cls.resolve(values[0], data)
+        right = cls.resolve(values[1], data)
+        if a == 'equals':
+            return left == right
+        elif a == 'not_equal':
+            return left != right
+        elif a == 'greater':
+            return left > right
+        elif a == 'greater_equal':
+            return left >= right
+        elif a == 'less':
+            return left < right
+        elif a == 'less_equal':
+            return left <= right
+        else:
+            assert False, f'Unsupported operation: {a}'
 
     @classmethod
     def dict(cls, items, data):

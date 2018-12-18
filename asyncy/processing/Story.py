@@ -49,7 +49,7 @@ class Story:
         story.start_line(line_number)
         try:
             method = line['method']
-            if method == 'if':
+            if method == 'if' or method == 'else' or method == 'elif':
                 return await Lexicon.if_condition(logger, story, line)
             elif method == 'for':
                 return await Lexicon.for_loop(logger, story, line)
