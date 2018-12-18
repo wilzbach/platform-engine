@@ -156,7 +156,7 @@ async def test_lexicon_if(patch, logger, story, async_mock,
         {'method': 'elif', 'ln': '3'},
         {'method': 'else', 'ln': '4'},
         {'method': 'execute', 'ln': '5'},
-        {'method': 'execute', 'ln': '6'},
+        {'method': 'execute', 'ln': '5'},  # Only because it's called twice.
     ])
 
     story.context = {}
@@ -173,7 +173,7 @@ async def test_lexicon_if(patch, logger, story, async_mock,
             story.resolve.assert_called_with(line['args'][0], encode=False)
         Story.execute_block.mock.assert_called_with(logger, story, line)
 
-        assert result == '6'
+        assert result == '5'
 
 
 @mark.parametrize('method', ['if', 'elif'])
