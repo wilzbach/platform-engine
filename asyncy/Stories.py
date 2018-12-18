@@ -73,7 +73,7 @@ class Stories:
 
             line = self.line(my_parent_number)
 
-    def next_block(self, parent_line):
+    def next_block(self, parent_line: dict):
         """
         Given a parent_line, it skips through the block and returns the next
         line after this block.

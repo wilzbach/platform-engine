@@ -92,7 +92,7 @@ class Story:
             story.set_context(current_context)
 
     @staticmethod
-    async def execute_block(logger, story, parent_line):
+    async def execute_block(logger, story, parent_line: dict):
         """
         Executes all the lines whose parent is parent_line.
         """
