@@ -138,20 +138,68 @@ async def test_lexicon_function(patch, logger, story, line):
     story.next_block.assert_called_with(line)
 
 
+@mark.parametrize('method', ['if', 'elif', 'else'])
+@mark.parametrize('args', [[True], [1, 2, 3]])
 @mark.asyncio
-async def test_lexicon_if(logger, story, line):
+async def test_lexicon_if(patch, logger, story, async_mock,
+                          method, args):
+    line = {
+        'method': method,
+        'args': args
+    }
+
+    patch.object(Story, 'execute_block', new=async_mock())
+    patch.object(story, 'resolve', return_value=True)
+    patch.object(story, 'next_block', side_effect=[
+        {'method': 'elif', 'ln': '1'},  # This is just to test the while loop,
+        {'method': 'elif', 'ln': '2'},  # and that we're jumping blocks.
+        {'method': 'elif', 'ln': '3'},
+        {'method': 'else', 'ln': '4'},
+        {'method': 'execute', 'ln': '5'},
+        {'method': 'execute', 'ln': '6'},
+    ])
+
+    story.context = {}
+
+    if len(args) > 2 and method != 'else':
+        with pytest.raises(AsyncyError):
+            await Lexicon.if_condition(logger, story, line)
+        return
+    else:
+        result = await Lexicon.if_condition(logger, story, line)
+        if method == 'else':
+            story.resolve.assert_not_called()
+        else:
+            story.resolve.assert_called_with(line['args'][0], encode=False)
+        Story.execute_block.mock.assert_called_with(logger, story, line)
+
+        assert result == '6'
+
+
+@mark.parametrize('method', ['if', 'elif'])
+@mark.asyncio
+async def test_lexicon_if_false(patch, logger, story, async_mock,
+                                method):
+    line = {
+        'method': method,
+        'args': [True],
+        'next': '2'
+    }
+
+    patch.object(Story, 'execute_block', new=async_mock())
+    patch.object(story, 'resolve', return_value=False)
+    patch.object(story, 'next_block', side_effect=[
+        {'method': 'execute', 'ln': '2'}
+    ])
+
     story.context = {}
     result = await Lexicon.if_condition(logger, story, line)
-    logger.log.assert_called_with('lexicon-if', line, story.context)
+
     story.resolve.assert_called_with(line['args'][0], encode=False)
-    assert result == line['enter']
 
+    Story.execute_block.mock.assert_not_called()
 
-@mark.asyncio
-async def test_lexicon_if_false(logger, story, line):
-    story.context = {}
-    story.resolve.return_value = False
-    assert await Lexicon.if_condition(logger, story, line) == line['exit']
+    assert '2' == result
 
 
 def test_lexicon_unless(logger, story, line):
