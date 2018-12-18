@@ -227,13 +227,20 @@ class Services:
                 story.logger.warn(f'Valid location for argument "{arg}" '
                                   'not specified')
 
+        method = command_conf['http'].get('method', 'post')
         kwargs = {
-            'method': command_conf['http'].get('method', 'post').upper(),
-            'body': json.dumps(body),
-            'headers': {
+            'method': method.upper()
+        }
+
+        if method.lower() == 'post':
+            kwargs['body'] = json.dumps(body)
+            kwargs['headers'] = {
                 'Content-Type': 'application/json; charset=utf-8'
             }
-        }
+        elif len(body) > 0:
+            raise AsyncyError(
+                message=f'Parameters found in the request body, '
+                        f'but the method is {method}', story=story, line=line)
 
         port = command_conf['http'].get('port', 5000)
         path = HttpUtils.add_params_to_url(
