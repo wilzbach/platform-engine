@@ -217,15 +217,16 @@ class Services:
 
         for arg in args:
             value = story.argument_by_name(line, arg)
-            if args[arg]['in'] == 'query':
+            location = args[arg].get('in', 'requestBody')
+            if location == 'query':
                 query_params[arg] = value
-            elif args[arg]['in'] == 'path':
+            elif location == 'path':
                 path_params[arg] = value
-            elif args[arg]['in'] == 'requestBody':
+            elif location == 'requestBody':
                 body[arg] = value
             else:
-                story.logger.warn(f'Valid location for argument "{arg}" '
-                                  'not specified')
+                raise AsyncyError(f'Invalid location for argument "{arg}" '
+                                  f'specified: {location}')
 
         method = command_conf['http'].get('method', 'post')
         kwargs = {
