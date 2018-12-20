@@ -176,58 +176,50 @@ def test_resolve_chain(story):
                   Event(name='foo'), Command(name='sonar')])
 
 
-@pytest.mark.parametrize('locations', [
-    {'foo': 'someid', 'query_param': 'true',
-        'path_param': 1234, 'default_case': 'default_case'},
-    {'foo': 1234, 'query_param': 'someid',
-        'path_param': 'true', 'default_case': 'default_case'},
-    {'foo': 'true', 'query_param': 1234,
-        'path_param': 'someid', 'default_case': 'default_case'}
-])
+@mark.parametrize('location', ['requestBody', 'query', 'path', 'invalid_loc'])
+@mark.parametrize('method', ['POST', 'GET'])
 @mark.asyncio
-async def test_services_execute_http(patch, story, async_mock, locations):
+async def test_services_execute_http(patch, story, async_mock,
+                                     location, method):
     chain = deque([Service(name='service'), Command(name='cmd')])
     patch.object(Containers, 'get_hostname',
                  new=async_mock(return_value='container_host'))
 
     command_conf = {
         'http': {
-            'method': 'post',
+            'method': method.lower(),
             'port': 2771,
-            'path': '/invoke/{path_param}'
+            'path': '/invoke'
         },
         'arguments': {
             'foo': {
-                'in': 'requestBody'
-            },
-            'query_param': {
-                'type': 'string',
-                'in': 'query'
-            },
-            'path_param': {
-                'type': 'string',
-                'in': 'path'
-            },
-            'default_case': {
-                'type': 'string',
-                'in': 'invalid'
+                'in': location
             }
         }
     }
-    expected_url = ('http://container_host:2771/invoke/'
-                    f'{locations["path_param"]}?'
-                    f'query_param={locations["query_param"]}')
 
-    def argument_by_name(line, arg):
-        return locations[arg]
+    patch.object(story, 'argument_by_name', return_value='bar')
 
-    patch.object(story, 'argument_by_name', side_effect=argument_by_name)
+    if location == 'path':
+        command_conf['http']['path'] = '/invoke/{foo}'
+        expected_url = 'http://container_host:2771/invoke/bar'
+    elif location == 'query':
+        expected_url = 'http://container_host:2771/invoke?foo=bar'
+    else:  # requestBody
+        expected_url = 'http://container_host:2771/invoke'
 
     expected_kwargs = {
-        'method': 'POST',
-        'body': json.dumps({'foo': locations['foo']}),
-        'headers': {'Content-Type': 'application/json; charset=utf-8'}
+        'method': method
     }
+
+    if method == 'POST':
+        if location == 'requestBody':
+            expected_kwargs['body'] = '{"foo": "bar"}'
+        else:
+            expected_kwargs['body'] = '{}'
+        expected_kwargs['headers'] = {
+            'Content-Type': 'application/json; charset=utf-8'
+        }
 
     line = {
         'ln': '1'
@@ -242,7 +234,14 @@ async def test_services_execute_http(patch, story, async_mock, locations):
     patch.object(HttpUtils, 'fetch_with_retry',
                  new=async_mock(return_value=response))
 
-    ret = await Services.execute_http(story, line, chain, command_conf)
+    if location == 'invalid_loc' or \
+            (location == 'requestBody' and method == 'GET'):
+        with pytest.raises(AsyncyError):
+            await Services.execute_http(story, line, chain, command_conf)
+        return
+    else:
+        ret = await Services.execute_http(story, line, chain, command_conf)
+
     assert ret == {'foo': '\U0001f44d'}
 
     HttpUtils.fetch_with_retry.mock.assert_called_with(
