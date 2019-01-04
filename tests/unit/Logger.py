@@ -6,6 +6,8 @@ from asyncy.Logger import Adapter, Logger
 
 from frustum import Frustum
 
+from google.cloud.logging.resource import Resource
+
 from pytest import fixture, mark
 
 
@@ -28,7 +30,7 @@ def test_adapter_log(patch, magic, enabled, cloud_logger_enabled):
 
     if cloud_logger_enabled:
         import asyncy.Logger as LoggerFile
-        LoggerFile.cloud_logger = cloud_logger
+        LoggerFile.cloud_logger_bg = cloud_logger
 
     adapter.logger = magic()
     patch.object(adapter, 'isEnabledFor', return_value=enabled)
@@ -38,18 +40,22 @@ def test_adapter_log(patch, magic, enabled, cloud_logger_enabled):
 
     if not enabled:
         adapter.logger.log.assert_not_called()
-        cloud_logger.log_struct.assert_not_called()
+        cloud_logger.worker._queue.put_nowait.assert_not_called()
         return
 
     if cloud_logger_enabled:
-        cloud_logger.log_struct.assert_called_with({
-            'app_id': 'foo',
-            'version': '1.0',
-            'message': 'formatted_message',
-            'level': 'INFO'
+        cloud_logger.worker._queue.put_nowait.assert_called_with({
+            'info': {
+                'app_id': 'foo',
+                'version': '1.0',
+                'message': 'formatted_message',
+                'level': 'INFO'
+            },
+            'severity': 'INFO',
+            'resource': Resource(type='global', labels={})
         })
     else:
-        cloud_logger.log_struct.assert_not_called()
+        cloud_logger.worker._queue.put_nowait.assert_not_called()
 
     adapter.process.assert_called_with('this is my message', {'k': 'v'})
     adapter.logger.log.assert_called_with(
