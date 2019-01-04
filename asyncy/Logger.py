@@ -5,13 +5,16 @@ from frustum import Frustum
 
 from google.auth.exceptions import DefaultCredentialsError
 from google.cloud import logging
+from google.cloud.logging.handlers.transports.background_thread \
+    import BackgroundThreadTransport
+from google.cloud.logging.resource import Resource
 
-
-cloud_logger = None
+cloud_logger_bg = None
 
 try:
     gcloud_logging_client = logging.Client()
-    cloud_logger = gcloud_logging_client.logger('engine')
+    cloud_logger_bg = BackgroundThreadTransport(
+        gcloud_logging_client, 'engine')
 except DefaultCredentialsError:
     print('Cloud logging disabled')
 
@@ -32,13 +35,25 @@ class Adapter(LoggerAdapter):
         app_id = self.extra['app_id']
         version = self.extra['version']
 
-        if cloud_logger is not None:
-            cloud_logger.log_struct(
+        if cloud_logger_bg is not None:
+            # The following usage is highly unconventional:
+            # There appears to be no way to log a structured log message
+            # asynchronously using the cloud logging client properly.
+            # However, internally, the library uses structured logging. As long
+            # as we queue the right payload into the worker's queue, we're OK.
+            # This works well with google-cloud-logging==1.9.0.
+            # It looks shady, but the only decent way to use the async logging
+            # support for Stackdriver.
+            cloud_logger_bg.worker._queue.put_nowait(
                 {
-                    'app_id': app_id,
-                    'version': version,
-                    'message': message,
-                    'level': getLevelName(level)
+                    'info': {
+                        'app_id': app_id,
+                        'version': version,
+                        'message': message,
+                        'level': getLevelName(level)
+                    },
+                    'severity': getLevelName(level),
+                    'resource': Resource(type='global', labels={})
                 }
             )
 
