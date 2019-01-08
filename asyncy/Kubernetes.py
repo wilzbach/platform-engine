@@ -8,6 +8,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 from .Exceptions import K8sError
 from .Stories import Stories
 from .constants.LineConstants import LineConstants
+from .entities.Volume import Volume, Volumes
 from .utils.HttpUtils import HttpUtils
 
 
@@ -90,14 +91,42 @@ class Kubernetes:
 
     @classmethod
     async def remove_volume(cls, story, line, name):
-        pass
+        app_id = story.app.app_id
+        res = await cls.make_k8s_call(
+            story.app,
+            f'/api/v1/namespaces/{app_id}/persistentvolumeclaims/{name}'
+            f'?PropagationPolicy=Background&gracePeriodSeconds=3',
+            method='delete')
+
+        cls.raise_if_not_2xx(res, story, line)
+        story.logger.info(f'k8s volume {name} deleted')
 
     @classmethod
     async def create_volume(cls, story, line, name):
-        pass
+        path = f'/api/v1/namespaces/{story.app.app_id}/persistentvolumeclaims'
+        payload = {
+            'apiVersion': 'v1',
+            'kind': 'PersistentVolumeClaim',
+            'metadata': {
+                'name': name,
+            },
+            'spec': {
+                'accessModes': 'ReadWriteOnce',
+                'resources': {
+                    'requests': {
+                        'storage': '100Mi'
+                    }
+                }
+            }
+        }
+
+        res = await cls.make_k8s_call(story.app, path, payload)
+        cls.raise_if_not_2xx(res, story, line)
+        story.logger.debug(f'k8s volume {name} created')
 
     @classmethod
     async def clean_namespace(cls, app):
+        # TODO: cannot do this since the persistent volumes will also be destroyed!
         app.logger.debug(f'Clearing namespace')
 
         res = await cls.make_k8s_call(
@@ -197,7 +226,8 @@ class Kubernetes:
     @classmethod
     async def create_deployment(cls, story: Stories, line: dict, image: str,
                                 container_name: str, start_command: [] or str,
-                                shutdown_command: [] or str, env: dict):
+                                shutdown_command: [] or str, env: dict,
+                                volumes: Volumes):
         # Note: We don't check if this deployment exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a deployment.
@@ -210,6 +240,21 @@ class Kubernetes:
                     'name': k,
                     'value': v
                 })
+
+        volume_mounts = []
+        volumes_k8s = []
+        for vol in volumes:
+            volume_mounts.append({
+                'mountPath': vol.mount_path,
+                'name': vol.name
+            })
+
+            volumes_k8s.append({
+                'name': vol.name,
+                'persistentVolumeClaim': {
+                    'claimName': vol.name
+                }
+            })
 
         payload = {
             'apiVersion': 'apps/v1',
@@ -243,9 +288,11 @@ class Kubernetes:
                                 'imagePullPolicy': 'Always',
                                 'env': env_k8s,
                                 'lifecycle': {
-                                }
+                                },
+                                'volumeMounts': volume_mounts
                             }
-                        ]
+                        ],
+                        'volumes': volumes_k8s
                     }
                 }
             }
@@ -294,7 +341,8 @@ class Kubernetes:
     @classmethod
     async def create_pod(cls, story: Stories, line: dict, image: str,
                          container_name: str, start_command: [] or str,
-                         shutdown_command: [] or str, env: dict):
+                         shutdown_command: [] or str, env: dict,
+                         volumes: Volumes):
         await cls.create_namespace_if_required(story, line)
         res = await cls.make_k8s_call(
             story.app,
@@ -307,6 +355,7 @@ class Kubernetes:
             return
 
         await cls.create_deployment(story, line, image, container_name,
-                                    start_command, shutdown_command, env)
+                                    start_command, shutdown_command, env,
+                                    volumes)
 
         await cls.create_service(story, line, container_name)
