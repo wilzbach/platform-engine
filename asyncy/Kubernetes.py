@@ -114,7 +114,7 @@ class Kubernetes:
                 'accessModes': 'ReadWriteOnce',
                 'resources': {
                     'requests': {
-                        'storage': '100Mi'
+                        'storage': '100Mi'  # For now, during beta.
                     }
                 }
             }
