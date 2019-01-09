@@ -99,18 +99,7 @@ class Kubernetes:
 
     @classmethod
     async def remove_volume(cls, story, line, name):
-        app_id = story.app.app_id
-        res = await cls.make_k8s_call(
-            story.app,
-            f'/api/v1/namespaces/{app_id}/persistentvolumeclaims/{name}'
-            f'?PropagationPolicy=Background&gracePeriodSeconds=3',
-            method='delete')
-
-        if res.code == 404:  # TODO: test
-            return
-
-        cls.raise_if_not_2xx(res, story, line)
-        story.logger.info(f'Kubernetes volume {name} deleted')
+        await cls._delete_resource(story.app, 'persistentvolumeclaims', name)
 
     @classmethod
     async def _does_volume_exist(cls, story, line, volume_name):
@@ -180,7 +169,8 @@ class Kubernetes:
     def _get_api_path_prefix(cls, resource):
         if resource == 'deployments':
             return '/apis/apps/v1/namespaces'
-        elif resource == 'services':
+        elif resource == 'services' or \
+                resource == 'persistentvolumeclaims':
             return '/api/v1/namespaces'
         else:
             raise Exception(f'Unsupported resource type {resource}')
@@ -228,7 +218,7 @@ class Kubernetes:
         # Wait until the resource has actually been killed.
         while True:
             res = await cls.make_k8s_call(
-                app, f'/api/v1/{resource}/{app.app_id}/{resource}/{name}')
+                app, f'{prefix}/{app.app_id}/{resource}/{name}')
 
             if res.code == 404:
                 break
