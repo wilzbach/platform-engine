@@ -224,11 +224,9 @@ async def test_app_destroy(patch, app, async_mock):
         'bar': {}
     }
     app.entrypoint = ['foo', 'bar']
-    patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(app, 'unsubscribe_all', new=async_mock())
     patch.object(app, 'clear_subscriptions_synapse', new=async_mock())
     await app.destroy()
 
     app.unsubscribe_all.mock.assert_called()
     app.clear_subscriptions_synapse.mock.assert_called()
-    Kubernetes.clean_namespace.mock.assert_called()
