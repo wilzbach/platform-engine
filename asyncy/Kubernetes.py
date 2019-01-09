@@ -98,8 +98,11 @@ class Kubernetes:
             f'?PropagationPolicy=Background&gracePeriodSeconds=3',
             method='delete')
 
+        if res.code == 404:  # TODO: test
+            return
+
         cls.raise_if_not_2xx(res, story, line)
-        story.logger.info(f'k8s volume {name} deleted')
+        story.logger.info(f'Kubernetes volume {name} deleted')
 
     @classmethod
     async def _does_volume_exist(cls, story, line, volume_name):
