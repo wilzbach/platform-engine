@@ -56,6 +56,8 @@ class Containers:
                 if not persist:
                     await cls.remove_volume(story, line, vol_name)
 
+                await cls.create_volume(story, line, vol_name)
+
                 volumes.append(Volume(persist=persist, name=vol_name,
                                       mount_path=target))
 
