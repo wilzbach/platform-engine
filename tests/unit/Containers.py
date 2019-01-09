@@ -170,9 +170,10 @@ async def test_start_no_command(patch, story, async_mock, run_command):
 
     await Containers.start(story, line)
     Kubernetes.create_pod.mock.assert_called_with(
-        story, line, 'alpine', 'asyncy-alpine',
-        run_command or ['tail', '-f', '/dev/null'], None,
-        {'alpine_only': True, 'global': 'yes'})
+        story=story, line=line, image='alpine', container_name='asyncy-alpine',
+        start_command=run_command or ['tail', '-f', '/dev/null'],
+        shutdown_command=None,
+        env={'alpine_only': True, 'global': 'yes'}, volumes=[])
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
