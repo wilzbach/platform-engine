@@ -5,7 +5,7 @@ import ssl
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
-from .Exceptions import K8sError
+from .Exceptions import AsyncyError, K8sError
 from .Stories import Stories
 from .constants.LineConstants import LineConstants
 from .entities.Volume import Volume, Volumes
@@ -35,10 +35,10 @@ class Kubernetes:
                                       f'/api/v1/namespaces/{story.app.app_id}')
 
         if res.code == 200:
-            story.logger.debug(f'k8s namespace exists')
+            story.logger.debug(f'Kubernetes namespace exists')
             return
 
-        story.logger.debug(f'k8s namespace does not exist')
+        story.logger.debug(f'Kubernetes namespace does not exist')
         payload = {
             'apiVersion': 'v1',
             'kind': 'Namespace',
@@ -51,7 +51,7 @@ class Kubernetes:
                                       payload=payload)
 
         cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(f'k8s namespace created')
+        story.logger.debug(f'Kubernetes namespace created')
 
     @classmethod
     def new_ssl_context(cls):
@@ -102,16 +102,38 @@ class Kubernetes:
         story.logger.info(f'k8s volume {name} deleted')
 
     @classmethod
+    async def _does_volume_exist(cls, story, line, volume_name):
+        path = f'/api/v1/namespaces/{story.app.app_id}' \
+               f'/persistentvolumeclaims/{volume_name}'
+        res = await cls.make_k8s_call(story.app, path)
+        if res.code == 404:
+            return False
+        elif res.code == 200:
+            return True
+
+        raise AsyncyError(
+            message=f'Kubernetes volume API returned an '
+                    f'unhandled error code: {res.code}',
+            story=story, line=line)
+
+    @classmethod
     async def create_volume(cls, story, line, name):
+        await cls.create_namespace_if_required(story, line)
+
+        if await cls._does_volume_exist(story, line, name):
+            story.logger.debug(f'Kubernetes volume {name} already exists')
+            return
+
         path = f'/api/v1/namespaces/{story.app.app_id}/persistentvolumeclaims'
         payload = {
             'apiVersion': 'v1',
             'kind': 'PersistentVolumeClaim',
             'metadata': {
                 'name': name,
+                'namespace': story.app.app_id,
             },
             'spec': {
-                'accessModes': 'ReadWriteOnce',
+                'accessModes': ['ReadWriteOnce'],
                 'resources': {
                     'requests': {
                         'storage': '100Mi'  # For now, during beta.
@@ -122,7 +144,7 @@ class Kubernetes:
 
         res = await cls.make_k8s_call(story.app, path, payload)
         cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(f'k8s volume {name} created')
+        story.logger.debug(f'Created a Kubernetes volume - {name}')
 
     @classmethod
     async def clean_namespace(cls, app):
