@@ -100,18 +100,19 @@ def test_format_command(logger, app, echo_service, echo_line):
     assert ['echo', '{"msg":"foo"}'] == cmd
 
 
-def test_format_volume_name(patch, story, line):
-    patch.object(Containers, 'is_service_reusable', return_value=True)
-    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
-        'asyncy--alpine-1'
+@mark.parametrize('reusable', [True, False])
+def test_hash_volume_name(patch, story, line, reusable):
+    line['ln'] = '1'
+    patch.object(Containers, 'is_service_reusable', return_value=reusable)
+    name = 'my_volume'
+    service = 'foo'
+    key = name + '-' + service
+    if not reusable:
+        key = f'{key}-{line["ln"]}'
 
-
-def test_format_volume_name_not_reusable(patch, story, line):
-    patch.object(Containers, 'is_service_reusable', return_value=False)
-    patch.object(Containers, 'hash_service_name_and_story_line',
-                 return_value='hash')
-    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
-        'asyncy--alpine-1-hash'
+    expected = f'{name}-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
+    assert Containers.hash_volume_name(story, line, service, name) == \
+        expected
 
 
 def test_service_name_and_story_line(patch, story):
