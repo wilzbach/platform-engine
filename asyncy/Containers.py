@@ -24,10 +24,6 @@ class Containers:
         await Kubernetes.clean_namespace(story.app)
 
     @classmethod
-    async def create_volume(cls, story, line, name):
-        await Kubernetes.create_volume(story, line, name)
-
-    @classmethod
     async def create_and_start(cls, story, line, service, container_name):
         # Note: 'image' is inserted by asyncy.Apps, and is not a part of the
         # OMG spec.
@@ -53,10 +49,6 @@ class Containers:
                 vol_name = cls.hash_volume_name(story, line, service, name)
                 persist = data.get('persist', False)
                 target = data.get('target', False)
-                if not persist:
-                    await cls.remove_volume(story, line, vol_name)
-
-                await cls.create_volume(story, line, vol_name)
 
                 volumes.append(Volume(persist=persist, name=vol_name,
                                       mount_path=target))
@@ -80,6 +72,10 @@ class Containers:
     @classmethod
     async def clean_app(cls, app):
         await Kubernetes.clean_namespace(app)
+
+    @classmethod
+    async def init(cls, app):
+        await Kubernetes.create_namespace(app)
 
     @classmethod
     def is_service_reusable(cls, story, line):

@@ -76,22 +76,22 @@ def test_raise_if_not_2xx(story, line):
 
 
 @mark.asyncio
-async def test_create_namespace_if_required_existing(patch, story,
-                                                     line, async_mock):
+async def test_create_namespace_if_required_existing(patch, app,
+                                                     async_mock):
     res = MagicMock()
     res.code = 200
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
 
-    story.app.app_id = 'my_app'
-    await Kubernetes.create_namespace_if_required(story, line)
+    app.app_id = 'my_app'
+    await Kubernetes.create_namespace(app)
 
     Kubernetes.make_k8s_call.mock.assert_called_once()
     Kubernetes.make_k8s_call.mock.assert_called_with(
-        story.app, '/api/v1/namespaces/my_app')
+        app, '/api/v1/namespaces/my_app')
 
 
 @mark.asyncio
-async def test_create_namespace_if_required(patch, story,
+async def test_create_namespace_if_required(patch, app,
                                             line, async_mock):
     res_check = MagicMock()
     res_check.code = 400
@@ -99,12 +99,11 @@ async def test_create_namespace_if_required(patch, story,
     res_create = MagicMock()
     res_create.code = 200
 
-    story.app.app_id = 'my_app'
+    app.app_id = 'my_app'
 
     patch.object(Kubernetes, 'make_k8s_call',
                  new=async_mock(side_effect=[res_check, res_create]))
-    patch.object(Kubernetes, 'raise_if_not_2xx')
-    await Kubernetes.create_namespace_if_required(story, line)
+    await Kubernetes.create_namespace(app)
 
     expected_payload = {
         'apiVersion': 'v1',
@@ -115,11 +114,9 @@ async def test_create_namespace_if_required(patch, story,
     }
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
-        mock.call(story.app, '/api/v1/namespaces/my_app'),
-        mock.call(story.app, '/api/v1/namespaces', payload=expected_payload)
+        mock.call(app, '/api/v1/namespaces/my_app'),
+        mock.call(app, '/api/v1/namespaces', payload=expected_payload)
     ]
-
-    assert Kubernetes.raise_if_not_2xx.called_with(res_create, story, line)
 
 
 def test_get_hostname(story, line):
@@ -225,7 +222,6 @@ def test_new_ssl_context():
 async def test_create_pod(patch, async_mock, story, line, res_code):
     res = MagicMock()
     res.code = res_code
-    patch.object(Kubernetes, 'create_namespace_if_required', new=async_mock())
     patch.object(Kubernetes, 'create_deployment', new=async_mock())
     patch.object(Kubernetes, 'create_service', new=async_mock())
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
@@ -243,7 +239,6 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app,
         '/apis/apps/v1/namespaces/my_app/deployments/asyncy--alpine-1')
-    Kubernetes.create_namespace_if_required.mock.assert_called_once()
 
     if res_code == 200:
         assert Kubernetes.create_deployment.mock.called is False

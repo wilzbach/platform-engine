@@ -2,6 +2,8 @@
 import asyncio
 import json
 import ssl
+import time
+import typing
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
@@ -30,28 +32,30 @@ class Kubernetes:
                                f'error={res.error}')
 
     @classmethod
-    async def create_namespace_if_required(cls, story, line):
-        res = await cls.make_k8s_call(story.app,
-                                      f'/api/v1/namespaces/{story.app.app_id}')
+    async def create_namespace(cls, app):
+        res = await cls.make_k8s_call(app,
+                                      f'/api/v1/namespaces/{app.app_id}')
 
         if res.code == 200:
-            story.logger.debug(f'Kubernetes namespace exists')
+            app.logger.debug(f'Kubernetes namespace exists')
             return
 
-        story.logger.debug(f'Kubernetes namespace does not exist')
+        app.logger.debug(f'Kubernetes namespace does not exist')
         payload = {
             'apiVersion': 'v1',
             'kind': 'Namespace',
             'metadata': {
-                'name': story.app.app_id
+                'name': app.app_id
             }
         }
 
-        res = await cls.make_k8s_call(story.app, '/api/v1/namespaces',
+        res = await cls.make_k8s_call(app, '/api/v1/namespaces',
                                       payload=payload)
 
-        cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(f'Kubernetes namespace created')
+        if not cls.is_2xx(res):
+            raise K8sError('Failed to create namespace!')
+
+        app.logger.debug(f'Kubernetes namespace created')
 
     @classmethod
     def new_ssl_context(cls):
@@ -77,6 +81,10 @@ class Kubernetes:
             },
             'method': method.upper()
         }
+
+        if method.lower() == 'patch':
+            kwargs['headers']['Content-Type'] = \
+                'application/merge-patch+json; charset=utf-8'
 
         if payload is not None:
             kwargs['body'] = json.dumps(payload)
@@ -120,11 +128,26 @@ class Kubernetes:
             story=story, line=line)
 
     @classmethod
-    async def create_volume(cls, story, line, name):
-        await cls.create_namespace_if_required(story, line)
+    async def _update_volume_label(cls, story, line, app, name):
+        path = f'/api/v1/namespaces/{app.app_id}/persistentvolumeclaims/{name}'
+        payload = {
+            'metadata': {
+                'labels': {
+                    'last_referenced_on': f'{int(time.time())}'
+                }
+            }
+        }
+        res = await cls.make_k8s_call(app, path, payload, method='patch')
+        cls.raise_if_not_2xx(res, story, line)
+        story.logger.debug(
+            f'Updated reference time for volume {name}')
 
+    @classmethod
+    async def create_volume(cls, story, line, name, persist):
         if await cls._does_volume_exist(story, line, name):
             story.logger.debug(f'Kubernetes volume {name} already exists')
+            # Update the last_referenced_on label
+            await cls._update_volume_label(story, line, story.app, name)
             return
 
         path = f'/api/v1/namespaces/{story.app.app_id}/persistentvolumeclaims'
@@ -134,6 +157,10 @@ class Kubernetes:
             'metadata': {
                 'name': name,
                 'namespace': story.app.app_id,
+                'labels': {
+                    'last_referenced_on': f'{int(time.time())}',
+                    'omg_persist': f'{persist}'
+                }
             },
             'spec': {
                 'accessModes': ['ReadWriteOnce'],
@@ -150,17 +177,46 @@ class Kubernetes:
         story.logger.debug(f'Created a Kubernetes volume - {name}')
 
     @classmethod
-    async def clean_namespace(cls, app):
-        # TODO: cannot do this since the persistent volumes will also be destroyed!
-        app.logger.debug(f'Clearing namespace')
+    def _get_api_path_prefix(cls, resource):
+        if resource == 'deployments':
+            return '/apis/apps/v1/namespaces'
+        elif resource == 'services':
+            return '/api/v1/namespaces'
+        else:
+            raise Exception(f'Unsupported resource type {resource}')
 
+    @classmethod
+    async def _list_resource_names(cls, app, resource) -> typing.List[str]:
+        prefix = cls._get_api_path_prefix(resource)
+        res = await cls.make_k8s_call(
+            app, f'{prefix}/{app.app_id}/{resource}'
+                 f'?includeUninitialized=true')
+
+        body = json.loads(res.body, encoding='utf-8')
+        out = []
+
+        for i in body['items']:
+            out.append(i['metadata']['name'])
+
+        return out
+
+    @classmethod
+    async def _delete_resource(cls, app, resource, name):
+        """
+        Deletes a resource immediately.
+        :param app: An instance of App
+        :param resource: "services"/"deployments"/etc.
+        :param name: The resource name
+        """
+        prefix = cls._get_api_path_prefix(resource)
         res = await cls.make_k8s_call(
             app,
-            f'/api/v1/namespaces/{app.app_id}?PropagationPolicy=Background'
-            f'&gracePeriodSeconds=3',
+            f'{prefix}/{app.app_id}/{resource}/{name}'
+            f'?gracePeriodSeconds=0',
             method='delete')
 
         if res.code == 404:
+            app.logger.debug(f'Resource {resource}/{name} not found')
             return
 
         # Sometimes, the API will throw a 409, indicating that a
@@ -169,19 +225,36 @@ class Kubernetes:
         if res.code != 409:
             cls.raise_if_not_2xx(res, None, None)
 
-        # Wait until the namespace has actually been killed.
+        # Wait until the resource has actually been killed.
         while True:
-            res = await cls.make_k8s_call(app,
-                                          f'/api/v1/namespaces/{app.app_id}')
+            res = await cls.make_k8s_call(
+                app, f'/api/v1/{resource}/{app.app_id}/{resource}/{name}')
 
             if res.code == 404:
                 break
 
-            app.logger.debug(f'Namespace is still terminating...')
+            app.logger.debug(f'{resource}/{name} is still terminating...')
 
             await asyncio.sleep(0.7)
 
-        app.logger.debug(f'Cleared namespace successfully')
+        app.logger.debug(f'Deleted {resource}/{name} successfully!')
+
+    @classmethod
+    async def clean_namespace(cls, app):
+        app.logger.debug(f'Clearing namespace contents...')
+        # Things to delete:
+        # 1. Services
+        # 2. Deployments (should delete all pods internally too)
+        # 3. Volumes which are marked with persist as false
+
+        for i in await cls._list_resource_names(app, 'services'):
+            await cls._delete_resource(app, 'services', i)
+
+        for i in await cls._list_resource_names(app, 'deployments'):
+            await cls._delete_resource(app, 'deployments', i)
+
+        # Volumes are not deleted at this moment.
+        # See https://github.com/asyncy/platform-engine/issues/189
 
     @classmethod
     def get_hostname(cls, story, line, container_name):
@@ -281,6 +354,11 @@ class Kubernetes:
                 }
             })
 
+            if not vol.persist:
+                await cls.remove_volume(story, line, vol.name)
+
+            await cls.create_volume(story, line, vol.name, vol.persist)
+
         payload = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
@@ -368,7 +446,6 @@ class Kubernetes:
                          container_name: str, start_command: [] or str,
                          shutdown_command: [] or str, env: dict,
                          volumes: Volumes):
-        await cls.create_namespace_if_required(story, line)
         res = await cls.make_k8s_call(
             story.app,
             f'/apis/apps/v1/namespaces/{story.app.app_id}'

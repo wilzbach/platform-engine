@@ -92,13 +92,6 @@ async def test_prepare_for_deployment(patch, async_mock):
     Kubernetes.clean_namespace.mock.assert_called_with(story.app)
 
 
-@mark.asyncio
-async def test_create_volume(patch, async_mock, story, line):
-    patch.object(Kubernetes, 'create_volume', new=async_mock())
-    await Containers.create_volume(story, line, 'foo')
-    Kubernetes.create_volume.mock.assert_called_with(story, line, 'foo')
-
-
 def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
