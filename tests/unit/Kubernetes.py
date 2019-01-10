@@ -345,6 +345,57 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
             story, line, container_name)
 
 
+@mark.parametrize('persist', [True, False])
+@mark.parametrize('resource_exists', [True, False])
+@mark.asyncio
+async def test_create_volume(story, patch, async_mock,
+                             line, persist, resource_exists):
+    name = 'foo'
+    patch.object(Kubernetes, '_does_resource_exist',
+                 new=async_mock(return_value=resource_exists))
+    patch.object(Kubernetes, '_update_volume_label',
+                 new=async_mock())
+    patch.object(time, 'time', return_value=123)
+    res = MagicMock()
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
+    patch.object(Kubernetes, 'raise_if_not_2xx')
+
+    expected_path = f'/api/v1/namespaces/{story.app.app_id}' \
+                    f'/persistentvolumeclaims'
+
+    expected_payload = {
+        'apiVersion': 'v1',
+        'kind': 'PersistentVolumeClaim',
+        'metadata': {
+            'name': name,
+            'namespace': story.app.app_id,
+            'labels': {
+                'last_referenced_on': '123',
+                'omg_persist': f'{persist}'
+            }
+        },
+        'spec': {
+            'accessModes': ['ReadWriteOnce'],
+            'resources': {
+                'requests': {
+                    'storage': '100Mi'
+                }
+            }
+        }
+    }
+
+    await Kubernetes.create_volume(story, line, name, persist)
+    if resource_exists:
+        Kubernetes._update_volume_label.mock.assert_called_with(
+            story, line, story.app, name)
+        Kubernetes.make_k8s_call.mock.assert_not_called()
+    else:
+        Kubernetes._update_volume_label.mock.assert_not_called()
+        Kubernetes.make_k8s_call.mock.assert_called_with(
+            story.app, expected_path, expected_payload)
+        Kubernetes.raise_if_not_2xx.assert_called_with(res, story, line)
+
+
 @mark.asyncio
 async def test_update_volume_label(story, line, patch, async_mock):
     res = MagicMock()
