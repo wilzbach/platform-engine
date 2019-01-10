@@ -135,8 +135,10 @@ def test_service_name(patch):
 
 
 @mark.parametrize('run_command', [None, ['/bin/bash', 'sleep', '10000']])
+@mark.parametrize('with_volumes', [True, False])
 @mark.asyncio
-async def test_start_no_command(patch, story, async_mock, run_command):
+async def test_start_no_command(patch, story, async_mock,
+                                run_command, with_volumes):
     line = {
         LineConstants.service: 'alpine',
         LineConstants.command: 'echo',
@@ -166,6 +168,9 @@ async def test_start_no_command(patch, story, async_mock, run_command):
         }
     }
 
+    if not with_volumes:
+        del story.app.services['alpine'][ServiceConstants.config]['volumes']
+
     if run_command is not None:
         story.app.services['alpine'][ServiceConstants.config]['actions'][
             'echo'] = {'run': {'command': run_command}}
@@ -180,19 +185,23 @@ async def test_start_no_command(patch, story, async_mock, run_command):
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
+    expected_volumes = []
+    if with_volumes:
+        hash_db = Containers.hash_volume_name(story, line, 'alpine', 'db')
+        hash_tmp = Containers.hash_volume_name(story, line, 'alpine', 'tmp')
+        expected_volumes = [
+            Volume(persist=True, name=hash_db, mount_path='/db'),
+            Volume(persist=False, name=hash_tmp, mount_path='/tmp'),
+        ]
+
     await Containers.start(story, line)
 
-    hash_db = Containers.hash_volume_name(story, line, 'alpine', 'db')
-    hash_tmp = Containers.hash_volume_name(story, line, 'alpine', 'tmp')
     Kubernetes.create_pod.mock.assert_called_with(
         story=story, line=line, image='alpine', container_name='asyncy-alpine',
         start_command=run_command or ['tail', '-f', '/dev/null'],
         shutdown_command=None,
         env={'alpine_only': True, 'global': 'yes'},
-        volumes=[
-            Volume(persist=True, name=hash_db, mount_path='/db'),
-            Volume(persist=False, name=hash_tmp, mount_path='/tmp'),
-        ])
+        volumes=expected_volumes)
 
 
 @mark.asyncio
