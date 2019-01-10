@@ -235,6 +235,36 @@ async def test_remove_volume(patch, story, line, async_mock):
         story.app, 'persistentvolumeclaims', name)
 
 
+@mark.parametrize('resource', ['persistentvolumeclaims', 'deployments',
+                               'services', 'foo'])
+@mark.parametrize('res_code', [404, 200, 500])
+@mark.asyncio
+async def test_does_resource_exist(patch, story, line, resource,
+                                   async_mock, res_code):
+    resp = MagicMock()
+    resp.code = res_code
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(return_value=resp))
+
+    if res_code == 500 or resource == 'foo':
+        with pytest.raises(Exception):
+            await Kubernetes._does_resource_exist(
+                story, line, resource, 'name')
+        return
+
+    ret = await Kubernetes._does_resource_exist(
+        story, line, resource, 'name')
+
+    if res_code == 200:
+        assert ret is True
+    else:
+        assert ret is False
+
+    expected_path = Kubernetes._get_api_path_prefix(resource) \
+                    + f'/{story.app.app_id}/{resource}/name'
+    Kubernetes.make_k8s_call.mock.assert_called_with(story.app, expected_path)
+
+
 def test_new_ssl_context():
     assert isinstance(Kubernetes.new_ssl_context(), ssl.SSLContext)
 

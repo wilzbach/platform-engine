@@ -102,18 +102,20 @@ class Kubernetes:
         await cls._delete_resource(story.app, 'persistentvolumeclaims', name)
 
     @classmethod
-    async def _does_volume_exist(cls, story, line, volume_name):
-        path = f'/api/v1/namespaces/{story.app.app_id}' \
-               f'/persistentvolumeclaims/{volume_name}'
+    async def _does_resource_exist(cls, story, line, resource, name):
+        prefix = cls._get_api_path_prefix(resource)
+        path = f'{prefix}/{story.app.app_id}' \
+               f'/{resource}/{name}'
+
         res = await cls.make_k8s_call(story.app, path)
         if res.code == 404:
             return False
         elif res.code == 200:
             return True
 
-        raise AsyncyError(
-            message=f'Kubernetes volume API returned an '
-                    f'unhandled error code: {res.code}',
+        raise K8sError(
+            message=f'Failed to check if {resource}/{name} exists! '
+                    f'Kubernetes API returned {res.code}.',
             story=story, line=line)
 
     @classmethod
@@ -133,7 +135,8 @@ class Kubernetes:
 
     @classmethod
     async def create_volume(cls, story, line, name, persist):
-        if await cls._does_volume_exist(story, line, name):
+        if await cls._does_resource_exist(
+                story, line, 'persistentvolumeclaims', name):
             story.logger.debug(f'Kubernetes volume {name} already exists')
             # Update the last_referenced_on label
             await cls._update_volume_label(story, line, story.app, name)
