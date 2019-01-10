@@ -5,11 +5,10 @@ import ssl
 from unittest import mock
 from unittest.mock import MagicMock
 
-from asyncy.entities.Volume import Volume
-
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
+from asyncy.entities.Volume import Volume
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
@@ -260,8 +259,8 @@ async def test_does_resource_exist(patch, story, line, resource,
     else:
         assert ret is False
 
-    expected_path = Kubernetes._get_api_path_prefix(resource) \
-                    + f'/{story.app.app_id}/{resource}/name'
+    expected_path = Kubernetes._get_api_path_prefix(resource) + \
+        f'/{story.app.app_id}/{resource}/name'
     Kubernetes.make_k8s_call.mock.assert_called_with(story.app, expected_path)
 
 
