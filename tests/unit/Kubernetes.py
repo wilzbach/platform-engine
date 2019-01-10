@@ -126,6 +126,24 @@ async def test_create_namespace_if_required(patch, app,
     ]
 
 
+@mark.asyncio
+async def test_clean_namespace(patch, story, async_mock):
+    patch.object(Kubernetes, '_list_resource_names',
+                 new=async_mock(side_effect=[['service_1', 'service_2'],
+                                             ['depl_1', 'depl_2']]))
+
+    patch.object(Kubernetes, '_delete_resource', new=async_mock())
+
+    await Kubernetes.clean_namespace(story.app)
+
+    assert Kubernetes._delete_resource.mock.mock_calls == [
+        mock.call(story.app, 'services', 'service_1'),
+        mock.call(story.app, 'services', 'service_2'),
+        mock.call(story.app, 'deployments', 'depl_1'),
+        mock.call(story.app, 'deployments', 'depl_2')
+    ]
+
+
 def test_get_hostname(story, line):
     story.app.app_id = 'my_app'
     container_name = 'alpine'
