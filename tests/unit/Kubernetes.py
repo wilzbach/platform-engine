@@ -5,6 +5,8 @@ import ssl
 from unittest import mock
 from unittest.mock import MagicMock
 
+from asyncy.entities.Volume import Volume
+
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
@@ -259,6 +261,12 @@ async def test_create_deployment(patch, async_mock, story):
     start_command = ['/bin/bash', 'sleep', '10000']
     shutdown_command = ['wall', 'Shutdown']
 
+    volumes = [Volume(persist=False, name='tmp', mount_path='/tmp'),
+               Volume(persist=True, name='db', mount_path='/db')]
+
+    patch.object(Kubernetes, 'remove_volume', new=async_mock())
+    patch.object(Kubernetes, 'create_volume', new=async_mock())
+
     expected_payload = {
         'apiVersion': 'apps/v1',
         'kind': 'Deployment',
@@ -297,6 +305,30 @@ async def test_create_deployment(patch, async_mock, story):
                                         'command': shutdown_command
                                     }
                                 }
+                            },
+                            'volumeMounts': [
+                                {
+                                    'mountPath': volumes[0].mount_path,
+                                    'name': volumes[0].name
+                                },
+                                {
+                                    'mountPath': volumes[1].mount_path,
+                                    'name': volumes[1].name
+                                }
+                            ]
+                        }
+                    ],
+                    'volumes': [
+                        {
+                            'name': volumes[0].name,
+                            'persistentVolumeClaim': {
+                                'claimName': volumes[0].name
+                            }
+                        },
+                        {
+                            'name': volumes[1].name,
+                            'persistentVolumeClaim': {
+                                'claimName': volumes[1].name
                             }
                         }
                     ]
@@ -323,7 +355,16 @@ async def test_create_deployment(patch, async_mock, story):
 
     await Kubernetes.create_deployment(story, line, image, container_name,
                                        start_command, shutdown_command, env,
-                                       [])
+                                       volumes)
+
+    Kubernetes.remove_volume.mock.assert_called_once()
+    Kubernetes.remove_volume.mock.assert_called_with(
+        story, line, volumes[0].name)
+
+    assert Kubernetes.create_volume.mock.mock_calls == [
+        mock.call(story, line, volumes[0].name, volumes[0].persist),
+        mock.call(story, line, volumes[1].name, volumes[1].persist)
+    ]
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
         mock.call(story.app, expected_create_path, expected_payload),
