@@ -2,6 +2,7 @@
 import asyncio
 import json
 import ssl
+import time
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -342,6 +343,30 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
             story, line, image, container_name, start_command, None, env, [])
         Kubernetes.create_service.mock.assert_called_with(
             story, line, container_name)
+
+
+@mark.asyncio
+async def test_update_volume_label(story, line, patch, async_mock):
+    res = MagicMock()
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
+    patch.object(Kubernetes, 'raise_if_not_2xx')
+    patch.object(time, 'time', return_value=123)
+
+    payload = {
+        'metadata': {
+            'labels': {
+                'last_referenced_on': '123'
+            }
+        }
+    }
+
+    await Kubernetes._update_volume_label(story, line, story.app, 'db')
+
+    path = f'/api/v1/namespaces/{story.app.app_id}/persistentvolumeclaims/db'
+
+    Kubernetes.make_k8s_call.mock.assert_called_with(
+        story.app, path, payload, method='patch')
+    Kubernetes.raise_if_not_2xx.assert_called_with(res, story, line)
 
 
 @mark.asyncio
