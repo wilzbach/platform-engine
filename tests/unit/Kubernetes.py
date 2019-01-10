@@ -286,6 +286,27 @@ async def test_does_resource_exist(patch, story, line, resource,
     Kubernetes.make_k8s_call.mock.assert_called_with(story.app, expected_path)
 
 
+@mark.asyncio
+async def test_list_resource_names(story, patch, async_mock):
+    mock_res = MagicMock()
+    mock_res.body = json.dumps({
+        'items': [
+            {'metadata': {'name': 'hello'}},
+            {'metadata': {'name': 'world'}},
+        ]
+    })
+
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(return_value=mock_res))
+    patch.object(Kubernetes, '_get_api_path_prefix', return_value='prefix')
+    ret = await Kubernetes._list_resource_names(story.app, 'services')
+    Kubernetes.make_k8s_call.mock.assert_called_with(
+        story.app,
+        f'prefix/{story.app.app_id}/services?includeUninitialized=true')
+
+    assert ret == ['hello', 'world']
+
+
 def test_new_ssl_context():
     assert isinstance(Kubernetes.new_ssl_context(), ssl.SSLContext)
 
