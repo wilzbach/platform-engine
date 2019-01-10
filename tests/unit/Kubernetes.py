@@ -159,7 +159,7 @@ def _create_response(code: int, body: dict = None):
     return res
 
 
-@mark.parametrize('first_res', [200, 409])
+@mark.parametrize('first_res', [200, 409, 404])
 @mark.parametrize('resource', ['deployments', 'services',
                                'persistentvolumeclaims', 'unknown'])
 @mark.asyncio
@@ -180,6 +180,10 @@ async def test_delete_resource(patch, story, async_mock, first_res, resource):
         return
     else:
         await Kubernetes._delete_resource(story.app, resource, 'foo')
+
+    if first_res == 404:
+        assert Kubernetes.make_k8s_call.mock.call_count == 1
+        return
 
     prefix = Kubernetes._get_api_path_prefix(resource)
 
