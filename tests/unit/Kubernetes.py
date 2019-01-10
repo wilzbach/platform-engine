@@ -177,8 +177,9 @@ async def test_delete_resource(patch, story, async_mock, first_res, resource):
     ]
 
 
+@mark.parametrize('method', ['patch', 'post'])
 @mark.asyncio
-async def test_make_k8s_call(patch, story, async_mock):
+async def test_make_k8s_call(patch, story, async_mock, method):
     patch.object(HttpUtils, 'fetch_with_retry', new=async_mock())
 
     context = MagicMock()
@@ -205,11 +206,16 @@ async def test_make_k8s_call(patch, story, async_mock):
             'Authorization': 'bearer my_token',
             'Content-Type': 'application/json; charset=utf-8'
         },
-        'method': 'POST',
+        'method': method.upper(),
         'body': json.dumps(payload)
     }
 
-    assert await Kubernetes.make_k8s_call(story.app, path, payload) \
+    if method == 'patch':
+        expected_kwargs['headers']['Content-Type'] = \
+            'application/merge-patch+json; charset=utf-8'
+
+    assert await Kubernetes.make_k8s_call(story.app, path, payload,
+                                          method=method) \
         == HttpUtils.fetch_with_retry.mock.return_value
 
     HttpUtils.fetch_with_retry.mock.assert_called_with(
