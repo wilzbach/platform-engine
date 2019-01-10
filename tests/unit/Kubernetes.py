@@ -226,6 +226,15 @@ async def test_make_k8s_call(patch, story, async_mock, method):
     context.load_verify_locations.assert_called_with(cadata='this_is\nmy_cert')
 
 
+@mark.asyncio
+async def test_remove_volume(patch, story, line, async_mock):
+    name = 'foo'
+    patch.object(Kubernetes, '_delete_resource', new=async_mock())
+    await Kubernetes.remove_volume(story, line, name)
+    Kubernetes._delete_resource.mock.assert_called_with(
+        story.app, 'persistentvolumeclaims', name)
+
+
 def test_new_ssl_context():
     assert isinstance(Kubernetes.new_ssl_context(), ssl.SSLContext)
 
