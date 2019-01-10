@@ -176,6 +176,13 @@ async def test_start_no_command(patch, story, async_mock, run_command):
         env={'alpine_only': True, 'global': 'yes'}, volumes=[])
 
 
+@mark.asyncio
+async def test_init(story, patch, async_mock):
+    patch.object(Kubernetes, 'create_namespace', new=async_mock())
+    await Containers.init(story.app)
+    Kubernetes.create_namespace.mock.assert_called_with(story.app)
+
+
 def test_format_command_no_format(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
