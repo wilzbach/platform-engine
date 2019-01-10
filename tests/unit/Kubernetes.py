@@ -135,8 +135,10 @@ def _create_response(code: int, body: dict = None):
 
 
 @mark.parametrize('first_res', [200, 409])
+@mark.parametrize('resource', ['deployments', 'services',
+                               'persistentvolumeclaims', 'unknown'])
 @mark.asyncio
-async def test_clean_namespace(patch, story, async_mock, first_res):
+async def test_delete_resource(patch, story, async_mock, first_res, resource):
     story.app.app_id = 'my_app'
     api_responses = [
         _create_response(first_res),
@@ -147,27 +149,24 @@ async def test_clean_namespace(patch, story, async_mock, first_res):
     patch.object(Kubernetes, 'make_k8s_call',
                  new=async_mock(side_effect=api_responses))
     patch.object(asyncio, 'sleep', new=async_mock())
-    await Kubernetes.clean_namespace(story.app)
+    if resource == 'unknown':
+        with pytest.raises(Exception):
+            await Kubernetes._delete_resource(story.app, resource, 'foo')
+        return
+    else:
+        await Kubernetes._delete_resource(story.app, resource, 'foo')
+
+    prefix = Kubernetes._get_api_path_prefix(resource)
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
         mock.call(story.app,
-                  '/api/v1/namespaces/my_app?PropagationPolicy=Background'
-                  '&gracePeriodSeconds=3',
+                  f'{prefix}/my_app/{resource}/foo'
+                  f'?gracePeriodSeconds=0',
                   method='delete'),
-        mock.call(story.app, '/api/v1/namespaces/my_app'),
-        mock.call(story.app, '/api/v1/namespaces/my_app'),
-        mock.call(story.app, '/api/v1/namespaces/my_app'),
+        mock.call(story.app, f'{prefix}/my_app/{resource}/foo'),
+        mock.call(story.app, f'{prefix}/my_app/{resource}/foo'),
+        mock.call(story.app, f'{prefix}/my_app/{resource}/foo'),
     ]
-
-
-@mark.asyncio
-async def test_clean_namespace_already_deleted(patch, story, async_mock):
-    story.app.app_id = 'my_app'
-    patch.object(Kubernetes, 'make_k8s_call',
-                 new=async_mock(return_value=_create_response(404)))
-    await Kubernetes.clean_namespace(story.app)
-
-    assert len(Kubernetes.make_k8s_call.mock.mock_calls) == 1
 
 
 @mark.asyncio
