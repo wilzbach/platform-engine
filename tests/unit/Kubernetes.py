@@ -93,19 +93,25 @@ async def test_create_namespace_if_required_existing(patch, app,
 
 
 @mark.asyncio
+@mark.parametrize('create_result', [200, 500])
 async def test_create_namespace_if_required(patch, app,
-                                            line, async_mock):
+                                            line, async_mock, create_result):
     res_check = MagicMock()
     res_check.code = 400
 
     res_create = MagicMock()
-    res_create.code = 200
+    res_create.code = create_result
 
     app.app_id = 'my_app'
 
     patch.object(Kubernetes, 'make_k8s_call',
                  new=async_mock(side_effect=[res_check, res_create]))
-    await Kubernetes.create_namespace(app)
+    if create_result != 200:
+        with pytest.raises(K8sError):
+            await Kubernetes.create_namespace(app)
+        return
+    else:
+        await Kubernetes.create_namespace(app)
 
     expected_payload = {
         'apiVersion': 'v1',
