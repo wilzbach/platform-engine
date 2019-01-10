@@ -7,6 +7,7 @@ from asyncy.Exceptions import ContainerSpecNotRegisteredError, K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.entities.Volume import Volume
 from asyncy.processing import Story
 
 import pytest
@@ -138,7 +139,8 @@ def test_service_name(patch):
 async def test_start_no_command(patch, story, async_mock, run_command):
     line = {
         LineConstants.service: 'alpine',
-        LineConstants.command: 'echo'
+        LineConstants.command: 'echo',
+        'ln': '1'
     }
 
     patch.object(Kubernetes, 'create_pod', new=async_mock())
@@ -148,6 +150,16 @@ async def test_start_no_command(patch, story, async_mock, run_command):
             ServiceConstants.config: {
                 'actions': {
                     'echo': {
+                    }
+                },
+                'volumes': {
+                    'db': {
+                        'persist': True,
+                        'target': '/db'
+                    },
+                    'tmp': {
+                        'persist': False,
+                        'target': '/tmp'
                     }
                 }
             }
@@ -169,11 +181,18 @@ async def test_start_no_command(patch, story, async_mock, run_command):
                  return_value='asyncy-alpine')
 
     await Containers.start(story, line)
+
+    hash_db = Containers.hash_volume_name(story, line, 'alpine', 'db')
+    hash_tmp = Containers.hash_volume_name(story, line, 'alpine', 'tmp')
     Kubernetes.create_pod.mock.assert_called_with(
         story=story, line=line, image='alpine', container_name='asyncy-alpine',
         start_command=run_command or ['tail', '-f', '/dev/null'],
         shutdown_command=None,
-        env={'alpine_only': True, 'global': 'yes'}, volumes=[])
+        env={'alpine_only': True, 'global': 'yes'},
+        volumes=[
+            Volume(persist=True, name=hash_db, mount_path='/db'),
+            Volume(persist=False, name=hash_tmp, mount_path='/tmp'),
+        ])
 
 
 @mark.asyncio
