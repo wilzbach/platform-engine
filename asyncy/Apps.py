@@ -88,6 +88,7 @@ class Apps:
 
             await Containers.clean_app(app)
 
+            await Containers.init(app)
             await app.bootstrap()
 
             cls.apps[app_id] = app
@@ -174,7 +175,10 @@ class Apps:
                 cls.update_release_state(app.logger, app.config, app.app_id,
                                          app.version,
                                          ReleaseState.TERMINATING)
+
             await app.destroy()
+
+            await Containers.clean_app(app)
         except BaseException as e:
             if not silent:
                 raise e

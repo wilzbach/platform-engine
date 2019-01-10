@@ -8,6 +8,7 @@ from unittest import mock
 
 from asyncy.App import App
 from asyncy.Apps import Apps
+from asyncy.Containers import Containers
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
@@ -68,6 +69,7 @@ def test_listen_to_releases(patch, db, magic, config, logger):
 
 @mark.asyncio
 async def test_destroy_all(patch, async_mock, magic):
+    patch.object(Containers, 'clean_app', new=async_mock())
     app = magic()
     app.destroy = async_mock()
     Apps.apps = {'app_id': app}
@@ -75,6 +77,7 @@ async def test_destroy_all(patch, async_mock, magic):
     await Apps.destroy_all()
     app.destroy.mock.assert_called()
     assert Apps.apps['app_id'] is None
+    Containers.clean_app.mock.assert_called()
 
 
 @mark.asyncio
@@ -219,6 +222,7 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
                               async_mock, raise_exc, exc, maintenance):
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
+    patch.object(Containers, 'init', new=async_mock())
     patch.many(Apps, ['update_release_state', 'make_logger_for_app'])
     Apps.apps = {}
     services = magic()
@@ -246,6 +250,7 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
             Apps.make_logger_for_app.return_value,
             {'stories': True}, services, 'env')
         App.bootstrap.mock.assert_called()
+        Containers.init.mock.assert_called()
         if raise_exc:
             assert Apps.apps.get('app_id') is None
             Sentry.capture_exc.assert_called()

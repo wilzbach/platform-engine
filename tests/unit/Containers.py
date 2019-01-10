@@ -7,6 +7,7 @@ from asyncy.Exceptions import ContainerSpecNotRegisteredError, K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.entities.Volume import Volume
 from asyncy.processing import Story
 
 import pytest
@@ -92,13 +93,6 @@ async def test_prepare_for_deployment(patch, async_mock):
     Kubernetes.clean_namespace.mock.assert_called_with(story.app)
 
 
-@mark.asyncio
-async def test_create_volume(patch, async_mock, story, line):
-    patch.object(Kubernetes, 'create_volume', new=async_mock())
-    await Containers.create_volume(story, line, 'foo')
-    Kubernetes.create_volume.mock.assert_called_with(story, line, 'foo')
-
-
 def test_format_command(logger, app, echo_service, echo_line):
     story = Story.story(app, logger, 'echo.story')
     app.services = echo_service
@@ -107,18 +101,19 @@ def test_format_command(logger, app, echo_service, echo_line):
     assert ['echo', '{"msg":"foo"}'] == cmd
 
 
-def test_format_volume_name(patch, story, line):
-    patch.object(Containers, 'is_service_reusable', return_value=True)
-    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
-        'asyncy--alpine-1'
+@mark.parametrize('reusable', [True, False])
+def test_hash_volume_name(patch, story, line, reusable):
+    line['ln'] = '1'
+    patch.object(Containers, 'is_service_reusable', return_value=reusable)
+    name = 'my_volume'
+    service = 'foo'
+    key = name + '-' + service
+    if not reusable:
+        key = f'{key}-{line["ln"]}'
 
-
-def test_format_volume_name_not_reusable(patch, story, line):
-    patch.object(Containers, 'is_service_reusable', return_value=False)
-    patch.object(Containers, 'hash_service_name_and_story_line',
-                 return_value='hash')
-    assert Containers.format_volume_name(story, line, 'asyncy--alpine-1') == \
-        'asyncy--alpine-1-hash'
+    expected = f'{name}-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
+    assert Containers.hash_volume_name(story, line, service, name) == \
+        expected
 
 
 def test_service_name_and_story_line(patch, story):
@@ -140,11 +135,14 @@ def test_service_name(patch):
 
 
 @mark.parametrize('run_command', [None, ['/bin/bash', 'sleep', '10000']])
+@mark.parametrize('with_volumes', [True, False])
 @mark.asyncio
-async def test_start_no_command(patch, story, async_mock, run_command):
+async def test_start_no_command(patch, story, async_mock,
+                                run_command, with_volumes):
     line = {
         LineConstants.service: 'alpine',
-        LineConstants.command: 'echo'
+        LineConstants.command: 'echo',
+        'ln': '1'
     }
 
     patch.object(Kubernetes, 'create_pod', new=async_mock())
@@ -155,10 +153,23 @@ async def test_start_no_command(patch, story, async_mock, run_command):
                 'actions': {
                     'echo': {
                     }
+                },
+                'volumes': {
+                    'db': {
+                        'persist': True,
+                        'target': '/db'
+                    },
+                    'tmp': {
+                        'persist': False,
+                        'target': '/tmp'
+                    }
                 }
             }
         }
     }
+
+    if not with_volumes:
+        del story.app.services['alpine'][ServiceConstants.config]['volumes']
 
     if run_command is not None:
         story.app.services['alpine'][ServiceConstants.config]['actions'][
@@ -174,11 +185,30 @@ async def test_start_no_command(patch, story, async_mock, run_command):
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
+    expected_volumes = []
+    if with_volumes:
+        hash_db = Containers.hash_volume_name(story, line, 'alpine', 'db')
+        hash_tmp = Containers.hash_volume_name(story, line, 'alpine', 'tmp')
+        expected_volumes = [
+            Volume(persist=True, name=hash_db, mount_path='/db'),
+            Volume(persist=False, name=hash_tmp, mount_path='/tmp'),
+        ]
+
     await Containers.start(story, line)
+
     Kubernetes.create_pod.mock.assert_called_with(
-        story, line, 'alpine', 'asyncy-alpine',
-        run_command or ['tail', '-f', '/dev/null'], None,
-        {'alpine_only': True, 'global': 'yes'})
+        story=story, line=line, image='alpine', container_name='asyncy-alpine',
+        start_command=run_command or ['tail', '-f', '/dev/null'],
+        shutdown_command=None,
+        env={'alpine_only': True, 'global': 'yes'},
+        volumes=expected_volumes)
+
+
+@mark.asyncio
+async def test_init(story, patch, async_mock):
+    patch.object(Kubernetes, 'create_namespace', new=async_mock())
+    await Containers.init(story.app)
+    Kubernetes.create_namespace.mock.assert_called_with(story.app)
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):

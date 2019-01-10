@@ -141,4 +141,3 @@ class App:
         """
         await self.clear_subscriptions_synapse()
         await self.unsubscribe_all()
-        await Services.remove_all(self)
