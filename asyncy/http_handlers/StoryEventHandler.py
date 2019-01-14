@@ -16,6 +16,12 @@ CLOUD_EVENTS_FILE_KEY = '_ce_payload'
 
 
 class StoryEventHandler(BaseHandler):
+    # TODO: multipart checklist
+    # 1. Done - Accept multipart events
+    # 2. Done - Make multipart requests to services
+    # 3. Handle multipart responses from services
+    # 4. Support lookups in multipart responses
+    # 5. Write multipart response to the gateway (unsolved on paper for now)
 
     async def run_story(self, app_id, story_name, block, event_body):
         io_loop = tornado.ioloop.IOLoop.current()

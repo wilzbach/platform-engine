@@ -11,12 +11,14 @@ from asyncy.Types import StreamingService
 from asyncy.constants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
-from asyncy.processing.Services import Command, Event, Service, Services
+from asyncy.processing.Services import Command, Event, \
+    FileFormField, FormField, Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
 from pytest import mark
 
+from tornado.gen import coroutine
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 import ujson
@@ -340,6 +342,49 @@ async def test_services_execute_external_http(patch, story, async_mock):
         {'http': {}})
     assert ret == await Services.execute_http()
     Services.start_container.mock.assert_called()
+
+
+class Writer:
+    out = ''
+
+    @coroutine
+    def write(self, content_bytes):
+        assert isinstance(content_bytes, bytes)
+        self.out += content_bytes.decode()
+        return len(content_bytes)
+
+
+def test_multipart_producer():
+    w = Writer()
+    boundary = str(uuid.uuid4())
+    body = {
+        'simple_arg': FormField('simple_arg', 10),
+        'simple_arg2': FormField('simple_arg2', 'hello'),
+        'hello_file': FileFormField('f1', 'hello world'.encode(),
+                                    'hello.txt', 'text/plain')
+    }
+    list(Services._multipart_producer(body, boundary, w.write))
+    expected = (
+        f'--{boundary}\r\n'
+        'Content-Disposition: form-data; name="simple_arg"\r\n'
+        '\r\n'
+        '10'
+        '\r\n'
+        f'--{boundary}\r\n'
+        'Content-Disposition: form-data; name="simple_arg2"\r\n'
+        '\r\n'
+        'hello'
+        '\r\n'
+        f'--{boundary}\r\n'
+        'Content-Disposition: form-data; name="f1"; filename="hello.txt"\r\n'
+        'Content-Type: text/plain\r\n'
+        '\r\n'
+        'hello world'
+        '\r\n'
+        f'--{boundary}--\r\n'
+    )
+
+    assert w.out == expected
 
 
 @mark.asyncio

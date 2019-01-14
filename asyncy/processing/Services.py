@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from functools import partial
 import json
 import urllib
 import uuid
 from collections import deque, namedtuple
 from urllib import parse
 
+from tornado.gen import coroutine
 from tornado.httpclient import AsyncHTTPClient
 
 import ujson
@@ -26,6 +28,10 @@ InternalService = namedtuple('InternalService', ['commands'])
 Service = namedtuple('Service', ['name'])
 Command = namedtuple('Command', ['name'])
 Event = namedtuple('Event', ['name'])
+
+FormField = namedtuple('FormField', ['name', 'body'])
+FileFormField = namedtuple('FileFormField',
+                           ['name', 'body', 'filename', 'content_type'])
 
 
 class Services:
@@ -206,6 +212,60 @@ class Services:
         # HTTP hack
 
     @classmethod
+    def _fill_http_req_body(cls, http_res_kwargs, content_type, body):
+        if content_type.startswith('application/json'):
+            http_res_kwargs['body'] = json.dumps(body)
+            http_res_kwargs['headers'] = {
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        elif content_type.startswith('multipart/form-data'):
+            boundary = uuid.uuid4().hex
+            headers = {
+                'Content-Type': f'multipart/form-data; boundary={boundary}'
+            }
+            producer = partial(cls._multipart_producer, body, boundary)
+            http_res_kwargs['headers'] = headers
+            http_res_kwargs['body_producer'] = producer
+
+    @classmethod
+    @coroutine
+    def _multipart_producer(cls, body, boundary, write):
+        """
+        Writes files as well as regular form fields.
+
+        Inspired directly from here:
+        https://github.com/tornadoweb/tornado/blob/master/demos/file_upload/file_uploader.py
+        """
+
+        for _, field in body.items():
+            assert isinstance(field, FormField) \
+                or isinstance(field, FileFormField)
+
+            buf = f'--{boundary}\r\n' \
+                  + f'Content-Disposition: form-data; '
+
+            if isinstance(field, FileFormField):
+                buf += f'name="{field.name}"; filename="{field.filename}"\r\n'
+                buf += f'Content-Type: {field.content_type}\r\n'
+            else:
+                buf += f'name="{field.name}"\r\n'
+
+            buf += f'\r\n'
+
+            yield write(buf.encode())
+
+            if isinstance(field.body, bytes):
+                yield write(field.body)
+            elif not isinstance(field.body, str):
+                yield write(f'{field.body}'.encode())
+            else:
+                yield write(field.body.encode())
+
+            yield write(b'\r\n')
+
+        yield write(b'--%s--\r\n' % (boundary.encode(),))
+
+    @classmethod
     async def execute_http(cls, story, line, chain, command_conf):
         assert isinstance(chain, deque)
         assert isinstance(chain[0], Service)
@@ -215,29 +275,44 @@ class Services:
         query_params = {}
         path_params = {}
 
+        form_fields_count = 0
+        all_fields_count = 0
+
         for arg in args:
             value = story.argument_by_name(line, arg)
             location = args[arg].get('in', 'requestBody')
+            all_fields_count += 1
             if location == 'query':
                 query_params[arg] = value
             elif location == 'path':
                 path_params[arg] = value
             elif location == 'requestBody':
                 body[arg] = value
+            elif location == 'formBody':
+                # TODO: create fileformfield if the resolved value is a file
+                body[arg] = FormField(arg, value)
+                form_fields_count += 1
             else:
                 raise AsyncyError(f'Invalid location for argument "{arg}" '
-                                  f'specified: {location}')
+                                  f'specified: {location}',
+                                  story=story, line=line)
+
+        if form_fields_count > 0 and form_fields_count != all_fields_count:
+            raise AsyncyError(f'Mixed locations are not permitted. '
+                              f'Found {all_fields_count} fields, of which '
+                              f'{form_fields_count} were in the form body',
+                              story=story, line=line)
 
         method = command_conf['http'].get('method', 'post')
         kwargs = {
             'method': method.upper()
         }
 
+        content_type = command_conf['http'] \
+            .get('contentType', 'application/json')
+
         if method.lower() == 'post':
-            kwargs['body'] = json.dumps(body)
-            kwargs['headers'] = {
-                'Content-Type': 'application/json; charset=utf-8'
-            }
+            cls._fill_http_req_body(kwargs, content_type, body)
         elif len(body) > 0:
             raise AsyncyError(
                 message=f'Parameters found in the request body, '
