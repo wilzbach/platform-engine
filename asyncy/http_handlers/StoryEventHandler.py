@@ -2,6 +2,7 @@
 import time
 
 import tornado
+from tornado.httputil import HTTPServerRequest
 
 import ujson
 
@@ -10,6 +11,8 @@ from .. import Metrics
 from ..Apps import Apps
 from ..constants import ContextConstants
 from ..processing import Story
+
+CLOUD_EVENTS_FILE_KEY = '_ce_payload'
 
 
 class StoryEventHandler(BaseHandler):
@@ -36,7 +39,7 @@ class StoryEventHandler(BaseHandler):
         app_id = self.get_argument('app')
 
         try:
-            event_body = ujson.loads(self.request.body)
+            event_body = self.get_ce_event_payload()
             self.logger.info(f'Running story for {app_id}: '
                              f'{story_name} @ {block} for '
                              f'event {event_body}')
@@ -50,3 +53,24 @@ class StoryEventHandler(BaseHandler):
                 app_id=app_id,
                 story_name=story_name
             ).observe(time.time() - start)
+
+    def get_req(self) -> HTTPServerRequest:
+        """
+        Wrapper method only to provide type hint to the IDE.
+        """
+        return self.request
+
+    def get_ce_event_payload(self):
+        ct = self.get_req().headers.get('Content-Type')
+        assert isinstance(ct, str)
+        if ct.startswith('application/json'):
+            return ujson.loads(self.request.body)
+        elif ct.startswith('multipart/form-data'):
+            file = self.get_req().files.get(CLOUD_EVENTS_FILE_KEY)
+            assert file is not None  # If not there, then we need to raise.
+            assert len(file) == 1  # There can be only one payload.
+            assert file[0].content_type == 'application/json'
+            return ujson.loads(file[0].body.decode('utf-8'))
+        else:
+            raise Exception(f'Unsupported Content-Type ({ct}) '
+                            f'for CloudEvents payload!')
