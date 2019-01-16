@@ -447,6 +447,12 @@ async def test_start_container_http(story):
 async def test_execute_inline(patch, story, command):
     chain = deque([Service('http'), Event('server'), Command(command)])
     req = MagicMock()
+    req._finished = False
+
+    def is_finished():
+        return req._finished
+
+    req.is_finished = is_finished
     io_loop = MagicMock()
     story.context = {
         ContextConstants.server_request: req,
