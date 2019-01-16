@@ -10,6 +10,7 @@ from .BaseHandler import BaseHandler
 from .. import Metrics
 from ..Apps import Apps
 from ..constants import ContextConstants
+from ..entities.Multipart import FileFormField
 from ..processing import Story
 
 CLOUD_EVENTS_FILE_KEY = '_ce_payload'
@@ -21,7 +22,7 @@ class StoryEventHandler(BaseHandler):
     # 2. Done - Make multipart requests to services
     # 3. NO - Handle multipart responses from services
     # 4. NO - Support lookups in multipart responses
-    # 5. Write multipart response to the gateway (unsolved on paper for now)
+    # 5. HACK - Write binary response to the gateway
 
     async def run_story(self, app_id, story_name, block, event_body):
         io_loop = tornado.ioloop.IOLoop.current()
@@ -32,6 +33,16 @@ class StoryEventHandler(BaseHandler):
         }
 
         app = Apps.get(app_id)
+
+        for key in self.get_req().files.keys():
+            if key == CLOUD_EVENTS_FILE_KEY:
+                continue
+
+            tf = self.get_req().files[key][0]
+            f = FileFormField(name=key, body=tf['body'],
+                              filename=tf['filename'],
+                              content_type=tf['content_type'])
+            event_body['data'][key] = f
 
         await Story.run(app, app.logger,
                         story_name=story_name,
@@ -50,8 +61,10 @@ class StoryEventHandler(BaseHandler):
                              f'{story_name} @ {block} for '
                              f'event {event_body}')
             await self.run_story(app_id, story_name, block, event_body)
-            self.set_status(200)
-            self.finish()
+
+            if not self._finished:
+                self.set_status(200)
+                self.finish()
         except BaseException as e:
             self.handle_story_exc(app_id, story_name, e)
         finally:

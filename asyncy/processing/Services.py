@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from functools import partial
 import json
 import urllib
 import uuid
 from collections import deque, namedtuple
+from functools import partial
 from urllib import parse
 
 from tornado.gen import coroutine
@@ -18,6 +18,7 @@ from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.ServiceConstants import ServiceConstants
+from ..entities.Multipart import FileFormField, FormField
 from ..utils import Dict
 from ..utils.HttpUtils import HttpUtils
 
@@ -28,10 +29,6 @@ InternalService = namedtuple('InternalService', ['commands'])
 Service = namedtuple('Service', ['name'])
 Command = namedtuple('Command', ['name'])
 Event = namedtuple('Event', ['name'])
-
-FormField = namedtuple('FormField', ['name', 'body'])
-FileFormField = namedtuple('FileFormField',
-                           ['name', 'body', 'filename', 'content_type'])
 
 
 class Services:
@@ -202,6 +199,23 @@ class Services:
             arg_val = story.argument_by_name(line, arg)
             body['data'][arg] = arg_val
 
+        # BEGIN hack for writing a binary response to the gateway
+        # How we write binary response to the gateway right now:
+        # 1. If the method is command is write,
+        # and the content is an instance of bytes, write it directly
+        # 2. Set the content-type to "application/octet-stream"
+        # 3. Dump the bytes directly in the response
+        # 4. TODO: DO NOT allow further operations on this service
+        if chain[0].name == 'http' and command.name == 'write' \
+                and isinstance(body['data']['content'], bytes):
+            req = story.context[ContextConstants.server_request]
+            req.add_header(name='Content-Type',
+                           value='application/octet-stream')
+            req.write(body['data']['content'])
+            return
+
+        # END hack for writing a binary response to the gateway
+
         req = story.context[ContextConstants.server_request]
         req.write(ujson.dumps(body) + '\n')
 
@@ -276,30 +290,35 @@ class Services:
         path_params = {}
 
         form_fields_count = 0
-        all_fields_count = 0
+        request_body_fields_count = 0
 
         for arg in args:
             value = story.argument_by_name(line, arg)
             location = args[arg].get('in', 'requestBody')
-            all_fields_count += 1
             if location == 'query':
                 query_params[arg] = value
             elif location == 'path':
                 path_params[arg] = value
             elif location == 'requestBody':
                 body[arg] = value
+                request_body_fields_count += 1
             elif location == 'formBody':
-                # TODO: create fileformfield if the resolved value is a file
-                body[arg] = FormField(arg, value)
+                # Created in StoryEventHandler.
+                if isinstance(value, FileFormField):
+                    body[arg] = FileFormField(arg, value.body, value.filename,
+                                              value.content_type)
+                else:
+                    body[arg] = FormField(arg, value)
                 form_fields_count += 1
             else:
                 raise AsyncyError(f'Invalid location for argument "{arg}" '
                                   f'specified: {location}',
                                   story=story, line=line)
 
-        if form_fields_count > 0 and form_fields_count != all_fields_count:
+        if form_fields_count > 0 and request_body_fields_count > 0:
             raise AsyncyError(f'Mixed locations are not permitted. '
-                              f'Found {all_fields_count} fields, of which '
+                              f'Found {request_body_fields_count} fields, '
+                              f'of which '
                               f'{form_fields_count} were in the form body',
                               story=story, line=line)
 

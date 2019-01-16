@@ -11,8 +11,9 @@ from asyncy.Types import StreamingService
 from asyncy.constants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.entities.Multipart import FileFormField, FormField
 from asyncy.processing.Services import Command, Event, \
-    FileFormField, FormField, Service, Services
+    Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
