@@ -18,6 +18,9 @@ from tornado import ioloop
 async def test_post(patch, logger, magic, async_mock, throw_exc):
     handler = StoryEventHandler(magic(), magic(), logger=logger)
     handler.request.body = '{}'
+    handler.request.headers = {
+        'Content-Type': 'application/json'
+    }
     handler.logger = magic()
     patch.object(handler, 'get_argument',
                  side_effect=['hello.story', '1', 'app_id'])
