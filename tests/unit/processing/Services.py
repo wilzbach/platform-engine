@@ -443,11 +443,12 @@ async def test_start_container_http(story):
 
 
 @mark.parametrize('command', ['write', 'finish'])
+@mark.parametrize('simulate_finished', [True, False])
 @mark.asyncio
-async def test_execute_inline(patch, story, command):
+async def test_execute_inline(patch, story, command, simulate_finished):
     chain = deque([Service('http'), Event('server'), Command(command)])
     req = MagicMock()
-    req._finished = False
+    req._finished = simulate_finished
 
     def is_finished():
         return req._finished
@@ -480,7 +481,12 @@ async def test_execute_inline(patch, story, command):
 
     line = {}
 
-    await Services.execute_inline(story, line, chain, command_conf)
+    if simulate_finished:
+        with pytest.raises(AsyncyError):
+            await Services.execute_inline(story, line, chain, command_conf)
+        return
+    else:
+        await Services.execute_inline(story, line, chain, command_conf)
 
     req.write.assert_called_with(ujson.dumps(expected_body) + '\n')
     if command == 'finish':
