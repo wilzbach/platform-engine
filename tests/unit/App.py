@@ -122,7 +122,8 @@ def test_app_init(magic, config, logger, env):
             if not isinstance(v, dict):
                 expected_secrets[k.lower()] = v
 
-    app = App('app_id', 'app_dns', logger, config, logger,
+    version = 100
+    app = App('app_id', 'app_dns', version, config, logger,
               stories, services, env)
     assert app.app_id == 'app_id'
     assert app.app_dns == 'app_dns'
@@ -131,6 +132,8 @@ def test_app_init(magic, config, logger, env):
     assert app.stories == stories['stories']
     assert app.services == services
     assert app.environment == env
+    assert app.app_context['hostname'] == f'{app.app_dns}.asyncyapp.com'
+    assert app.app_context['version'] == version
     assert app.app_context['secrets'] == expected_secrets
     assert app.entrypoint == stories['entrypoint']
 
