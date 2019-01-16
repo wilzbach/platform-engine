@@ -199,28 +199,39 @@ class Services:
             arg_val = story.argument_by_name(line, arg)
             body['data'][arg] = arg_val
 
+        req = story.context[ContextConstants.server_request]
+        io_loop = story.context[ContextConstants.server_io_loop]
+
+        if req.is_finished():
+            raise AsyncyError(message='No more actions can be executed for '
+                                      'this service as it\'s already closed.',
+                              story=story, line=line)
+
         # BEGIN hack for writing a binary response to the gateway
         # How we write binary response to the gateway right now:
         # 1. If the method is command is write,
         # and the content is an instance of bytes, write it directly
         # 2. Set the content-type to "application/octet-stream"
         # 3. Dump the bytes directly in the response
-        # 4. TODO: DO NOT allow further operations on this service
         if chain[0].name == 'http' and command.name == 'write' \
                 and isinstance(body['data']['content'], bytes):
-            req = story.context[ContextConstants.server_request]
+
             req.add_header(name='Content-Type',
                            value='application/octet-stream')
             req.write(body['data']['content'])
+            # Close this connection immediately,
+            # as no more data can be written to it.
+            story.app.logger.info('Connection has been closed '
+                                  'for service http implicitly, '
+                                  'as binary data was written to it.')
+            io_loop.add_callback(req.finish)
             return
 
         # END hack for writing a binary response to the gateway
 
-        req = story.context[ContextConstants.server_request]
         req.write(ujson.dumps(body) + '\n')
 
         # HTTP hack
-        io_loop = story.context[ContextConstants.server_io_loop]
         if chain[0].name == 'http' and command.name == 'finish':
             io_loop.add_callback(req.finish)
         # HTTP hack

@@ -56,7 +56,7 @@ class StoryEventHandler(BaseHandler):
                              f'event {event_body}')
             await self.run_story(app_id, story_name, block, event_body)
 
-            if not self._finished:
+            if not self.is_finished():
                 self.set_status(200)
                 self.finish()
         except BaseException as e:
