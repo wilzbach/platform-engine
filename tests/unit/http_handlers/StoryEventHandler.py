@@ -1,23 +1,66 @@
 # -*- coding: utf-8 -*-
 import json
 
-
 from asyncy.Apps import Apps
 from asyncy.constants import ContextConstants
-from asyncy.http_handlers.StoryEventHandler import StoryEventHandler
+from asyncy.entities.Multipart import FileFormField
+from asyncy.http_handlers.StoryEventHandler import CLOUD_EVENTS_FILE_KEY, \
+    StoryEventHandler
 from asyncy.processing import Story
 
-from pytest import mark
+import pytest
+from pytest import fixture, mark
 
 import tornado
 from tornado import ioloop
 
 
+@fixture
+def handler(logger, magic):
+    return StoryEventHandler(magic(), magic(), logger=logger)
+
+
+def test_get_ce_event_payload_json(handler: StoryEventHandler):
+    handler.request.headers = {'Content-Type': 'application/json'}
+    handler.request.body = '{"foo": "bar"}'
+    assert handler.get_ce_event_payload() == {'foo': 'bar'}
+
+
+def test_get_ce_event_payload_invalid(handler: StoryEventHandler):
+    handler.request.headers = {'Content-Type': 'foo/bar'}
+    with pytest.raises(Exception):
+        handler.get_ce_event_payload()
+
+
+def test_get_ce_event_payload_multipart(handler: StoryEventHandler, magic):
+    handler.request.headers = {'Content-Type': 'multipart/form-data'}
+    ce_payload_file = magic()
+    ce_payload_file.content_type = 'application/json'
+    ce_payload_file.body = b'{"foo": "bar"}'
+
+    handler.request.files = {
+        CLOUD_EVENTS_FILE_KEY: [ce_payload_file]
+    }
+
+    assert handler.get_ce_event_payload() == {'foo': 'bar'}
+
+
 @mark.asyncio
 @mark.parametrize('throw_exc', [False, True])
-async def test_post(patch, logger, magic, async_mock, throw_exc):
-    handler = StoryEventHandler(magic(), magic(), logger=logger)
+async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
     handler.request.body = '{}'
+    hello_file = magic()
+    hello_file.content_type = 'image/jpeg'
+    hello_file.body = b'my_image'
+    hello_file.filename = 'my_image_name'
+
+    handler.request.files = {
+        'hello': [hello_file],
+        CLOUD_EVENTS_FILE_KEY: 'chill, ignored.'
+    }
+    handler.request.headers = {
+        'Content-Type': 'application/json'
+    }
     handler.logger = magic()
     patch.object(handler, 'get_argument',
                  side_effect=['hello.story', '1', 'app_id'])
@@ -36,8 +79,12 @@ async def test_post(patch, logger, magic, async_mock, throw_exc):
     patch.object(tornado, 'ioloop')
     patch.many(handler, ['finish'])
 
+    hello_field = FileFormField(name='hello', body=hello_file.body,
+                                filename=hello_file.filename,
+                                content_type=hello_file.content_type)
+
     expected_context = {
-        ContextConstants.service_event: json.loads(handler.request.body),
+        ContextConstants.service_event: {'data': {'hello': hello_field}},
         ContextConstants.server_io_loop: tornado.ioloop.IOLoop.current(),
         ContextConstants.server_request: handler
     }

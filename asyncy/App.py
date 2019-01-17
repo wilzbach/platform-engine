@@ -38,7 +38,11 @@ class App:
             for k, v in self.environment.items():
                 if not isinstance(v, dict):
                     secrets[k.lower()] = v
-        self.app_context = {'secrets': secrets}
+        self.app_context = {
+            'secrets': secrets,
+            'hostname': f'{self.app_dns}.asyncyapp.com',
+            'version': self.version
+        }
 
     async def bootstrap(self):
         """

@@ -3,8 +3,10 @@ import json
 import urllib
 import uuid
 from collections import deque, namedtuple
+from functools import partial
 from urllib import parse
 
+from tornado.gen import coroutine
 from tornado.httpclient import AsyncHTTPClient
 
 import ujson
@@ -16,6 +18,7 @@ from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.ServiceConstants import ServiceConstants
+from ..entities.Multipart import FileFormField, FormField
 from ..utils import Dict
 from ..utils.HttpUtils import HttpUtils
 
@@ -197,13 +200,99 @@ class Services:
             body['data'][arg] = arg_val
 
         req = story.context[ContextConstants.server_request]
+        io_loop = story.context[ContextConstants.server_io_loop]
+
+        if req.is_finished():
+            raise AsyncyError(message='No more actions can be executed for '
+                                      'this service as it\'s already closed.',
+                              story=story, line=line)
+
+        # BEGIN hack for writing a binary response to the gateway
+        # How we write binary response to the gateway right now:
+        # 1. If the method is command is write,
+        # and the content is an instance of bytes, write it directly
+        # 2. Set the content-type to "application/octet-stream"
+        # 3. Dump the bytes directly in the response
+        if chain[0].name == 'http' and command.name == 'write' \
+                and isinstance(body['data']['content'], bytes):
+
+            req.set_header(name='Content-Type',
+                           value='application/octet-stream')
+            req.write(body['data']['content'])
+            # Close this connection immediately,
+            # as no more data can be written to it.
+            story.app.logger.info('Connection has been closed '
+                                  'for service http implicitly, '
+                                  'as binary data was written to it.')
+            io_loop.add_callback(req.finish)
+            return
+
+        # END hack for writing a binary response to the gateway
+
+        # Set the header for the first time to something we know.
+        req.set_header('Content-Type', 'application/stream+json')
+
         req.write(ujson.dumps(body) + '\n')
 
         # HTTP hack
-        io_loop = story.context[ContextConstants.server_io_loop]
         if chain[0].name == 'http' and command.name == 'finish':
             io_loop.add_callback(req.finish)
         # HTTP hack
+
+    @classmethod
+    def _fill_http_req_body(cls, http_res_kwargs, content_type, body):
+        if content_type.startswith('application/json'):
+            http_res_kwargs['body'] = json.dumps(body)
+            http_res_kwargs['headers'] = {
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        elif content_type.startswith('multipart/form-data'):
+            boundary = uuid.uuid4().hex
+            headers = {
+                'Content-Type': f'multipart/form-data; boundary={boundary}'
+            }
+            producer = partial(cls._multipart_producer,
+                               body=body, boundary=boundary)
+            http_res_kwargs['headers'] = headers
+            http_res_kwargs['body_producer'] = producer
+
+    @classmethod
+    @coroutine
+    def _multipart_producer(cls, body, boundary, write):
+        """
+        Writes files as well as regular form fields.
+
+        Inspired directly from here:
+        https://github.com/tornadoweb/tornado/blob/master/demos/file_upload/file_uploader.py
+        """
+
+        for _, field in body.items():
+            assert isinstance(field, FormField) \
+                or isinstance(field, FileFormField)
+
+            buf = f'--{boundary}\r\n' \
+                  + f'Content-Disposition: form-data; '
+
+            if isinstance(field, FileFormField):
+                buf += f'name="{field.name}"; filename="{field.filename}"\r\n'
+                buf += f'Content-Type: {field.content_type}\r\n'
+            else:
+                buf += f'name="{field.name}"\r\n'
+
+            buf += f'\r\n'
+
+            yield write(buf.encode())
+
+            if isinstance(field.body, bytes):
+                yield write(field.body)
+            elif not isinstance(field.body, str):
+                yield write(f'{field.body}'.encode())
+            else:
+                yield write(field.body.encode())
+
+            yield write(b'\r\n')
+
+        yield write(b'--%s--\r\n' % (boundary.encode(),))
 
     @classmethod
     async def execute_http(cls, story, line, chain, command_conf):
@@ -215,6 +304,9 @@ class Services:
         query_params = {}
         path_params = {}
 
+        form_fields_count = 0
+        request_body_fields_count = 0
+
         for arg in args:
             value = story.argument_by_name(line, arg)
             location = args[arg].get('in', 'requestBody')
@@ -224,20 +316,37 @@ class Services:
                 path_params[arg] = value
             elif location == 'requestBody':
                 body[arg] = value
+                request_body_fields_count += 1
+            elif location == 'formBody':
+                # Created in StoryEventHandler.
+                if isinstance(value, FileFormField):
+                    body[arg] = FileFormField(arg, value.body, value.filename,
+                                              value.content_type)
+                else:
+                    body[arg] = FormField(arg, value)
+                form_fields_count += 1
             else:
                 raise AsyncyError(f'Invalid location for argument "{arg}" '
-                                  f'specified: {location}')
+                                  f'specified: {location}',
+                                  story=story, line=line)
+
+        if form_fields_count > 0 and request_body_fields_count > 0:
+            raise AsyncyError(f'Mixed locations are not permitted. '
+                              f'Found {request_body_fields_count} fields, '
+                              f'of which '
+                              f'{form_fields_count} were in the form body',
+                              story=story, line=line)
 
         method = command_conf['http'].get('method', 'post')
         kwargs = {
             'method': method.upper()
         }
 
+        content_type = command_conf['http'] \
+            .get('contentType', 'application/json')
+
         if method.lower() == 'post':
-            kwargs['body'] = json.dumps(body)
-            kwargs['headers'] = {
-                'Content-Type': 'application/json; charset=utf-8'
-            }
+            cls._fill_http_req_body(kwargs, content_type, body)
         elif len(body) > 0:
             raise AsyncyError(
                 message=f'Parameters found in the request body, '
