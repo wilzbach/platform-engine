@@ -251,7 +251,8 @@ class Services:
             headers = {
                 'Content-Type': f'multipart/form-data; boundary={boundary}'
             }
-            producer = partial(cls._multipart_producer, body, boundary)
+            producer = partial(cls._multipart_producer,
+                               body=body, boundary=boundary)
             http_res_kwargs['headers'] = headers
             http_res_kwargs['body_producer'] = producer
 

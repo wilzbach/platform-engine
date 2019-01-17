@@ -179,14 +179,20 @@ def test_resolve_chain(story):
                   Event(name='foo'), Command(name='sonar')])
 
 
-@mark.parametrize('location', ['requestBody', 'query', 'path', 'invalid_loc'])
+@mark.parametrize('location', ['requestBody', 'query', 'path',
+                               'invalid_loc', 'formBody'])
 @mark.parametrize('method', ['POST', 'GET'])
 @mark.asyncio
 async def test_services_execute_http(patch, story, async_mock,
                                      location, method):
+    if location == 'formBody' and method == 'GET':
+        return  # Invalid case.
+
     chain = deque([Service(name='service'), Command(name='cmd')])
     patch.object(Containers, 'get_hostname',
                  new=async_mock(return_value='container_host'))
+
+    patch.object(uuid, 'uuid4')
 
     command_conf = {
         'http': {
@@ -200,6 +206,9 @@ async def test_services_execute_http(patch, story, async_mock,
             }
         }
     }
+
+    if location == 'formBody':
+        command_conf['http']['contentType'] = 'multipart/form-data'
 
     patch.object(story, 'argument_by_name', return_value='bar')
 
@@ -216,13 +225,17 @@ async def test_services_execute_http(patch, story, async_mock,
     }
 
     if method == 'POST':
-        if location == 'requestBody':
-            expected_kwargs['body'] = '{"foo": "bar"}'
-        else:
-            expected_kwargs['body'] = '{}'
         expected_kwargs['headers'] = {
             'Content-Type': 'application/json; charset=utf-8'
         }
+
+        if location == 'requestBody':
+            expected_kwargs['body'] = '{"foo": "bar"}'
+        elif location == 'formBody':
+            expected_kwargs['headers']['Content-Type'] = \
+                f'multipart/form-data; boundary={uuid.uuid4().hex}'
+        else:
+            expected_kwargs['body'] = '{}'
 
     line = {
         'ln': '1'
@@ -247,8 +260,25 @@ async def test_services_execute_http(patch, story, async_mock,
 
     assert ret == {'foo': '\U0001f44d'}
 
-    HttpUtils.fetch_with_retry.mock.assert_called_with(
-        3, story.logger, expected_url, client, expected_kwargs)
+    if location == 'formBody':
+        call = HttpUtils.fetch_with_retry.mock.mock_calls[0][1]
+        assert call[0] == 3
+        assert call[1] == story.logger
+        assert call[2] == expected_url
+        assert call[3] == client
+
+        # Since we can't mock the partial, we must inspect it.
+        actual_body_producer = call[4].pop('body_producer')
+        assert call[4] == expected_kwargs
+
+        assert actual_body_producer.func == Services._multipart_producer
+        assert actual_body_producer.keywords == {
+            'boundary': uuid.uuid4().hex,
+            'body': {'foo': FormField(name='foo', body='bar')}
+        }
+    else:
+        HttpUtils.fetch_with_retry.mock.assert_called_with(
+            3, story.logger, expected_url, client, expected_kwargs)
 
     # Additionally, test for other scenarios.
     response = HTTPResponse(HTTPRequest(url=expected_url), 200,
@@ -444,8 +474,14 @@ async def test_start_container_http(story):
 
 @mark.parametrize('command', ['write', 'finish'])
 @mark.parametrize('simulate_finished', [True, False])
+@mark.parametrize('bin_content', [True, False])
 @mark.asyncio
-async def test_execute_inline(patch, story, command, simulate_finished):
+async def test_execute_inline(patch, story, command, simulate_finished,
+                              bin_content):
+    # Not a valid combination.
+    if bin_content and command != 'write':
+        return
+
     chain = deque([Service('http'), Event('server'), Command(command)])
     req = MagicMock()
     req._finished = simulate_finished
@@ -470,7 +506,10 @@ async def test_execute_inline(patch, story, command, simulate_finished):
         }
     }
 
-    patch.object(story, 'argument_by_name', return_value='hello world!')
+    if bin_content:
+        patch.object(story, 'argument_by_name', return_value=b'bin world!')
+    else:
+        patch.object(story, 'argument_by_name', return_value='hello world!')
 
     expected_body = {
         'command': command,
@@ -488,11 +527,20 @@ async def test_execute_inline(patch, story, command, simulate_finished):
     else:
         await Services.execute_inline(story, line, chain, command_conf)
 
-    req.write.assert_called_with(ujson.dumps(expected_body) + '\n')
-    if command == 'finish':
+    if bin_content:
+        req.write.assert_called_with(b'bin world!')
+    else:
+        req.write.assert_called_with(ujson.dumps(expected_body) + '\n')
+
+    if command == 'finish' or bin_content:
         io_loop.add_callback.assert_called_with(req.finish)
     else:
         io_loop.add_callback.assert_not_called()
+
+
+def test_set_logger(logger):
+    Services.set_logger(logger)
+    assert Services.logger == logger
 
 
 @mark.parametrize('service_name', ['http', 'time-client'])
