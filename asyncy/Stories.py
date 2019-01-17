@@ -166,9 +166,6 @@ class Stories:
     def end_line(self, line_number, output=None, assign=None):
         start = self.results[line_number]['start']
 
-        if type(output) is bytes:
-            output = output.decode('utf-8')
-
         # Please see https://github.com/asyncy/platform-engine/issues/148
         # for the rationale on removing auto conversion. Code commented and
         # NOT removed so that this note here makes sense.
