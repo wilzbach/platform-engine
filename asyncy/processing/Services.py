@@ -216,7 +216,7 @@ class Services:
         if chain[0].name == 'http' and command.name == 'write' \
                 and isinstance(body['data']['content'], bytes):
 
-            req.add_header(name='Content-Type',
+            req.set_header(name='Content-Type',
                            value='application/octet-stream')
             req.write(body['data']['content'])
             # Close this connection immediately,
@@ -228,6 +228,9 @@ class Services:
             return
 
         # END hack for writing a binary response to the gateway
+
+        # Set the header for the first time to something we know.
+        req.set_header('Content-Type', 'application/stream+json')
 
         req.write(ujson.dumps(body) + '\n')
 
