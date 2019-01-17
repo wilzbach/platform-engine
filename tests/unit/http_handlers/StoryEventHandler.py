@@ -3,6 +3,7 @@ import json
 
 from asyncy.Apps import Apps
 from asyncy.constants import ContextConstants
+from asyncy.entities.Multipart import FileFormField
 from asyncy.http_handlers.StoryEventHandler import CLOUD_EVENTS_FILE_KEY, \
     StoryEventHandler
 from asyncy.processing import Story
@@ -48,6 +49,15 @@ def test_get_ce_event_payload_multipart(handler: StoryEventHandler, magic):
 @mark.parametrize('throw_exc', [False, True])
 async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
     handler.request.body = '{}'
+    hello_file = magic()
+    hello_file.content_type = 'image/jpeg'
+    hello_file.body = b'my_image'
+    hello_file.filename = 'my_image_name'
+
+    handler.request.files = {
+        'hello': [hello_file],
+        CLOUD_EVENTS_FILE_KEY: 'chill, ignored.'
+    }
     handler.request.headers = {
         'Content-Type': 'application/json'
     }
@@ -69,8 +79,12 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
     patch.object(tornado, 'ioloop')
     patch.many(handler, ['finish'])
 
+    hello_field = FileFormField(name='hello', body=hello_file.body,
+                                filename=hello_file.filename,
+                                content_type=hello_file.content_type)
+
     expected_context = {
-        ContextConstants.service_event: json.loads(handler.request.body),
+        ContextConstants.service_event: {'data': {'hello': hello_field}},
         ContextConstants.server_io_loop: tornado.ioloop.IOLoop.current(),
         ContextConstants.server_request: handler
     }

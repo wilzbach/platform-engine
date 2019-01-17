@@ -33,10 +33,10 @@ class StoryEventHandler(BaseHandler):
                 continue
 
             tf = self.get_req().files[key][0]
-            f = FileFormField(name=key, body=tf['body'],
-                              filename=tf['filename'],
-                              content_type=tf['content_type'])
-            event_body['data'][key] = f
+            f = FileFormField(name=key, body=tf.body,
+                              filename=tf.filename,
+                              content_type=tf.content_type)
+            event_body.setdefault('data', {})[key] = f
 
         await Story.run(app, app.logger,
                         story_name=story_name,
