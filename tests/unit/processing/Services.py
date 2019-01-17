@@ -272,10 +272,6 @@ async def test_services_execute_http(patch, story, async_mock,
         assert call[4] == expected_kwargs
 
         assert actual_body_producer.func == Services._multipart_producer
-        assert actual_body_producer.keywords == {
-            'boundary': uuid.uuid4().hex,
-            'body': {'foo': FormField(name='foo', body='bar')}
-        }
     else:
         HttpUtils.fetch_with_retry.mock.assert_called_with(
             3, story.logger, expected_url, client, expected_kwargs)
