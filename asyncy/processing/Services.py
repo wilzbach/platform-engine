@@ -298,7 +298,7 @@ class Services:
         assert isinstance(chain, deque)
         assert isinstance(chain[0], Service)
         hostname = await Containers.get_hostname(story, line, chain[0].name)
-        args = command_conf.get('arguments')
+        args = command_conf.get('arguments', {})
         body = {}
         query_params = {}
         path_params = {}
