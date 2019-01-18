@@ -180,7 +180,7 @@ def test_resolve_chain(story):
 
 
 @mark.parametrize('location', ['requestBody', 'query', 'path',
-                               'invalid_loc', 'formBody'])
+                               'invalid_loc', 'formBody', None])
 @mark.parametrize('method', ['POST', 'GET'])
 @mark.asyncio
 async def test_services_execute_http(patch, story, async_mock,
@@ -206,6 +206,9 @@ async def test_services_execute_http(patch, story, async_mock,
             }
         }
     }
+
+    if location is None:
+        del command_conf['arguments']
 
     if location == 'formBody':
         command_conf['http']['contentType'] = 'multipart/form-data'
