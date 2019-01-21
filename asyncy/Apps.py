@@ -66,7 +66,13 @@ class Apps:
                              version, environment, stories,
                              maintenance: bool, deleted: bool):
         glogger.info(f'Deploying app {app_id}@{version}')
-        if maintenance or deleted:
+
+        if maintenance:
+            glogger.warn(f'Not updating deployment, app put in maintenance'
+                         f'({app_id}@{version})')
+            return
+
+        if deleted:
             cls.update_release_state(glogger, config, app_id, version,
                                      ReleaseState.NO_DEPLOY)
             glogger.warn(f'Deployment halted {app_id}@{version}; '
