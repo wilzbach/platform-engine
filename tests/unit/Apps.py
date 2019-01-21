@@ -237,7 +237,10 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
         config, logger, 'app_id', 'app_dns', 'version', 'env',
         {'stories': True}, maintenance, deleted)
 
-    if maintenance or deleted:
+    if maintenance:
+        assert Apps.update_release_state.call_count == 0
+        logger.warn.assert_called()
+    elif deleted:
         logger.warn.assert_called()
         Apps.update_release_state.assert_called_with(
             logger, config, 'app_id', 'version', ReleaseState.NO_DEPLOY)
