@@ -173,7 +173,8 @@ class Kubernetes:
         if resource == 'deployments':
             return '/apis/apps/v1/namespaces'
         elif resource == 'services' or \
-                resource == 'persistentvolumeclaims':
+                resource == 'persistentvolumeclaims' or \
+                resource == 'pods':
             return '/api/v1/namespaces'
         else:
             raise Exception(f'Unsupported resource type {resource}')
@@ -245,6 +246,9 @@ class Kubernetes:
 
         for i in await cls._list_resource_names(app, 'deployments'):
             await cls._delete_resource(app, 'deployments', i)
+
+        for i in await cls._list_resource_names(app, 'pods'):
+            await cls._delete_resource(app, 'pods', i)
 
         # Volumes are not deleted at this moment.
         # See https://github.com/asyncy/platform-engine/issues/189

@@ -131,7 +131,8 @@ async def test_create_namespace_if_required(patch, app,
 async def test_clean_namespace(patch, story, async_mock):
     patch.object(Kubernetes, '_list_resource_names',
                  new=async_mock(side_effect=[['service_1', 'service_2'],
-                                             ['depl_1', 'depl_2']]))
+                                             ['depl_1', 'depl_2'],
+                                             ['pod_1', 'pod_2']]))
 
     patch.object(Kubernetes, '_delete_resource', new=async_mock())
 
@@ -141,7 +142,9 @@ async def test_clean_namespace(patch, story, async_mock):
         mock.call(story.app, 'services', 'service_1'),
         mock.call(story.app, 'services', 'service_2'),
         mock.call(story.app, 'deployments', 'depl_1'),
-        mock.call(story.app, 'deployments', 'depl_2')
+        mock.call(story.app, 'deployments', 'depl_2'),
+        mock.call(story.app, 'pods', 'pod_1'),
+        mock.call(story.app, 'pods', 'pod_2')
     ]
 
 
@@ -162,7 +165,7 @@ def _create_response(code: int, body: dict = None):
 
 @mark.parametrize('first_res', [200, 409, 404])
 @mark.parametrize('resource', ['deployments', 'services',
-                               'persistentvolumeclaims', 'unknown'])
+                               'persistentvolumeclaims', 'unknown', 'pods'])
 @mark.asyncio
 async def test_delete_resource(patch, story, async_mock, first_res, resource):
     story.app.app_id = 'my_app'
