@@ -368,10 +368,40 @@ class Services:
             if content_type and 'application/json' in content_type:
                 return ujson.loads(response.body)
             else:
-                return response.body
+                return cls.parse_output(command_conf, response.body,
+                                        story, line)
         else:
             raise AsyncyError(message=f'Failed to invoke service!',
                               story=story, line=line)
+
+    @classmethod
+    def parse_output(cls, command_conf: dict, raw_output, story, line):
+        output = command_conf.get('output', {})
+        t = output.get('type')
+        if t is None:
+            return raw_output  # We don't know what it is, return raw bytes.
+
+        try:
+            if t == 'string':
+                return cls._convert_bytes_to_string(raw_output)
+            elif t == 'int':
+                return int(cls._convert_bytes_to_string(raw_output))
+            elif t == 'float':
+                return float(cls._convert_bytes_to_string(raw_output))
+            elif t == 'boolean':
+                raw_output = cls._convert_bytes_to_string(raw_output).lower()
+                return raw_output == 'true'
+
+            raise Exception(f'Unsupported type {t}')
+        except BaseException as e:
+            raise AsyncyError(message=f'Failed to parse output as {t}',
+                              story=story, line=line)
+
+    @classmethod
+    def _convert_bytes_to_string(cls, raw):
+        if isinstance(raw, bytes):
+            return raw.decode()
+        return raw
 
     @classmethod
     async def start_container(cls, story, line):

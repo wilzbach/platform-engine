@@ -298,6 +298,65 @@ async def test_services_execute_http(patch, story, async_mock,
         await Services.execute_http(story, line, chain, command_conf)
 
 
+@mark.parametrize('output_type', ['string', 'int', 'float', 'boolean', None])
+def test_parse_output(output_type, story):
+    line = {}
+    command_conf = {
+        'output': {
+            'type': output_type
+        }
+    }
+
+    expected_output = None
+    actual_input = None
+
+    if output_type == 'string':
+        actual_input = 'hello'
+        expected_output = 'hello'
+    elif output_type == 'int':
+        actual_input = b'10'
+        expected_output = 10
+    elif output_type == 'float':
+        actual_input = b'7.0'
+        expected_output = 7.0
+    elif output_type == 'boolean':
+        actual_input = f'true'
+        expected_output = True
+    elif output_type is None:
+        actual_input = b'empty'
+        expected_output = b'empty'
+
+    assert Services.parse_output(
+        command_conf, actual_input, story, line) == expected_output
+
+
+def test_parse_output_invalid_cast(story):
+    command_conf = {
+        'output': {
+            'type': 'int'
+        }
+    }
+
+    with pytest.raises(AsyncyError):
+        Services.parse_output(command_conf, 'not_an_int', story, {})
+
+
+def test_parse_output_invalid_type(story):
+    command_conf = {
+        'output': {
+            'type': 'foo'
+        }
+    }
+
+    with pytest.raises(AsyncyError):
+        Services.parse_output(command_conf, 'blah', story, {})
+
+
+def test_convert_bytes_to_string():
+    assert Services._convert_bytes_to_string(b'hello') == 'hello'
+    assert Services._convert_bytes_to_string('hello') == 'hello'
+
+
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
     line = {
