@@ -475,12 +475,16 @@ class Services:
             'app_id': story.app.app_id
         }
 
+        # Why request_timeout is set to 120 seconds:
+        # Since this is the Synapse, Synapse does multiple internal retries,
+        # so we must set this to a really high value.
         kwargs = {
             'method': subscribe_method.upper(),
             'body': json.dumps(body),
             'headers': {
                 'Content-Type': 'application/json; charset=utf-8'
-            }
+            },
+            'request_timeout': 120
         }
 
         client = AsyncHTTPClient()
@@ -491,7 +495,8 @@ class Services:
               f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
               f'/subscribe'
 
-        response = await HttpUtils.fetch_with_retry(3, story.logger, url,
+        # Okay to retry a request to the Synapse a hundred times.
+        response = await HttpUtils.fetch_with_retry(100, story.logger, url,
                                                     client, kwargs)
         if int(response.code / 100) == 2:
             story.logger.info(f'Subscribed!')
