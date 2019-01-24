@@ -694,7 +694,8 @@ async def test_when(patch, story, async_mock, service_name):
     expected_kwargs = {
         'method': 'POST',
         'body': json.dumps(expected_body),
-        'headers': {'Content-Type': 'application/json; charset=utf-8'}
+        'headers': {'Content-Type': 'application/json; charset=utf-8'},
+        'request_timeout': 120
     }
 
     patch.init(AsyncHTTPClient)
@@ -710,7 +711,7 @@ async def test_when(patch, story, async_mock, service_name):
     client = AsyncHTTPClient()
 
     HttpUtils.fetch_with_retry.mock.assert_called_with(
-        3, story.logger, expected_url, client, expected_kwargs)
+        100, story.logger, expected_url, client, expected_kwargs)
 
     story.app.add_subscription.assert_called_with(
         'my_guid_here', story.context[service_name],
