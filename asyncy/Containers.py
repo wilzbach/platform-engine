@@ -171,7 +171,7 @@ class Containers:
         # of the hash and a hyphen. K8s names must be < 63 chars.
         simple_name = re.sub('\W', '', name)[:20]
         if cls.is_service_reusable(story, line):
-            h = cls.hash_service_name(name)
+            h = cls.hash_service_name(story, name)
         else:
             h = cls.hash_service_name_and_story_line(story, line, name)
 
@@ -179,12 +179,14 @@ class Containers:
 
     @classmethod
     def hash_service_name_and_story_line(cls, story, line, name):
-        return hashlib.sha1(f'{name}-{story.name}-{line["ln"]}'
+        return hashlib.sha1(f'{name}-{story.app.version}-'
+                            f'{story.name}-{line["ln"]}'
                             .encode('utf-8')).hexdigest()
 
     @classmethod
-    def hash_service_name(cls, name):
-        return hashlib.sha1(f'{name}'.encode('utf-8')).hexdigest()
+    def hash_service_name(cls, story, name):
+        return hashlib.sha1(f'{name}-{story.app.version}'
+                            .encode('utf-8')).hexdigest()
 
     @classmethod
     def hash_volume_name(cls, story, line, service, volume_name):
