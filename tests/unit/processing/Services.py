@@ -298,7 +298,8 @@ async def test_services_execute_http(patch, story, async_mock,
         await Services.execute_http(story, line, chain, command_conf)
 
 
-@mark.parametrize('output_type', ['string', 'int', 'float', 'boolean', None])
+@mark.parametrize('output_type',
+                  ['string', 'any', 'int', 'float', 'boolean', None])
 def test_parse_output(output_type, story):
     line = {}
     command_conf = {
@@ -323,6 +324,9 @@ def test_parse_output(output_type, story):
         actual_input = f'true'
         expected_output = True
     elif output_type is None:
+        actual_input = b'empty'
+        expected_output = b'empty'
+    elif output_type == 'any':
         actual_input = b'empty'
         expected_output = b'empty'
 
