@@ -48,9 +48,10 @@ def test_is_service_reusable(story):
 def test_get_container_name(patch, story, line, reusable):
     patch.object(Containers, 'is_service_reusable', return_value=reusable)
     story.app.app_id = 'my_app'
+    story.app.version = 'v2'
     ret = Containers.get_container_name(story, line, 'alpine')
     if reusable:
-        assert ret == f'alpine-{Containers.hash_service_name("alpine")}'
+        assert ret == f'alpine-{Containers.hash_service_name(story, "alpine")}'
     else:
         h = Containers.hash_service_name_and_story_line(story, line, 'alpine')
         assert ret == f'alpine-{h}'
@@ -119,18 +120,21 @@ def test_hash_volume_name(patch, story, line, reusable):
 def test_service_name_and_story_line(patch, story):
     patch.object(hashlib, 'sha1')
     story.name = 'story_name'
+    story.app.version = 'v29'
     ret = Containers.hash_service_name_and_story_line(
         story, {'ln': '1'}, 'alpine')
 
-    hashlib.sha1.assert_called_with(f'alpine-{story.name}-1'.encode('utf-8'))
+    hashlib.sha1.assert_called_with(f'alpine-v29-{story.name}-1'
+                                    .encode('utf-8'))
     assert ret == hashlib.sha1().hexdigest()
 
 
-def test_service_name(patch):
+def test_service_name(patch, story):
+    story.app.version = 'v2'
     patch.object(hashlib, 'sha1')
-    ret = Containers.hash_service_name('alpine')
+    ret = Containers.hash_service_name(story, 'alpine')
 
-    hashlib.sha1.assert_called_with(f'alpine'.encode('utf-8'))
+    hashlib.sha1.assert_called_with(f'alpine-v2'.encode('utf-8'))
     assert ret == hashlib.sha1().hexdigest()
 
 
