@@ -4,7 +4,8 @@ import re
 
 import ujson
 
-from .Exceptions import ContainerSpecNotRegisteredError, K8sError
+from .Exceptions import ContainerSpecNotRegisteredError, \
+    EnvironmentVariableNotFound, K8sError
 from .Kubernetes import Kubernetes
 from .Types import StreamingService
 from .constants.LineConstants import LineConstants
@@ -54,14 +55,15 @@ class Containers:
                                       mount_path=target))
 
         env = {}
-        for key, val in story.app.environment.items():
-            if isinstance(val, dict):
-                if key == service:
-                    for k, v in val.items():
-                        env[k] = v
-                continue
+        for key, omg_config in omg.get('environment', {}).items():
+            actual_val = story.app.environment.get(service, {}).get(key)
+            if omg_config.get('required', False) and actual_val is None:
+                raise EnvironmentVariableNotFound(service=service,
+                                                  variable=key, story=story,
+                                                  line=line)
 
-            env[key] = val
+            if actual_val is not None:
+                env[key] = actual_val
 
         await Kubernetes.create_pod(story=story, line=line, image=image,
                                     container_name=container_name,

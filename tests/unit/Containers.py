@@ -168,6 +168,12 @@ async def test_start_no_command(patch, story, async_mock,
                         'persist': False,
                         'target': '/tmp'
                     }
+                },
+                'environment': {
+                    'param_1': {
+                        'required': True
+                    },
+                    'alpine_only': {}
                 }
             }
         }
@@ -182,7 +188,8 @@ async def test_start_no_command(patch, story, async_mock,
 
     story.app.environment = {
         'alpine': {
-            'alpine_only': True
+            'alpine_only': True,
+            'param_1': 'hello_world'
         },
         'global': 'yes'
     }
@@ -205,7 +212,7 @@ async def test_start_no_command(patch, story, async_mock,
         story=story, line=line, image='alpine', container_name='asyncy-alpine',
         start_command=run_command or ['tail', '-f', '/dev/null'],
         shutdown_command=None,
-        env={'alpine_only': True, 'global': 'yes'},
+        env={'alpine_only': True, 'param_1': 'hello_world'},
         volumes=expected_volumes)
 
 
