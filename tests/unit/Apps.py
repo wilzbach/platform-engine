@@ -223,7 +223,7 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
     assert ret == conn.cursor().fetchall()
 
 
-@mark.parametrize('raise_exc', [None, exc(), asyncy_exc()])
+@mark.parametrize('raise_exc', [None, exc, asyncy_exc])
 @mark.parametrize('maintenance', [True, False])
 @mark.parametrize('deleted', [True, False])
 @mark.asyncio
@@ -240,7 +240,7 @@ async def test_deploy_release(config, magic, patch, deleted,
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
     patch.init(App)
     if raise_exc is not None:
-        patch.object(App, 'bootstrap', new=async_mock(side_effect=raise_exc))
+        patch.object(App, 'bootstrap', new=async_mock(side_effect=raise_exc()))
     else:
         patch.object(App, 'bootstrap', new=async_mock())
 
@@ -267,7 +267,7 @@ async def test_deploy_release(config, magic, patch, deleted,
         Containers.init.mock.assert_called()
         if raise_exc is not None:
             assert Apps.apps.get('app_id') is None
-            if raise_exc == exc():
+            if raise_exc == exc:
                 Sentry.capture_exc.assert_called()
             assert Apps.update_release_state.mock_calls[1] == mock.call(
                 app_logger, config, 'app_id', 'version', ReleaseState.FAILED)
