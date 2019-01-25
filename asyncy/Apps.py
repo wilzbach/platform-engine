@@ -62,32 +62,31 @@ class Apps:
         glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
 
     @classmethod
-    async def deploy_release(cls, config, glogger: Logger, app_id, app_dns,
+    async def deploy_release(cls, config, app_id, app_dns,
                              version, environment, stories,
                              maintenance: bool, deleted: bool):
-        glogger.info(f'Deploying app {app_id}@{version}')
+        logger = cls.make_logger_for_app(config, app_id, version)
+        logger.info(f'Deploying app {app_id}@{version}')
 
         if maintenance:
-            glogger.warn(f'Not updating deployment, app put in maintenance'
-                         f'({app_id}@{version})')
+            logger.warn(f'Not updating deployment, app put in maintenance'
+                        f'({app_id}@{version})')
             return
 
         if deleted:
-            cls.update_release_state(glogger, config, app_id, version,
+            cls.update_release_state(logger, config, app_id, version,
                                      ReleaseState.NO_DEPLOY)
-            glogger.warn(f'Deployment halted {app_id}@{version}; '
-                         f'deleted={deleted}; maintenance={maintenance}')
-            glogger.warn(f'State changed to NO_DEPLOY for {app_id}@{version}')
+            logger.warn(f'Deployment halted {app_id}@{version}; '
+                        f'deleted={deleted}; maintenance={maintenance}')
+            logger.warn(f'State changed to NO_DEPLOY for {app_id}@{version}')
             return
 
-        cls.update_release_state(glogger, config, app_id, version,
+        cls.update_release_state(logger, config, app_id, version,
                                  ReleaseState.DEPLOYING)
 
         try:
             services = await cls.get_services(
-                stories.get('yaml', {}), glogger, stories)
-
-            logger = cls.make_logger_for_app(config, app_id, version)
+                stories.get('yaml', {}), logger, stories)
 
             app = App(app_id, app_dns, version, config, logger,
                       stories, services, environment)
@@ -98,15 +97,14 @@ class Apps:
             await app.bootstrap()
 
             cls.apps[app_id] = app
-            cls.update_release_state(glogger, config, app_id, version,
+            cls.update_release_state(logger, config, app_id, version,
                                      ReleaseState.DEPLOYED)
 
-            glogger.info(f'Successfully deployed app {app_id}@{version}')
+            logger.info(f'Successfully deployed app {app_id}@{version}')
         except BaseException as e:
-            cls.update_release_state(glogger, config, app_id, version,
+            cls.update_release_state(logger, config, app_id, version,
                                      ReleaseState.FAILED)
-            glogger.error(
-                f'Failed to bootstrap app {app_id}@{version}', exc=e)
+            logger.error(f'Failed to bootstrap app!', exc=e)
             Sentry.capture_exc(e)
 
     @classmethod
@@ -252,7 +250,7 @@ class Apps:
                              f'app {app_id}@{version}. Halting deployment.')
                 return
             await cls.deploy_release(
-                config, glogger, app_id, app_dns, version,
+                config, app_id, app_dns, version,
                 environment, stories, maintenance, deleted)
             glogger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:

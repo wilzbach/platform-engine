@@ -195,7 +195,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         return
 
     Apps.deploy_release.mock.assert_called_with(
-        config, logger, app_id, app_dns,
+        config, app_id, app_dns,
         release[1], release[2], release[3], release[4], release[7])
 
     if raise_error:
@@ -218,12 +218,14 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
 @mark.parametrize('maintenance', [True, False])
 @mark.parametrize('deleted', [True, False])
 @mark.asyncio
-async def test_deploy_release(config, logger, magic, patch, deleted,
+async def test_deploy_release(config, magic, patch, deleted,
                               async_mock, raise_exc, exc, maintenance):
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(Containers, 'init', new=async_mock())
-    patch.many(Apps, ['update_release_state', 'make_logger_for_app'])
+    patch.many(Apps, ['update_release_state'])
+    app_logger = magic()
+    patch.object(Apps, 'make_logger_for_app', return_value=app_logger)
     Apps.apps = {}
     services = magic()
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
@@ -234,23 +236,23 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
         patch.object(App, 'bootstrap', new=async_mock())
 
     await Apps.deploy_release(
-        config, logger, 'app_id', 'app_dns', 'version', 'env',
+        config, 'app_id', 'app_dns', 'version', 'env',
         {'stories': True}, maintenance, deleted)
 
     if maintenance:
         assert Apps.update_release_state.call_count == 0
-        logger.warn.assert_called()
+        app_logger.warn.assert_called()
     elif deleted:
-        logger.warn.assert_called()
+        app_logger.warn.assert_called()
         Apps.update_release_state.assert_called_with(
-            logger, config, 'app_id', 'version', ReleaseState.NO_DEPLOY)
+            app_logger, config, 'app_id', 'version', ReleaseState.NO_DEPLOY)
     else:
         assert Apps.update_release_state.mock_calls[0] == mock.call(
-            logger, config, 'app_id', 'version', ReleaseState.DEPLOYING)
+            app_logger, config, 'app_id', 'version', ReleaseState.DEPLOYING)
 
         App.__init__.assert_called_with(
             'app_id', 'app_dns', 'version', config,
-            Apps.make_logger_for_app.return_value,
+            app_logger,
             {'stories': True}, services, 'env')
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
@@ -258,10 +260,10 @@ async def test_deploy_release(config, logger, magic, patch, deleted,
             assert Apps.apps.get('app_id') is None
             Sentry.capture_exc.assert_called()
             assert Apps.update_release_state.mock_calls[1] == mock.call(
-                logger, config, 'app_id', 'version', ReleaseState.FAILED)
+                app_logger, config, 'app_id', 'version', ReleaseState.FAILED)
         else:
             assert Apps.update_release_state.mock_calls[1] == mock.call(
-                logger, config, 'app_id', 'version', ReleaseState.DEPLOYED)
+                app_logger, config, 'app_id', 'version', ReleaseState.DEPLOYED)
             assert Apps.apps.get('app_id') is not None
 
 

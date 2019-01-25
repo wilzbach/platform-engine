@@ -6,6 +6,7 @@ import certifi
 
 from tornado.httpclient import AsyncHTTPClient, HTTPError
 
+from .Exceptions import ServiceNotFound
 from .utils.HttpUtils import HttpUtils
 
 
@@ -45,7 +46,8 @@ class GraphQLAPI:
         graph_result = json.loads(res.body)
 
         res = graph_result['data']['serviceByAlias']
-        assert res, f'Alias "{alias}" was not found in the Asyncy Hub'
+        if not res:
+            raise ServiceNotFound(name=f'{alias}:{tag}')
 
         return (
             res['pullUrl'],
@@ -93,6 +95,11 @@ class GraphQLAPI:
         res = await cls._fetch_res_with_infinite_retry(logger, client, kwargs)
 
         graph_result = json.loads(res.body)
+        if len(graph_result['data']['allOwners']['nodes']) == 0 \
+                or len(graph_result['data']['allOwners']['nodes']
+                       [0]['services']['nodes']) == 0:
+            raise ServiceNotFound(name=f'{image}:{tag}')
+
         res = \
             graph_result['data']['allOwners']['nodes'][0][
                 'services']['nodes'][0]
