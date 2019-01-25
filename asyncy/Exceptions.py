@@ -49,3 +49,15 @@ class ServiceNotFound(AsyncyError):
             f'Hint: 1. Check with the Asyncy team if this service has '
             f'been made public; 2. Service names are case sensitive',
             story=story, line=line)
+
+
+class EnvironmentVariableNotFound(AsyncyError):
+    def __init__(self, service=None, variable=None, story=None, line=None):
+        assert service is not None
+        assert variable is not None
+        super().__init__(
+            f'The service "{service}" requires an environment variable '
+            f'"{variable}" which was not specified. '
+            f'Please set it by running '
+            f'"$ asyncy config set {service}.{variable}=<value>" '
+            f'in your Asyncy app directory', story, line)
