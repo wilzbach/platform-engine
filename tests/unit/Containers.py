@@ -3,7 +3,8 @@ import hashlib
 from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
-from asyncy.Exceptions import ContainerSpecNotRegisteredError, K8sError
+from asyncy.Exceptions import ContainerSpecNotRegisteredError, \
+    EnvironmentVariableNotFound, K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
@@ -141,8 +142,10 @@ def test_service_name(patch, story):
 
 @mark.parametrize('run_command', [None, ['/bin/bash', 'sleep', '10000']])
 @mark.parametrize('with_volumes', [True, False])
+@mark.parametrize('missing_required_var', [False, True])
 @mark.asyncio
 async def test_start_no_command(patch, story, async_mock,
+                                missing_required_var,
                                 run_command, with_volumes):
     line = {
         LineConstants.service: 'alpine',
@@ -194,6 +197,9 @@ async def test_start_no_command(patch, story, async_mock,
         'global': 'yes'
     }
 
+    if missing_required_var:
+        story.app.environment['alpine']['param_1'] = None
+
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
@@ -206,7 +212,12 @@ async def test_start_no_command(patch, story, async_mock,
             Volume(persist=False, name=hash_tmp, mount_path='/tmp'),
         ]
 
-    await Containers.start(story, line)
+    if missing_required_var:
+        with pytest.raises(EnvironmentVariableNotFound):
+            await Containers.start(story, line)
+        return
+    else:
+        await Containers.start(story, line)
 
     Kubernetes.create_pod.mock.assert_called_with(
         story=story, line=line, image='alpine', container_name='asyncy-alpine',
