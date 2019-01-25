@@ -125,6 +125,10 @@ def test_app_init(magic, config, logger, env):
     version = 100
     app = App('app_id', 'app_dns', version, config, logger,
               stories, services, env)
+
+    if env is None:
+        env = {}
+
     assert app.app_id == 'app_id'
     assert app.app_dns == 'app_dns'
     assert app.config == config
