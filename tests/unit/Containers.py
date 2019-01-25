@@ -45,15 +45,16 @@ def test_is_service_reusable(story):
 
 
 @mark.parametrize('reusable', [False, True])
-def test_get_container_name(patch, story, line, reusable):
+@mark.parametrize('name', ['alpine', 'a!lpine', 'ALPINE', '__aLpInE'])
+def test_get_container_name(patch, story, line, reusable, name):
     patch.object(Containers, 'is_service_reusable', return_value=reusable)
     story.app.app_id = 'my_app'
     story.app.version = 'v2'
-    ret = Containers.get_container_name(story, line, 'alpine')
+    ret = Containers.get_container_name(story, line, name)
     if reusable:
-        assert ret == f'alpine-{Containers.hash_service_name(story, "alpine")}'
+        assert ret == f'alpine-{Containers.hash_service_name(story, name)}'
     else:
-        h = Containers.hash_service_name_and_story_line(story, line, 'alpine')
+        h = Containers.hash_service_name_and_story_line(story, line, name)
         assert ret == f'alpine-{h}'
 
 
@@ -112,7 +113,7 @@ def test_hash_volume_name(patch, story, line, reusable):
     if not reusable:
         key = f'{key}-{line["ln"]}'
 
-    expected = f'{name}-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
+    expected = f'myvolume-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
     assert Containers.hash_volume_name(story, line, service, name) == \
         expected
 

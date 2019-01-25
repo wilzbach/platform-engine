@@ -169,7 +169,7 @@ class Containers:
         # simple_name is included in the container name to aid debugging only.
         # It's 20 chars at max because 41 chars consists
         # of the hash and a hyphen. K8s names must be < 63 chars.
-        simple_name = re.sub('\W', '', name)[:20]
+        simple_name = cls.get_simple_name(name)[:20]
         if cls.is_service_reusable(story, line):
             h = cls.hash_service_name(story, name)
         else:
@@ -184,6 +184,16 @@ class Containers:
                             .encode('utf-8')).hexdigest()
 
     @classmethod
+    def get_simple_name(cls, string):
+        parts = re.findall('[a-zA-Z]*', string)
+        out = ''
+        for i in parts:
+            if i != '':
+                out += i
+
+        return out.lower()
+
+    @classmethod
     def hash_service_name(cls, story, name):
         return hashlib.sha1(f'{name}-{story.app.version}'
                             .encode('utf-8')).hexdigest()
@@ -195,7 +205,7 @@ class Containers:
         if not cls.is_service_reusable(story, line):
             key = f'{key}-{line["ln"]}'
 
-        simple_name = re.sub('\W', '', volume_name)[:20]
+        simple_name = cls.get_simple_name(volume_name)[:20]
         h = hashlib.sha1(key.encode('utf-8')).hexdigest()
         return f'{simple_name}-{h}'
 
