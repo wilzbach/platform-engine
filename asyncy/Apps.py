@@ -11,6 +11,7 @@ from .App import App
 from .Config import Config
 from .Containers import Containers
 from .DeploymentLock import DeploymentLock
+from .Exceptions import AsyncyError
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
@@ -104,8 +105,11 @@ class Apps:
         except BaseException as e:
             cls.update_release_state(logger, config, app_id, version,
                                      ReleaseState.FAILED)
-            logger.error(f'Failed to bootstrap app!', exc=e)
-            Sentry.capture_exc(e)
+            if isinstance(e, AsyncyError):
+                logger.error(str(e))
+            else:
+                logger.error(f'Failed to bootstrap app ({e})', exc=e)
+                Sentry.capture_exc(e)
 
     @classmethod
     def make_logger_for_app(cls, config, app_id, version):

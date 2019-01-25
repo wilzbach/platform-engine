@@ -9,6 +9,7 @@ from unittest import mock
 from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
+from asyncy.Exceptions import AsyncyError
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
@@ -25,6 +26,14 @@ from pytest import fixture, mark
 def exc():
     def foo(*args, **kwargs):
         raise Exception()
+
+    return foo
+
+
+@fixture
+def asyncy_exc():
+    def foo(*args, **kwargs):
+        raise AsyncyError()
 
     return foo
 
@@ -214,12 +223,12 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
     assert ret == conn.cursor().fetchall()
 
 
-@mark.parametrize('raise_exc', [True, False])
+@mark.parametrize('raise_exc', [None, exc(), asyncy_exc()])
 @mark.parametrize('maintenance', [True, False])
 @mark.parametrize('deleted', [True, False])
 @mark.asyncio
 async def test_deploy_release(config, magic, patch, deleted,
-                              async_mock, raise_exc, exc, maintenance):
+                              async_mock, raise_exc, maintenance):
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(Containers, 'init', new=async_mock())
@@ -230,8 +239,8 @@ async def test_deploy_release(config, magic, patch, deleted,
     services = magic()
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
     patch.init(App)
-    if raise_exc:
-        patch.object(App, 'bootstrap', new=async_mock(side_effect=exc))
+    if raise_exc is not None:
+        patch.object(App, 'bootstrap', new=async_mock(side_effect=raise_exc))
     else:
         patch.object(App, 'bootstrap', new=async_mock())
 
@@ -256,9 +265,10 @@ async def test_deploy_release(config, magic, patch, deleted,
             {'stories': True}, services, 'env')
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
-        if raise_exc:
+        if raise_exc is not None:
             assert Apps.apps.get('app_id') is None
-            Sentry.capture_exc.assert_called()
+            if raise_exc == exc():
+                Sentry.capture_exc.assert_called()
             assert Apps.update_release_state.mock_calls[1] == mock.call(
                 app_logger, config, 'app_id', 'version', ReleaseState.FAILED)
         else:
