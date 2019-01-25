@@ -2,6 +2,8 @@
 import json
 from collections import namedtuple
 
+from requests.structures import CaseInsensitiveDict
+
 from tornado.httpclient import AsyncHTTPClient
 
 from .Config import Config
@@ -9,7 +11,6 @@ from .Logger import Logger
 from .Types import StreamingService
 from .constants.ServiceConstants import ServiceConstants
 from .processing import Story
-from .processing.Services import Services
 from .utils import Dict
 from .utils.HttpUtils import HttpUtils
 
@@ -28,16 +29,17 @@ class App:
         self.config = config
         self.version = version
         self.logger = logger
-        self.environment = environment
+        if environment is None:
+            environment = {}
+
+        self.environment = CaseInsensitiveDict(data=environment)
         self.stories = stories['stories']
         self.entrypoint = stories['entrypoint']
         self.services = services
-        secrets = {}
-        if self.environment:
-            assert isinstance(self.environment, dict)
-            for k, v in self.environment.items():
-                if not isinstance(v, dict):
-                    secrets[k.lower()] = v
+        secrets = CaseInsensitiveDict()
+        for k, v in self.environment.items():
+            if not isinstance(v, dict):
+                secrets[k] = v
         self.app_context = {
             'secrets': secrets,
             'hostname': f'{self.app_dns}.asyncyapp.com',
