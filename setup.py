@@ -5,8 +5,6 @@ import sys
 
 from setuptools import find_packages, setup
 
-from .asyncy import Version
-
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
@@ -22,7 +20,7 @@ setup(
     long_description=readme,
     author='Asyncy',
     author_email='noreply@asyncy.com',
-    version=Version.version,
+    version='0.2.0',
     packages=find_packages(),
     tests_require=[
         'pytest',
