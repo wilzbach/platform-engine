@@ -3,9 +3,9 @@ import io
 import os
 import sys
 
-from .asyncy import Version
-
 from setuptools import find_packages, setup
+
+from .asyncy import Version
 
 
 if sys.argv[-1] == 'publish':
