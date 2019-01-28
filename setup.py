@@ -3,6 +3,8 @@ import io
 import os
 import sys
 
+from .asyncy import Version
+
 from setuptools import find_packages, setup
 
 
@@ -20,7 +22,7 @@ setup(
     long_description=readme,
     author='Asyncy',
     author_email='noreply@asyncy.com',
-    version='0.0.2',
+    version=Version.version,
     packages=find_packages(),
     tests_require=[
         'pytest',
