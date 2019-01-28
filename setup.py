@@ -20,7 +20,7 @@ setup(
     long_description=readme,
     author='Asyncy',
     author_email='noreply@asyncy.com',
-    version='0.0.2',
+    version='0.2.0',
     packages=find_packages(),
     tests_require=[
         'pytest',
@@ -35,7 +35,7 @@ setup(
         'click==7.0',
         'frustum==0.0.6',
         'raven==6.9.0',
-        'storyscript==0.9.0',
+        'storyscript==0.9.2',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'psycopg2==2.7.5',

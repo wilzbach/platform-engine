@@ -122,13 +122,13 @@ async def test_story_execute_block(patch, logger, story, async_mock):
         '1': {'ln': '1', 'next': '2'},
         '2': {'ln': '2', 'next': '3', 'enter': '3', 'output': ['foo_client']},
         '3': {'ln': '3', 'next': '4', 'parent': '2'},
-        '4': {'ln': '4', 'next': '5', 'parent': '2', 'enter': '5'},
-        '5': {'ln': '5', 'next': '6', 'parent': '4'},
-        '6': {'ln': '6', 'parent': '2'}
+        '4': {'ln': '4', 'next': '5', 'parent': '2'},
+        '5': {'ln': '5', 'next': '6', 'parent': '2'},
+        '6': {'ln': '6', 'parent': '1'}
     }
 
-    patch.object(Story, 'execute_line', new=async_mock())
-    patch.object(story, 'next_block', return_value=story.tree['6'])
+    patch.object(Story, 'execute_line', new=async_mock(
+        side_effect=['4', '5', '6']))
 
     line = story.line
     story.context = {
@@ -146,13 +146,18 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     assert story.context['foo_client'] \
         == story.context[ContextConstants.service_event]['data']
 
-    story.next_block.assert_called_with(story.tree['4'])
+    assert [
+        mock.call(logger, story, '3'),
+        mock.call(logger, story, '4'),
+        mock.call(logger, story, '5')
+    ] == Story.execute_line.mock.mock_calls
+
     assert [
         mock.call('3'),
         mock.call('4'),
         mock.call('5'),
         mock.call('6'),
-        mock.call(None)
+        mock.call('1')
     ] == story.line.mock_calls
 
 

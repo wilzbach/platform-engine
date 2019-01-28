@@ -108,14 +108,10 @@ class Story:
                 story.context[parent_line['output'][0]] = \
                     story.context[ContextConstants.service_event].get('data')
 
-        while next_line is not None and \
-                next_line['parent'] == parent_line['ln']:
-            if next_line.get('enter') is not None:
-                await Story.execute_block(logger, story, next_line)
-                next_line = story.next_block(next_line)
-            else:
-                await Story.execute_line(logger, story, next_line['ln'])
-                next_line = story.line(next_line.get('next'))
+        while next_line is not None \
+                and story.line_has_parent(parent_line['ln'], next_line):
+            nxt = await Story.execute_line(logger, story, next_line['ln'])
+            next_line = story.line(nxt)
 
     @classmethod
     async def run(cls,
