@@ -2,7 +2,7 @@
 import pathlib
 import time
 
-from asyncy.Stories import Stories
+from asyncy.Stories import MAX_BYTES_LOGGING, Stories
 from asyncy.utils import Dict, Resolver
 
 from pytest import mark
@@ -35,6 +35,27 @@ def test_stories_create_tmp_dir(patch, story):
     pathlib.Path.assert_called_with(story.get_tmp_dir())
     pathlib.Path().mkdir.assert_called_with(
         parents=True, mode=0o700, exist_ok=True)
+
+
+@mark.parametrize('long', [True, False])
+def test_get_str_for_logging(long):
+    def make_string(length):
+        out = ''
+        for i in range(0, length):
+            out += 'a'
+        return out
+
+    test_str = 'hello world'
+    if long:
+        test_str = make_string(1024)
+
+    actual_val = Stories.get_str_for_logging(test_str)
+
+    if long:
+        assert actual_val == f'{test_str[:MAX_BYTES_LOGGING]} ... ' \
+                             f'({1024-MAX_BYTES_LOGGING} bytes truncated)'
+    else:
+        assert actual_val == 'hello world'
 
 
 def test_stories_line(magic, story):

@@ -7,6 +7,8 @@ from json import JSONDecodeError, dumps, loads
 from .utils import Dict
 from .utils.Resolver import Resolver
 
+MAX_BYTES_LOGGING = 160
+
 
 class Stories:
 
@@ -110,6 +112,25 @@ class Stories:
 
         return next_line
 
+    @staticmethod
+    def get_str_for_logging(result) -> str:
+        """
+        Truncate the logged result to just N bytes.
+
+        See https://github.com/asyncy/platform-engine/issues/188
+        """
+        str_bytes = str(result).encode('utf-8', 'ignore')
+        str_bytes_len = len(str_bytes)
+
+        if str_bytes_len > MAX_BYTES_LOGGING:
+            truncated_len = str_bytes_len - MAX_BYTES_LOGGING
+            str_for_logging = str_bytes[:MAX_BYTES_LOGGING] \
+                .decode('utf-8', 'ignore')
+            result = f'{str_for_logging} ... ' \
+                     f'({truncated_len} bytes truncated)'
+
+        return result
+
     def resolve(self, arg, encode=False):
         """
         Resolves line argument to their real value
@@ -120,7 +141,7 @@ class Stories:
 
         result = Resolver.resolve(arg, self.context)
 
-        self.logger.log('story-resolve', arg, result)
+        self.logger.log('story-resolve', arg, self.get_str_for_logging(result))
 
         # encode and escape then format for shell
         if encode:
