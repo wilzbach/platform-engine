@@ -3,23 +3,56 @@ import re
 
 from asyncy.utils import Resolver
 
+import pytest
 from pytest import mark
 
 import storyscript
 
 
-# def test_resolve_list():
-#     data = {
-#         'foo': 'bar',
-#         'planets': ['mars', 'earth']
-#     }
-#     item = [
-#         'hello',
-#         {'$OBJECT': 'path', 'paths': ['foo']},
-#         {'$OBJECT': 'path', 'paths': ['planets', '1']}
-#     ]
-#
-#     assert Resolver.resolve(item, data) == 'hello bar earth'
+@mark.parametrize('case', [
+    ['2 + 2', 4],
+    ['0 + 2', 2],
+    ['2 / 2', 1],
+    ['"a" + "b"', 'ab'],
+    ['"a" + "b" + ("c" + "d")', 'abcd'],
+    ['2 + 10 / 5', 4],
+    ['20 * 100', 2000],
+    ['20 / 1000', 0.02],
+    ['2 * 4 / 4', 2],
+    ['2 * 4 / (4 * 2)', 1],
+    ['2 * 4 / (4 * 2) + 1', 2],
+    ['2 * 4 / (4 * 2) + 1 * 20', 21],
+    ['2 * 4 / (4 * foo) + 1 * 20 + zero', 21, {'foo': 2, 'zero': 0}],
+])
+def test_resolve_expressions(case):
+    # case[0] == the expression under test
+    # case[1] == the expected result
+    # case[2] == context
+    t = storyscript.Api.loads(f'a = {case[0]}')
+    context = {}
+    if len(case) > 2:
+        context = case[2]
+
+    assert case[1] == Resolver.resolve(t['tree']['1']['args'][0], context)
+
+
+def test_operate_unhandled():
+    with pytest.raises(Exception):
+        Resolver.operate(1, 1, 'foo')
+
+
+def test_operate_a_none():
+    assert Resolver.operate(None, 1, 'foo') == 1
+
+
+def test_operate_b_none():
+    assert Resolver.operate(1, None, 'foo') == 1
+
+
+def test_expression_invalid_type():
+    with pytest.raises(Exception):
+        assert Resolver.expression(
+            {'expression': 'a', 'values': [b'asd']}, {}) == 1
 
 
 @mark.parametrize('cases', [
