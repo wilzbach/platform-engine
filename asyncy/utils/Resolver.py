@@ -76,9 +76,42 @@ class Resolver:
             return dict(cls.dict(item['items'], data))
         elif object_type == 'list':
             return list(cls.list_object(item['items'], data))
+        elif object_type == 'expression':
+            return cls.expression(item, data)
         elif object_type == 'assertion':
             return cls.assertion(item, data)
         return cls.dictionary(item, data)
+
+    @classmethod
+    def operate(cls, a, b, expression):
+        if a is None:
+            return b
+        elif b is None:
+            return a
+        elif expression == 'sum':
+            return a + b
+        elif expression == 'multiplication':
+            return a * b
+        elif expression == 'division':
+            return a / b
+        else:
+            raise Exception(f'Unhandled expression {expression}!')
+
+    @classmethod
+    def expression(cls, item, data):
+        result = None
+        expression = item['expression']
+        for val in item['values']:
+            if isinstance(val, dict):
+                val = cls.resolve(val, data)
+
+            if type(val) in (int, float, str):
+                result = cls.operate(result, val, expression)
+            else:
+                raise Exception(f'Cannot operate on type {str(type(val))}! '
+                                f'Must be one of int, float, str')
+
+        return result
 
     @classmethod
     def assertion(cls, item, data):
