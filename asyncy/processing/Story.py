@@ -55,7 +55,8 @@ class Story:
                 return await Lexicon.for_loop(logger, story, line)
             elif method == 'execute':
                 return await Lexicon.execute(logger, story, line)
-            elif method == 'set' or method == 'expression':
+            elif method == 'set' or method == 'expression' \
+                    or method == 'mutation':
                 return await Lexicon.set(logger, story, line)
             elif method == 'call':
                 return await Story.execute_function(logger, story, line)
