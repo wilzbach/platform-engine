@@ -18,7 +18,31 @@ IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
-        preparation_lines='e = 10\no = -3',
+        preparation_lines='str = "hello world!"',
+        cases=[
+            TestCase(line='len = str length',
+                     assertion=ContextAssertion(key='len', expected=12)),
+
+            TestCase(line='parts = str split by: " "',
+                     assertion=ContextAssertion(
+                         key='parts', expected=['hello', 'world!'])),
+
+            TestCase(line='a = str uppercase',
+                     assertion=ContextAssertion(
+                         key='a', expected='HELLO WORLD!')),
+
+            TestCase(line='a = str lowercase',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello world!')),
+
+            TestCase(line='a = str capitalize',
+                     assertion=ContextAssertion(
+                         key='a', expected='Hello World!'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='e = 10\n'
+                          'o = -3',
         cases=[
             TestCase(line='a = e is_odd',
                      assertion=ContextAssertion(key='a', expected=False)),
