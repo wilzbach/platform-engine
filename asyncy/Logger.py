@@ -111,4 +111,4 @@ class Logger:
         getattr(self.frustum.logger, 'error')(message, exc_info=exc)
 
     def warn(self, message):
-        getattr(self.frustum.logger, 'warn')(message)
+        getattr(self.frustum.logger, 'warning')(message)
