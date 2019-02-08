@@ -191,6 +191,10 @@ async def test_mutation(suite: TestSuite, logger):
     well for simple stories. Don't run services or anything here. Use it
     to test mutations, variable assignments, value resolution, and so on.
     """
+    await run_suite(suite, logger)
+
+
+async def run_suite(suite: TestSuite, logger):
     for case in suite.cases:
         await run_test_case_in_suite(suite, case, logger)
 
@@ -222,9 +226,26 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     for a in assertions:
         if isinstance(a, ContextAssertion):
-            assert context.get(a.key) == a.expected
+            assert a.expected == context.get(a.key)
         elif isinstance(a, IsANumberContextAssertion):
             val = context.get(a.key)
             assert type(val) == int or type(val) == float
         else:
             raise Exception('Unknown assertion')
+
+
+@mark.parametrize('suite', [
+    TestSuite(preparation_lines='a = [20, 12, 23]', cases=[
+        TestCase(line='a[0] = 100', assertion=ContextAssertion(
+            key='a', expected=[100, 12, 23]))
+    ]),
+
+    TestSuite(preparation_lines='a = [[20, 12, 23], [-1]]', cases=[
+        TestCase(line='a[0][1] = 100\na[1][0] = 10',
+                 assertion=ContextAssertion(
+                     key='a', expected=[[20, 100, 23], [10]]))
+    ])
+])
+@mark.asyncio
+async def test_arrays(suite, logger):
+    await run_suite(suite, logger)
