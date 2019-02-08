@@ -122,6 +122,9 @@ IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
             TestCase(line='actual = arr index of: 5',
                      assertion=ContextAssertion(key='actual', expected=6)),
 
+            TestCase(line='actual = arr index of: 500',
+                     assertion=ContextAssertion(key='actual', expected=-1)),
+
             TestCase(line='actual = arr length',
                      assertion=ContextAssertion(key='actual', expected=8)),
 
@@ -166,6 +169,10 @@ IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
             TestCase(line='arr remove item: 3',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 4, 4, 5, 5])),
+
+            TestCase(line='arr remove item: 30',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
         ])
 ])
 @mark.asyncio
