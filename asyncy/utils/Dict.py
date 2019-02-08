@@ -11,11 +11,15 @@ class Dict:
             _cur = _dict
             last = keys.pop()
             for key in keys:
-                _cur = _cur.setdefault(key, {})
-                if not isinstance(_cur, dict):
-                    _dict[key] = {}
-                    _cur = _dict[key]
-            _cur[last] = output
+                if isinstance(_cur, list):
+                    _cur = _cur[int(key)]
+                else:
+                    _cur = _cur.setdefault(key, {})
+
+            if isinstance(_cur, list):
+                _cur[int(last)] = output
+            else:
+                _cur[last] = output
 
     @staticmethod
     def find(root, path, default_value=None):
