@@ -18,6 +18,46 @@ IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='e = 10\no = -3',
+        cases=[
+            TestCase(line='a = e is_odd',
+                     assertion=ContextAssertion(key='a', expected=False)),
+
+            TestCase(line='a = o is_odd',
+                     assertion=ContextAssertion(key='a', expected=True)),
+
+            TestCase(line='a = e is_even',
+                     assertion=ContextAssertion(key='a', expected=True)),
+
+            TestCase(line='a = o is_even',
+                     assertion=ContextAssertion(key='a', expected=False)),
+
+            TestCase(line='a = o absolute',
+                     assertion=[
+                         ContextAssertion(key='a', expected=3),
+                         ContextAssertion(key='o', expected=-3)
+                     ]),
+
+            TestCase(line='a = e increment',
+                     assertion=[
+                         ContextAssertion(key='a', expected=11),
+                         ContextAssertion(key='e', expected=10)
+                     ]),
+
+            TestCase(line='a = e decrement',
+                     assertion=[
+                         ContextAssertion(key='a', expected=9),
+                         ContextAssertion(key='e', expected=10)
+                     ]),
+
+            TestCase(line='e decrement',
+                     assertion=ContextAssertion(key='e', expected=10)),
+
+            TestCase(line='e increment',
+                     assertion=ContextAssertion(key='e', expected=10))
+        ]
+    ),
+    TestSuite(
         preparation_lines='m = {"a": 1, "b": 2}',
         cases=[
             TestCase(line='s = m size',
