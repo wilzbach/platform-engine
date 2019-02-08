@@ -11,7 +11,6 @@ class Mutations:
     @classmethod
     def mutate(cls, mutation, value, story, line):
         operator = mutation['mutation']
-        operand = story.argument_by_name(mutation, operator)
         handler = None
         try:
             if isinstance(value, str):
@@ -21,10 +20,7 @@ class Mutations:
             elif isinstance(value, dict):
                 handler = getattr(DictMutations, operator)
             elif isinstance(value, int) or isinstance(value, float):
-                if operator in ['+', '-', '/', '^', '*']:
-                    handler = NumberMutations.op_unary
-                else:
-                    handler = getattr(NumberMutations, operator)
+                handler = getattr(NumberMutations, operator)
         except AttributeError:
             pass  # handler is None at this point.
 
@@ -33,5 +29,9 @@ class Mutations:
                 message=f'Unsupported data type {str(type(value))} '
                         f'for mutation {operator}',
                 story=story, line=line)
-
-        return handler(mutation, value, story, line, operator, operand)
+        try:
+            return handler(mutation, value, story, line, operator)
+        except BaseException as e:
+            raise AsyncyError(
+                message=f'Failed to apply mutation {operator}! err={str(e)}',
+                story=story, line=line)

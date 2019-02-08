@@ -4,26 +4,28 @@
 class StringMutations:
 
     @classmethod
-    def _list_shift(cls, l, n):
-        return l[n:] + l[:n]
-
-    @classmethod
-    def length(cls, mutation, value, story, line, operator, operand):
+    def length(cls, mutation, value, story, line, operator):
         return len(value)
 
     @classmethod
-    def replace(cls, mutation, value, story, line, operator, operand):
-        new_val = story.argument_by_name(mutation, 'with')
-        return value.replace(operand, new_val)
+    def replace(cls, mutation, value, story, line, operator):
+        pattern = story.argument_by_name(mutation, 'pattern')
+        by = story.argument_by_name(mutation, 'by')
+        return value.replace(pattern, by)
 
     @classmethod
-    def split(cls, mutation, value, story, line, operator, operand):
-        return value.split(operand)
+    def split(cls, mutation, value, story, line, operator):
+        by = story.argument_by_name(mutation, 'by')
+        return value.split(by)
 
     @classmethod
-    def uppercase(cls, mutation, value, story, line, operator, operand):
+    def uppercase(cls, mutation, value, story, line, operator):
         return value.upper()
 
     @classmethod
-    def lowercase(cls, mutation, value, story, line, operator, operand):
+    def lowercase(cls, mutation, value, story, line, operator):
         return value.lower()
+
+    @classmethod
+    def capitalize(cls, mutation, value, story, line, operator):
+        return value.title()
