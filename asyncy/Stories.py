@@ -209,6 +209,12 @@ class Stories:
             self.set_variable(assign, output)
 
     def set_variable(self, assign, output):
+        if assign is None or assign.get('paths') is None:
+            self.logger.warn(
+                'Output should ne assigned to something, '
+                'but no variable found!')
+            return
+
         Dict.set(self.context, assign['paths'], output)
 
     def function_line_by_name(self, function_name):
@@ -229,7 +235,7 @@ class Stories:
         return None
 
     def argument_by_name(self, line, argument_name, encode=False):
-        args = line.get('args')
+        args = line.get('args', line.get('arguments'))
         if args is None:
             return None
 
@@ -266,7 +272,9 @@ class Stories:
         return new_context
 
     def set_context(self, context):
-        self.context = context or {}
+        if context is None:
+            context = {}
+        self.context = context
         # Optimise this later.
         self.context['app'] = self.app.app_context.copy()
 
