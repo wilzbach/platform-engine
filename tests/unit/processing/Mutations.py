@@ -29,7 +29,7 @@ def test_mutations_unexpected_mutation(story):
 
 
 def test_mutations_handler_exception(story, patch):
-    def exc():
+    def exc(*args):
         raise Exception()
 
     patch.object(StringMutations, 'replace', side_effect=exc)
