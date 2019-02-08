@@ -19,7 +19,6 @@ jobs:
 
     steps:
       - checkout
-      - setup_remote_docker
 
       # Download and cache dependencies
       - restore_cache:
@@ -30,9 +29,6 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            docker pull alpine
-            docker run -d --name "asyncy--app_id-alpine-echo-1" alpine sleep 10000
-            docker volume create hello.story
             python3 -m venv venv
             . venv/bin/activate
             pip3 install tox
