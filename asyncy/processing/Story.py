@@ -64,6 +64,8 @@ class Story:
                 return await Lexicon.function(logger, story, line)
             elif method == 'when':
                 return await Lexicon.when(logger, story, line)
+            elif method == 'return':
+                return await Lexicon.ret(logger, story, line)
             else:
                 raise NotImplementedError(
                     f'Unknown method to execute: {method}'

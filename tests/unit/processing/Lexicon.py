@@ -297,6 +297,51 @@ async def test_lexicon_when(patch, story, async_mock, service_name):
         assert ret == Lexicon.next_line_or_none.return_value
 
 
+@mark.asyncio
+async def test_return_in_when(patch, logger, story):
+    tree = {
+        '1': {'ln': '1', 'method': 'when'},
+        '2': {'ln': '2', 'method': 'execute', 'parent': '1'},
+        '3': {'ln': '3', 'method': 'if', 'parent': '1'},
+        '4': {'ln': '4', 'method': 'return', 'parent': '2'},
+        '5': {'ln': '5', 'method': 'execute'},
+    }
+
+    def get_line(ln):
+        return tree[ln]
+
+    patch.object(story, 'line', side_effect=get_line)
+    patch.object(story, 'next_block', return_value=tree['5'])
+    patch.object(Lexicon, 'next_line_or_none')
+
+    story.tree = tree
+
+    ret = await Lexicon.ret(logger, story, tree['4'])
+
+    story.next_block.assert_called_with(tree['1'])
+    Lexicon.next_line_or_none.assert_called_with(tree['5'])
+
+    assert ret == Lexicon.next_line_or_none()
+
+
+@mark.asyncio
+async def test_return_used_outside_when(patch, logger, story):
+    tree = {
+        '1': {'ln': '1', 'method': 'return'},
+    }
+    with pytest.raises(AsyncyError):
+        await Lexicon.ret(logger, story, tree['1'])
+
+
+@mark.asyncio
+async def test_return_used_with_args(patch, logger, story):
+    tree = {
+        '1': {'ln': '1', 'method': 'return', 'args': [{}]},
+    }
+    with pytest.raises(AsyncyError):
+        await Lexicon.ret(logger, story, tree['1'])
+
+
 def test_next_line_or_none():
     line = {'ln': '10'}
     assert Lexicon.next_line_or_none(line) == '10'
