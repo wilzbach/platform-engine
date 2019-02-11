@@ -44,7 +44,7 @@ class Lexicon:
             story.end_line(line['ln'], output=output,
                            assign={'paths': line.get('output')})
 
-            return Lexicon.next_line_or_none(story.line(line.get('next')))
+            return Lexicon.line_number_or_none(story.line(line.get('next')))
         else:
             output = await Services.execute(story, line)
             Metrics.container_exec_seconds_total.labels(
@@ -59,7 +59,7 @@ class Lexicon:
                 story.end_line(line['ln'], output=output,
                                assign=line.get('output'))
 
-            return Lexicon.next_line_or_none(story.line(line.get('next')))
+            return Lexicon.line_number_or_none(story.line(line.get('next')))
 
     @staticmethod
     async def function(logger, story, line):
@@ -68,10 +68,10 @@ class Lexicon:
         This method returns the next block's line number,
         if there are more statements to be executed.
         """
-        return Lexicon.next_line_or_none(story.next_block(line))
+        return Lexicon.line_number_or_none(story.next_block(line))
 
     @staticmethod
-    def next_line_or_none(line):
+    def line_number_or_none(line):
         if line:
             return line['ln']
 
@@ -94,7 +94,7 @@ class Lexicon:
 
         story.end_line(line['ln'], output=value,
                        assign={'$OBJECT': 'path', 'paths': line['name']})
-        return Lexicon.next_line_or_none(story.line(line.get('next')))
+        return Lexicon.line_number_or_none(story.line(line.get('next')))
 
     @staticmethod
     def _is_if_condition_true(story, line):
@@ -123,7 +123,7 @@ class Lexicon:
         if line['method'] == 'elif' or line['method'] == 'else':
             # If something had to be executed in this if/elif/else block, it
             # would have been executed already. See execution strategy above.
-            return Lexicon.next_line_or_none(story.next_block(line))
+            return Lexicon.line_number_or_none(story.next_block(line))
 
         # while true here because all if/elif/elif/else is executed here.
         while True:
@@ -153,7 +153,7 @@ class Lexicon:
                     continue
                 else:
                     # Next block is not a part of the if/elif/else.
-                    return Lexicon.next_line_or_none(next_line)
+                    return Lexicon.line_number_or_none(next_line)
 
         # Note: Control can NEVER reach here.
 
@@ -188,7 +188,7 @@ class Lexicon:
             # Yes, we need to subscribe to an event with the service.
             await Services.when(s, story, line)
             next_line = story.next_block(line)
-            return Lexicon.next_line_or_none(next_line)
+            return Lexicon.line_number_or_none(next_line)
         else:
             raise AsyncyError(message=f'Unknown service {service} for when!',
                               story=story, line=line)
@@ -223,6 +223,6 @@ class Lexicon:
 
             if parent_line['method'] == 'when':
                 next_line = story.next_block(parent_line)
-                return Lexicon.next_line_or_none(next_line)
+                return Lexicon.line_number_or_none(next_line)
 
             line = parent_line
