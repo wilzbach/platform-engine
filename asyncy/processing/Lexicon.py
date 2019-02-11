@@ -97,38 +97,65 @@ class Lexicon:
         return Lexicon.next_line_or_none(story.line(line.get('next')))
 
     @staticmethod
+    def _is_if_condition_true(story, line):
+        if len(line['args']) != 1:
+            raise AsyncyError(message=f'Complex if condition found! '
+                                      f'len={len(line["args"])}',
+                              story=story, line=line)
+
+        return story.resolve(line['args'][0], encode=False)
+
+    @staticmethod
     async def if_condition(logger, story, line):
         """
         Evaluates the resolution value to decide whether to enter
         inside an if-block.
+
+        Execution strategy:
+        1. Evaluate the if condition. If true, return the 'enter' line number
+        2. If the condition is false, find next elif, and perform step 1
+        3. If we reach an else block, perform step 1 without condition check
+
+        Since the entire if/elif/elif/else block execution happens here,
+        we can ignore all subsequent elif/else calls, and just return the
+        next block.
         """
-        logger.log('lexicon-if', line, story.context)
-        if line['method'] == 'else':
-            result = True
-        else:
-            if len(line['args']) != 1:
-                raise AsyncyError(message=f'Complex if condition found! '
-                                          f'len={len(line["args"])}',
-                                  story=story, line=line)
+        if line['method'] == 'elif' or line['method'] == 'else':
+            # If something had to be executed in this if/elif/else block, it
+            # would have been executed already. See execution strategy above.
+            return Lexicon.next_line_or_none(story.next_block(line))
 
-            result = story.resolve(line['args'][0], encode=False)
-        if result:
-            from . import Story
-            await Story.execute_block(logger, story, line)
+        # while true here because all if/elif/elif/else is executed here.
+        while True:
+            logger.log('lexicon-if', line, story.context)
 
-            while True:
+            if line['method'] == 'else':
+                result = True
+            else:
+                result = Lexicon._is_if_condition_true(story, line)
+
+            if result:
+                return line['enter']
+            else:
+                # Check for an elif block or an else block
+                # (step 2 of execution strategy).
                 next_line = story.next_block(line)
                 if next_line is None:
                     return None
 
-                if next_line['method'] == 'else' or \
-                        next_line['method'] == 'elif':
+                # Ensure that the elif/else is in the same parent.
+                if next_line['parent'] == line['parent'] and \
+                        (next_line['method'] == 'elif' or
+                         next_line['method'] == 'else'):
+                    # Continuing this loop will mean that step 1 in the
+                    # execution strategy is performed.
                     line = next_line
                     continue
                 else:
-                    break
+                    # Next block is not a part of the if/elif/else.
+                    return Lexicon.next_line_or_none(next_line)
 
-        return Lexicon.next_line_or_none(story.next_block(line))
+        # Note: Control can NEVER reach here.
 
     @staticmethod
     def unless_condition(logger, story, line):
