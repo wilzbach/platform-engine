@@ -24,7 +24,48 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
-        preparation_lines=''
+        preparation_lines='if colour == "blue"\n'
+                          '  result = "blue"\n'
+                          'else if colour == "red"\n'
+                          '  result = "red"\n'
+                          'else if colour == "yellow"\n'
+                          '  result = "yellow"\n'
+                          'else if colour == "green"\n'
+                          '  result = "green"\n'
+                          'else\n'
+                          '  result = "unknown"\n'
+                          'outside_var = "executed"\n',
+        cases=[
+            TestCase(prepend='colour = "blue"',
+                     assertion=[ContextAssertion(key='result',
+                                                 expected='blue'),
+                                ContextAssertion(key='outside_var',
+                                                 expected='executed')]),
+
+            TestCase(prepend='colour = "red"',
+                     assertion=[ContextAssertion(key='result',
+                                                 expected='red'),
+                                ContextAssertion(key='outside_var',
+                                                 expected='executed')]),
+
+            TestCase(prepend='colour = "yellow"',
+                     assertion=[ContextAssertion(key='result',
+                                                 expected='yellow'),
+                                ContextAssertion(key='outside_var',
+                                                 expected='executed')]),
+
+            TestCase(prepend='colour = "green"',
+                     assertion=[ContextAssertion(key='result',
+                                                 expected='green'),
+                                ContextAssertion(key='outside_var',
+                                                 expected='executed')]),
+
+            TestCase(prepend='colour = "pink"',
+                     assertion=[ContextAssertion(key='result',
+                                                 expected='unknown'),
+                                ContextAssertion(key='outside_var',
+                                                 expected='executed')])
+        ]
     ),
     TestSuite(
         preparation_lines='str = "hello world!"',
