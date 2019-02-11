@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
-import json
 import time
 
 from .Mutations import Mutations
 from .Services import Services
 from .. import Metrics
 from ..Exceptions import AsyncyError
+from ..Stories import Stories
 from ..Types import StreamingService
 from ..constants.LineConstants import LineConstants
-from ..constants.ServiceConstants import ServiceConstants
-from ..utils import Dict
-from ..utils.HttpUtils import HttpUtils
 
 
 class Lexicon:
@@ -168,3 +165,37 @@ class Lexicon:
         else:
             raise AsyncyError(message=f'Unknown service {service} for when!',
                               story=story, line=line)
+
+    @classmethod
+    async def ret(cls, logger, story: Stories, line):
+        """
+        Implementation for return.
+        The semantics for return are as follows:
+        1. Stops execution and returns from the nearest when or function block
+        2. At this time, return from functions is not supported because
+           we haven't spec'd it out completely.
+           See https://github.com/storyscript/storyscript/issues/596
+
+        As a result, only return in when blocks are supported, and cannot
+        return any value (since when blocks return nothing).
+        """
+        args = line.get('args', line.get('arguments'))
+        if args is not None and len(args) > 0:
+            # No support for returning a value.
+            raise AsyncyError('return may not be used with a value')
+
+        original_line = line
+        while True:
+            parent_line_ln = line.get('parent')
+            if parent_line_ln is None:
+                # There is no parent, this is an illegal usage of return.
+                raise AsyncyError(f'return not used inside a when block',
+                                  story=story, line=original_line)
+
+            parent_line = story.line(parent_line_ln)
+
+            if parent_line['method'] == 'when':
+                next_line = story.next_block(parent_line)
+                return Lexicon.next_line_or_none(next_line)
+
+            line = parent_line
