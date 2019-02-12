@@ -9,7 +9,8 @@ from unittest import mock
 from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError, TooManyServices, TooManyVolumes
+from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
+    TooManyServices, TooManyVolumes
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
@@ -191,7 +192,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         patch.object(Apps, 'deploy_release', new=async_mock())
 
     release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns,
-               previous_state, False]
+               previous_state, False, 'owner_uuid']
     conn.cursor().fetchone.return_value = release
 
     await Apps.reload_app(config, logger, app_id)
@@ -206,7 +207,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     Apps.deploy_release.mock.assert_called_with(
         config, app_id, app_dns,
-        release[1], release[2], release[3], release[4], release[7])
+        release[1], release[2], release[3], release[4], release[7], release[8])
 
     if raise_error:
         logger.error.assert_called()
@@ -235,10 +236,34 @@ async def test_deploy_release_many_services(patch):
         stories['services'][f'service_{i}'] = {}
 
     await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
-                              stories, False, False)
+                              stories, False, False, 'owner_uuid')
 
     TooManyServices.__init__.assert_called_with(20, 15)
     Apps.update_release_state.assert_called()
+
+
+@mark.asyncio
+async def test_deploy_release_many_apps(patch, magic):
+    patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
+    patch.init(TooManyActiveApps)
+
+    stories = {'services': {}}
+
+    Apps.apps = {}
+
+    try:
+        for i in range(20):
+            Apps.apps[f'app_{i}'] = magic()
+            Apps.apps[f'app_{i}'].owner_uuid = 'owner_uuid'
+            stories['services'][f'service_{i}'] = {}
+
+        await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
+                                  stories, False, False, 'owner_uuid')
+
+        TooManyActiveApps.__init__.assert_called_with(20, 5)
+        Apps.update_release_state.assert_called()
+    finally:
+        Apps.apps = {}  # Cleanup.
 
 
 @mark.asyncio
@@ -262,7 +287,7 @@ async def test_deploy_release_many_volumes(patch, async_mock):
                  new=async_mock(return_value=stories['services']))
 
     await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
-                              stories, False, False)
+                              stories, False, False, 'owner_uuid')
 
     TooManyVolumes.__init__.assert_called_with(20, 15)
     Apps.update_release_state.assert_called()
@@ -291,7 +316,7 @@ async def test_deploy_release(config, magic, patch, deleted,
 
     await Apps.deploy_release(
         config, 'app_id', 'app_dns', 'version', 'env',
-        {'stories': True}, maintenance, deleted)
+        {'stories': True}, maintenance, deleted, 'owner_uuid')
 
     if maintenance:
         assert Apps.update_release_state.call_count == 0
@@ -307,7 +332,7 @@ async def test_deploy_release(config, magic, patch, deleted,
         App.__init__.assert_called_with(
             'app_id', 'app_dns', 'version', config,
             app_logger,
-            {'stories': True}, services, 'env')
+            {'stories': True}, services, 'env', 'owner_uuid')
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
         if raise_exc is not None:

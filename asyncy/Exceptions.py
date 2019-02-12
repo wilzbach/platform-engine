@@ -23,6 +23,14 @@ class TooManyVolumes(AsyncyError):
                     f'https://docs.asyncy.com/faq/ for more information.')
 
 
+class TooManyActiveApps(AsyncyError):
+    def __init__(self, active_apps, max_apps):
+        super().__init__(
+            message=f'Only {max_apps} active apps are allowed during Asyncy '
+                    f'Beta. Please see '
+                    f'https://docs.asyncy.com/faq/ for more information.')
+
+
 class TooManyServices(AsyncyError):
     def __init__(self, service_count, max_services):
         super().__init__(

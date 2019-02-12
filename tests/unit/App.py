@@ -26,7 +26,7 @@ def exc(patch):
 @fixture
 def app(config, logger, magic):
     return App('app_id', 'app_dns', logger, config,
-               magic(), magic(), magic(), {})
+               magic(), magic(), magic(), {}, 'owner_uuid')
 
 
 def test_add_subscription(patch, app, magic):
@@ -124,7 +124,7 @@ def test_app_init(magic, config, logger, env):
 
     version = 100
     app = App('app_id', 'app_dns', version, config, logger,
-              stories, services, env)
+              stories, services, env, 'owner_1')
 
     if env is None:
         env = {}
@@ -133,6 +133,7 @@ def test_app_init(magic, config, logger, env):
     assert app.app_dns == 'app_dns'
     assert app.config == config
     assert app.logger == logger
+    assert app.owner_uuid == 'owner_1'
     assert app.stories == stories['stories']
     assert app.services == services
     assert app.environment == env
