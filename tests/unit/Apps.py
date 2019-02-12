@@ -24,7 +24,6 @@ import pytest
 from pytest import fixture, mark
 
 
-@fixture
 def exc():
     def foo(*args, **kwargs):
         raise Exception()
@@ -32,7 +31,6 @@ def exc():
     return foo
 
 
-@fixture
 def asyncy_exc():
     def foo(*args, **kwargs):
         raise AsyncyError()
@@ -177,7 +175,7 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 @mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
-                          magic, exc, raise_error, previous_state):
+                          magic, raise_error, previous_state):
     conn = db()
     old_app = magic()
     app_id = 'app_id'
@@ -187,7 +185,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     patch.object(Apps, 'destroy_app', new=async_mock())
     if raise_error:
-        patch.object(Apps, 'deploy_release', new=async_mock(side_effect=exc))
+        patch.object(Apps, 'deploy_release', new=async_mock(side_effect=exc()))
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
@@ -420,10 +418,10 @@ async def test_get_services(patch, logger, async_mock):
 @mark.parametrize('silent', [False, True])
 @mark.parametrize('update_db', [False, True])
 @mark.asyncio
-async def test_destroy_app_exc(patch, async_mock, magic, exc,
+async def test_destroy_app_exc(patch, async_mock, magic,
                                silent, update_db):
     app = magic()
-    app.destroy = async_mock(side_effect=exc)
+    app.destroy = async_mock(side_effect=exc())
     patch.object(Apps, 'update_release_state')
 
     if silent:
