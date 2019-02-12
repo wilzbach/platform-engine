@@ -11,11 +11,17 @@ from .App import App
 from .Config import Config
 from .Containers import Containers
 from .DeploymentLock import DeploymentLock
-from .Exceptions import AsyncyError
+from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
+    TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
+from .constants.ServiceConstants import ServiceConstants
 from .enums.ReleaseState import ReleaseState
+
+MAX_VOLUMES_BETA = 15
+MAX_SERVICES_BETA = 15
+MAX_ACTIVE_APPS = 5
 
 
 class Apps:
@@ -65,7 +71,7 @@ class Apps:
     @classmethod
     async def deploy_release(cls, config, app_id, app_dns,
                              version, environment, stories,
-                             maintenance: bool, deleted: bool):
+                             maintenance: bool, deleted: bool, owner_uuid):
         logger = cls.make_logger_for_app(config, app_id, version)
         logger.info(f'Deploying app {app_id}@{version}')
 
@@ -86,11 +92,34 @@ class Apps:
                                  ReleaseState.DEPLOYING)
 
         try:
+            # Check for the currently active apps by the same owner.
+            # Note: This is a super inefficient method, but is OK
+            # since it'll last only during beta.
+            active_apps = 0
+            for app in cls.apps.values():
+                if app.owner_uuid == owner_uuid:
+                    active_apps += 1
+
+            if active_apps >= MAX_ACTIVE_APPS:
+                raise TooManyActiveApps(active_apps, MAX_ACTIVE_APPS)
+
+            services_count = len(stories.get('services', []))
+            if services_count > MAX_SERVICES_BETA:
+                raise TooManyServices(services_count, MAX_SERVICES_BETA)
+
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
+            volume_count = 0
+            for service in services.keys():
+                omg = services[service][ServiceConstants.config]
+                volume_count += len(omg.get('volumes', {}).keys())
+
+            if volume_count > MAX_VOLUMES_BETA:
+                raise TooManyVolumes(volume_count, MAX_VOLUMES_BETA)
+
             app = App(app_id, app_dns, version, config, logger,
-                      stories, services, environment)
+                      stories, services, environment, owner_uuid)
 
             await Containers.clean_app(app)
 
@@ -227,7 +256,7 @@ class Apps:
                             where state != 'NO_DEPLOY'::release_state
                             group by app_uuid)
             select app_uuid, id, config, payload, maintenance,
-                   hostname, state, deleted
+                   hostname, state, deleted, apps.owner_uuid
             from latest
                    inner join releases using (app_uuid, id)
                    inner join apps on (latest.app_uuid = apps.uuid)
@@ -243,6 +272,7 @@ class Apps:
             app_dns = release[5]
             state = release[6]
             deleted = release[7]
+            owner_uuid = release[8]
             if state == ReleaseState.FAILED.value:
                 glogger.warn(f'Cowardly refusing to deploy app '
                              f'{app_id}@{version} as it\'s '
@@ -255,7 +285,7 @@ class Apps:
                 return
             await cls.deploy_release(
                 config, app_id, app_dns, version,
-                environment, stories, maintenance, deleted)
+                environment, stories, maintenance, deleted, owner_uuid)
             glogger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:
             glogger.error(

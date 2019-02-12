@@ -467,6 +467,12 @@ async def test_create_deployment(patch, async_mock, story):
                         {
                             'name': container_name,
                             'image': image,
+                            'resources': {
+                                'limits': {
+                                    'memory': '100Mi',
+                                    'cpu': '0.1'
+                                }
+                            },
                             'command': start_command,
                             'imagePullPolicy': 'Always',
                             'env': [{'name': 'token', 'value': 'asyncy-19920'},

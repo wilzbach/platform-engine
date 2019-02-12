@@ -9,11 +9,13 @@ from unittest import mock
 from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError
+from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
+    TooManyServices, TooManyVolumes
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
 from asyncy.Sentry import Sentry
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.enums.ReleaseState import ReleaseState
 
 import psycopg2
@@ -22,7 +24,6 @@ import pytest
 from pytest import fixture, mark
 
 
-@fixture
 def exc():
     def foo(*args, **kwargs):
         raise Exception()
@@ -30,7 +31,6 @@ def exc():
     return foo
 
 
-@fixture
 def asyncy_exc():
     def foo(*args, **kwargs):
         raise AsyncyError()
@@ -175,7 +175,7 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 @mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
-                          magic, exc, raise_error, previous_state):
+                          magic, raise_error, previous_state):
     conn = db()
     old_app = magic()
     app_id = 'app_id'
@@ -185,12 +185,12 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     patch.object(Apps, 'destroy_app', new=async_mock())
     if raise_error:
-        patch.object(Apps, 'deploy_release', new=async_mock(side_effect=exc))
+        patch.object(Apps, 'deploy_release', new=async_mock(side_effect=exc()))
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
     release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns,
-               previous_state, False]
+               previous_state, False, 'owner_uuid']
     conn.cursor().fetchone.return_value = release
 
     await Apps.reload_app(config, logger, app_id)
@@ -205,7 +205,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     Apps.deploy_release.mock.assert_called_with(
         config, app_id, app_dns,
-        release[1], release[2], release[3], release[4], release[7])
+        release[1], release[2], release[3], release[4], release[7], release[8])
 
     if raise_error:
         logger.error.assert_called()
@@ -221,6 +221,74 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
     ret = Apps.get_all_app_uuids_for_deployment(config)
     conn.cursor().execute.assert_called_with(query)
     assert ret == conn.cursor().fetchall()
+
+
+@mark.asyncio
+async def test_deploy_release_many_services(patch):
+    patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
+    patch.init(TooManyServices)
+
+    stories = {'services': {}}
+
+    for i in range(20):
+        stories['services'][f'service_{i}'] = {}
+
+    await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
+                              stories, False, False, 'owner_uuid')
+
+    TooManyServices.__init__.assert_called_with(20, 15)
+    Apps.update_release_state.assert_called()
+
+
+@mark.asyncio
+async def test_deploy_release_many_apps(patch, magic):
+    patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
+    patch.init(TooManyActiveApps)
+
+    stories = {'services': {}}
+
+    Apps.apps = {}
+
+    try:
+        for i in range(20):
+            Apps.apps[f'app_{i}'] = magic()
+            Apps.apps[f'app_{i}'].owner_uuid = 'owner_uuid'
+            stories['services'][f'service_{i}'] = {}
+
+        await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
+                                  stories, False, False, 'owner_uuid')
+
+        TooManyActiveApps.__init__.assert_called_with(20, 5)
+        Apps.update_release_state.assert_called()
+    finally:
+        Apps.apps = {}  # Cleanup.
+
+
+@mark.asyncio
+async def test_deploy_release_many_volumes(patch, async_mock):
+    patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
+    patch.init(TooManyVolumes)
+
+    stories = {'services': {}}
+
+    for i in range(10):
+        stories['services'][f'service_{i}'] = {
+            ServiceConstants.config: {
+                'volumes': {
+                    'a': {},
+                    'b': {}
+                }
+            }
+        }
+
+    patch.object(Apps, 'get_services',
+                 new=async_mock(return_value=stories['services']))
+
+    await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
+                              stories, False, False, 'owner_uuid')
+
+    TooManyVolumes.__init__.assert_called_with(20, 15)
+    Apps.update_release_state.assert_called()
 
 
 @mark.parametrize('raise_exc', [None, exc, asyncy_exc])
@@ -246,7 +314,7 @@ async def test_deploy_release(config, magic, patch, deleted,
 
     await Apps.deploy_release(
         config, 'app_id', 'app_dns', 'version', 'env',
-        {'stories': True}, maintenance, deleted)
+        {'stories': True}, maintenance, deleted, 'owner_uuid')
 
     if maintenance:
         assert Apps.update_release_state.call_count == 0
@@ -262,7 +330,7 @@ async def test_deploy_release(config, magic, patch, deleted,
         App.__init__.assert_called_with(
             'app_id', 'app_dns', 'version', config,
             app_logger,
-            {'stories': True}, services, 'env')
+            {'stories': True}, services, 'env', 'owner_uuid')
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
         if raise_exc is not None:
@@ -350,10 +418,10 @@ async def test_get_services(patch, logger, async_mock):
 @mark.parametrize('silent', [False, True])
 @mark.parametrize('update_db', [False, True])
 @mark.asyncio
-async def test_destroy_app_exc(patch, async_mock, magic, exc,
+async def test_destroy_app_exc(patch, async_mock, magic,
                                silent, update_db):
     app = magic()
-    app.destroy = async_mock(side_effect=exc)
+    app.destroy = async_mock(side_effect=exc())
     patch.object(Apps, 'update_release_state')
 
     if silent:
