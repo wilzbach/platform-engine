@@ -14,6 +14,24 @@ class ContainerSpecNotRegisteredError(AsyncyError):
         super().__init__(message=f'Service {container_name} not registered!')
 
 
+class TooManyVolumes(AsyncyError):
+    def __init__(self, volume_count, max_volumes):
+        super().__init__(
+            message=f'Your app makes use of {volume_count} volumes. '
+                    f'The total permissible limit during Asyncy Beta is '
+                    f'{max_volumes} volumes. Please see '
+                    f'https://docs.asyncy.com/faq/ for more information.')
+
+
+class TooManyServices(AsyncyError):
+    def __init__(self, service_count, max_services):
+        super().__init__(
+            message=f'Your app makes use of {service_count} services. '
+                    f'The total permissible limit during Asyncy Beta is '
+                    f'{max_services} services. Please see '
+                    f'https://docs.asyncy.com/faq/ for more information.')
+
+
 class ArgumentNotFoundError(AsyncyError):
 
     def __init__(self, story=None, line=None, name=None):

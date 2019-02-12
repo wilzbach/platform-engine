@@ -384,6 +384,12 @@ class Kubernetes:
                             {
                                 'name': container_name,
                                 'image': image,
+                                'resources': {
+                                    'limits': {
+                                        'memory': '100Mi',  # During beta.
+                                        'cpu': '0.1',  # During beta.
+                                    }
+                                },
                                 'command': start_command,
                                 'imagePullPolicy': 'Always',
                                 'env': env_k8s,

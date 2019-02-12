@@ -11,11 +11,15 @@ from .App import App
 from .Config import Config
 from .Containers import Containers
 from .DeploymentLock import DeploymentLock
-from .Exceptions import AsyncyError
+from .Exceptions import AsyncyError, TooManyServices, TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
+from .constants.ServiceConstants import ServiceConstants
 from .enums.ReleaseState import ReleaseState
+
+MAX_VOLUMES_BETA = 15
+MAX_SERVICES_BETA = 15
 
 
 class Apps:
@@ -86,8 +90,20 @@ class Apps:
                                  ReleaseState.DEPLOYING)
 
         try:
+            services_count = len(stories.get('services', []))
+            if services_count > MAX_SERVICES_BETA:
+                raise TooManyServices(services_count, MAX_SERVICES_BETA)
+
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
+
+            volume_count = 0
+            for service in services.keys():
+                omg = services[service][ServiceConstants.config]
+                volume_count += len(omg.get('volumes', {}).keys())
+
+            if volume_count > MAX_VOLUMES_BETA:
+                raise TooManyVolumes(volume_count, MAX_VOLUMES_BETA)
 
             app = App(app_id, app_dns, version, config, logger,
                       stories, services, environment)

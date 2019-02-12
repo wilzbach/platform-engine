@@ -9,11 +9,12 @@ from unittest import mock
 from asyncy.App import App
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError
+from asyncy.Exceptions import AsyncyError, TooManyServices, TooManyVolumes
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
 from asyncy.Sentry import Sentry
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.enums.ReleaseState import ReleaseState
 
 import psycopg2
@@ -221,6 +222,50 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
     ret = Apps.get_all_app_uuids_for_deployment(config)
     conn.cursor().execute.assert_called_with(query)
     assert ret == conn.cursor().fetchall()
+
+
+@mark.asyncio
+async def test_deploy_release_many_services(patch):
+    patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
+    patch.init(TooManyServices)
+
+    stories = {'services': {}}
+
+    for i in range(20):
+        stories['services'][f'service_{i}'] = {}
+
+    await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
+                              stories, False, False)
+
+    TooManyServices.__init__.assert_called_with(20, 15)
+    Apps.update_release_state.assert_called()
+
+
+@mark.asyncio
+async def test_deploy_release_many_volumes(patch, async_mock):
+    patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
+    patch.init(TooManyVolumes)
+
+    stories = {'services': {}}
+
+    for i in range(10):
+        stories['services'][f'service_{i}'] = {
+            ServiceConstants.config: {
+                'volumes': {
+                    'a': {},
+                    'b': {}
+                }
+            }
+        }
+
+    patch.object(Apps, 'get_services',
+                 new=async_mock(return_value=stories['services']))
+
+    await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
+                              stories, False, False)
+
+    TooManyVolumes.__init__.assert_called_with(20, 15)
+    Apps.update_release_state.assert_called()
 
 
 @mark.parametrize('raise_exc', [None, exc, asyncy_exc])
