@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock
 
 from asyncy import Metrics
 from asyncy.Exceptions import AsyncyError
+from asyncy.Stories import Stories
 from asyncy.Types import StreamingService
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
@@ -138,75 +139,157 @@ async def test_lexicon_function(patch, logger, story, line):
     story.next_block.assert_called_with(line)
 
 
-@mark.parametrize('method', ['if', 'elif', 'else'])
-@mark.parametrize('args', [[True], [1, 2, 3]])
-@mark.parametrize('no_more_blocks', [True, False])
+@mark.parametrize('method', ['elif', 'else'])
 @mark.asyncio
-async def test_lexicon_if(patch, logger, story, async_mock,
-                          method, args, no_more_blocks):
-    line = {
-        'method': method,
-        'args': args
+async def test_if_condition_elif_else(patch, logger, story, line, method):
+    line['method'] = method
+    patch.object(Lexicon, 'line_number_or_none')
+    patch.object(story, 'next_block')
+    ret = await Lexicon.if_condition(logger, story, line)
+    story.next_block.assert_called_with(line)
+    Lexicon.line_number_or_none.assert_called_with(story.next_block())
+    assert ret == Lexicon.line_number_or_none()
+
+
+@mark.asyncio
+async def test_if_condition_1(patch, logger, magic):
+    tree = {
+        '1': {
+            'ln': '1',
+            'method': 'if',
+            'parent': None,
+            'enter': '2',
+            'next': '2'
+        },
+        '2': {
+            'ln': '2',
+            'parent': '1',
+            'next': None
+        }
     }
 
-    patch.object(Story, 'execute_block', new=async_mock())
-    patch.object(story, 'resolve', return_value=True)
-    side_effect = [
-        {'method': 'elif', 'ln': '1'},  # This is just to test the while loop,
-        {'method': 'elif', 'ln': '2'},  # and that we're jumping blocks.
-        {'method': 'elif', 'ln': '3'},
-        {'method': 'else', 'ln': '4'},
-        {'method': 'execute', 'ln': '5'},
-        {'method': 'execute', 'ln': '5'},  # Only because it's called twice.
-    ]
-    if no_more_blocks:
-        side_effect = [None]
-    patch.object(story, 'next_block', side_effect=side_effect)
+    patch.object(Lexicon, '_is_if_condition_true', return_value=False)
+    patch.object(Lexicon, 'line_number_or_none')
+    story = Stories(magic(), 'foo', logger)
 
-    story.context = {}
-
-    if len(args) > 2 and method != 'else':
-        with pytest.raises(AsyncyError):
-            await Lexicon.if_condition(logger, story, line)
-        return
-    else:
-        result = await Lexicon.if_condition(logger, story, line)
-        if method == 'else':
-            story.resolve.assert_not_called()
-        else:
-            story.resolve.assert_called_with(line['args'][0], encode=False)
-        Story.execute_block.mock.assert_called_with(logger, story, line)
-
-        if no_more_blocks:
-            assert result is None
-        else:
-            assert result == '5'
+    story.tree = tree
+    ret = await Lexicon.if_condition(logger, story, tree['1'])
+    assert ret is None
 
 
-@mark.parametrize('method', ['if', 'elif'])
 @mark.asyncio
-async def test_lexicon_if_false(patch, logger, story, async_mock,
-                                method):
-    line = {
-        'method': method,
-        'args': [True],
-        'next': '2'
+async def test_if_condition_2(patch, logger, magic):
+    tree = {
+        '1': {
+            'ln': '1',
+            'method': 'if',
+            'enter': '2',
+            'next': '2'
+        },
+        '2': {
+            'ln': '2',
+            'parent': '1',
+            'next': '3'
+        },
+        '3': {
+            'ln': '3',
+            'next': None,
+            'method': 'execute'
+        }
     }
 
-    patch.object(Story, 'execute_block', new=async_mock())
-    patch.object(story, 'resolve', return_value=False)
-    patch.object(story, 'next_block', side_effect=[
-        {'method': 'execute', 'ln': '2'}
-    ])
+    patch.object(Lexicon, '_is_if_condition_true', return_value=False)
+    story = Stories(magic(), 'foo', logger)
 
-    story.context = {}
-    result = await Lexicon.if_condition(logger, story, line)
+    story.tree = tree
+    ret = await Lexicon.if_condition(logger, story, tree['1'])
+    assert ret == '3'
 
-    story.resolve.assert_called_with(line['args'][0], encode=False)
 
-    Story.execute_block.mock.assert_not_called()
+def test__is_if_condition_true(patch, story):
+    line = {
+        'args': ['my_condition']
+    }
+    patch.object(story, 'resolve', return_value='condition_result')
+    assert Lexicon._is_if_condition_true(story, line) == 'condition_result'
+    story.resolve.assert_called_with('my_condition', encode=False)
 
-    assert '2' == result
+
+def test__is_if_condition_true_complex(patch, story):
+    line = {
+        'args': ['my_condition', 'my_condition_2']
+    }
+    with pytest.raises(AsyncyError):
+        Lexicon._is_if_condition_true(story, line)
+
+
+@mark.parametrize('case', [
+    # case[0] - side_effect for Lexicon._is_if_condition_true
+    # case[1] - expected line number to be returned
+    [[True, False, False], '2'],
+    [[False, True, False], '4'],
+    [[False, False, True], '6'],
+    [[False, False, False], '8'],
+])
+@mark.asyncio
+async def test_if_condition(patch, logger, magic, case):
+    tree = {
+        '1': {
+            'ln': '1',
+            'method': 'if',
+            'parent': None,
+            'enter': '2',
+            'next': '2'
+        },
+        '2': {
+            'ln': '2',
+            'parent': '1',
+            'next': '3'
+        },
+        '3': {
+            'ln': '3',
+            'method': 'elif',
+            'parent': None,
+            'enter': '4',
+            'next': '4'
+        },
+        '4': {
+            'ln': '4',
+            'parent': '3',
+            'next': '5'
+        },
+        '5': {
+            'ln': '5',
+            'method': 'elif',
+            'parent': None,
+            'enter': '6',
+            'next': '6'
+        },
+        '6': {
+            'ln': '6',
+            'parent': '5',
+            'next': '7'
+        },
+        '7': {
+            'ln': '7',
+            'method': 'else',
+            'parent': None,
+            'next': '8',
+            'enter': '8'
+        },
+        '8': {
+            'ln': '8',
+            'parent': '7',
+            'next': None
+        }
+    }
+
+    patch.object(Lexicon, '_is_if_condition_true', side_effect=case[0])
+    story = Stories(magic(), 'foo', logger)
+
+    story.tree = tree
+    ret = await Lexicon.if_condition(logger, story, tree['1'])
+    assert ret == case[1]
 
 
 def test_lexicon_unless(logger, story, line):

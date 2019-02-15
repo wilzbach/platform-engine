@@ -144,7 +144,7 @@ class Lexicon:
                     return None
 
                 # Ensure that the elif/else is in the same parent.
-                if next_line['parent'] == line['parent'] and \
+                if next_line.get('parent') == line.get('parent') and \
                         (next_line['method'] == 'elif' or
                          next_line['method'] == 'else'):
                     # Continuing this loop will mean that step 1 in the
