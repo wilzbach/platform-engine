@@ -12,7 +12,7 @@ from tornado.httpclient import AsyncHTTPClient
 import ujson
 
 from ..Containers import Containers
-from ..Exceptions import AsyncyError
+from ..Exceptions import ArgumentTypeMismatchError, AsyncyError
 from ..Logger import Logger
 from ..Types import StreamingService
 from ..constants.ContextConstants import ContextConstants
@@ -294,6 +294,63 @@ class Services:
         yield write(b'--%s--\r\n' % (boundary.encode(),))
 
     @classmethod
+    def raise_for_type_mismatch(cls, story, line, name, value, command_conf):
+        """
+        Validates for types listed on
+        https://microservice.guide/schema/actions/#arguments.
+
+        Supported types: int, float, string, list, map, boolean, enum, or any
+        """
+        t = command_conf.get('type', 'any')
+
+        if t == 'string' and isinstance(value, str):
+            return
+        elif t == 'int' and isinstance(value, int):
+            return
+        elif t == 'float' and isinstance(value, float):
+            return
+        elif t == 'list' and isinstance(value, list):
+            return
+        elif t == 'map' and isinstance(value, dict):
+            return
+        elif t == 'boolean' and isinstance(value, bool):
+            return
+        elif t == 'enum' and isinstance(value, str):
+            valid_values = command_conf.get('enum', [])
+            if value in valid_values:
+                return
+        elif t == 'any':
+            return
+
+        raise ArgumentTypeMismatchError(name, t, story=story, line=line)
+
+    @classmethod
+    def smart_insert(cls, story, line, command_conf: dict, key: str, value,
+                     m: dict):
+        """
+        Validates type, and sets the key in the map m.
+        Additionally, it performs a "smart" cast - if the value is of type
+        dict, or an array, and the command_conf indicates that the value
+        expected by the service is a string, it will convert the value
+        into a JSON representation, and insert it.
+
+        :param line: The line
+        :param story: The story
+        :param command_conf: The command config, as seen in the OMG
+        :param key: The key to insert this value as
+        :param value: The value, which might be "smartly" stringified to JSON
+        :param m: The map to insert the value in
+        """
+        t = command_conf.get('type', 'any')
+        if t == 'string':
+            if isinstance(value, dict) or isinstance(value, list):
+                value = json.dumps(value)
+
+        cls.raise_for_type_mismatch(story, line, key, value, command_conf)
+
+        m[key] = value
+
+    @classmethod
     async def execute_http(cls, story, line, chain, command_conf):
         assert isinstance(chain, deque)
         assert isinstance(chain[0], Service)
@@ -310,11 +367,14 @@ class Services:
             value = story.argument_by_name(line, arg)
             location = args[arg].get('in', 'requestBody')
             if location == 'query':
-                query_params[arg] = value
+                cls.smart_insert(story, line, command_conf,
+                                 arg, value, query_params)
             elif location == 'path':
-                path_params[arg] = value
+                cls.smart_insert(story, line, command_conf,
+                                 arg, value, path_params)
             elif location == 'requestBody':
-                body[arg] = value
+                cls.smart_insert(story, line, command_conf,
+                                 arg, value, body)
                 request_body_fields_count += 1
             elif location == 'formBody':
                 # Created in StoryEventHandler.
