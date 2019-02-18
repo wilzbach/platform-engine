@@ -6,7 +6,7 @@ from io import StringIO
 from unittest.mock import MagicMock, Mock
 
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError
+from asyncy.Exceptions import ArgumentTypeMismatchError, AsyncyError
 from asyncy.Types import StreamingService
 from asyncy.constants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
@@ -177,6 +177,76 @@ def test_resolve_chain(story):
     assert Services.resolve_chain(story, story.tree['5']) \
         == deque([Service(name='alpine'), Command(name='echo'),
                   Event(name='foo'), Command(name='sonar')])
+
+
+@mark.parametrize('value', [{'a': 'b'}, [0, 2, 'hello']])
+def test_smart_insert(patch, story, value):
+    patch.object(Services, 'raise_for_type_mismatch')
+
+    command_conf = {
+        'type': 'string'
+    }
+
+    m = {}
+
+    key = 'my_key'
+
+    Services.smart_insert(story, {}, command_conf, key, value, m)
+    Services.raise_for_type_mismatch.assert_called_with(
+        story, {}, key, json.dumps(value), command_conf)
+
+    assert m[key] == json.dumps(value)
+
+
+@mark.parametrize('val', ['a', 'b', 'c', 'd'])
+def test_raise_for_type_mismatch_enum(story, val):
+    command_conf = {
+        'type': 'enum',
+        'enum': ['a', 'b', 'c']
+    }
+
+    if val in command_conf['enum']:
+        Services.raise_for_type_mismatch(story, {}, 'arg_name',
+                                         val, command_conf)
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, {}, 'arg_name',
+                                             val, command_conf)
+
+
+@mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
+                          'boolean', 'any'])
+@mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])
+def test_raise_for_type_mismatch(story, typ, val):
+    command_conf = {
+        'type': typ
+    }
+
+    line = {'ln': '10'}
+
+    valid = False
+    if typ == 'string' and isinstance(val, str):
+        valid = True
+    elif typ == 'int' and isinstance(val, int):
+        valid = True
+    elif typ == 'float' and isinstance(val, float):
+        valid = True
+    elif typ == 'list' and isinstance(val, list):
+        valid = True
+    elif typ == 'map' and isinstance(val, dict):
+        valid = True
+    elif typ == 'boolean' and isinstance(val, bool):
+        valid = True
+    elif typ == 'any':
+        valid = True
+
+    if valid:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         val, command_conf)
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             val, command_conf)
 
 
 @mark.parametrize('location', ['requestBody', 'query', 'path',

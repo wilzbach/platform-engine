@@ -50,6 +50,14 @@ class ArgumentNotFoundError(AsyncyError):
         super().__init__(message, story=story, line=line)
 
 
+class ArgumentTypeMismatchError(AsyncyError):
+
+    def __init__(self, arg_name: str, omg_type: str, story=None, line=None):
+        message = f'The argument "{arg_name}" does not match the expected ' \
+                  f'type "{omg_type}"'
+        super().__init__(message, story=story, line=line)
+
+
 class InvalidCommandError(AsyncyError):
 
     def __init__(self, name, story=None, line=None):
