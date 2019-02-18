@@ -179,7 +179,7 @@ def test_resolve_chain(story):
                   Event(name='foo'), Command(name='sonar')])
 
 
-@mark.parametrize('value', [{'a': 'b'}, [0, 2, 'hello']])
+@mark.parametrize('value', [{'a': 'b'}, [0, 2, 'hello'], 'a'])
 def test_smart_insert(patch, story, value):
     patch.object(Services, 'raise_for_type_mismatch')
 
@@ -191,11 +191,16 @@ def test_smart_insert(patch, story, value):
 
     key = 'my_key'
 
+    if isinstance(value, dict) or isinstance(value, list):
+        expected = json.dumps(value)
+    else:
+        expected = value
+
     Services.smart_insert(story, {}, command_conf, key, value, m)
     Services.raise_for_type_mismatch.assert_called_with(
-        story, {}, key, json.dumps(value), command_conf)
+        story, {}, key, expected, command_conf)
 
-    assert m[key] == json.dumps(value)
+    assert m[key] == expected
 
 
 @mark.parametrize('val', ['a', 'b', 'c', 'd'])
