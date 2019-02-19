@@ -24,6 +24,13 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = []',
+        cases=[
+            TestCase(append='b = a[10]',
+                     assertion=ContextAssertion(key='b', expected=None))
+        ]
+    ),
+    TestSuite(
         preparation_lines='if colour == "blue"\n'
                           '  result = "blue"\n'
                           'else if colour == "red"\n'
