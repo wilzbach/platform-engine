@@ -97,7 +97,7 @@ class Apps:
             # since it'll last only during beta.
             active_apps = 0
             for app in cls.apps.values():
-                if app.owner_uuid == owner_uuid:
+                if app is not None and app.owner_uuid == owner_uuid:
                     active_apps += 1
 
             if active_apps >= MAX_ACTIVE_APPS:
