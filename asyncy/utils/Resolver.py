@@ -123,14 +123,19 @@ class Resolver:
         - greater_equal
         - less
         - less_equal
+        - not
         """
         a = item['assertion']
         values = item['values']
-        assert len(values) == 2, \
+        assert len(values) <= 2, \
             f'Only simple assertions are supported. Found {len(values)}'
 
         left = cls.resolve(values[0], data)
-        right = cls.resolve(values[1], data)
+        right = None
+
+        if len(values) == 2:
+            right = cls.resolve(values[1], data)
+
         if a == 'equals':
             return left == right
         elif a == 'not_equal':
@@ -143,6 +148,8 @@ class Resolver:
             return left < right
         elif a == 'less_equal':
             return left <= right
+        elif a == 'not':
+            return left is False
         else:
             assert False, f'Unsupported operation: {a}'
 
