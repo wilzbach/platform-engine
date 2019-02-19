@@ -42,7 +42,7 @@ class Resolver:
         """
         try:
             return reduce(cls._walk, paths, data)
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, IndexError):
             return None
 
     @classmethod

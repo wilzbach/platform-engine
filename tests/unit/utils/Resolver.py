@@ -85,6 +85,7 @@ def test_expression_invalid_type():
     [{'i': True}, 'if i\n  echo foo', True, False],
     [{'i': True}, 'if !i\n  echo foo', False, False],
     [{'i': False}, 'if !i\n  echo foo', True, False],
+    [{'i': None}, 'if !i\n  echo foo', False, False],
 ])
 def test_resolve_all_objects(cases):
     data = cases[0]
