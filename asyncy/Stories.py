@@ -2,10 +2,11 @@
 import pathlib
 import time
 import uuid
-from json import JSONDecodeError, dumps, loads
+from json import dumps
 
 from .utils import Dict
 from .utils.Resolver import Resolver
+from .utils.StringUtils import StringUtils
 
 MAX_BYTES_LOGGING = 160
 
@@ -119,17 +120,7 @@ class Stories:
 
         See https://github.com/asyncy/platform-engine/issues/188
         """
-        str_bytes = str(result).encode('utf-8', 'ignore')
-        str_bytes_len = len(str_bytes)
-
-        if str_bytes_len > MAX_BYTES_LOGGING:
-            truncated_len = str_bytes_len - MAX_BYTES_LOGGING
-            str_for_logging = str_bytes[:MAX_BYTES_LOGGING] \
-                .decode('utf-8', 'ignore')
-            result = f'{str_for_logging} ... ' \
-                     f'({truncated_len} bytes truncated)'
-
-        return result
+        return StringUtils.truncate(result, MAX_BYTES_LOGGING)
 
     def resolve(self, arg, encode=False):
         """

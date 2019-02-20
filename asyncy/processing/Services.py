@@ -21,6 +21,7 @@ from ..constants.ServiceConstants import ServiceConstants
 from ..entities.Multipart import FileFormField, FormField
 from ..utils import Dict
 from ..utils.HttpUtils import HttpUtils
+from ..utils.StringUtils import StringUtils
 
 InternalCommand = namedtuple('InternalCommand',
                              ['arguments', 'output_type', 'handler'])
@@ -429,13 +430,14 @@ class Services:
                 return ujson.loads(response.body)
             else:
                 return cls.parse_output(command_conf, response.body,
-                                        story, line)
+                                        story, line, content_type)
         else:
             raise AsyncyError(message=f'Failed to invoke service!',
                               story=story, line=line)
 
     @classmethod
-    def parse_output(cls, command_conf: dict, raw_output, story, line):
+    def parse_output(cls, command_conf: dict, raw_output, story,
+                     line, content_type: str):
         output = command_conf.get('output', {})
         t = output.get('type')
         if t is None or t == 'any':
@@ -453,9 +455,13 @@ class Services:
                 return raw_output == 'true'
 
             raise Exception(f'Unsupported type {t}')
-        except BaseException as e:
-            raise AsyncyError(message=f'Failed to parse output as {t}',
-                              story=story, line=line)
+        except BaseException:
+            truncated_output = StringUtils.truncate(raw_output, 160)
+            raise AsyncyError(
+                message=f'Failed to parse output as type {t}. '
+                        f'Content-Type received: "{content_type}". '
+                        f'Output received {truncated_output}.',
+                story=story, line=line)
 
     @classmethod
     def _convert_bytes_to_string(cls, raw):

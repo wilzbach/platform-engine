@@ -406,7 +406,7 @@ def test_parse_output(output_type, story):
         expected_output = b'empty'
 
     assert Services.parse_output(
-        command_conf, actual_input, story, line) == expected_output
+        command_conf, actual_input, story, line, '') == expected_output
 
 
 def test_parse_output_invalid_cast(story):
@@ -417,7 +417,7 @@ def test_parse_output_invalid_cast(story):
     }
 
     with pytest.raises(AsyncyError):
-        Services.parse_output(command_conf, 'not_an_int', story, {})
+        Services.parse_output(command_conf, 'not_an_int', story, {}, '')
 
 
 def test_parse_output_invalid_type(story):
@@ -428,7 +428,7 @@ def test_parse_output_invalid_type(story):
     }
 
     with pytest.raises(AsyncyError):
-        Services.parse_output(command_conf, 'blah', story, {})
+        Services.parse_output(command_conf, 'blah', story, {}, '')
 
 
 def test_convert_bytes_to_string():
