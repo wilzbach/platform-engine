@@ -146,11 +146,13 @@ def test_app_init(magic, config, logger, env):
 @mark.asyncio
 async def test_app_bootstrap(patch, app, async_mock):
     patch.object(app, 'run_stories', new=async_mock())
+    patch.object(app, 'start_services', new=async_mock())
     stories = {'entrypoint': ['foo'], 'stories': {'foo': {}}}
     app.stories = stories
     await app.bootstrap()
 
     assert app.run_stories.mock.call_count == 1
+    assert app.start_services.mock.call_count == 1
 
 
 @mark.asyncio
