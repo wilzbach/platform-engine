@@ -117,7 +117,7 @@ class Containers:
                               container_name=container_name,
                               hostname=hostname)
 
-        story.logger.info(f'Started container {container_name}: {ss}')
+        story.logger.info(f'Started container {container_name}')
         return ss
 
     @classmethod
