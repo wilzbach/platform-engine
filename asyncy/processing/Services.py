@@ -565,7 +565,7 @@ class Services:
         response = await HttpUtils.fetch_with_retry(100, story.logger, url,
                                                     client, kwargs)
         if int(response.code / 100) == 2:
-            story.logger.info(f'Subscribed!')
+            story.logger.debug(f'Subscribed!')
             story.app.add_subscription(sub_id, s, command, body)
         else:
             raise AsyncyError(
