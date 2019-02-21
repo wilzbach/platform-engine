@@ -387,7 +387,7 @@ class Kubernetes:
                                 'resources': {
                                     'limits': {
                                         'memory': '100Mi',  # During beta.
-                                        'cpu': '0.1',  # During beta.
+                                        'cpu': '0.01',  # During beta.
                                     }
                                 },
                                 'command': start_command,
