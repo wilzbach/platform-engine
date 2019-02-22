@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from asyncio import TimeoutError
 import json
 import ssl
 import time
 import typing
+from asyncio import TimeoutError
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
