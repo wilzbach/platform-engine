@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+from asyncio import TimeoutError
 import json
 import ssl
 import time
