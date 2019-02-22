@@ -336,7 +336,7 @@ class Kubernetes:
                 await asyncio.wait_for(fut, timeout=timeout_secs)
                 return True
             except (TimeoutError, ConnectionRefusedError):
-                continue
+                await asyncio.sleep(timeout_secs)
 
         return False
 
