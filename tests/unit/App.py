@@ -176,8 +176,10 @@ async def test_start_services_completed_exc(patch, app, async_mock, magic):
 
 
 @mark.parametrize('reusable', [True, False])
+@mark.parametrize('internal', [True, False])
 @mark.asyncio
-async def test_start_services(patch, app, async_mock, magic, reusable):
+async def test_start_services(patch, app, async_mock, magic,
+                              reusable, internal):
     app.stories = {
         'a.story': {
             'tree': {
@@ -201,6 +203,7 @@ async def test_start_services(patch, app, async_mock, magic, reusable):
     start_container_result = magic()
 
     patch.object(Services, 'resolve_chain', return_value=chain)
+    patch.object(Services, 'is_internal', return_value=internal)
     patch.object(Services, 'start_container',
                  return_value=start_container_result)
     patch.object(Containers, 'is_service_reusable', return_value=reusable)
@@ -211,6 +214,9 @@ async def test_start_services(patch, app, async_mock, magic, reusable):
     tasks = [start_container_result]
     if not reusable:
         tasks = [start_container_result, start_container_result]
+
+    if internal:
+        tasks = []
 
     asyncio.wait.mock.assert_called_with(tasks)
 
