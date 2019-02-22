@@ -335,7 +335,7 @@ class Kubernetes:
                 fut = asyncio.open_connection(host, port)
                 await asyncio.wait_for(fut, timeout=timeout_secs)
                 return True
-            except TimeoutError:
+            except (TimeoutError, ConnectionRefusedError):
                 continue
 
         return False
