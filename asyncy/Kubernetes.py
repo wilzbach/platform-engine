@@ -327,16 +327,16 @@ class Kubernetes:
 
     @classmethod
     async def wait_for_port(cls, host, port):
-        fut = asyncio.open_connection(host, port)
         attempts = 0
         timeout_secs = 2
         while attempts < 15:  # Max wait time = attempts * timeout_secs = 30
             attempts += 1
             try:
+                fut = asyncio.open_connection(host, port)
                 await asyncio.wait_for(fut, timeout=timeout_secs)
                 return True
             except TimeoutError:
-                await asyncio.sleep(timeout_secs)
+                continue
 
         return False
 
