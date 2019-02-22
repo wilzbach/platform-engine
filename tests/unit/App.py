@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import json
-from unittest import mock
+from collections import deque
 
 from asyncy.App import App
+from asyncy.Containers import Containers
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Types import StreamingService
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
+from asyncy.processing.Services import Command, Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
@@ -146,11 +149,76 @@ def test_app_init(magic, config, logger, env):
 @mark.asyncio
 async def test_app_bootstrap(patch, app, async_mock):
     patch.object(app, 'run_stories', new=async_mock())
+    patch.object(app, 'start_services', new=async_mock())
     stories = {'entrypoint': ['foo'], 'stories': {'foo': {}}}
     app.stories = stories
     await app.bootstrap()
 
     assert app.run_stories.mock.call_count == 1
+    assert app.start_services.mock.call_count == 1
+
+
+@mark.asyncio
+async def test_start_services_completed(patch, app, async_mock):
+    app.stories = {}
+    patch.object(asyncio, 'wait', new=async_mock(return_value=([], [])))
+    await app.start_services()
+
+
+@mark.asyncio
+async def test_start_services_completed_exc(patch, app, async_mock, magic):
+    app.stories = {}
+    task = magic()
+    task.exception.return_value = Exception()
+    patch.object(asyncio, 'wait', new=async_mock(return_value=([task], [])))
+    with pytest.raises(Exception):
+        await app.start_services()
+
+
+@mark.parametrize('reusable', [True, False])
+@mark.parametrize('internal', [True, False])
+@mark.asyncio
+async def test_start_services(patch, app, async_mock, magic,
+                              reusable, internal):
+    app.stories = {
+        'a.story': {
+            'tree': {
+                '1': {
+                    'method': 'execute',
+                    'next': '2'
+                },
+                '2': {
+                    'method': 'execute',
+                    'next': '3'
+                },
+                '3': {'method': 'not_execute'}
+            },
+            'entrypoint': '1'
+        }
+    }
+    chain = deque()
+    chain.append(Service(name='cold_service'))
+    chain.append(Command(name='cold_command'))
+
+    start_container_result = magic()
+
+    patch.object(Services, 'resolve_chain', return_value=chain)
+    patch.object(Services, 'is_internal', return_value=internal)
+    patch.object(Services, 'start_container',
+                 return_value=start_container_result)
+    patch.object(Containers, 'is_service_reusable', return_value=reusable)
+    patch.object(asyncio, 'wait', new=async_mock(return_value=([], [])))
+
+    await app.start_services()
+
+    tasks = [start_container_result]
+    if not reusable:
+        tasks = [start_container_result, start_container_result]
+
+    if internal:
+        tasks = []
+
+    asyncio.wait.mock.assert_called_with(tasks)
 
 
 @mark.asyncio
