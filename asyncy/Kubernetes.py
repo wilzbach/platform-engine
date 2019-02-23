@@ -4,6 +4,7 @@ import json
 import ssl
 import time
 import typing
+from asyncio import TimeoutError
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
@@ -313,10 +314,31 @@ class Kubernetes:
         path = f'/api/v1/namespaces/{story.app.app_id}/services'
         res = await cls.make_k8s_call(story.app, path, payload)
         cls.raise_if_not_2xx(res, story, line)
-        # There seems to be no reliable way to know if this service is ready
-        # or not. Hence, there's an arbitrary 2 second sleep here, which
-        # seems to work always.
-        await asyncio.sleep(2)
+
+        # Wait until the ports of the destination pod are open.
+        hostname = cls.get_hostname(story, line, container_name)
+        story.app.logger.info(f'Waiting for ports to open: {ports}')
+        for port in ports:
+            success = await cls.wait_for_port(hostname, port)
+            if not success:
+                story.app.logger.warn(
+                    f'Timed out waiting for {hostname}:{port} to open. '
+                    f'Some actions of {service} might fail!')
+
+    @classmethod
+    async def wait_for_port(cls, host, port):
+        attempts = 0
+        timeout_secs = 2
+        while attempts < 60:  # Max wait time = attempts * timeout_secs = 120
+            attempts += 1
+            try:
+                fut = asyncio.open_connection(host, port)
+                await asyncio.wait_for(fut, timeout=timeout_secs)
+                return True
+            except (TimeoutError, ConnectionRefusedError):
+                await asyncio.sleep(timeout_secs)
+
+        return False
 
     @classmethod
     async def create_deployment(cls, story: Stories, line: dict, image: str,
