@@ -553,6 +553,32 @@ async def test_create_deployment(patch, async_mock, story):
     ]
 
 
+@mark.parametrize('unavailable', [True, False])
+@mark.asyncio
+async def test_wait_for_port(patch, magic, async_mock, unavailable):
+    fut = magic()
+    patch.object(asyncio, 'open_connection', return_value=fut)
+
+    def exc(a, timeout=0):
+        raise ConnectionRefusedError()
+
+    if unavailable:
+        patch.object(asyncio, 'wait_for', new=async_mock(side_effect=exc))
+    else:
+        patch.object(asyncio, 'wait_for', new=async_mock())
+
+    patch.object(asyncio, 'sleep', new=async_mock())
+
+    ret = await Kubernetes.wait_for_port('asyncy.com', 80)
+
+    asyncio.wait_for.mock.assert_called_with(fut, timeout=2)
+
+    if unavailable:
+        assert ret is False
+    else:
+        assert ret is True
+
+
 @mark.asyncio
 async def test_create_service(patch, story, async_mock):
     container_name = 'asyncy--alpine-1'
@@ -561,7 +587,10 @@ async def test_create_service(patch, story, async_mock):
     }
     patch.object(Kubernetes, 'find_all_ports', return_value={10, 20, 30})
     patch.object(Kubernetes, 'raise_if_not_2xx')
+    patch.object(Kubernetes, 'get_hostname', return_value=container_name)
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock())
+    patch.object(Kubernetes, 'wait_for_port',
+                 new=async_mock(return_value=True))
     patch.object(asyncio, 'sleep', new=async_mock())
     story.app.app_id = 'my_app'
 
@@ -594,7 +623,11 @@ async def test_create_service(patch, story, async_mock):
 
     Kubernetes.raise_if_not_2xx.assert_called_with(
         Kubernetes.make_k8s_call.mock.return_value, story, line)
-    asyncio.sleep.mock.assert_called()
+    assert Kubernetes.wait_for_port.mock.mock_calls == [
+        mock.call(container_name, 10),
+        mock.call(container_name, 20),
+        mock.call(container_name, 30)
+    ]
 
 
 def test_is_2xx():
