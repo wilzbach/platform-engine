@@ -85,6 +85,16 @@ class ServiceNotFound(AsyncyError):
             story=story, line=line)
 
 
+class ActionNotFound(AsyncyError):
+
+    def __init__(self, story=None, line=None, service=None, action=None):
+        super().__init__(
+            f'The action "{action}" was not found in the service "{service}". '
+            f'Hint: Check the Asyncy Hub for a list of supported '
+            f'actions for this service.',
+            story=story, line=line)
+
+
 class EnvironmentVariableNotFound(AsyncyError):
     def __init__(self, service=None, variable=None, story=None, line=None):
         assert service is not None

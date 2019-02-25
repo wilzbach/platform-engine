@@ -4,7 +4,7 @@ import re
 
 import ujson
 
-from .Exceptions import ContainerSpecNotRegisteredError, \
+from .Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from .Kubernetes import Kubernetes
 from .Types import StreamingService
@@ -31,8 +31,13 @@ class Containers:
         omg = story.app.services[service][ServiceConstants.config]
         image = omg.get('image', service)
 
-        command_conf = Dict.find(omg, f'actions.'
-                                      f'{line[LineConstants.command]}')
+        action = line[LineConstants.command]
+
+        command_conf = Dict.find(omg, f'actions.{action}')
+
+        if command_conf is None:
+            raise ActionNotFound(story=story, line=line,
+                                 service=service, action=action)
 
         shutdown_command = Dict.find(omg, f'lifecycle.shutdown.command')
 

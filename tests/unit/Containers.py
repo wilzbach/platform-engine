@@ -3,7 +3,7 @@ import hashlib
 from unittest.mock import MagicMock
 
 from asyncy.Containers import Containers
-from asyncy.Exceptions import ContainerSpecNotRegisteredError, \
+from asyncy.Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
@@ -140,13 +140,21 @@ def test_service_name(patch, story):
     assert ret == hashlib.sha1().hexdigest()
 
 
+@mark.asyncio
+async def test_create_and_start_no_action(story):
+    story.app.services = {'alpine': {'configuration': {}}}
+    with pytest.raises(ActionNotFound):
+        await Containers.create_and_start(story, {'command': 'foo'},
+                                          'alpine', 'alpine')
+
+
 @mark.parametrize('run_command', [None, ['/bin/bash', 'sleep', '10000']])
 @mark.parametrize('with_volumes', [True, False])
 @mark.parametrize('missing_required_var', [False, True])
 @mark.asyncio
-async def test_start_no_command(patch, story, async_mock,
-                                missing_required_var,
-                                run_command, with_volumes):
+async def test_start(patch, story, async_mock,
+                     missing_required_var,
+                     run_command, with_volumes):
     line = {
         LineConstants.service: 'alpine',
         LineConstants.command: 'echo',
