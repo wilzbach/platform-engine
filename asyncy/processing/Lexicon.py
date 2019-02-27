@@ -4,10 +4,11 @@ import time
 from .Mutations import Mutations
 from .Services import Services
 from .. import Metrics
-from ..Exceptions import AsyncyError
+from ..Exceptions import AsyncyError, InvalidKeywordUsage
 from ..Stories import Stories
 from ..Types import StreamingService
 from ..constants.LineConstants import LineConstants
+from ..constants.LineSentinels import LineSentinels
 
 
 class Lexicon:
@@ -69,6 +70,31 @@ class Lexicon:
         if there are more statements to be executed.
         """
         return Lexicon.line_number_or_none(story.next_block(line))
+
+    @staticmethod
+    def _does_line_have_parent_method(story, line, parent_method_wanted):
+        # Just walk up the stack using 'parent'.
+        while True:
+            parent_line = line.get('parent')
+            if parent_line is None:
+                return False
+
+            parent_line = story.line(parent_line)
+
+            if parent_line['method'] == parent_method_wanted:
+                return True
+            else:
+                line = parent_line
+
+    @staticmethod
+    async def break_(logger, story, line):
+        # Ensure that we're in a foreach loop. If we are, return BREAK,
+        # otherwise raise an exception.
+        if Lexicon._does_line_have_parent_method(story, line, 'for'):
+            return LineSentinels.BREAK
+        else:
+            # There is no parent, this is an illegal usage of break.
+            raise InvalidKeywordUsage(story, line, 'break')
 
     @staticmethod
     def line_number_or_none(line):
@@ -168,14 +194,29 @@ class Lexicon:
     @staticmethod
     async def for_loop(logger, story, line):
         """
-        Evaluates a for loop
+        Evaluates a for loop.
         """
         _list = story.resolve(line['args'][0], encode=False)
         output = line['output'][0]
+
         from . import Story
-        for item in _list:
-            story.context[output] = item
-            await Story.execute_block(logger, story, line)
+
+        try:
+            for item in _list:
+                story.context[output] = item
+
+                result = await Story.execute_block(logger, story, line)
+
+                if LineSentinels.BREAK == result:
+                    break
+                elif LineSentinels.is_sentinel(result):
+                    # We do not know what to do with this sentinel,
+                    # so bubble it up.
+                    return result
+        finally:
+            # Don't leak the variable to the outer scope.
+            del story.context[output]
+
         return line['exit']
 
     @staticmethod
@@ -211,18 +252,8 @@ class Lexicon:
             # No support for returning a value.
             raise AsyncyError('return may not be used with a value')
 
-        original_line = line
-        while True:
-            parent_line_ln = line.get('parent')
-            if parent_line_ln is None:
-                # There is no parent, this is an illegal usage of return.
-                raise AsyncyError(f'return not used inside a when block',
-                                  story=story, line=original_line)
-
-            parent_line = story.line(parent_line_ln)
-
-            if parent_line['method'] == 'when':
-                next_line = story.next_block(parent_line)
-                return Lexicon.line_number_or_none(next_line)
-
-            line = parent_line
+        if cls._does_line_have_parent_method(story, line, 'when'):
+            return LineSentinels.RETURN
+        else:
+            # There is no parent, this is an illegal usage of return.
+            raise InvalidKeywordUsage(story, line, 'return')

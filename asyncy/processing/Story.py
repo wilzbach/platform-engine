@@ -4,9 +4,11 @@ import time
 from .. import Metrics
 from ..Containers import Containers
 from ..Exceptions import AsyncyError
+from ..Exceptions import AsyncyRuntimeError
 from ..Stories import Stories
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
+from ..constants.LineSentinels import LineSentinels
 from ..constants.ServiceConstants import ServiceConstants
 from ..processing import Lexicon
 from ..utils import Dict
@@ -32,7 +34,15 @@ class Story:
         """
         line_number = story.first_line()
         while line_number:
-            line_number = await Story.execute_line(logger, story, line_number)
+            result = await Story.execute_line(logger, story, line_number)
+
+            # Sentinels are not allowed to escape from here.
+            if LineSentinels.is_sentinel(result):
+                raise AsyncyRuntimeError(
+                    message=f'A sentinel has escaped ({result})!',
+                    story=story, line=story.line(line_number))
+
+            line_number = result
             logger.log('story-execution', line_number)
 
     @staticmethod
@@ -66,6 +76,8 @@ class Story:
                 return await Lexicon.when(logger, story, line)
             elif method == 'return':
                 return await Lexicon.ret(logger, story, line)
+            elif method == 'break':
+                return await Lexicon.break_(logger, story, line)
             else:
                 raise NotImplementedError(
                     f'Unknown method to execute: {method}'
@@ -97,7 +109,13 @@ class Story:
     @staticmethod
     async def execute_block(logger, story, parent_line: dict):
         """
-        Executes all the lines whose parent is parent_line.
+        Executes all the lines whose parent is parent_line, and returns
+        either one of the following:
+        1. A sentinel (from LineSentinels) - if this was returned by execute()
+        2. None in all other cases
+
+        The result can have special significance, such as the BREAK
+        line sentinel.
         """
         next_line = story.line(parent_line['enter'])
 
@@ -113,8 +131,16 @@ class Story:
 
         while next_line is not None \
                 and story.line_has_parent(parent_line['ln'], next_line):
-            nxt = await Story.execute_line(logger, story, next_line['ln'])
-            next_line = story.line(nxt)
+            result = await Story.execute_line(logger, story, next_line['ln'])
+
+            if result == LineSentinels.RETURN:
+                return None  # Block as completed execution.
+            elif LineSentinels.is_sentinel(result):
+                return result
+
+            next_line = story.line(result)
+
+        return None
 
     @classmethod
     async def run(cls,

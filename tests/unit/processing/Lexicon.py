@@ -8,6 +8,7 @@ from asyncy.Exceptions import AsyncyError
 from asyncy.Stories import Stories
 from asyncy.Types import StreamingService
 from asyncy.constants.LineConstants import LineConstants
+from asyncy.constants.LineSentinels import LineSentinels
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Lexicon, Story
 from asyncy.processing.Mutations import Mutations
@@ -319,7 +320,8 @@ async def test_lexicon_for_loop(patch, logger, story, line, async_mock):
     story.environment = {}
     result = await Lexicon.for_loop(logger, story, line)
     Story.execute_block.mock.assert_called_with(logger, story, line)
-    assert story.context['element'] == 'one'
+    # TODO: somehow test that the element was actually assigned in the context
+    assert story.context.get('element') is None
     assert result == line['exit']
 
 
@@ -401,10 +403,7 @@ async def test_return_in_when(patch, logger, story):
 
     ret = await Lexicon.ret(logger, story, tree['4'])
 
-    story.next_block.assert_called_with(tree['1'])
-    Lexicon.line_number_or_none.assert_called_with(tree['5'])
-
-    assert ret == Lexicon.line_number_or_none()
+    assert ret == LineSentinels.RETURN
 
 
 @mark.asyncio

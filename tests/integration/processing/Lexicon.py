@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from asyncy.Stories import Stories
 from asyncy.processing import Story
 
+import pytest
 from pytest import mark
 
 import storyscript
@@ -16,13 +17,43 @@ IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
 
 
 class TestCase:
-    def __init__(self, append=None, prepend=None, assertion=None):
+    def __init__(self, append=None, prepend=None, assertion=None,
+                 expect_exception=None):
         self.append = append
         self.prepend = prepend
         self.assertion = assertion
+        self.expect_exception = expect_exception
 
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
+    TestSuite(
+        preparation_lines='a = [1, 2, 3, 4, 5]\n'
+                          'b = []\n'
+                          'c = []\n',
+        cases=[
+            TestCase(append='foreach a as elem\n'
+                            '   b append item: elem\n'
+                            '   foreach b as elem2\n'
+                            '       if elem2 > 1\n'
+                            '           break\n'
+                            '       c append item: elem2\n',
+                     assertion=[
+                         ContextAssertion(key='b', expected=[1, 2, 3, 4, 5]),
+                         ContextAssertion(key='c', expected=[1, 1, 1, 1, 1])
+                     ])
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = [1, 1, 1, 2, 3, 4, 5]\n'
+                          'b = 0\n',
+        cases=[
+            TestCase(append='foreach a as elem\n'
+                            '   b = b + elem\n'
+                            '   if b == 3\n'
+                            '       break',
+                     assertion=ContextAssertion(key='b', expected=3))
+        ]
+    ),
     TestSuite(
         preparation_lines='a = []',
         cases=[
@@ -281,7 +312,12 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     story = Stories(app, story_name, logger)
     story.prepare(context)
-    await Story.execute(logger, story)
+    if case.expect_exception is not None:
+        with pytest.raises(case.expect_exception):
+            await Story.execute(logger, story)
+        return
+    else:
+        await Story.execute(logger, story)
 
     if type(case.assertion) == list:
         assertions = case.assertion
