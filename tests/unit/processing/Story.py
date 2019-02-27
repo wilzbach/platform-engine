@@ -5,9 +5,10 @@ from unittest import mock
 
 from asyncy import Metrics
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError
+from asyncy.Exceptions import AsyncyError, AsyncyRuntimeError
 from asyncy.Stories import Stories
 from asyncy.constants import ContextConstants
+from asyncy.constants.LineSentinels import LineSentinels
 from asyncy.processing import Lexicon, Story
 from asyncy.utils import Dict
 
@@ -32,6 +33,20 @@ async def test_story_execute(patch, app, logger, story, async_mock):
     logger.log.assert_called_with('story-execution', None)
     Story.execute_line.mock.assert_called_with(logger,
                                                story, Stories.first_line())
+
+
+@mark.asyncio
+async def test_story_execute_escaping_sentinel(patch, app, logger,
+                                               story, async_mock):
+    """
+    This one ensures that any uncaught sentinels result in an exception.
+    """
+    patch.object(Story, 'execute_line', new=async_mock(
+        return_value=LineSentinels.RETURN))
+    patch.object(Stories, 'first_line')
+    story.prepare()
+    with pytest.raises(AsyncyRuntimeError):
+        await Story.execute(logger, story)
 
 
 @mark.asyncio
@@ -77,7 +92,8 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='set', lexicon_name='set', async_mock=True),
     Method(name='function', lexicon_name='function', async_mock=True),
     Method(name='when', lexicon_name='when', async_mock=True),
-    Method(name='return', lexicon_name='ret', async_mock=True)
+    Method(name='return', lexicon_name='ret', async_mock=True),
+    Method(name='break', lexicon_name='break_', async_mock=True)
 ])
 @mark.asyncio
 async def test_story_execute_line_generic(patch, logger, story,
@@ -118,7 +134,10 @@ async def test_story_execute_line_call(patch, logger, story, async_mock):
 
 
 @mark.asyncio
-async def test_story_execute_block(patch, logger, story, async_mock):
+@mark.parametrize('line_4_result', ['5', LineSentinels.RETURN,
+                                    LineSentinels.BREAK])
+async def test_story_execute_block(patch, logger, story,
+                                   async_mock, line_4_result):
     story.tree = {
         '1': {'ln': '1', 'next': '2'},
         '2': {'ln': '2', 'next': '3', 'enter': '3', 'output': ['foo_client']},
@@ -129,7 +148,7 @@ async def test_story_execute_block(patch, logger, story, async_mock):
     }
 
     patch.object(Story, 'execute_line', new=async_mock(
-        side_effect=['4', '5', '6']))
+        side_effect=['4', line_4_result, '6']))
 
     line = story.line
     story.context = {
@@ -141,25 +160,39 @@ async def test_story_execute_block(patch, logger, story, async_mock):
 
     patch.object(story, 'line', side_effect=proxy_line)
 
-    await Story.execute_block(logger, story, story.tree['2'])
+    execute_block_return = await Story.execute_block(
+        logger, story, story.tree['2'])
 
     assert story.context[ContextConstants.service_output] == 'foo_client'
     assert story.context['foo_client'] \
         == story.context[ContextConstants.service_event]['data']
 
-    assert [
-        mock.call(logger, story, '3'),
-        mock.call(logger, story, '4'),
-        mock.call(logger, story, '5')
-    ] == Story.execute_line.mock.mock_calls
-
-    assert [
-        mock.call('3'),
-        mock.call('4'),
-        mock.call('5'),
-        mock.call('6'),
-        mock.call('1')
-    ] == story.line.mock_calls
+    if LineSentinels.is_sentinel(line_4_result):
+        assert [
+            mock.call(logger, story, '3'),
+            mock.call(logger, story, '4')
+        ] == Story.execute_line.mock.mock_calls
+        assert [
+            mock.call('3'),
+            mock.call('4')
+        ] == story.line.mock_calls
+        if line_4_result == LineSentinels.RETURN:
+            assert execute_block_return is None
+        else:
+            assert execute_block_return == line_4_result
+    else:
+        assert [
+            mock.call(logger, story, '3'),
+            mock.call(logger, story, '4'),
+            mock.call(logger, story, '5')
+        ] == Story.execute_line.mock.mock_calls
+        assert [
+            mock.call('3'),
+            mock.call('4'),
+            mock.call('5'),
+            mock.call('6'),
+            mock.call('1')
+        ] == story.line.mock_calls
 
 
 @mark.asyncio

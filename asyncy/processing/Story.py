@@ -134,7 +134,7 @@ class Story:
             result = await Story.execute_line(logger, story, next_line['ln'])
 
             if result == LineSentinels.RETURN:
-                return None  # Block as completed execution.
+                return None  # Block has completed execution.
             elif LineSentinels.is_sentinel(result):
                 return result
 
