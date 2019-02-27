@@ -4,7 +4,7 @@ import uuid
 from unittest.mock import MagicMock, Mock
 
 from asyncy import Metrics
-from asyncy.Exceptions import AsyncyError
+from asyncy.Exceptions import AsyncyError, InvalidKeywordUsage
 from asyncy.Stories import Stories
 from asyncy.Types import StreamingService
 from asyncy.constants.LineConstants import LineConstants
@@ -291,6 +291,21 @@ async def test_if_condition(patch, logger, magic, case):
     story.tree = tree
     ret = await Lexicon.if_condition(logger, story, tree['1'])
     assert ret == case[1]
+
+
+@mark.parametrize('valid_usage', [True, False])
+@mark.asyncio
+async def test_break(logger, story, line, patch, valid_usage):
+    patch.object(Lexicon, '_does_line_have_parent_method',
+                 return_value=valid_usage)
+    if valid_usage:
+        ret = await Lexicon.break_(logger, story, line)
+        assert ret == LineSentinels.BREAK
+        Lexicon._does_line_have_parent_method.assert_called_with(
+            story, line, 'for')
+    else:
+        with pytest.raises(InvalidKeywordUsage):
+            await Lexicon.break_(logger, story, line)
 
 
 def test_lexicon_unless(logger, story, line):
