@@ -9,6 +9,16 @@ class AsyncyError(Exception):
         super().__init__(message)
 
 
+class AsyncyRuntimeError(AsyncyError):
+    pass
+
+
+class InvalidKeywordUsage(AsyncyError):
+    def __init__(self, story, line, keyword):
+        super().__init__(message=f'Invalid usage of keyword "{keyword}".',
+                         story=story, line=line)
+
+
 class ContainerSpecNotRegisteredError(AsyncyError):
     def __init__(self, container_name):
         super().__init__(message=f'Service {container_name} not registered!')
