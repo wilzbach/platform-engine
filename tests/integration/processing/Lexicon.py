@@ -27,6 +27,40 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = 1\n'
+                          'b = 5\n'
+                          'c = null\n',
+        cases=[
+            TestCase(append='if true or false\n'
+                            '   c = "true"',
+                     assertion=ContextAssertion(key='c', expected='true')),
+            TestCase(append='if false or true\n'
+                            '   c = "true"',
+                     assertion=ContextAssertion(key='c', expected='true')),
+            TestCase(append='if true\n'
+                            '   c = "true"',
+                     assertion=ContextAssertion(key='c', expected='true')),
+            TestCase(append='if false\n'
+                            '   c = "wtf"',
+                     assertion=ContextAssertion(key='c', expected=None)),
+            TestCase(append='if a == 100 or b == 100\n'
+                            '   c = "wtf"',
+                     assertion=ContextAssertion(key='c', expected=None)),
+            TestCase(append='if a == 100 or b == 5\n'
+                            '   c = "b"',
+                     assertion=ContextAssertion(key='c', expected='b')),
+            TestCase(append='if a == 1 or b == 100\n'
+                            '   c = "a"',
+                     assertion=ContextAssertion(key='c', expected='a')),
+            TestCase(append='if a == 1 or b == 5\n'
+                            '   c = "a"',
+                     assertion=ContextAssertion(key='c', expected='a')),
+            TestCase(append='if a == 100 or b == 100 or true\n'
+                            '   c = "true"',
+                     assertion=ContextAssertion(key='c', expected='true'))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = [1, 2, 3, 4, 5]\n'
                           'b = []\n'
                           'c = []\n',

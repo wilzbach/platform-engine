@@ -76,47 +76,15 @@ class Resolver:
             return dict(cls.dict(item['items'], data))
         elif object_type == 'list':
             return list(cls.list_object(item['items'], data))
-        elif object_type == 'expression':
+        elif object_type == 'expression' or object_type == 'assertion':
             return cls.expression(item, data)
-        elif object_type == 'assertion':
-            return cls.assertion(item, data)
         return cls.dictionary(item, data)
 
     @classmethod
-    def operate(cls, a, b, expression):
-        if a is None:
-            return b
-        elif b is None:
-            return a
-        elif expression == 'sum':
-            return a + b
-        elif expression == 'multiplication':
-            return a * b
-        elif expression == 'division':
-            return a / b
-        else:
-            raise Exception(f'Unhandled expression {expression}!')
-
-    @classmethod
     def expression(cls, item, data):
-        result = None
-        expression = item['expression']
-        for val in item['values']:
-            if isinstance(val, dict):
-                val = cls.resolve(val, data)
-
-            if type(val) in (int, float, str):
-                result = cls.operate(result, val, expression)
-            else:
-                raise Exception(f'Cannot operate on type {str(type(val))}! '
-                                f'Must be one of int, float, str')
-
-        return result
-
-    @classmethod
-    def assertion(cls, item, data):
         """
-        Handles assertions where item['assertion'] is one of the following:
+        Handles expression where item['assertion'/'expression']
+        is one of the following:
         - equals
         - not_equal
         - greater
@@ -124,32 +92,62 @@ class Resolver:
         - less
         - less_equal
         - not
+        - or
+        - sum
+        - division
+        - multiplication
         """
-        a = item['assertion']
+        a = item.get('assertion', item.get('expression'))
+
         values = item['values']
-        assert len(values) <= 2, \
-            f'Only simple assertions are supported. Found {len(values)}'
 
         left = cls.resolve(values[0], data)
-        right = None
-
-        if len(values) == 2:
-            right = cls.resolve(values[1], data)
 
         if a == 'equals':
+            right = cls.resolve(values[1], data)
             return left == right
         elif a == 'not_equal':
+            right = cls.resolve(values[1], data)
             return left != right
         elif a == 'greater':
+            right = cls.resolve(values[1], data)
             return left > right
         elif a == 'greater_equal':
+            right = cls.resolve(values[1], data)
             return left >= right
         elif a == 'less':
+            right = cls.resolve(values[1], data)
             return left < right
         elif a == 'less_equal':
+            right = cls.resolve(values[1], data)
             return left <= right
         elif a == 'not':
             return left is False
+        elif a == 'or':
+            if left is True:
+                return True
+
+            for i in range(1, len(values)):
+                result = cls.resolve(values[i], data)
+                if result is True:
+                    return True
+
+            return False
+        elif a == 'sum':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float, str)
+            assert type(right) in (int, float, str)
+            return left + right
+        elif a == 'multiplication':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float, str)
+            assert type(right) in (int, float, str)
+            return left * right
+        elif a == 'division':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float, str)
+            assert type(right) in (int, float, str)
+            return left / right
         else:
             assert False, f'Unsupported operation: {a}'
 
