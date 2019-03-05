@@ -327,12 +327,22 @@ def test_lexicon_unless_false(logger, story, line):
 @mark.asyncio
 async def test_lexicon_for_loop(patch, logger, story, line,
                                 async_mock, execute_block_return):
+    iterated_over_items = []
+
+    async def execute_block(our_logger, our_story, our_line):
+        iterated_over_items.append(story.context['element'])
+        assert our_logger == logger
+        assert our_story == story
+        assert our_line == line
+        return execute_block_return
+
     patch.object(Lexicon, 'execute', new=async_mock())
-    patch.object(Story, 'execute_block', new=async_mock(
-        return_value=execute_block_return))
+    patch.object(Story, 'execute_block', side_effect=execute_block)
+
     line['args'] = [
         {'$OBJECT': 'path', 'paths': ['elements']}
     ]
+
     line['output'] = ['element']
     story.context = {'elements': ['one', 'two', 'three']}
     story.resolve.return_value = ['one', 'two', 'three']
@@ -340,16 +350,13 @@ async def test_lexicon_for_loop(patch, logger, story, line,
     result = await Lexicon.for_loop(logger, story, line)
 
     if execute_block_return == LineSentinels.BREAK:
-        assert Story.execute_block.mock.call_count == 1
+        assert iterated_over_items == ['one']
         assert result == line['exit']
     elif LineSentinels.is_sentinel(execute_block_return):
-        assert Story.execute_block.mock.call_count == 1
+        assert iterated_over_items == ['one']
         assert result == execute_block_return
     else:
-        Story.execute_block.mock.assert_called_with(logger, story, line)
-        assert Story.execute_block.mock.call_count == 3
-        # TODO: somehow test that the element was
-        # todo: actually assigned in the context
+        assert iterated_over_items == story.context['elements']
         assert result == line['exit']
 
     # Ensure no leakage of the element
