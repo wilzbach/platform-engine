@@ -27,6 +27,20 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='labels = [{"name": "a"}]\n'
+                          'found = false',
+        cases=[
+            TestCase(
+                append='foreach labels as label\n'
+                       '   if label["name"] == "a" or label["name"] == "b"\n'
+                       '        found = true\n'
+                       'outside = true',
+                assertion=[ContextAssertion(key='found', expected=True),
+                           ContextAssertion(key='outside', expected=True)]
+            )
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = 1\n'
                           'b = 5\n'
                           'c = null\n',

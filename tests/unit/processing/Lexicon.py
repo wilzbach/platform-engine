@@ -337,7 +337,9 @@ async def test_lexicon_for_loop(patch, logger, story, line,
         return execute_block_return
 
     patch.object(Lexicon, 'execute', new=async_mock())
+    patch.object(Lexicon, 'line_number_or_none')
     patch.object(Story, 'execute_block', side_effect=execute_block)
+    patch.object(story, 'next_block')
 
     line['args'] = [
         {'$OBJECT': 'path', 'paths': ['elements']}
@@ -351,13 +353,13 @@ async def test_lexicon_for_loop(patch, logger, story, line,
 
     if execute_block_return == LineSentinels.BREAK:
         assert iterated_over_items == ['one']
-        assert result == line['exit']
+        assert result == Lexicon.line_number_or_none(story.next_block(line))
     elif LineSentinels.is_sentinel(execute_block_return):
         assert iterated_over_items == ['one']
         assert result == execute_block_return
     else:
         assert iterated_over_items == story.context['elements']
-        assert result == line['exit']
+        assert result == Lexicon.line_number_or_none(story.next_block(line))
 
     # Ensure no leakage of the element
     assert story.context.get('element') is None
