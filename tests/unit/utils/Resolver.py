@@ -36,19 +36,6 @@ def test_resolve_expressions(case):
     assert case[1] == Resolver.resolve(t['tree']['1']['args'][0], context)
 
 
-def test_operate_unhandled():
-    with pytest.raises(Exception):
-        Resolver.operate(1, 1, 'foo')
-
-
-def test_operate_a_none():
-    assert Resolver.operate(None, 1, 'foo') == 1
-
-
-def test_operate_b_none():
-    assert Resolver.operate(1, None, 'foo') == 1
-
-
 def test_expression_invalid_type():
     with pytest.raises(Exception):
         assert Resolver.expression(
