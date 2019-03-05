@@ -217,7 +217,8 @@ class Lexicon:
             # Don't leak the variable to the outer scope.
             del story.context[output]
 
-        return line['exit']
+        # Use story.next_block(line), because line["exit"] is unreliable...
+        return Lexicon.line_number_or_none(story.next_block(line))
 
     @staticmethod
     async def when(logger, story, line):
