@@ -121,7 +121,8 @@ class Story:
 
         # If this block represents a streaming service, copy over it's
         # output to the context, so that Lexicon can read it later.
-        if parent_line.get('output') is not None:
+        if parent_line.get('output') is not None \
+                and parent_line.get('method') == 'when':
             story.context[ContextConstants.service_output] = \
                 parent_line['output'][0]
 

@@ -140,7 +140,8 @@ async def test_story_execute_block(patch, logger, story,
                                    async_mock, line_4_result):
     story.tree = {
         '1': {'ln': '1', 'next': '2'},
-        '2': {'ln': '2', 'next': '3', 'enter': '3', 'output': ['foo_client']},
+        '2': {'ln': '2', 'next': '3', 'enter': '3',
+              'output': ['foo_client'], 'method': 'when'},
         '3': {'ln': '3', 'next': '4', 'parent': '2'},
         '4': {'ln': '4', 'next': '5', 'parent': '2'},
         '5': {'ln': '5', 'next': '6', 'parent': '2'},
