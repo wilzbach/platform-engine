@@ -159,6 +159,12 @@ class TestCase:
             TestCase(append='len = str length',
                      assertion=ContextAssertion(key='len', expected=12)),
 
+            TestCase(append='has = str contains pattern: "hello"',
+                     assertion=ContextAssertion(key='has', expected=True)),
+
+            TestCase(append='has = str contains pattern: "hello1"',
+                     assertion=ContextAssertion(key='has', expected=False)),
+
             TestCase(append='parts = str split by: " "',
                      assertion=ContextAssertion(
                          key='parts', expected=['hello', 'world!'])),
