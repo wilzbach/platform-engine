@@ -14,6 +14,11 @@ class StringMutations:
         return value.replace(pattern, by)
 
     @classmethod
+    def contains(cls, mutation, value, story, line, operator):
+        pattern = story.argument_by_name(mutation, 'pattern')
+        return pattern in value
+
+    @classmethod
     def split(cls, mutation, value, story, line, operator):
         by = story.argument_by_name(mutation, 'by')
         return value.split(by)
