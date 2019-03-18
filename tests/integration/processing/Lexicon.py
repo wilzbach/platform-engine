@@ -27,6 +27,30 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='hello = "hello"\n'
+                          'world = "world"',
+        cases=[
+            TestCase(append='a = hello + world',
+                     assertion=ContextAssertion(
+                         key='a', expected='helloworld')),
+            TestCase(append='a = hello + " " + world',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello world')),
+            TestCase(append='a = hello + " "',  # Test for auto trim.
+                     assertion=ContextAssertion(
+                         key='a', expected='hello')),
+            TestCase(append='a = "{hello}"',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello')),
+            TestCase(append='a = "{hello} {world}"',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello world')),
+            TestCase(append='a = "{hello}{world}"',
+                     assertion=ContextAssertion(
+                         key='a', expected='helloworld'))
+        ]
+    ),
+    TestSuite(
         preparation_lines='labels = [{"name": "a"}]\n'
                           'found = false',
         cases=[

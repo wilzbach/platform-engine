@@ -134,10 +134,18 @@ class Resolver:
 
             return False
         elif a == 'sum':
-            right = cls.resolve(values[1], data)
+            result = left
+
             assert type(left) in (int, float, str)
-            assert type(right) in (int, float, str)
-            return left + right
+            # Sum supports flattened values since this only occurs when
+            # a string like "{a} {b} {c}" is compiled. Everything else,
+            # including arithmetic is compiled as a nested expression.
+            for i in range(1, len(values)):
+                r = cls.resolve(values[i], data)
+                assert type(r) in (int, float, str)
+                result += r
+
+            return result
         elif a == 'multiplication':
             right = cls.resolve(values[1], data)
             assert type(left) in (int, float, str)
