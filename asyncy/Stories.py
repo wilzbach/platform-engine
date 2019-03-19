@@ -94,7 +94,7 @@ class Stories:
                 if next_line is None:
                     return None
 
-            if next_line.get('parent', None) != parent_line['ln']:
+            if not self.line_has_parent(parent_line['ln'], next_line):
                 break
 
         # We might have skipped through all the lines in this story,
