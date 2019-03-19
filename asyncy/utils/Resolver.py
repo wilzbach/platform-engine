@@ -161,6 +161,11 @@ class Resolver:
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left * right
+        elif a == 'modulus':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float)
+            assert type(right) in (int, float)
+            return left % right
         elif a == 'division':
             right = cls.resolve(values[1], data)
             assert type(left) in (int, float, str)
