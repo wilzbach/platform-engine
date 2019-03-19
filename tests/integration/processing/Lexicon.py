@@ -28,6 +28,21 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='function is_even n:int returns any\n'  # TODO: change this from any to boolean with 0.12.
+                          '    if n % 2 == 0\n'
+                          '        return true\n'
+                          '    else\n'
+                          '        return false\n'
+                          '\n'
+                          'even = is_even(n: a)',  # a is prepended.
+        cases=[
+            TestCase(prepend='a = 10',
+                     assertion=ContextAssertion(key='even', expected=True)),
+            TestCase(prepend='a = 11',
+                     assertion=ContextAssertion(key='even', expected=False))
+        ]
+    ),
+    TestSuite(
         preparation_lines='function echo i:int returns int\n'
                           '    return i\n'
                           '\n'
