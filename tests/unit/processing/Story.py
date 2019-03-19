@@ -271,16 +271,11 @@ async def test_story_run_with_id(patch, app, logger, async_mock):
 
 @mark.asyncio
 async def test_story_run_prepare_function(patch, app, logger, async_mock):
-    patch.object(Story, 'call', new=async_mock())
     patch.object(Story, 'story')
     function_name = 'function_name'
-    await Story.run(app, logger, 'story_name',
-                    context='context', function_name=function_name)
-    Story.story().prepare.assert_called_with('context')
-    Story.story().function_line_by_name.assert_called_with(function_name)
-    Story.call.mock \
-        .assert_called_with(logger, Story.story(),
-                            Story.story().function_line_by_name())
+    with pytest.raises(AsyncyError):
+        await Story.run(app, logger, 'story_name',
+                        context='context', function_name=function_name)
 
 
 @mark.asyncio
