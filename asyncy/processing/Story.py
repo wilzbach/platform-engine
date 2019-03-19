@@ -2,16 +2,12 @@
 import time
 
 from .. import Metrics
-from ..Containers import Containers
 from ..Exceptions import AsyncyError
 from ..Exceptions import AsyncyRuntimeError
 from ..Stories import Stories
 from ..constants.ContextConstants import ContextConstants
-from ..constants.LineConstants import LineConstants
 from ..constants.LineSentinels import LineSentinels
-from ..constants.ServiceConstants import ServiceConstants
 from ..processing import Lexicon
-from ..utils import Dict
 
 
 class Story:
@@ -50,7 +46,7 @@ class Story:
         """
         Executes a single line by calling the Lexicon for various operations.
 
-        To execute a function completely, see Story#execute_function.
+        To execute a function completely, see Story#call.
 
         :return: Returns the next line number to be executed
         (return value from Lexicon), or None if there is none.
@@ -69,7 +65,7 @@ class Story:
                     or method == 'mutation':
                 return await Lexicon.set(logger, story, line)
             elif method == 'call':
-                return await Story.execute_function(logger, story, line)
+                return await Lexicon.call(logger, story, line)
             elif method == 'function':
                 return await Lexicon.function(logger, story, line)
             elif method == 'when':
@@ -88,23 +84,6 @@ class Story:
 
             raise AsyncyError(message='Failed to execute line',
                               story=story, line=line)
-
-    @staticmethod
-    async def execute_function(logger, story, line):
-        """
-        Calls a particular function indicated by the line.
-        The parameter types are verified, and ensures that all the required
-        parameters are present. This will setup a new context for the
-        function block to be executed, and will return the output (if any).
-        """
-        current_context = story.context
-        function_line = story.function_line_by_name(line['function'])
-        context = story.context_for_function_call(line, function_line)
-        try:
-            story.set_context(context)
-            await Story.execute_block(logger, story, function_line)
-        finally:
-            story.set_context(current_context)
 
     @staticmethod
     async def execute_block(logger, story, parent_line: dict):
@@ -156,8 +135,7 @@ class Story:
             story.prepare(context)
 
             if function_name:
-                function_line = story.function_line_by_name(function_name)
-                await cls.execute_function(logger, story, function_line)
+                raise AsyncyRuntimeError('No longer supported')
             elif block:
                 await cls.execute_block(logger, story, story.line(block))
             else:

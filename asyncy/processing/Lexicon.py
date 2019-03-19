@@ -4,11 +4,11 @@ import time
 from .Mutations import Mutations
 from .Services import Services
 from .. import Metrics
-from ..Exceptions import AsyncyError, InvalidKeywordUsage
+from ..Exceptions import AsyncyError, AsyncyRuntimeError, InvalidKeywordUsage
 from ..Stories import Stories
 from ..Types import StreamingService
 from ..constants.LineConstants import LineConstants
-from ..constants.LineSentinels import LineSentinels
+from ..constants.LineSentinels import LineSentinels, ReturnSentinel
 
 
 class Lexicon:
@@ -70,6 +70,38 @@ class Lexicon:
         if there are more statements to be executed.
         """
         return Lexicon.line_number_or_none(story.next_block(line))
+
+    @staticmethod
+    async def call(logger, story, line):
+        """
+        Calls a particular function indicated by the line.
+        This will setup a new context for the
+        function block to be executed, and will return the output (if any).
+        """
+        current_context = story.context
+        function_line = story.function_line_by_name(
+            line.get('service'))  # TODO: remove the fallback to service
+        context = story.context_for_function_call(line, function_line)
+        return_from_function_call = None
+        try:
+            story.set_context(context)
+            from . import Story
+            result = await Story.execute_block(logger, story, function_line)
+            if LineSentinels.is_sentinel(result):
+                if not isinstance(result, ReturnSentinel):
+                    raise AsyncyRuntimeError(f'Uncaught sentinel has '
+                                             f'escaped! sentinel={result}')
+
+                return_from_function_call = result.return_value
+
+            return Lexicon.line_number_or_none(story.line(line.get('next')))
+        finally:
+            story.set_context(current_context)
+            if line.get('name') is not None and len(line['name']) > 0:
+                story.end_line(line['ln'],
+                               output=return_from_function_call,
+                               assign={
+                                   '$OBJECT': 'path', 'paths': line['name']})
 
     @staticmethod
     def _does_line_have_parent_method(story, line, parent_method_wanted):
@@ -241,20 +273,28 @@ class Lexicon:
         Implementation for return.
         The semantics for return are as follows:
         1. Stops execution and returns from the nearest when or function block
-        2. At this time, return from functions is not supported because
-           we haven't spec'd it out completely.
-           See https://github.com/storyscript/storyscript/issues/596
 
-        As a result, only return in when blocks are supported, and cannot
-        return any value (since when blocks return nothing).
+        Returns can happen in two types of blocks:
+        1. From when blocks - no value may be returned
+        2. From function blocks - one value may be returned
         """
         args = line.get('args', line.get('arguments'))
-        if args is not None and len(args) > 0:
-            # No support for returning a value.
-            raise AsyncyError('return may not be used with a value')
+        if args is None:
+            args = []
 
         if cls._does_line_have_parent_method(story, line, 'when'):
+            assert len(args) == 0, \
+                'return may not be used with a value in a when block'
+
             return LineSentinels.RETURN
+        elif cls._does_line_have_parent_method(story, line, 'function'):
+            returned_value = None
+
+            if len(args) > 0:
+                assert len(args) == 1, 'multiple return values are not allowed'
+                returned_value = story.resolve(args[0])
+
+            return ReturnSentinel(return_value=returned_value)
         else:
             # There is no parent, this is an illegal usage of return.
             raise InvalidKeywordUsage(story, line, 'return')

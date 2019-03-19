@@ -58,7 +58,7 @@ async def test_story_execute_function(patch, logger, story, async_mock):
     first_context = {'first': 'context'}
 
     story.context = first_context
-    await Story.execute_function(logger, story, line)
+    await Story.call(logger, story, line)
 
     story.function_line_by_name.assert_called_with(line['function'])
     story.context_for_function_call \
@@ -120,14 +120,14 @@ async def test_story_execute_line_generic(patch, logger, story,
 
 @mark.asyncio
 async def test_story_execute_line_call(patch, logger, story, async_mock):
-    patch.object(Story, 'execute_function', new=async_mock())
+    patch.object(Story, 'call', new=async_mock())
     patch.object(story, 'line', return_value={'method': 'call'})
     patch.object(story, 'start_line')
     result = await Story.execute_line(logger, story, '1')
 
-    Story.execute_function.mock.assert_called_with(logger, story,
-                                                   story.line.return_value)
-    assert result == Story.execute_function.mock.return_value
+    Story.call.mock.assert_called_with(logger, story,
+                                       story.line.return_value)
+    assert result == Story.call.mock.return_value
 
     story.line.assert_called_with('1')
     story.start_line.assert_called_with('1')
@@ -271,14 +271,14 @@ async def test_story_run_with_id(patch, app, logger, async_mock):
 
 @mark.asyncio
 async def test_story_run_prepare_function(patch, app, logger, async_mock):
-    patch.object(Story, 'execute_function', new=async_mock())
+    patch.object(Story, 'call', new=async_mock())
     patch.object(Story, 'story')
     function_name = 'function_name'
     await Story.run(app, logger, 'story_name',
                     context='context', function_name=function_name)
     Story.story().prepare.assert_called_with('context')
     Story.story().function_line_by_name.assert_called_with(function_name)
-    Story.execute_function.mock \
+    Story.call.mock \
         .assert_called_with(logger, Story.story(),
                             Story.story().function_line_by_name())
 

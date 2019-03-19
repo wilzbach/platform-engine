@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 from collections import namedtuple
 from unittest.mock import MagicMock
 
@@ -26,6 +27,39 @@ class TestCase:
 
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
+    TestSuite(
+        preparation_lines='function echo i:int returns int\n'
+                          '    return i\n'
+                          '\n'
+                          'function add a:int b:int returns int\n'
+                          '    return a + b\n'
+                          '\n'
+                          'function get_28 returns int\n'
+                          '    return 28\n'
+                          '\n'
+                          'function do_nothing\n'
+                          '    a = "nothing meaningful happened"\n',
+        cases=[
+            TestCase(append='a = echo(i: 200)',
+                     assertion=ContextAssertion(key='a', expected=200)),
+            TestCase(append='a = echo(i: -1)',
+                     assertion=ContextAssertion(key='a', expected=-1)),
+            TestCase(append='a = echo(i: 28)',
+                     assertion=ContextAssertion(key='a', expected=28)),
+            TestCase(append='echo(i: 28)',
+                     assertion=[]),
+            TestCase(append='a = add(a: 10 b: 20)',
+                     assertion=ContextAssertion(key='a', expected=30)),
+            TestCase(append='a = add(a: 10 b: 20) + get_28()',
+                     assertion=ContextAssertion(key='a', expected=58)),
+            TestCase(append='a = get_28()',
+                     assertion=ContextAssertion(key='a', expected=28)),
+            TestCase(append='a = do_nothing()',
+                     assertion=ContextAssertion(key='a', expected=None)),
+            TestCase(append='do_nothing()',
+                     assertion=ContextAssertion(key='a', expected=None)),
+        ]
+    ),
     TestSuite(
         preparation_lines='my_list = [1, 2, 3]',
         cases=[
@@ -394,7 +428,12 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     if case.prepend is not None:
         all_lines = case.prepend + '\n' + all_lines
 
-    tree = storyscript.Api.loads(all_lines)
+    try:
+        tree = storyscript.Api.loads(all_lines)
+    except BaseException as e:
+        print(f'Failed to compile the following story:'
+              f'\n\n{all_lines}', file=sys.stderr)
+        raise e
 
     app = MagicMock()
 
@@ -412,7 +451,12 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
             await Story.execute(logger, story)
         return
     else:
-        await Story.execute(logger, story)
+        try:
+            await Story.execute(logger, story)
+        except BaseException as e:
+            print(f'Failed to run the following story:'
+                  f'\n\n{all_lines}', file=sys.stderr)
+            raise e
 
     if type(case.assertion) == list:
         assertions = case.assertion
