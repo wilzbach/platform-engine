@@ -27,6 +27,23 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='my_list = [1, 2, 3]',
+        cases=[
+            TestCase(append='a = (my_list length) + 4',
+                     assertion=ContextAssertion(key='a', expected=7))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='status = "opened"\n'
+                          'tag = "priority"\n'
+                          'if status == "opened" and '
+                          '(["important", "priority"] contains item: tag)\n'
+                          '   a = 1',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
+    TestSuite(
         preparation_lines='hello = "hello"\n'
                           'world = "world"',
         cases=[

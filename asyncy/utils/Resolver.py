@@ -133,6 +133,16 @@ class Resolver:
                     return True
 
             return False
+        elif a == 'and':
+            if left is False:
+                return False
+
+            for i in range(1, len(values)):
+                result = cls.resolve(values[i], data)
+                if result is False:
+                    return False
+
+            return True
         elif a == 'sum':
             result = left
 
