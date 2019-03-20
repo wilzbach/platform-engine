@@ -28,7 +28,7 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
-        preparation_lines='function is_even n:int returns any\n'  # TODO: change this from any to boolean with 0.12.
+        preparation_lines='function is_even n:int returns boolean\n'
                           '    if n % 2 == 0\n'
                           '        return true\n'
                           '    else\n'
