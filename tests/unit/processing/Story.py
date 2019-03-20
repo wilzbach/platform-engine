@@ -67,6 +67,7 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='execute', lexicon_name='execute', async_mock=True),
     Method(name='set', lexicon_name='set', async_mock=True),
     Method(name='function', lexicon_name='function', async_mock=True),
+    Method(name='call', lexicon_name='call', async_mock=True),
     Method(name='when', lexicon_name='when', async_mock=True),
     Method(name='return', lexicon_name='ret', async_mock=True),
     Method(name='break', lexicon_name='break_', async_mock=True)
@@ -89,21 +90,6 @@ async def test_story_execute_line_generic(patch, logger, story,
 
     mock.assert_called_with(logger, story, story.line.return_value)
     assert result == mock.return_value
-
-    story.line.assert_called_with('1')
-    story.start_line.assert_called_with('1')
-
-
-@mark.asyncio
-async def test_story_execute_line_call(patch, logger, story, async_mock):
-    patch.object(Story, 'call', new=async_mock())
-    patch.object(story, 'line', return_value={'method': 'call'})
-    patch.object(story, 'start_line')
-    result = await Story.execute_line(logger, story, '1')
-
-    Story.call.mock.assert_called_with(logger, story,
-                                       story.line.return_value)
-    assert result == Story.call.mock.return_value
 
     story.line.assert_called_with('1')
     story.start_line.assert_called_with('1')
