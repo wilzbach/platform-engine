@@ -79,8 +79,7 @@ class Lexicon:
         function block to be executed, and will return the output (if any).
         """
         current_context = story.context
-        function_line = story.function_line_by_name(
-            line.get('service'))  # TODO: remove the fallback to service
+        function_line = story.function_line_by_name(line.get('function'))
         context = story.context_for_function_call(line, function_line)
         return_from_function_call = None
         try:
