@@ -50,30 +50,6 @@ async def test_story_execute_escaping_sentinel(patch, app, logger,
 
 
 @mark.asyncio
-async def test_story_execute_function(patch, logger, story, async_mock):
-    line = {'function': 'my_super_awesome_function'}
-    patch.many(story, ['function_line_by_name',
-                       'context_for_function_call', 'set_context'])
-    patch.object(Story, 'execute_block', new=async_mock())
-    first_context = {'first': 'context'}
-
-    story.context = first_context
-    await Story.call(logger, story, line)
-
-    story.function_line_by_name.assert_called_with(line['function'])
-    story.context_for_function_call \
-        .assert_called_with(line, story.function_line_by_name())
-
-    assert story.set_context.mock_calls == [
-        mock.call(story.context_for_function_call()),
-        mock.call(first_context)
-    ]
-
-    Story.execute_block.mock \
-        .assert_called_with(logger, story, story.function_line_by_name())
-
-
-@mark.asyncio
 async def test_story_execute_line_unknown_method(logger, story):
     story.tree['1']['method'] = 'foo_method'
     with pytest.raises(AsyncyError):
