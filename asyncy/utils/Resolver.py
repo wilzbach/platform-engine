@@ -66,6 +66,10 @@ class Resolver:
             if 'values' in item:
                 return cls.string(item['string'], data, values=item['values'])
             return cls.string(item['string'], data)
+        elif object_type == 'int':
+            return item['int']
+        elif object_type == 'float':
+            return item['float']
         elif object_type == 'path':
             return cls.path(item['paths'], data)
         elif object_type == 'regexp':
