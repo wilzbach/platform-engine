@@ -34,7 +34,7 @@ class LineSentinels:
     2. It's an exception, which is not what it was designed to do
     """
     BREAK = _Sentinel('break')
-    RETURN = _Sentinel('return')
+    RETURN = ReturnSentinel(None)
 
     @staticmethod
     def is_sentinel(result):
