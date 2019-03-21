@@ -28,6 +28,13 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = 1283',
+        cases=[
+            TestCase(append='b = a + ""',
+                     assertion=ContextAssertion(key='b', expected='1283'))
+        ]
+    ),
+    TestSuite(
         preparation_lines='function is_even n:int returns boolean\n'
                           '    if n % 2 == 0\n'
                           '        return true\n'
