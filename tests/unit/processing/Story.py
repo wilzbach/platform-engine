@@ -75,10 +75,7 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
 @mark.asyncio
 async def test_story_execute_line_generic(patch, logger, story,
                                           async_mock, method):
-    if method.async_mock:
-        patch.object(Lexicon, method.lexicon_name, new=async_mock())
-    else:
-        patch.object(Lexicon, method.lexicon_name)
+    patch.object(Lexicon, method.lexicon_name, new=async_mock())
 
     patch.object(story, 'line', return_value={'method': method.name})
     patch.object(story, 'start_line')
@@ -190,7 +187,7 @@ async def test_story_run_metrics_exc(patch, app, logger, async_mock, magic):
     Metrics.story_run_total = magic()
     Metrics.story_run_failure = magic()
 
-    def exc():
+    def exc(*args, **kwargs):
         raise Exception()
 
     patch.object(Story, 'execute', new=async_mock(side_effect=exc))
