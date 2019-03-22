@@ -28,6 +28,22 @@ class TestCase:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = 1\n'
+                          'if false and true\n'
+                          '    a = 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 1\n'
+                          'if true and false\n'
+                          '    a = 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = 1283',
         cases=[
             TestCase(append='b = a + ""',
