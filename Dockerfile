@@ -5,7 +5,7 @@ RUN           apt-get install -y socat
 
 # Optimization to not keep downloading dependencies on every build.
 RUN           mkdir /app
-COPY          ./README.rst /app
+COPY          ./README.md /app
 COPY          ./setup.py /app
 WORKDIR       /app
 RUN           python setup.py install
