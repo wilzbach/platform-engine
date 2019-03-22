@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
-import uuid
+from unittest import mock
 from unittest.mock import MagicMock, Mock
 
 from asyncy import Metrics
@@ -388,6 +387,30 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
     story.line.assert_called_with(line['next'])
     Lexicon.line_number_or_none.assert_called_with(story.line())
     assert ret == Lexicon.line_number_or_none()
+
+
+@mark.asyncio
+async def test_story_execute_function(patch, logger, story, async_mock):
+    line = {'function': 'my_super_awesome_function'}
+    patch.many(story, ['function_line_by_name',
+                       'context_for_function_call', 'set_context'])
+    patch.object(Story, 'execute_block', new=async_mock())
+    first_context = {'first': 'context'}
+
+    story.context = first_context
+    await Lexicon.call(logger, story, line)
+
+    story.function_line_by_name.assert_called_with(line['function'])
+    story.context_for_function_call \
+        .assert_called_with(line, story.function_line_by_name())
+
+    assert story.set_context.mock_calls == [
+        mock.call(story.context_for_function_call()),
+        mock.call(first_context)
+    ]
+
+    Story.execute_block.mock \
+        .assert_called_with(logger, story, story.function_line_by_name())
 
 
 @mark.parametrize('service_name', ['http', 'unknown_service'])

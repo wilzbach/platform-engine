@@ -94,7 +94,7 @@ class Stories:
                 if next_line is None:
                     return None
 
-            if next_line.get('parent', None) != parent_line['ln']:
+            if not self.line_has_parent(parent_line['ln'], next_line):
                 break
 
         # We might have skipped through all the lines in this story,
@@ -210,20 +210,10 @@ class Stories:
 
     def function_line_by_name(self, function_name):
         """
-        Finds the line which declares a function by the name of `function_name`
-        and returns it.
-
-        If no such function could be found, it returns None.
+        Returns the line at which the given function_name was defined at.
         """
-        next_line = self.line(self.first_line())
-        while next_line is not None:
-            if next_line.get('method', None) == 'function':
-                if next_line['function'] == function_name:
-                    return next_line
-
-            next_line = self.next_block(next_line)
-
-        return None
+        line_number = self.app.stories[self.name]['functions'][function_name]
+        return self.line(line_number)
 
     def argument_by_name(self, line, argument_name, encode=False):
         args = line.get('args', line.get('arguments'))

@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 
 
-_ALL_SENTINELS = set()
-"""
-Collection of all sentinels. Handy when trying to know if a result
-is a sentinel or not.
-"""
-
-
 class _Sentinel:
     def __init__(self, keyword):
         self.keyword = keyword
-        _ALL_SENTINELS.add(self)
 
     def __str__(self):
         return f'_Sentinel#{self.keyword}'
+
+
+class ReturnSentinel(_Sentinel):
+    def __init__(self, return_value: any):
+        super().__init__('return')
+        self.return_value = return_value
 
 
 class LineSentinels:
@@ -36,11 +34,11 @@ class LineSentinels:
     2. It's an exception, which is not what it was designed to do
     """
     BREAK = _Sentinel('break')
-    RETURN = _Sentinel('return')
+    RETURN = ReturnSentinel(None)
 
     @staticmethod
     def is_sentinel(result):
-        return result in _ALL_SENTINELS
+        return isinstance(result, _Sentinel)
 
     @staticmethod
     def is_not_sentinel(result):

@@ -66,6 +66,10 @@ class Resolver:
             if 'values' in item:
                 return cls.string(item['string'], data, values=item['values'])
             return cls.string(item['string'], data)
+        elif object_type == 'int':
+            return item['int']
+        elif object_type == 'float':
+            return item['float']
         elif object_type == 'path':
             return cls.path(item['paths'], data)
         elif object_type == 'regexp':
@@ -133,6 +137,16 @@ class Resolver:
                     return True
 
             return False
+        elif a == 'and':
+            if left is False:
+                return False
+
+            for i in range(1, len(values)):
+                result = cls.resolve(values[i], data)
+                if result is False:
+                    return False
+
+            return True
         elif a == 'sum':
             result = left
 
@@ -143,6 +157,10 @@ class Resolver:
             for i in range(1, len(values)):
                 r = cls.resolve(values[i], data)
                 assert type(r) in (int, float, str)
+                if isinstance(result, str):
+                    r = str(r)
+                elif isinstance(r, str):
+                    result = str(result)
                 result += r
 
             return result
@@ -151,6 +169,11 @@ class Resolver:
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left * right
+        elif a == 'modulus':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float)
+            assert type(right) in (int, float)
+            return left % right
         elif a == 'division':
             right = cls.resolve(values[1], data)
             assert type(left) in (int, float, str)

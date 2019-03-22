@@ -78,14 +78,12 @@ def test_stories_first_line(patch, story):
 
 
 def test_stories_function_line_by_name(patch, story):
-    story.entrypoint = '1'
-    story.tree = {
-        '1': {'ln': '1', 'next': '2'},
-        '2': {'ln': '2', 'method': 'function', 'function': 'execute'}
-    }
+    patch.object(story, 'line')
+    ret = story.function_line_by_name('execute')
+    story.line.assert_called_with(
+        story.app.stories[story.name]['functions']['execute'])
 
-    function_line = story.function_line_by_name('execute')
-    assert function_line == story.tree['2']
+    assert ret == story.line()
 
 
 def test_stories_resolve(patch, logger, story):

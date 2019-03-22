@@ -50,30 +50,6 @@ async def test_story_execute_escaping_sentinel(patch, app, logger,
 
 
 @mark.asyncio
-async def test_story_execute_function(patch, logger, story, async_mock):
-    line = {'function': 'my_super_awesome_function'}
-    patch.many(story, ['function_line_by_name',
-                       'context_for_function_call', 'set_context'])
-    patch.object(Story, 'execute_block', new=async_mock())
-    first_context = {'first': 'context'}
-
-    story.context = first_context
-    await Story.execute_function(logger, story, line)
-
-    story.function_line_by_name.assert_called_with(line['function'])
-    story.context_for_function_call \
-        .assert_called_with(line, story.function_line_by_name())
-
-    assert story.set_context.mock_calls == [
-        mock.call(story.context_for_function_call()),
-        mock.call(first_context)
-    ]
-
-    Story.execute_block.mock \
-        .assert_called_with(logger, story, story.function_line_by_name())
-
-
-@mark.asyncio
 async def test_story_execute_line_unknown_method(logger, story):
     story.tree['1']['method'] = 'foo_method'
     with pytest.raises(AsyncyError):
@@ -91,6 +67,7 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='execute', lexicon_name='execute', async_mock=True),
     Method(name='set', lexicon_name='set', async_mock=True),
     Method(name='function', lexicon_name='function', async_mock=True),
+    Method(name='call', lexicon_name='call', async_mock=True),
     Method(name='when', lexicon_name='when', async_mock=True),
     Method(name='return', lexicon_name='ret', async_mock=True),
     Method(name='break', lexicon_name='break_', async_mock=True)
@@ -98,10 +75,7 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
 @mark.asyncio
 async def test_story_execute_line_generic(patch, logger, story,
                                           async_mock, method):
-    if method.async_mock:
-        patch.object(Lexicon, method.lexicon_name, new=async_mock())
-    else:
-        patch.object(Lexicon, method.lexicon_name)
+    patch.object(Lexicon, method.lexicon_name, new=async_mock())
 
     patch.object(story, 'line', return_value={'method': method.name})
     patch.object(story, 'start_line')
@@ -113,21 +87,6 @@ async def test_story_execute_line_generic(patch, logger, story,
 
     mock.assert_called_with(logger, story, story.line.return_value)
     assert result == mock.return_value
-
-    story.line.assert_called_with('1')
-    story.start_line.assert_called_with('1')
-
-
-@mark.asyncio
-async def test_story_execute_line_call(patch, logger, story, async_mock):
-    patch.object(Story, 'execute_function', new=async_mock())
-    patch.object(story, 'line', return_value={'method': 'call'})
-    patch.object(story, 'start_line')
-    result = await Story.execute_line(logger, story, '1')
-
-    Story.execute_function.mock.assert_called_with(logger, story,
-                                                   story.line.return_value)
-    assert result == Story.execute_function.mock.return_value
 
     story.line.assert_called_with('1')
     story.start_line.assert_called_with('1')
@@ -228,7 +187,7 @@ async def test_story_run_metrics_exc(patch, app, logger, async_mock, magic):
     Metrics.story_run_total = magic()
     Metrics.story_run_failure = magic()
 
-    def exc():
+    def exc(*args, **kwargs):
         raise Exception()
 
     patch.object(Story, 'execute', new=async_mock(side_effect=exc))
@@ -271,16 +230,11 @@ async def test_story_run_with_id(patch, app, logger, async_mock):
 
 @mark.asyncio
 async def test_story_run_prepare_function(patch, app, logger, async_mock):
-    patch.object(Story, 'execute_function', new=async_mock())
     patch.object(Story, 'story')
     function_name = 'function_name'
-    await Story.run(app, logger, 'story_name',
-                    context='context', function_name=function_name)
-    Story.story().prepare.assert_called_with('context')
-    Story.story().function_line_by_name.assert_called_with(function_name)
-    Story.execute_function.mock \
-        .assert_called_with(logger, Story.story(),
-                            Story.story().function_line_by_name())
+    with pytest.raises(AsyncyError):
+        await Story.run(app, logger, 'story_name',
+                        context='context', function_name=function_name)
 
 
 @mark.asyncio

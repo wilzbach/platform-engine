@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 from unittest.mock import MagicMock
 
 from asyncy.utils.HttpUtils import HttpUtils
@@ -26,7 +27,7 @@ async def test_fetch_with_retry(patch, logger, async_mock):
 
 
 @mark.asyncio
-async def test_fetch_with_retry_fail(patch, logger):
+async def test_fetch_with_retry_fail(patch, logger, async_mock):
     client = MagicMock()
     fetch = MagicMock()
 
@@ -37,6 +38,7 @@ async def test_fetch_with_retry_fail(patch, logger):
         return res
 
     patch.object(client, 'fetch', side_effect=exc)
+    patch.object(asyncio, 'sleep', new=async_mock())
 
     with pytest.raises(HTTPError):
         await HttpUtils.fetch_with_retry(10, logger, 'asyncy.com', client, {})
