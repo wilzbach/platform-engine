@@ -62,6 +62,8 @@ class Containers:
         env = {}
         for key, omg_config in omg.get('environment', {}).items():
             actual_val = story.app.environment.get(service, {}).get(key)
+            if actual_val is None:
+                actual_val = omg_config.get('default')
             if omg_config.get('required', False) and actual_val is None:
                 raise EnvironmentVariableNotFound(service=service,
                                                   variable=key, story=story,
