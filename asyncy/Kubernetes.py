@@ -8,10 +8,9 @@ from asyncio import TimeoutError
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
-from .Exceptions import AsyncyError, K8sError
-from .Stories import Stories
-from .constants.LineConstants import LineConstants
-from .entities.Volume import Volume, Volumes
+from .AppConfig import Expose
+from .Exceptions import K8sError
+from .entities.Volume import Volumes
 from .utils.HttpUtils import HttpUtils
 
 
@@ -22,15 +21,74 @@ class Kubernetes:
         return int(res.code / 100) == 2
 
     @classmethod
-    def raise_if_not_2xx(cls, res: HTTPResponse, story, line):
+    def raise_if_not_2xx(cls, res: HTTPResponse):
         if cls.is_2xx(res):
             return
 
         path = res.request.url
-        raise K8sError(story=story, line=line,
-                       message=f'Failed to call {path}! '
+        raise K8sError(message=f'Failed to call {path}! '
                                f'code={res.code}; body={res.body}; '
                                f'error={res.error}')
+
+    @classmethod
+    async def create_ingress(cls, ingress_name, app, expose: Expose,
+                             container_name: str):
+        if cls._does_resource_exist(app, 'ingresses', ingress_name):
+            app.logger.debug(f'Kubernetes ingress for {expose} exists')
+            return
+
+        payload = {
+            'apiVersion': 'extensions/v1beta1',
+            'kind': 'Ingress',
+            'metadata': {
+                'name': ingress_name,
+                'annotations': {
+                    'kubernetes.io/ingress.class': 'nginx',
+                    'kubernetes.io/ingress.global-static-ip-name':
+                        app.config.INGRESS_GLOBAL_STATIC_IP_NAME,
+                    'ingress.kubernetes.io/rewrite-target': expose.http_path,
+                    'nginx.ingress.kubernetes.io/proxy-body-size': '1m',
+                    'nginx.ingress.kubernetes.io/proxy-read-timeout': '120'
+                }
+            },
+            'spec': {
+                'tls': [
+                    {
+                        'hosts': [f'{app.app_dns}.'
+                                  f'{app.config.APP_DOMAIN}'],
+                        'secretName':
+                            app.config.APP_DOMAIN_TLS_SECRET_NAME
+                    }
+                ],
+                'rules': [
+                    {
+                        'host': f'{app.app_dns}.'
+                        f'{app.config.APP_DOMAIN}',
+                        'http': {
+                            'paths': [
+                                {
+                                    'path': '/',  # TODO:
+                                    'backend': {
+                                        'serviceName': container_name,
+                                        'servicePort': 8888  # TODO:
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+        prefix = cls._get_api_path_prefix('ingresses')
+        res = await cls.make_k8s_call(app,
+                                      f'{prefix}/{app.app_id}/ingresses',
+                                      payload=payload)
+
+        if not cls.is_2xx(res):
+            raise K8sError(f'Failed to create ingress for expose {expose}!')
+
+        app.logger.debug(f'Kubernetes ingress created')
 
     @classmethod
     async def create_namespace(cls, app):
@@ -99,16 +157,16 @@ class Kubernetes:
             client, kwargs)
 
     @classmethod
-    async def remove_volume(cls, story, line, name):
-        await cls._delete_resource(story.app, 'persistentvolumeclaims', name)
+    async def remove_volume(cls, app, name):
+        await cls._delete_resource(app, 'persistentvolumeclaims', name)
 
     @classmethod
-    async def _does_resource_exist(cls, story, line, resource, name):
+    async def _does_resource_exist(cls, app, resource, name):
         prefix = cls._get_api_path_prefix(resource)
-        path = f'{prefix}/{story.app.app_id}' \
-               f'/{resource}/{name}'
+        path = f'{prefix}/{app.app_id}' \
+            f'/{resource}/{name}'
 
-        res = await cls.make_k8s_call(story.app, path)
+        res = await cls.make_k8s_call(app, path)
         if res.code == 404:
             return False
         elif res.code == 200:
@@ -116,11 +174,10 @@ class Kubernetes:
 
         raise K8sError(
             message=f'Failed to check if {resource}/{name} exists! '
-                    f'Kubernetes API returned {res.code}.',
-            story=story, line=line)
+            f'Kubernetes API returned {res.code}.')
 
     @classmethod
-    async def _update_volume_label(cls, story, line, app, name):
+    async def _update_volume_label(cls, app, name):
         path = f'/api/v1/namespaces/{app.app_id}/persistentvolumeclaims/{name}'
         payload = {
             'metadata': {
@@ -130,26 +187,26 @@ class Kubernetes:
             }
         }
         res = await cls.make_k8s_call(app, path, payload, method='patch')
-        cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(
+        cls.raise_if_not_2xx(res)
+        app.logger.debug(
             f'Updated reference time for volume {name}')
 
     @classmethod
-    async def create_volume(cls, story, line, name, persist):
+    async def create_volume(cls, app, name, persist):
         if await cls._does_resource_exist(
-                story, line, 'persistentvolumeclaims', name):
-            story.logger.debug(f'Kubernetes volume {name} already exists')
+                app, 'persistentvolumeclaims', name):
+            app.logger.debug(f'Kubernetes volume {name} already exists')
             # Update the last_referenced_on label
-            await cls._update_volume_label(story, line, story.app, name)
+            await cls._update_volume_label(app, name)
             return
 
-        path = f'/api/v1/namespaces/{story.app.app_id}/persistentvolumeclaims'
+        path = f'/api/v1/namespaces/{app.app_id}/persistentvolumeclaims'
         payload = {
             'apiVersion': 'v1',
             'kind': 'PersistentVolumeClaim',
             'metadata': {
                 'name': name,
-                'namespace': story.app.app_id,
+                'namespace': app.app_id,
                 'labels': {
                     'last_referenced_on': f'{int(time.time())}',
                     'omg_persist': f'{persist}'
@@ -165,14 +222,16 @@ class Kubernetes:
             }
         }
 
-        res = await cls.make_k8s_call(story.app, path, payload)
-        cls.raise_if_not_2xx(res, story, line)
-        story.logger.debug(f'Created a Kubernetes volume - {name}')
+        res = await cls.make_k8s_call(app, path, payload)
+        cls.raise_if_not_2xx(res)
+        app.logger.debug(f'Created a Kubernetes volume - {name}')
 
     @classmethod
     def _get_api_path_prefix(cls, resource):
         if resource == 'deployments':
             return '/apis/apps/v1/namespaces'
+        elif resource == 'ingresses':
+            return '/apis/extensions/v1beta1/namespaces'
         elif resource == 'services' or \
                 resource == 'persistentvolumeclaims' or \
                 resource == 'pods':
@@ -218,7 +277,7 @@ class Kubernetes:
         # deletion is in progress. Don't assert that the status code
         # is 2xx in this case.
         if res.code != 409:
-            cls.raise_if_not_2xx(res, None, None)
+            cls.raise_if_not_2xx(res)
 
         # Wait until the resource has actually been killed.
         while True:
@@ -241,6 +300,7 @@ class Kubernetes:
         # 1. Services
         # 2. Deployments (should delete all pods internally too)
         # 3. Volumes which are marked with persist as false
+        # 4. Ingresses
 
         for i in await cls._list_resource_names(app, 'services'):
             await cls._delete_resource(app, 'services', i)
@@ -251,13 +311,16 @@ class Kubernetes:
         for i in await cls._list_resource_names(app, 'pods'):
             await cls._delete_resource(app, 'pods', i)
 
+        for i in await cls._list_resource_names(app, 'ingresses'):
+            await cls._delete_resource(app, 'ingresses', i)
+
         # Volumes are not deleted at this moment.
         # See https://github.com/asyncy/platform-engine/issues/189
 
     @classmethod
-    def get_hostname(cls, story, line, container_name):
+    def get_hostname(cls, app, container_name):
         return f'{container_name}.' \
-               f'{story.app.app_id}.svc.cluster.local'
+            f'{app.app_id}.svc.cluster.local'
 
     @classmethod
     def find_all_ports(cls, service_config: dict, inside_http=False) -> set:
@@ -284,13 +347,12 @@ class Kubernetes:
         return port_list
 
     @classmethod
-    async def create_service(cls, story: Stories, line: dict,
+    async def create_service(cls, app, service: str,
                              container_name: str):
         # Note: We don't check if this service exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a service.
-        service = line[LineConstants.service]
-        ports = cls.find_all_ports(story.app.services[service])
+        ports = cls.find_all_ports(app.services[service])
         port_list = cls.format_ports(ports)
 
         payload = {
@@ -298,7 +360,7 @@ class Kubernetes:
             'kind': 'Service',
             'metadata': {
                 'name': container_name,
-                'namespace': story.app.app_id,
+                'namespace': app.app_id,
                 'labels': {
                     'app': container_name
                 }
@@ -311,17 +373,17 @@ class Kubernetes:
             }
         }
 
-        path = f'/api/v1/namespaces/{story.app.app_id}/services'
-        res = await cls.make_k8s_call(story.app, path, payload)
-        cls.raise_if_not_2xx(res, story, line)
+        path = f'/api/v1/namespaces/{app.app_id}/services'
+        res = await cls.make_k8s_call(app, path, payload)
+        cls.raise_if_not_2xx(res)
 
         # Wait until the ports of the destination pod are open.
-        hostname = cls.get_hostname(story, line, container_name)
-        story.app.logger.info(f'Waiting for ports to open: {ports}')
+        hostname = cls.get_hostname(app, container_name)
+        app.logger.info(f'Waiting for ports to open: {ports}')
         for port in ports:
             success = await cls.wait_for_port(hostname, port)
             if not success:
-                story.app.logger.warn(
+                app.logger.warn(
                     f'Timed out waiting for {hostname}:{port} to open. '
                     f'Some actions of {service} might fail!')
 
@@ -341,7 +403,7 @@ class Kubernetes:
         return False
 
     @classmethod
-    async def create_deployment(cls, story: Stories, line: dict, image: str,
+    async def create_deployment(cls, app, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
                                 volumes: Volumes):
@@ -374,16 +436,16 @@ class Kubernetes:
             })
 
             if not vol.persist:
-                await cls.remove_volume(story, line, vol.name)
+                await cls.remove_volume(app, vol.name)
 
-            await cls.create_volume(story, line, vol.name, vol.persist)
+            await cls.create_volume(app, vol.name, vol.persist)
 
         payload = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
             'metadata': {
                 'name': container_name,
-                'namespace': story.app.app_id
+                'namespace': app.app_id
             },
             'spec': {
                 'replicas': 1,
@@ -434,7 +496,7 @@ class Kubernetes:
                 }
             }
 
-        path = f'/apis/apps/v1/namespaces/{story.app.app_id}/deployments'
+        path = f'/apis/apps/v1/namespaces/{app.app_id}/deployments'
 
         # When a namespace is created for the first time, K8s needs to perform
         # some sort of preparation. Pods creation fails sporadically for new
@@ -443,46 +505,46 @@ class Kubernetes:
         res = None
         while tries < 10:
             tries = tries + 1
-            res = await cls.make_k8s_call(story.app, path, payload)
+            res = await cls.make_k8s_call(app, path, payload)
             if cls.is_2xx(res):
                 break
 
-            story.logger.debug(f'Failed to create deployment, retrying...')
+            app.logger.debug(f'Failed to create deployment, retrying...')
             await asyncio.sleep(1)
 
-        cls.raise_if_not_2xx(res, story, line)
+        cls.raise_if_not_2xx(res)
 
-        path = f'/apis/apps/v1/namespaces/{story.app.app_id}' \
-               f'/deployments/{container_name}'
+        path = f'/apis/apps/v1/namespaces/{app.app_id}' \
+            f'/deployments/{container_name}'
 
         # Wait until the deployment is ready.
         while True:
-            res = await cls.make_k8s_call(story.app, path)
-            cls.raise_if_not_2xx(res, story, line)
+            res = await cls.make_k8s_call(app, path)
+            cls.raise_if_not_2xx(res)
             body = json.loads(res.body, encoding='utf-8')
             if body['status'].get('readyReplicas', 0) > 0:
                 break
 
-            story.logger.debug('Waiting for deployment to be ready...')
+            app.logger.debug('Waiting for deployment to be ready...')
             await asyncio.sleep(1)
 
     @classmethod
-    async def create_pod(cls, story: Stories, line: dict, image: str,
+    async def create_pod(cls, app, service: str, image: str,
                          container_name: str, start_command: [] or str,
                          shutdown_command: [] or str, env: dict,
                          volumes: Volumes):
         res = await cls.make_k8s_call(
-            story.app,
-            f'/apis/apps/v1/namespaces/{story.app.app_id}'
+            app,
+            f'/apis/apps/v1/namespaces/{app.app_id}'
             f'/deployments/{container_name}')
 
         if res.code == 200:
-            story.logger.debug(f'Deployment {container_name} '
-                               f'already exists, reusing')
+            app.logger.debug(f'Deployment {container_name} '
+                             f'already exists, reusing')
             return
 
-        await cls.create_deployment(story, line, image, container_name,
+        await cls.create_deployment(app, image, container_name,
                                     start_command, shutdown_command, env,
                                     volumes)
 
-        await cls.create_service(story, line, container_name)
+        await cls.create_service(app, service, container_name)

@@ -7,8 +7,10 @@ from requests.structures import CaseInsensitiveDict
 
 from tornado.httpclient import AsyncHTTPClient
 
+from .AppConfig import AppConfig, Expose
 from .Config import Config
 from .Containers import Containers
+from .Exceptions import AsyncyError
 from .Logger import Logger
 from .Stories import Stories
 from .Types import StreamingService
@@ -23,14 +25,24 @@ Subscription = namedtuple('Subscription',
 
 
 class App:
+    app_config: AppConfig = None
+    """
+    The contents of asyncy.yaml.
+    """
+
+    config: Config = None
+    """
+    The runtime config for this app.
+    """
 
     def __init__(self, app_id: str, app_dns: str, version: int, config: Config,
                  logger: Logger, stories: dict, services: dict,
-                 environment: dict, owner_uuid: str):
+                 environment: dict, owner_uuid: str, app_config: AppConfig):
         self._subscriptions = {}
         self.app_id = app_id
         self.app_dns = app_dns
         self.config = config
+        self.app_config = app_config
         self.version = version
         self.logger = logger
         self.owner_uuid = owner_uuid
@@ -47,7 +59,7 @@ class App:
                 secrets[k] = v
         self.app_context = {
             'secrets': secrets,
-            'hostname': f'{self.app_dns}.asyncyapp.com',
+            'hostname': f'{self.app_dns}.{self.config.APP_DOMAIN}',
             'version': self.version
         }
 
@@ -59,6 +71,34 @@ class App:
         """
         await self.start_services()
         await self.run_stories()
+        await self.expose_services()
+
+    async def expose_services(self):
+        for expose in self.app_config.get_expose_config():
+            await self._expose_service(expose)
+
+    async def _expose_service(self, e: Expose):
+        self.logger.info(f'Exposing service {e.service}/'
+                         f'{e.service_expose_name} '
+                         f'on {e.http_path}')
+        conf = Dict.find(self.services,
+                         f'{e.service}'
+                         f'.{ServiceConstants.config}'
+                         f'.expose.{e.service_expose_name}')
+        if conf is None:
+            raise AsyncyError(
+                message=f'Configuration for expose "{e.service_expose_name}" '
+                f'not found in service "{e.service}"')
+
+        target_path = conf.get('http', {}).get('path')
+        target_port = conf.get('http', {}).get('port')
+
+        if target_path is None or target_port is None:
+            raise AsyncyError(
+                message=f'http.path or http.port is null '
+                f'for expose {e.service}/{e.service_expose_name}')
+        # TODO:
+        await Containers.expose_service(self, e)
 
     async def start_services(self):
         tasks = []
@@ -78,7 +118,7 @@ class App:
                     assert isinstance(chain[0], Service)
                     assert isinstance(chain[1], Command)
 
-                    if Containers.is_service_reusable(story, line):
+                    if Containers.is_service_reusable(story.app, line):
                         # Simple cache to not unnecessarily make more calls to
                         # Kubernetes. It's okay if we don't have this check
                         # though, since the underlying API handles this.

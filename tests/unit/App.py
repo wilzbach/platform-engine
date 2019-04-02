@@ -29,7 +29,7 @@ def exc(patch):
 @fixture
 def app(config, logger, magic):
     return App('app_id', 'app_dns', logger, config,
-               magic(), magic(), magic(), {}, 'owner_uuid')
+               magic(), magic(), magic(), {}, 'owner_uuid', magic())
 
 
 def test_add_subscription(patch, app, magic):
@@ -126,8 +126,10 @@ def test_app_init(magic, config, logger, env):
                 expected_secrets[k.lower()] = v
 
     version = 100
+    app_config = magic()
+    config.APP_DOMAIN = 'asyncyapp.com'
     app = App('app_id', 'app_dns', version, config, logger,
-              stories, services, env, 'owner_1')
+              stories, services, env, 'owner_1', app_config)
 
     if env is None:
         env = {}
@@ -144,6 +146,7 @@ def test_app_init(magic, config, logger, env):
     assert app.app_context['version'] == version
     assert app.app_context['secrets'] == expected_secrets
     assert app.entrypoint == stories['entrypoint']
+    assert app.app_config == app_config
 
 
 @mark.asyncio
