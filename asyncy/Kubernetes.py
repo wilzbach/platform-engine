@@ -59,14 +59,14 @@ class Kubernetes:
                 }
             },
             'spec': {
-                # 'tls': [
-                #     {
-                #         'hosts': [f'{app.app_dns}.'
-                #                   f'{app.config.APP_DOMAIN}'],
-                #         'secretName':
-                #             app.config.APP_DOMAIN_TLS_SECRET_NAME
-                #     }
-                # ],
+                'tls': [
+                    {
+                        'hosts': [f'{app.app_dns}.'
+                                  f'{app.config.APP_DOMAIN}'],
+                        'secretName':
+                            app.config.APP_DOMAIN_TLS_SECRET_NAME
+                    }
+                ],
                 'rules': [
                     {
                         'host': f'{app.app_dns}.{app.config.APP_DOMAIN}',
