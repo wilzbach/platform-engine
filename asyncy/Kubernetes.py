@@ -493,8 +493,8 @@ class Kubernetes:
                                 'image': image,
                                 'resources': {
                                     'limits': {
-                                        'memory': '100Mi',  # During beta.
-                                        'cpu': '0.01',  # During beta.
+                                        'memory': '150Mi',  # During beta.
+                                        # 'cpu': '0.01',  # During beta. todo add back this limitation
                                     }
                                 },
                                 'command': start_command,
