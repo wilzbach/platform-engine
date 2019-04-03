@@ -88,8 +88,8 @@ class Kubernetes:
         }
 
         prefix = cls._get_api_path_prefix('ingresses')
-        res = await cls.make_k8s_call(app,
-                                      f'{prefix}/{app.app_id}/ingresses',
+        res = await cls.make_k8s_call(app, # TODO: reclaim tenant ingresses from the asyncy-system
+                                      f'{prefix}/asyncy-system/ingresses',
                                       payload=payload)
 
         if not cls.is_2xx(res):
