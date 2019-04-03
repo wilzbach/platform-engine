@@ -63,8 +63,8 @@ class Kubernetes:
                     {
                         'hosts': [f'{app.app_dns}.'
                                   f'{app.config.APP_DOMAIN}'],
-                        'secretName':
-                            app.config.APP_DOMAIN_TLS_SECRET_NAME
+                        # 'secretName':
+                        #     app.config.APP_DOMAIN_TLS_SECRET_NAME
                     }
                 ],
                 'rules': [
