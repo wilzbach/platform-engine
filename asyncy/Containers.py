@@ -48,8 +48,8 @@ class Containers:
         if action is not None:
             command_conf = Dict.find(omg, f'actions.{action}')
 
-        if command_conf is None:
-            raise ActionNotFound(service=service, action=action)
+            if command_conf is None:
+                raise ActionNotFound(service=service, action=action)
 
         shutdown_command = Dict.find(omg, f'lifecycle.shutdown.command')
 

@@ -70,8 +70,8 @@ class App:
         register with the gateway, and queue cron jobs.
         """
         await self.start_services()
-        await self.run_stories()
         await self.expose_services()
+        await self.run_stories()
 
     async def expose_services(self):
         for expose in self.app_config.get_expose_config():
@@ -133,13 +133,15 @@ class App:
                 finally:
                     line = line.get('next')
 
-        completed, pending = await asyncio.wait(tasks)
-        assert len(pending) == 0  # Pending must never be greater than zero.
+        if len(tasks) > 0:
+            completed, pending = await asyncio.wait(tasks)
+            # Pending must never be greater than zero.
+            assert len(pending) == 0
 
-        for task in completed:
-            exc = task.exception()
-            if exc is not None:
-                raise exc
+            for task in completed:
+                exc = task.exception()
+                if exc is not None:
+                    raise exc
 
     async def run_stories(self):
         """

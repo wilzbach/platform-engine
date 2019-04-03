@@ -8,6 +8,7 @@ import threading
 import psycopg2
 
 from .App import App
+from .AppConfig import AppConfig, KEY_EXPOSE
 from .Config import Config
 from .Containers import Containers
 from .DeploymentLock import DeploymentLock
@@ -118,8 +119,10 @@ class Apps:
             if volume_count > MAX_VOLUMES_BETA:
                 raise TooManyVolumes(volume_count, MAX_VOLUMES_BETA)
 
+            app_config = AppConfig(raw=stories.get('yaml', {}))
+
             app = App(app_id, app_dns, version, config, logger,
-                      stories, services, environment, owner_uuid)
+                      stories, services, environment, owner_uuid, app_config)
 
             await Containers.clean_app(app)
 
@@ -176,8 +179,13 @@ class Apps:
     async def get_services(cls, asyncy_yaml, glogger: Logger,
                            stories: dict):
         services = {}
+        all_services = stories.get('services', [])
 
-        for service in stories.get('services', []):
+        expose = asyncy_yaml.get(KEY_EXPOSE, {})
+        for expose_name, expose_conf in expose.items():
+            all_services.append(expose_conf['service'])
+
+        for service in all_services:
             conf = asyncy_yaml.get('services', {}).get(service, {})
             # query the Hub for the OMG
             tag = conf.get('tag', 'latest')

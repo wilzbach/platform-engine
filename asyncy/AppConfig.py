@@ -12,7 +12,7 @@ class AppConfig:
     _expose: typing.List[Expose] = []
 
     def __init__(self, raw: dict):
-        for name, expose in raw.get(KEY_EXPOSE, {}):
+        for name, expose in raw.get(KEY_EXPOSE, {}).items():
             e = Expose(name=name, service=expose.get('service'),
                        service_expose_name=expose.get('name'),
                        http_path=expose.get('http', {}).get('path'))

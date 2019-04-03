@@ -8,8 +8,10 @@ from asyncio import TimeoutError
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
+from . import AppConfig
 from .AppConfig import Expose
 from .Exceptions import K8sError
+from .constants.ServiceConstants import ServiceConstants
 from .entities.Volume import Volumes
 from .utils.HttpUtils import HttpUtils
 
@@ -33,9 +35,14 @@ class Kubernetes:
     @classmethod
     async def create_ingress(cls, ingress_name, app, expose: Expose,
                              container_name: str):
-        if cls._does_resource_exist(app, 'ingresses', ingress_name):
+        if await cls._does_resource_exist(app, 'ingresses', ingress_name):
             app.logger.debug(f'Kubernetes ingress for {expose} exists')
             return
+
+        expose_conf = app.services[expose.service][
+            ServiceConstants.config][AppConfig.KEY_EXPOSE][
+            expose.service_expose_name]
+        http_conf = expose_conf['http']
 
         payload = {
             'apiVersion': 'extensions/v1beta1',
@@ -67,10 +74,10 @@ class Kubernetes:
                         'http': {
                             'paths': [
                                 {
-                                    'path': '/',  # TODO:
+                                    'path': http_conf['path'],
                                     'backend': {
                                         'serviceName': container_name,
-                                        'servicePort': 8888  # TODO:
+                                        'servicePort': http_conf['port']
                                     }
                                 }
                             ]
@@ -333,6 +340,13 @@ class Kubernetes:
                 assert isinstance(value, int)
                 ports.add(value)
 
+        if not inside_http:
+            expose = service_config.get('expose', {})
+            for name, expose_conf in expose.items():
+                expose_port = expose_conf.get('http', {}).get('port')
+                if expose_port is not None:
+                    ports.add(expose_port)
+
         return ports
 
     @classmethod
@@ -389,6 +403,9 @@ class Kubernetes:
 
     @classmethod
     async def wait_for_port(cls, host, port):
+        # TODO: remove this temp hack for hasura
+        if port == 8080:
+            return True
         attempts = 0
         timeout_secs = 2
         while attempts < 60:  # Max wait time = attempts * timeout_secs = 120
@@ -415,6 +432,13 @@ class Kubernetes:
 
         if env:
             for k, v in env.items():
+                if isinstance(v, bool):
+                    if v:
+                        v = 'true'
+                    else:
+                        v = 'false'
+
+                v = str(v)  # In case it was a number.
                 env_k8s.append({
                     'name': k,
                     'value': v
@@ -518,6 +542,7 @@ class Kubernetes:
             f'/deployments/{container_name}'
 
         # Wait until the deployment is ready.
+        app.logger.debug('Waiting for deployment to be ready...')
         while True:
             res = await cls.make_k8s_call(app, path)
             cls.raise_if_not_2xx(res)
@@ -525,8 +550,9 @@ class Kubernetes:
             if body['status'].get('readyReplicas', 0) > 0:
                 break
 
-            app.logger.debug('Waiting for deployment to be ready...')
             await asyncio.sleep(1)
+
+        app.logger.debug('Deployment is ready')
 
     @classmethod
     async def create_pod(cls, app, service: str, image: str,
