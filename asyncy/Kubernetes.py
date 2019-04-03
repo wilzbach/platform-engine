@@ -59,18 +59,17 @@ class Kubernetes:
                 }
             },
             'spec': {
-                'tls': [
-                    {
-                        'hosts': [f'{app.app_dns}.'
-                                  f'{app.config.APP_DOMAIN}'],
-                        'secretName':
-                            app.config.APP_DOMAIN_TLS_SECRET_NAME
-                    }
-                ],
+                # 'tls': [
+                #     {
+                #         'hosts': [f'{app.app_dns}.'
+                #                   f'{app.config.APP_DOMAIN}'],
+                #         'secretName':
+                #             app.config.APP_DOMAIN_TLS_SECRET_NAME
+                #     }
+                # ],
                 'rules': [
                     {
-                        'host': f'{app.app_dns}.'
-                        f'{app.config.APP_DOMAIN}',
+                        'host': f'{app.app_dns}.{app.config.APP_DOMAIN}',
                         'http': {
                             'paths': [
                                 {
@@ -89,7 +88,7 @@ class Kubernetes:
 
         prefix = cls._get_api_path_prefix('ingresses')
         res = await cls.make_k8s_call(app, # TODO: reclaim tenant ingresses from the asyncy-system
-                                      f'{prefix}/asyncy-system/ingresses',
+                                      f'{prefix}/{app.app_id}/ingresses',
                                       payload=payload)
 
         if not cls.is_2xx(res):
