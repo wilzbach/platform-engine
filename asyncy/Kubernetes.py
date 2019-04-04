@@ -494,7 +494,7 @@ class Kubernetes:
                                 'resources': {
                                     'limits': {
                                         'memory': '150Mi',  # During beta.
-                                        # 'cpu': '0.01',  # During beta. todo add back this limitation
+                                        'cpu': '100m',  # During beta.
                                     }
                                 },
                                 'command': start_command,
