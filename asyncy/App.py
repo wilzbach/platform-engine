@@ -97,7 +97,7 @@ class App:
             raise AsyncyError(
                 message=f'http.path or http.port is null '
                 f'for expose {e.service}/{e.service_expose_name}')
-        # TODO:
+
         await Containers.expose_service(self, e)
 
     async def start_services(self):

@@ -130,6 +130,10 @@ class Containers:
                                         expose, container_name,
                                         hostname=hostname)
 
+        app.logger.info(f'Exposed service {expose.service} as '
+                        f'https://{hostname}.{app.config.APP_DOMAIN}'
+                        f'/{expose.http_path}')
+
     @classmethod
     async def start(cls, story, line):
         """
