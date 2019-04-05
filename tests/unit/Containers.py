@@ -117,7 +117,7 @@ def test_hash_volume_name(patch, story, line, reusable):
 
     expected = f'myvolume-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
     assert Containers.hash_volume_name(story.app, line, service, name) == \
-           expected
+        expected
 
 
 def test_service_name_and_story_line(patch, story):
