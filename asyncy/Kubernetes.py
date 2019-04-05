@@ -85,7 +85,7 @@ class Kubernetes:
         }
 
         prefix = cls._get_api_path_prefix('ingresses')
-        res = await cls.make_k8s_call(app, # TODO: reclaim tenant ingresses from the asyncy-system
+        res = await cls.make_k8s_call(app,
                                       f'{prefix}/{app.app_id}/ingresses',
                                       payload=payload)
 
@@ -400,9 +400,6 @@ class Kubernetes:
 
     @classmethod
     async def wait_for_port(cls, host, port):
-        # TODO: remove this temp hack for hasura
-        if port == 8080:
-            return True
         attempts = 0
         timeout_secs = 2
         while attempts < 60:  # Max wait time = attempts * timeout_secs = 120
