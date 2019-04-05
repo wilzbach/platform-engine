@@ -125,8 +125,10 @@ class Containers:
                                                 expose.service)
         await cls.create_and_start(app, None, expose.service, container_name)
         ingress_name = cls.hash_ingress_name(expose)
+        hostname = f'{app.app_dns}--{cls.get_simple_name(expose.service)}'
         await Kubernetes.create_ingress(ingress_name, app,
-                                        expose, container_name)
+                                        expose, container_name,
+                                        hostname=hostname)
 
     @classmethod
     async def start(cls, story, line):

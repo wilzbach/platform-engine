@@ -34,7 +34,7 @@ class Kubernetes:
 
     @classmethod
     async def create_ingress(cls, ingress_name, app, expose: Expose,
-                             container_name: str):
+                             container_name: str, hostname: str):
         if await cls._does_resource_exist(app, 'ingresses', ingress_name):
             app.logger.debug(f'Kubernetes ingress for {expose} exists')
             return
@@ -61,15 +61,13 @@ class Kubernetes:
             'spec': {
                 'tls': [
                     {
-                        'hosts': [f'{app.app_dns}.'
-                                  f'{app.config.APP_DOMAIN}'],
-                        # 'secretName':
-                        #     app.config.APP_DOMAIN_TLS_SECRET_NAME
+                        'hosts': [f'{hostname}.'
+                                  f'{app.config.APP_DOMAIN}']
                     }
                 ],
                 'rules': [
                     {
-                        'host': f'{app.app_dns}.{app.config.APP_DOMAIN}',
+                        'host': f'{hostname}.{app.config.APP_DOMAIN}',
                         'http': {
                             'paths': [
                                 {
