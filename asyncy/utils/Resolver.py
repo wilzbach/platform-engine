@@ -68,6 +68,8 @@ class Resolver:
             return cls.string(item['string'], data)
         elif object_type == 'int':
             return item['int']
+        elif object_type == 'boolean':
+            return item['boolean']
         elif object_type == 'float':
             return item['float']
         elif object_type == 'path':
