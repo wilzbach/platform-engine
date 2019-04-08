@@ -129,6 +129,32 @@ def test_hash_ingress_name():
     assert ret == 'exposename-0cf994f170f9d213bb814f74baca87ea149f7536'
 
 
+@mark.asyncio
+async def test_expose_service(app, patch, async_mock):
+    container_name = 'container_name'
+    patch.object(Containers, 'get_container_name',
+                 return_value=container_name)
+
+    patch.object(Containers, 'create_and_start', new=async_mock())
+    patch.object(Kubernetes, 'create_ingress', new=async_mock())
+
+    e = Expose(name='name', service='service',
+               service_expose_name='expose_name',
+               http_path='expose_path')
+
+    ingress_name = Containers.hash_ingress_name(e)
+    hostname = f'{app.app_dns}--{Containers.get_simple_name(e.service)}'
+
+    await Containers.expose_service(app, e)
+
+    Containers.create_and_start.mock.assert_called_with(app, None, e.service,
+                                                        container_name)
+
+    Kubernetes.create_ingress.mock.assert_called_with(ingress_name, app, e,
+                                                      container_name,
+                                                      hostname=hostname)
+
+
 def test_service_name_and_story_line(patch, story):
     patch.object(hashlib, 'sha1')
     story.name = 'story_name'
