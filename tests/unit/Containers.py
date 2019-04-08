@@ -2,6 +2,7 @@
 import hashlib
 from unittest.mock import MagicMock
 
+from asyncy.AppConfig import Expose
 from asyncy.Containers import Containers
 from asyncy.Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
@@ -118,6 +119,14 @@ def test_hash_volume_name(patch, story, line, reusable):
     expected = f'myvolume-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
     assert Containers.hash_volume_name(story.app, line, service, name) == \
         expected
+
+
+def test_hash_ingress_name():
+    e = Expose(name='name', service='service',
+               service_expose_name='expose_name',
+               http_path='expose_path')
+    ret = Containers.hash_ingress_name(e)
+    assert ret == 'exposename-0cf994f170f9d213bb814f74baca87ea149f7536'
 
 
 def test_service_name_and_story_line(patch, story):
