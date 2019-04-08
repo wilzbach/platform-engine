@@ -70,6 +70,10 @@ class Apps:
         glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
 
     @classmethod
+    def get_app_config(cls, raw):
+        return AppConfig(raw)
+
+    @classmethod
     async def deploy_release(cls, config, app_id, app_dns,
                              version, environment, stories,
                              maintenance: bool, deleted: bool, owner_uuid):
@@ -119,7 +123,7 @@ class Apps:
             if volume_count > MAX_VOLUMES_BETA:
                 raise TooManyVolumes(volume_count, MAX_VOLUMES_BETA)
 
-            app_config = AppConfig(raw=stories.get('yaml', {}))
+            app_config = cls.get_app_config(raw=stories.get('yaml', {}))
 
             app = App(app_id, app_dns, version, config, logger,
                       stories, services, environment, owner_uuid, app_config)
