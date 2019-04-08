@@ -170,7 +170,23 @@ async def test_start_services_completed(patch, app, async_mock):
 
 @mark.asyncio
 async def test_start_services_completed_exc(patch, app, async_mock, magic):
-    app.stories = {}
+    app.stories = {
+        'a': {
+            'tree': {
+                '1': {
+                    'method': 'execute'
+                }
+            },
+            'entrypoint': '1'
+        }
+    }
+
+    patch.object(Containers, 'is_service_reusable', return_value=True)
+    patch.object(Services, 'is_internal', return_value=False)
+    chain = deque()
+    chain.append(Service(name='foo'))
+    chain.append(Command(name='foo'))
+    patch.object(Services, 'resolve_chain', return_value=chain)
     task = magic()
     task.exception.return_value = Exception()
     patch.object(asyncio, 'wait', new=async_mock(return_value=([task], [])))
@@ -218,10 +234,8 @@ async def test_start_services(patch, app, async_mock, magic,
     if not reusable:
         tasks = [start_container_result, start_container_result]
 
-    if internal:
-        tasks = []
-
-    asyncio.wait.mock.assert_called_with(tasks)
+    if not internal:
+        asyncio.wait.mock.assert_called_with(tasks)
 
 
 @mark.asyncio
