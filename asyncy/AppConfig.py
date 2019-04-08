@@ -9,9 +9,10 @@ KEY_EXPOSE = 'expose'
 
 
 class AppConfig:
-    _expose: typing.List[Expose] = []
+    _expose: typing.List[Expose] = None
 
     def __init__(self, raw: dict):
+        self._expose = []
         for name, expose in raw.get(KEY_EXPOSE, {}).items():
             e = Expose(name=name, service=expose.get('service'),
                        service_expose_name=expose.get('name'),
