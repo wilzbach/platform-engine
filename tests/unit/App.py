@@ -4,12 +4,15 @@ import json
 from collections import deque
 
 from asyncy.App import App
+from asyncy.AppConfig import Expose
 from asyncy.Containers import Containers
+from asyncy.Exceptions import AsyncyError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Types import StreamingService
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.processing import Story
 from asyncy.processing.Services import Command, Service, Services
+from asyncy.utils import Dict
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
@@ -236,6 +239,63 @@ async def test_start_services(patch, app, async_mock, magic,
 
     if not internal:
         asyncio.wait.mock.assert_called_with(tasks)
+
+
+@mark.asyncio
+async def test_expose_services(patch, app, async_mock):
+    a = Expose(name='foo', service='foo', service_expose_name='foo',
+               http_path='foo')
+    b = Expose(name='foo', service='foo', service_expose_name='foo',
+               http_path='foo')
+    patch.object(app.app_config, 'get_expose_config', return_value=[a, b])
+    patch.object(App, '_expose_service', new=async_mock())
+
+    await app.expose_services()
+
+    assert app._expose_service.mock.call_count == 2
+
+
+@mark.parametrize('no_config', [True, False])
+@mark.parametrize('no_http_path', [True, False])
+@mark.asyncio
+async def test_expose_service(patch, app, async_mock, no_config, no_http_path):
+    if no_http_path and no_config:
+        # THey're mutually exclusive.
+        return
+
+    app.services = {
+        'foo': {
+            'configuration': {
+                'expose': {
+                    'my_expose_name': {
+                        'http': {
+                            'path': '/expose_path',
+                            'port': 1993
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if no_config:
+        app.services['foo']['configuration']['expose']['my_expose_name'] = None
+
+    if no_http_path:
+        app.services['foo']['configuration']['expose'][
+            'my_expose_name']['http']['path'] = None
+
+    patch.object(Containers, 'expose_service', new=async_mock())
+
+    e = Expose(name='foo', service='foo', service_expose_name='my_expose_name',
+               http_path='/expose_external_path')
+
+    if no_config or no_http_path:
+        with pytest.raises(AsyncyError):
+            await app._expose_service(e)
+    else:
+        await app._expose_service(e)
+        Containers.expose_service.mock.assert_called_with(app, e)
 
 
 @mark.asyncio
