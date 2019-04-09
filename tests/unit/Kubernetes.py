@@ -6,9 +6,11 @@ import time
 from unittest import mock
 from unittest.mock import MagicMock
 
+from asyncy.AppConfig import AppConfig, Expose, KEY_EXPOSE
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.entities.Volume import Volume
 from asyncy.utils.HttpUtils import HttpUtils
 
@@ -431,6 +433,114 @@ async def test_update_volume_label(story, patch, async_mock):
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app, path, payload, method='patch')
     Kubernetes.raise_if_not_2xx.assert_called_with(res)
+
+
+@mark.parametrize('resource_exists', [True, False])
+@mark.parametrize('k8s_api_returned_2xx', [True, False])
+@mark.asyncio
+async def test_create_ingress(patch, app, async_mock, resource_exists,
+                              k8s_api_returned_2xx):
+    if resource_exists and not k8s_api_returned_2xx:
+        # Invalid combination, since if the ing resource exists already,
+        # no additional call to the k8s API is made.
+        return
+
+    app.app_id = 'my_app_id'
+    app.config.INGRESS_GLOBAL_STATIC_IP_NAME = 'ip-static-name-global'
+    ingress_name = 'my_ingress_name'
+    hostname = 'my_ingress_hostname'
+    container_name = 'my_container_name'
+    expose = Expose(name='name', service='service',
+                    service_expose_name='expose_name',
+                    http_path='expose_path')
+
+    http_conf = {
+        'path': '/my_app',
+        'port': 6000
+    }
+
+    app.services = {
+        expose.service: {
+            ServiceConstants.config: {
+                KEY_EXPOSE: {
+                    expose.service_expose_name: {
+                        'http': http_conf
+                    }
+                }
+            }
+        }
+    }
+
+    app.config.APP_DOMAIN = 'foo.com'
+
+    patch.object(Kubernetes, '_does_resource_exist',
+                 new=async_mock(return_value=resource_exists))
+
+    expected_payload = {
+        'apiVersion': 'extensions/v1beta1',
+        'kind': 'Ingress',
+        'metadata': {
+            'name': ingress_name,
+            'annotations': {
+                'kubernetes.io/ingress.class': 'nginx',
+                'kubernetes.io/ingress.global-static-ip-name':
+                    app.config.INGRESS_GLOBAL_STATIC_IP_NAME,
+                'ingress.kubernetes.io/rewrite-target': expose.http_path,
+                'nginx.ingress.kubernetes.io/proxy-body-size': '1m',
+                'nginx.ingress.kubernetes.io/proxy-read-timeout': '120'
+            }
+        },
+        'spec': {
+            'tls': [
+                {
+                    'hosts': [f'{hostname}.'
+                              f'{app.config.APP_DOMAIN}']
+                }
+            ],
+            'rules': [
+                {
+                    'host': f'{hostname}.{app.config.APP_DOMAIN}',
+                    'http': {
+                        'paths': [
+                            {
+                                'path': http_conf['path'],
+                                'backend': {
+                                    'serviceName': container_name,
+                                    'servicePort': http_conf['port']
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(return_value=314))
+    patch.object(Kubernetes, 'is_2xx',
+                 return_value=k8s_api_returned_2xx)
+
+    if k8s_api_returned_2xx:
+        await Kubernetes.create_ingress(ingress_name, app, expose,
+                                        container_name,
+                                        hostname)
+    else:
+        with pytest.raises(K8sError):
+            await Kubernetes.create_ingress(ingress_name, app, expose,
+                                            container_name,
+                                            hostname)
+        return
+
+    if resource_exists:
+        Kubernetes.make_k8s_call.mock.assert_not_called()
+    else:
+        prefix = Kubernetes._get_api_path_prefix('ingresses')
+        prefix = f'{prefix}/{app.app_id}/ingresses'
+        Kubernetes.make_k8s_call.mock.assert_called_with(
+            app, prefix, payload=expected_payload)
+
+        Kubernetes.is_2xx.assert_called_with(314)
 
 
 @mark.asyncio
