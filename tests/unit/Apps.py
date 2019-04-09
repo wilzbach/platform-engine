@@ -398,11 +398,11 @@ async def test_get_services(patch, logger, async_mock):
             'microservice/slack':
                 {'image': 'microservice/slack', 'tag': 'v1'}
         },
-        'expose': {
-            'expose_name': {
+        'expose': [
+            {
                 'service': 'naked_service'
             }
-        }
+        ]
     }
     stories = {
         'services': ['microservice/slack', 'http', 'lastfm']

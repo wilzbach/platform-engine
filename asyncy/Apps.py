@@ -186,7 +186,7 @@ class Apps:
         all_services = stories.get('services', [])
 
         expose = asyncy_yaml.get(KEY_EXPOSE, {})
-        for expose_name, expose_conf in expose.items():
+        for expose_conf in expose:
             all_services.append(expose_conf['service'])
 
         for service in all_services:
