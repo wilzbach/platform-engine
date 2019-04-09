@@ -450,7 +450,7 @@ async def test_create_ingress(patch, app, async_mock, resource_exists,
     ingress_name = 'my_ingress_name'
     hostname = 'my_ingress_hostname'
     container_name = 'my_container_name'
-    expose = Expose(name='name', service='service',
+    expose = Expose(service='service',
                     service_expose_name='expose_name',
                     http_path='expose_path')
 

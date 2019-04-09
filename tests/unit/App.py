@@ -243,9 +243,9 @@ async def test_start_services(patch, app, async_mock, magic,
 
 @mark.asyncio
 async def test_expose_services(patch, app, async_mock):
-    a = Expose(name='foo', service='foo', service_expose_name='foo',
+    a = Expose(service='foo', service_expose_name='foo',
                http_path='foo')
-    b = Expose(name='foo', service='foo', service_expose_name='foo',
+    b = Expose(service='foo', service_expose_name='foo',
                http_path='foo')
     patch.object(app.app_config, 'get_expose_config', return_value=[a, b])
     patch.object(App, '_expose_service', new=async_mock())
@@ -287,7 +287,7 @@ async def test_expose_service(patch, app, async_mock, no_config, no_http_path):
 
     patch.object(Containers, 'expose_service', new=async_mock())
 
-    e = Expose(name='foo', service='foo', service_expose_name='my_expose_name',
+    e = Expose(service='foo', service_expose_name='my_expose_name',
                http_path='/expose_external_path')
 
     if no_config or no_http_path:
