@@ -2,6 +2,7 @@
 import hashlib
 from unittest.mock import MagicMock
 
+from asyncy.AppConfig import Expose
 from asyncy.Containers import Containers
 from asyncy.Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
@@ -38,11 +39,11 @@ def test_is_service_reusable(story):
         LineConstants.command: 'echo'
     }
 
-    assert Containers.is_service_reusable(story, line) is False
+    assert Containers.is_service_reusable(story.app, line) is False
     story.app.services['alpine']['configuration']['actions']['echo'][
         'run'] = None
 
-    assert Containers.is_service_reusable(story, line) is True
+    assert Containers.is_service_reusable(story.app, line) is True
 
 
 @mark.parametrize('reusable', [False, True])
@@ -51,11 +52,12 @@ def test_get_container_name(patch, story, line, reusable, name):
     patch.object(Containers, 'is_service_reusable', return_value=reusable)
     story.app.app_id = 'my_app'
     story.app.version = 'v2'
-    ret = Containers.get_container_name(story, line, name)
+    ret = Containers.get_container_name(story.app, story.name, line, name)
     if reusable:
-        assert ret == f'alpine-{Containers.hash_service_name(story, name)}'
+        assert ret == f'alpine-{Containers.hash_service_name(story.app, name)}'
     else:
-        h = Containers.hash_service_name_and_story_line(story, line, name)
+        h = Containers.hash_service_name_and_story_line(story.app, story.name,
+                                                        line, name)
         assert ret == f'alpine-{h}'
 
 
@@ -84,8 +86,8 @@ async def test_clean_app(patch, async_mock):
 @mark.asyncio
 async def test_remove_volume(patch, story, line, async_mock):
     patch.object(Kubernetes, 'remove_volume', new=async_mock())
-    await Containers.remove_volume(story, line, 'foo')
-    Kubernetes.remove_volume.mock.assert_called_with(story, line, 'foo')
+    await Containers.remove_volume(story.app, 'foo')
+    Kubernetes.remove_volume.mock.assert_called_with(story.app, 'foo')
 
 
 @mark.asyncio
@@ -115,8 +117,42 @@ def test_hash_volume_name(patch, story, line, reusable):
         key = f'{key}-{line["ln"]}'
 
     expected = f'myvolume-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
-    assert Containers.hash_volume_name(story, line, service, name) == \
+    assert Containers.hash_volume_name(story.app, line, service, name) == \
         expected
+
+
+def test_hash_ingress_name():
+    e = Expose(service='service',
+               service_expose_name='expose_name',
+               http_path='expose_path')
+    ret = Containers.hash_ingress_name(e)
+    assert ret == 'exposename-0cf994f170f9d213bb814f74baca87ea149f7536'
+
+
+@mark.asyncio
+async def test_expose_service(app, patch, async_mock):
+    container_name = 'container_name'
+    patch.object(Containers, 'get_container_name',
+                 return_value=container_name)
+
+    patch.object(Containers, 'create_and_start', new=async_mock())
+    patch.object(Kubernetes, 'create_ingress', new=async_mock())
+
+    e = Expose(service='service',
+               service_expose_name='expose_name',
+               http_path='expose_path')
+
+    ingress_name = Containers.hash_ingress_name(e)
+    hostname = f'{app.app_dns}--{Containers.get_simple_name(e.service)}'
+
+    await Containers.expose_service(app, e)
+
+    Containers.create_and_start.mock.assert_called_with(app, None, e.service,
+                                                        container_name)
+
+    Kubernetes.create_ingress.mock.assert_called_with(ingress_name, app, e,
+                                                      container_name,
+                                                      hostname=hostname)
 
 
 def test_service_name_and_story_line(patch, story):
@@ -124,7 +160,7 @@ def test_service_name_and_story_line(patch, story):
     story.name = 'story_name'
     story.app.version = 'v29'
     ret = Containers.hash_service_name_and_story_line(
-        story, {'ln': '1'}, 'alpine')
+        story.app, story.name, {'ln': '1'}, 'alpine')
 
     hashlib.sha1.assert_called_with(f'alpine-v29-{story.name}-1'
                                     .encode('utf-8'))
@@ -134,7 +170,7 @@ def test_service_name_and_story_line(patch, story):
 def test_service_name(patch, story):
     story.app.version = 'v2'
     patch.object(hashlib, 'sha1')
-    ret = Containers.hash_service_name(story, 'alpine')
+    ret = Containers.hash_service_name(story.app, 'alpine')
 
     hashlib.sha1.assert_called_with(f'alpine-v2'.encode('utf-8'))
     assert ret == hashlib.sha1().hexdigest()
@@ -144,7 +180,7 @@ def test_service_name(patch, story):
 async def test_create_and_start_no_action(story):
     story.app.services = {'alpine': {'configuration': {}}}
     with pytest.raises(ActionNotFound):
-        await Containers.create_and_start(story, {'command': 'foo'},
+        await Containers.create_and_start(story.app, {'command': 'foo'},
                                           'alpine', 'alpine')
 
 
@@ -213,8 +249,9 @@ async def test_start(patch, story, async_mock,
 
     expected_volumes = []
     if with_volumes:
-        hash_db = Containers.hash_volume_name(story, line, 'alpine', 'db')
-        hash_tmp = Containers.hash_volume_name(story, line, 'alpine', 'tmp')
+        hash_db = Containers.hash_volume_name(story.app, line, 'alpine', 'db')
+        hash_tmp = Containers.hash_volume_name(story.app, line, 'alpine',
+                                               'tmp')
         expected_volumes = [
             Volume(persist=True, name=hash_db, mount_path='/db'),
             Volume(persist=False, name=hash_tmp, mount_path='/tmp'),
@@ -228,7 +265,8 @@ async def test_start(patch, story, async_mock,
         await Containers.start(story, line)
 
     Kubernetes.create_pod.mock.assert_called_with(
-        story=story, line=line, image='alpine', container_name='asyncy-alpine',
+        app=story.app, service='alpine',
+        image='alpine', container_name='asyncy-alpine',
         start_command=run_command or ['tail', '-f', '/dev/null'],
         shutdown_command=None,
         env={'alpine_only': True, 'param_1': 'hello_world'},

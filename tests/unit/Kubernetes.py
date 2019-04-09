@@ -6,9 +6,11 @@ import time
 from unittest import mock
 from unittest.mock import MagicMock
 
+from asyncy.AppConfig import AppConfig, Expose, KEY_EXPOSE
 from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
+from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.entities.Volume import Volume
 from asyncy.utils.HttpUtils import HttpUtils
 
@@ -31,6 +33,13 @@ def test_find_all_ports():
             }
         },
         'alpha': {
+            'expose': {
+                'console': {
+                    'http': {
+                        'port': 1882
+                    }
+                }
+            },
             'http': {
                 'port': 9092,
                 'subscribe': {
@@ -63,7 +72,8 @@ def test_find_all_ports():
         }
     }
     assert Kubernetes.find_all_ports(services['alpine']) == {8080}
-    assert Kubernetes.find_all_ports(services['alpha']) == {9090, 9091, 9092}
+    assert Kubernetes.find_all_ports(services['alpha']) == {1882, 9090, 9091,
+                                                            9092}
     assert Kubernetes.find_all_ports(services['nested']) == {1234, 1235}
 
 
@@ -71,10 +81,10 @@ def test_raise_if_not_2xx(story, line):
     res = MagicMock()
     res.code = 401
     with pytest.raises(K8sError):
-        Kubernetes.raise_if_not_2xx(res, story, line)
+        Kubernetes.raise_if_not_2xx(res)
 
     res.code = 200
-    assert Kubernetes.raise_if_not_2xx(res, story, line) is None
+    assert Kubernetes.raise_if_not_2xx(res) is None
 
 
 @mark.asyncio
@@ -132,7 +142,8 @@ async def test_clean_namespace(patch, story, async_mock):
     patch.object(Kubernetes, '_list_resource_names',
                  new=async_mock(side_effect=[['service_1', 'service_2'],
                                              ['depl_1', 'depl_2'],
-                                             ['pod_1', 'pod_2']]))
+                                             ['pod_1', 'pod_2'],
+                                             ['ing_1', 'ing_2']]))
 
     patch.object(Kubernetes, '_delete_resource', new=async_mock())
 
@@ -144,14 +155,16 @@ async def test_clean_namespace(patch, story, async_mock):
         mock.call(story.app, 'deployments', 'depl_1'),
         mock.call(story.app, 'deployments', 'depl_2'),
         mock.call(story.app, 'pods', 'pod_1'),
-        mock.call(story.app, 'pods', 'pod_2')
+        mock.call(story.app, 'pods', 'pod_2'),
+        mock.call(story.app, 'ingresses', 'ing_1'),
+        mock.call(story.app, 'ingresses', 'ing_2')
     ]
 
 
-def test_get_hostname(story, line):
+def test_get_hostname(story):
     story.app.app_id = 'my_app'
     container_name = 'alpine'
-    ret = Kubernetes.get_hostname(story, line, container_name)
+    ret = Kubernetes.get_hostname(story.app, container_name)
     assert ret == 'alpine.my_app.svc.cluster.local'
 
 
@@ -252,10 +265,10 @@ async def test_make_k8s_call(patch, story, async_mock, method):
 
 
 @mark.asyncio
-async def test_remove_volume(patch, story, line, async_mock):
+async def test_remove_volume(patch, story, async_mock):
     name = 'foo'
     patch.object(Kubernetes, '_delete_resource', new=async_mock())
-    await Kubernetes.remove_volume(story, line, name)
+    await Kubernetes.remove_volume(story.app, name)
     Kubernetes._delete_resource.mock.assert_called_with(
         story.app, 'persistentvolumeclaims', name)
 
@@ -264,7 +277,7 @@ async def test_remove_volume(patch, story, line, async_mock):
                                'services', 'foo'])
 @mark.parametrize('res_code', [404, 200, 500])
 @mark.asyncio
-async def test_does_resource_exist(patch, story, line, resource,
+async def test_does_resource_exist(patch, story, resource,
                                    async_mock, res_code):
     resp = MagicMock()
     resp.code = res_code
@@ -273,12 +286,10 @@ async def test_does_resource_exist(patch, story, line, resource,
 
     if res_code == 500 or resource == 'foo':
         with pytest.raises(Exception):
-            await Kubernetes._does_resource_exist(
-                story, line, resource, 'name')
+            await Kubernetes._does_resource_exist(story.app, resource, 'name')
         return
 
-    ret = await Kubernetes._does_resource_exist(
-        story, line, resource, 'name')
+    ret = await Kubernetes._does_resource_exist(story.app, resource, 'name')
 
     if res_code == 200:
         assert ret is True
@@ -332,7 +343,8 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
     story.app.app_id = 'my_app'
 
     await Kubernetes.create_pod(
-        story, line, image, container_name, start_command, None, env, [])
+        story.app, line[LineConstants.service], image,
+        container_name, start_command, None, env, [])
 
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app,
@@ -343,16 +355,16 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
         assert Kubernetes.create_service.mock.called is False
     else:
         Kubernetes.create_deployment.mock.assert_called_with(
-            story, line, image, container_name, start_command, None, env, [])
+            story.app, image, container_name, start_command, None, env, [])
         Kubernetes.create_service.mock.assert_called_with(
-            story, line, container_name)
+            story.app, line[LineConstants.service], container_name)
 
 
 @mark.parametrize('persist', [True, False])
 @mark.parametrize('resource_exists', [True, False])
 @mark.asyncio
 async def test_create_volume(story, patch, async_mock,
-                             line, persist, resource_exists):
+                             persist, resource_exists):
     name = 'foo'
     patch.object(Kubernetes, '_does_resource_exist',
                  new=async_mock(return_value=resource_exists))
@@ -387,20 +399,20 @@ async def test_create_volume(story, patch, async_mock,
         }
     }
 
-    await Kubernetes.create_volume(story, line, name, persist)
+    await Kubernetes.create_volume(story.app, name, persist)
     if resource_exists:
         Kubernetes._update_volume_label.mock.assert_called_with(
-            story, line, story.app, name)
+            story.app, name)
         Kubernetes.make_k8s_call.mock.assert_not_called()
     else:
         Kubernetes._update_volume_label.mock.assert_not_called()
         Kubernetes.make_k8s_call.mock.assert_called_with(
             story.app, expected_path, expected_payload)
-        Kubernetes.raise_if_not_2xx.assert_called_with(res, story, line)
+        Kubernetes.raise_if_not_2xx.assert_called_with(res)
 
 
 @mark.asyncio
-async def test_update_volume_label(story, line, patch, async_mock):
+async def test_update_volume_label(story, patch, async_mock):
     res = MagicMock()
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
     patch.object(Kubernetes, 'raise_if_not_2xx')
@@ -414,13 +426,121 @@ async def test_update_volume_label(story, line, patch, async_mock):
         }
     }
 
-    await Kubernetes._update_volume_label(story, line, story.app, 'db')
+    await Kubernetes._update_volume_label(story.app, 'db')
 
     path = f'/api/v1/namespaces/{story.app.app_id}/persistentvolumeclaims/db'
 
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app, path, payload, method='patch')
-    Kubernetes.raise_if_not_2xx.assert_called_with(res, story, line)
+    Kubernetes.raise_if_not_2xx.assert_called_with(res)
+
+
+@mark.parametrize('resource_exists', [True, False])
+@mark.parametrize('k8s_api_returned_2xx', [True, False])
+@mark.asyncio
+async def test_create_ingress(patch, app, async_mock, resource_exists,
+                              k8s_api_returned_2xx):
+    if resource_exists and not k8s_api_returned_2xx:
+        # Invalid combination, since if the ing resource exists already,
+        # no additional call to the k8s API is made.
+        return
+
+    app.app_id = 'my_app_id'
+    app.config.INGRESS_GLOBAL_STATIC_IP_NAME = 'ip-static-name-global'
+    ingress_name = 'my_ingress_name'
+    hostname = 'my_ingress_hostname'
+    container_name = 'my_container_name'
+    expose = Expose(service='service',
+                    service_expose_name='expose_name',
+                    http_path='expose_path')
+
+    http_conf = {
+        'path': '/my_app',
+        'port': 6000
+    }
+
+    app.services = {
+        expose.service: {
+            ServiceConstants.config: {
+                KEY_EXPOSE: {
+                    expose.service_expose_name: {
+                        'http': http_conf
+                    }
+                }
+            }
+        }
+    }
+
+    app.config.APP_DOMAIN = 'foo.com'
+
+    patch.object(Kubernetes, '_does_resource_exist',
+                 new=async_mock(return_value=resource_exists))
+
+    expected_payload = {
+        'apiVersion': 'extensions/v1beta1',
+        'kind': 'Ingress',
+        'metadata': {
+            'name': ingress_name,
+            'annotations': {
+                'kubernetes.io/ingress.class': 'nginx',
+                'kubernetes.io/ingress.global-static-ip-name':
+                    app.config.INGRESS_GLOBAL_STATIC_IP_NAME,
+                'ingress.kubernetes.io/rewrite-target': expose.http_path,
+                'nginx.ingress.kubernetes.io/proxy-body-size': '1m',
+                'nginx.ingress.kubernetes.io/proxy-read-timeout': '120'
+            }
+        },
+        'spec': {
+            'tls': [
+                {
+                    'hosts': [f'{hostname}.'
+                              f'{app.config.APP_DOMAIN}']
+                }
+            ],
+            'rules': [
+                {
+                    'host': f'{hostname}.{app.config.APP_DOMAIN}',
+                    'http': {
+                        'paths': [
+                            {
+                                'path': http_conf['path'],
+                                'backend': {
+                                    'serviceName': container_name,
+                                    'servicePort': http_conf['port']
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    patch.object(Kubernetes, 'make_k8s_call',
+                 new=async_mock(return_value=314))
+    patch.object(Kubernetes, 'is_2xx',
+                 return_value=k8s_api_returned_2xx)
+
+    if k8s_api_returned_2xx:
+        await Kubernetes.create_ingress(ingress_name, app, expose,
+                                        container_name,
+                                        hostname)
+    else:
+        with pytest.raises(K8sError):
+            await Kubernetes.create_ingress(ingress_name, app, expose,
+                                            container_name,
+                                            hostname)
+        return
+
+    if resource_exists:
+        Kubernetes.make_k8s_call.mock.assert_not_called()
+    else:
+        prefix = Kubernetes._get_api_path_prefix('ingresses')
+        prefix = f'{prefix}/{app.app_id}/ingresses'
+        Kubernetes.make_k8s_call.mock.assert_called_with(
+            app, prefix, payload=expected_payload)
+
+        Kubernetes.is_2xx.assert_called_with(314)
 
 
 @mark.asyncio
@@ -469,8 +589,8 @@ async def test_create_deployment(patch, async_mock, story):
                             'image': image,
                             'resources': {
                                 'limits': {
-                                    'memory': '100Mi',
-                                    'cpu': '0.01'
+                                    'memory': '150Mi',
+                                    'cpu': '100m'
                                 }
                             },
                             'command': start_command,
@@ -529,19 +649,18 @@ async def test_create_deployment(patch, async_mock, story):
         _create_response(200, {'status': {'readyReplicas': 0}}),
         _create_response(200, {'status': {'readyReplicas': 1}})
     ]))
-    line = {}
 
-    await Kubernetes.create_deployment(story, line, image, container_name,
+    await Kubernetes.create_deployment(story.app, image, container_name,
                                        start_command, shutdown_command, env,
                                        volumes)
 
     Kubernetes.remove_volume.mock.assert_called_once()
     Kubernetes.remove_volume.mock.assert_called_with(
-        story, line, volumes[0].name)
+        story.app, volumes[0].name)
 
     assert Kubernetes.create_volume.mock.mock_calls == [
-        mock.call(story, line, volumes[0].name, volumes[0].persist),
-        mock.call(story, line, volumes[1].name, volumes[1].persist)
+        mock.call(story.app, volumes[0].name, volumes[0].persist),
+        mock.call(story.app, volumes[1].name, volumes[1].persist)
     ]
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
@@ -617,12 +736,13 @@ async def test_create_service(patch, story, async_mock):
     }
 
     expected_path = f'/api/v1/namespaces/{story.app.app_id}/services'
-    await Kubernetes.create_service(story, line, container_name)
+    await Kubernetes.create_service(story.app, line[LineConstants.service],
+                                    container_name)
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app, expected_path, expected_payload)
 
     Kubernetes.raise_if_not_2xx.assert_called_with(
-        Kubernetes.make_k8s_call.mock.return_value, story, line)
+        Kubernetes.make_k8s_call.mock.return_value)
     assert Kubernetes.wait_for_port.mock.mock_calls == [
         mock.call(container_name, 10),
         mock.call(container_name, 20),

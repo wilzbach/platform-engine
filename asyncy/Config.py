@@ -11,6 +11,9 @@ class Config:
         'ASYNCY_SYNAPSE_PORT': 80,
         'LOGGER_NAME': 'asyncy',
         'LOGGER_LEVEL': 'debug',
+        'INGRESS_GLOBAL_STATIC_IP_NAME': 'asyncy-and-asyncyapp-com',
+        'APP_DOMAIN': 'asyncyapp.com',
+        'APP_DOMAIN_TLS_SECRET_NAME': 'asyncy-system/asyncyapp.com',
         'POSTGRES': 'options='
                     '--search_path=app_public,app_hidden,app_private,public '
                     'dbname=postgres user=postgres',

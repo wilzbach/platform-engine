@@ -80,6 +80,8 @@ class Story:
                 )
         except BaseException as e:
             if isinstance(e, AsyncyError):  # Don't wrap AsyncyError.
+                e.story = story  # Always set.
+                e.line = line  # Always set.
                 raise e
 
             raise AsyncyError(message='Failed to execute line',

@@ -7,6 +7,7 @@ from threading import Thread
 from unittest import mock
 
 from asyncy.App import App
+from asyncy.AppConfig import AppConfig
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
 from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
@@ -264,6 +265,14 @@ async def test_deploy_release_many_apps(patch, magic):
         Apps.apps = {}  # Cleanup.
 
 
+def test_get_app_config(patch):
+    patch.init(AppConfig)
+    raw = {'raw': 1}
+    ret = Apps.get_app_config(raw)
+    assert isinstance(ret, AppConfig)
+    AppConfig.__init__.assert_called_with(raw)
+
+
 @mark.asyncio
 async def test_deploy_release_many_volumes(patch, async_mock):
     patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
@@ -305,6 +314,10 @@ async def test_deploy_release(config, magic, patch, deleted,
     patch.object(Apps, 'make_logger_for_app', return_value=app_logger)
     Apps.apps = {}
     services = magic()
+
+    app_config = magic()
+    patch.object(Apps, 'get_app_config', return_value=app_config)
+
     patch.object(Apps, 'get_services', new=async_mock(return_value=services))
     patch.init(App)
     if raise_exc is not None:
@@ -330,7 +343,7 @@ async def test_deploy_release(config, magic, patch, deleted,
         App.__init__.assert_called_with(
             'app_id', 'app_dns', 'version', config,
             app_logger,
-            {'stories': True}, services, 'env', 'owner_uuid')
+            {'stories': True}, services, 'env', 'owner_uuid', app_config)
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
         if raise_exc is not None:
@@ -384,7 +397,12 @@ async def test_get_services(patch, logger, async_mock):
         'services': {
             'microservice/slack':
                 {'image': 'microservice/slack', 'tag': 'v1'}
-        }
+        },
+        'expose': [
+            {
+                'service': 'naked_service'
+            }
+        ]
     }
     stories = {
         'services': ['microservice/slack', 'http', 'lastfm']
@@ -406,6 +424,13 @@ async def test_get_services(patch, logger, async_mock):
             }
         },
         'http': {
+            'configuration': {
+                'alias': True,
+                'image': 'alias_pull:latest'
+            },
+            'tag': 'latest'
+        },
+        'naked_service': {
             'configuration': {
                 'alias': True,
                 'image': 'alias_pull:latest'
