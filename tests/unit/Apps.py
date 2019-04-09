@@ -397,6 +397,11 @@ async def test_get_services(patch, logger, async_mock):
         'services': {
             'microservice/slack':
                 {'image': 'microservice/slack', 'tag': 'v1'}
+        },
+        'expose': {
+            'expose_name': {
+                'service': 'naked_service'
+            }
         }
     }
     stories = {
@@ -419,6 +424,13 @@ async def test_get_services(patch, logger, async_mock):
             }
         },
         'http': {
+            'configuration': {
+                'alias': True,
+                'image': 'alias_pull:latest'
+            },
+            'tag': 'latest'
+        },
+        'naked_service': {
             'configuration': {
                 'alias': True,
                 'image': 'alias_pull:latest'
