@@ -44,7 +44,8 @@ async def http_post(story, line, resolved_args):
             pass
 
         raise AsyncyError(
-            story=story, line=line,
+            story=story,
+            line=line,
             message=f'Failed to make HTTP call: {response.error}; '
             f'response code={response.code}; response body={response_body}')
 
