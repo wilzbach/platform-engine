@@ -40,7 +40,7 @@ async def http_post(story, line, resolved_args):
         response_body = None
         try:
             response_body = response.body.decode('utf-8')
-        except:
+        except UnicodeDecodeError:
             pass
 
         raise AsyncyError(
