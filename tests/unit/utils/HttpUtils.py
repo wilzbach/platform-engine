@@ -10,6 +10,20 @@ from pytest import mark
 from tornado.httpclient import HTTPError
 
 
+def test_read_response_body_quietly(magic):
+    response = magic()
+    response.body = b'hello world'
+    ret = HttpUtils.read_response_body_quietly(response)
+    assert ret == 'hello world'
+
+
+def test_read_response_body_quietly_error(magic):
+    response = magic()
+    response.body = 12828
+    ret = HttpUtils.read_response_body_quietly(response)
+    assert ret is None
+
+
 @mark.asyncio
 async def test_fetch_with_retry(patch, logger, async_mock):
     client = MagicMock()

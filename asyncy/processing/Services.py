@@ -432,7 +432,10 @@ class Services:
                 return cls.parse_output(command_conf, response.body,
                                         story, line, content_type)
         else:
-            raise AsyncyError(message=f'Failed to invoke service!',
+            response_body = HttpUtils.read_response_body_quietly(response)
+            raise AsyncyError(message=f'Failed to invoke service! '
+                              f'Status code: {response.code}; '
+                              f'response body: {response_body}',
                               story=story, line=line)
 
     @classmethod

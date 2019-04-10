@@ -8,6 +8,13 @@ from tornado.httpclient import HTTPError
 class HttpUtils:
 
     @staticmethod
+    def read_response_body_quietly(response):
+        try:
+            return response.body.decode('utf-8')
+        except BaseException:
+            return None
+
+    @staticmethod
     async def fetch_with_retry(tries, logger, url, http_client, kwargs):
         kwargs['raise_error'] = False
         attempts = 0
