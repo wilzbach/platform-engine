@@ -36,9 +36,18 @@ async def http_post(story, line, resolved_args):
                                                 resolved_args['url'],
                                                 http_client, kwargs)
     if int(response.code / 100) != 2:
+        # Attempt to read the response body.
+        response_body = None
+        try:
+            response_body = response.body.decode('utf-8')
+        except UnicodeDecodeError:
+            pass
+
         raise AsyncyError(
-            story=story, line=line,
-            message=f'Failed to make HTTP call: {response.error}')
+            story=story,
+            line=line,
+            message=f'Failed to make HTTP call: {response.error}; '
+            f'response code={response.code}; response body={response_body}')
 
     if 'application/json' in response.headers.get('Content-Type'):
         return json.loads(response.body.decode('utf-8'))
