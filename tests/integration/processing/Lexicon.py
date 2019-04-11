@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import sys
 from collections import namedtuple
 from unittest.mock import MagicMock
@@ -14,6 +15,10 @@ import storyscript
 TestSuite = namedtuple('TestSuite', ['preparation_lines', 'cases'])
 
 ContextAssertion = namedtuple('ContextAssertion', ['key', 'expected'])
+ListElementContextAssertion = namedtuple('ListElementContextAssertion',
+                                         ['key', 'index', 'expected'])
+DictElementContextAssertion = namedtuple('DictElementContextAssertion',
+                                         ['key', 'index', 'expected'])
 IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
 
 
@@ -507,6 +512,10 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
         elif isinstance(a, IsANumberContextAssertion):
             val = context.get(a.key)
             assert type(val) == int or type(val) == float
+        elif isinstance(a, ListElementContextAssertion):
+            assert a.expected == context.get(a.key)[a.index]
+        elif isinstance(a, DictElementContextAssertion):
+            assert a.expected == context.get(a.key).get(a.index)
         else:
             raise Exception('Unknown assertion')
 
@@ -525,4 +534,340 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 ])
 @mark.asyncio
 async def test_arrays(suite, logger):
+    await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    TestSuite(
+        preparation_lines='a = 2 + 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=4))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 0 + 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=2))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 / 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = "a" + "b"',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected='ab'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = "a" + "b" + ("c" + "d")',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected='abcd'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 + 10 / 5',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=4))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 20 * 100',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=2000))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 10 % 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=0))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 11 % 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 20 / 1000',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=0.02))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 * 4 / 4',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=2))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 * 4 / (4 * 2)',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 * 4 / (4 * 2) + 1',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=2))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 * 4 / (4 * 2) + 1 * 20',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=21))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='foo = 2\n'
+                          'zero = 0\n'
+                          'a = 2 * 4 / (4 * foo) + 1 * 20 + zero',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=21))
+        ]
+    ),
+])
+@mark.asyncio
+async def test_resolve_expressions(suite: TestSuite, logger):
+    await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    TestSuite(
+        preparation_lines='a = "yoda"',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected='yoda'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='planet = "mars"',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='planet',
+                                                expected='mars')),
+            TestCase(append='a = {"planet": planet, "element": "air"}',
+                     assertion=ContextAssertion(key='a',
+                                                expected={'planet': 'mars',
+                                                          'element': 'air'}))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='planet = ["mars", "earth"]',
+        cases=[
+            TestCase(assertion=ListElementContextAssertion(key='planet',
+                                                           index=0,
+                                                           expected='mars')),
+            TestCase(assertion=ListElementContextAssertion(key='planet',
+                                                           index=1,
+                                                           expected='earth'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='planet = {"name": "mars"}',
+        cases=[
+            TestCase(assertion=DictElementContextAssertion(key='planet',
+                                                           index='name',
+                                                           expected='mars')),
+            TestCase(assertion=DictElementContextAssertion(key='planet',
+                                                           index='name__',
+                                                           expected=None))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = [0, 1, 2]',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=[0, 1, 2]))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = /foo/',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a',
+                                                expected=re.compile('/foo/')))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = [true]',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a',
+                                                expected=[True]))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 1\n'
+                          'success = false\n'
+                          'if i == 1\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 2\n'
+                          'success = true\n'
+                          'if i == 1\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 2\n'
+                          'success = false\n'
+                          'if i != 1\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 1\n'
+                          'success = true\n'
+                          'if i != 1\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = false\n'
+                          'if i >= 1\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = false\n'
+                          'if i >= 5\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = true\n'
+                          'if i >= 6\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = true\n'
+                          'if i > 5\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = false\n'
+                          'if i > 4\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = true\n'
+                          'if i < 5\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = false\n'
+                          'if i < 6\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = false\n'
+                          'if i <= 5\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = true\n'
+                          'if i <= 4\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 5\n'
+                          'success = false\n'
+                          'if i <= 6\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = false\n'
+                          'success = true\n'
+                          'if i\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = true\n'
+                          'success = false\n'
+                          'if i\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = true\n'
+                          'success = true\n'
+                          'if !i\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = false\n'
+                          'success = false\n'
+                          'if !i\n'
+                          '    success = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = null\n'
+                          'success = true\n'
+                          'if !i\n'
+                          '    success = false',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='success', expected=True))
+        ]
+    ),
+])
+@mark.asyncio
+async def test_resolve_all_objects(suite: TestSuite, logger):
     await run_suite(suite, logger)
