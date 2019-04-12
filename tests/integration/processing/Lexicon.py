@@ -7,28 +7,22 @@ from unittest.mock import MagicMock
 from asyncy.Stories import Stories
 from asyncy.processing import Story
 
-import pytest
 from pytest import mark
 
 import storyscript
 
-TestSuite = namedtuple('TestSuite', ['preparation_lines', 'cases'])
+from .Assertions import ContextAssertion, IsANumberAssertion, \
+    ListItemAssertion, MapValueAssertion
 
-ContextAssertion = namedtuple('ContextAssertion', ['key', 'expected'])
-ListElementContextAssertion = namedtuple('ListElementContextAssertion',
-                                         ['key', 'index', 'expected'])
-DictElementContextAssertion = namedtuple('DictElementContextAssertion',
-                                         ['key', 'index', 'expected'])
-IsANumberContextAssertion = namedtuple('IsANumberAssertion', ['key'])
+
+TestSuite = namedtuple('TestSuite', ['preparation_lines', 'cases'])
 
 
 class TestCase:
-    def __init__(self, append=None, prepend=None, assertion=None,
-                 expect_exception=None):
+    def __init__(self, append=None, prepend=None, assertion=None):
         self.append = append
         self.prepend = prepend
         self.assertion = assertion
-        self.expect_exception = expect_exception
 
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
@@ -397,7 +391,7 @@ class TestCase:
                          key='arr', expected=[1, 1, 2, 2, 3, 4, 4, 5, 5])),
 
             TestCase(append='r = arr random',
-                     assertion=IsANumberContextAssertion(key='r')),
+                     assertion=IsANumberAssertion(key='r')),
 
             TestCase(append='arr reverse',
                      assertion=ContextAssertion(
@@ -489,17 +483,12 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     story = Stories(app, story_name, logger)
     story.prepare(context)
-    if case.expect_exception is not None:
-        with pytest.raises(case.expect_exception):
-            await Story.execute(logger, story)
-        return
-    else:
-        try:
-            await Story.execute(logger, story)
-        except BaseException as e:
-            print(f'Failed to run the following story:'
-                  f'\n\n{all_lines}', file=sys.stderr)
-            raise e
+    try:
+        await Story.execute(logger, story)
+    except BaseException as e:
+        print(f'Failed to run the following story:'
+              f'\n\n{all_lines}', file=sys.stderr)
+        raise e
 
     if type(case.assertion) == list:
         assertions = case.assertion
@@ -507,17 +496,11 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
         assertions = [case.assertion]
 
     for a in assertions:
-        if isinstance(a, ContextAssertion):
-            assert a.expected == context.get(a.key)
-        elif isinstance(a, IsANumberContextAssertion):
-            val = context.get(a.key)
-            assert type(val) == int or type(val) == float
-        elif isinstance(a, ListElementContextAssertion):
-            assert a.expected == context.get(a.key)[a.index]
-        elif isinstance(a, DictElementContextAssertion):
-            assert a.expected == context.get(a.key).get(a.index)
-        else:
-            raise Exception('Unknown assertion')
+        try:
+            a.verify(context)
+        except BaseException as e:
+            print(f'Assertion failure ({type(a)}) for story: \n{all_lines}')
+            raise e
 
 
 @mark.parametrize('suite', [
@@ -650,30 +633,29 @@ async def test_resolve_expressions(suite: TestSuite, logger):
                                                 expected='mars')),
             TestCase(append='a = {"planet": planet, "element": "air"}',
                      assertion=ContextAssertion(key='a',
-                                                expected={'planet': 'mars',
-                                                          'element': 'air'}))
+                                                expected={
+                                                    'planet': 'mars',
+                                                    'element': 'air'
+                                                }))
         ]
     ),
     TestSuite(
         preparation_lines='planet = ["mars", "earth"]',
         cases=[
-            TestCase(assertion=ListElementContextAssertion(key='planet',
-                                                           index=0,
-                                                           expected='mars')),
-            TestCase(assertion=ListElementContextAssertion(key='planet',
-                                                           index=1,
-                                                           expected='earth'))
+            TestCase(assertion=ListItemAssertion(key='planet',
+                                                 index=0,
+                                                 expected='mars')),
+            TestCase(assertion=ListItemAssertion(key='planet',
+                                                 index=1,
+                                                 expected='earth'))
         ]
     ),
     TestSuite(
         preparation_lines='planet = {"name": "mars"}',
         cases=[
-            TestCase(assertion=DictElementContextAssertion(key='planet',
-                                                           index='name',
-                                                           expected='mars')),
-            TestCase(assertion=DictElementContextAssertion(key='planet',
-                                                           index='name__',
-                                                           expected=None))
+            TestCase(assertion=MapValueAssertion(key='planet',
+                                                 map_key='name',
+                                                 expected='mars'))
         ]
     ),
     TestSuite(
@@ -864,7 +846,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
                           'if !i\n'
                           '    success = false',
         cases=[
-            TestCase(assertion=ContextAssertion(key='success', expected=True))
+            TestCase(assertion=ContextAssertion(key='success', expected=False))
         ]
     ),
 ])
