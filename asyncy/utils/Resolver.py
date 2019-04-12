@@ -128,7 +128,7 @@ class Resolver:
             right = cls.resolve(values[1], data)
             return left <= right
         elif a == 'not':
-            return left is False
+            return not left
         elif a == 'or':
             if left is True:
                 return True
