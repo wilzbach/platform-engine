@@ -91,8 +91,6 @@ class TestCase:
                      assertion=ContextAssertion(key='a', expected=58)),
             TestCase(append='a = get_28()',
                      assertion=ContextAssertion(key='a', expected=28)),
-            TestCase(append='a = do_nothing()',
-                     assertion=ContextAssertion(key='a', expected=None)),
             TestCase(append='do_nothing()',
                      assertion=ContextAssertion(key='a', expected=None)),
         ]
@@ -101,7 +99,9 @@ class TestCase:
         preparation_lines='my_list = [1, 2, 3]',
         cases=[
             TestCase(append='a = (my_list length) + 4',
-                     assertion=ContextAssertion(key='a', expected=7))
+                     assertion=ContextAssertion(key='a', expected=7)),
+            TestCase(append='a = my_list[0]',
+                     assertion=ContextAssertion(key='a', expected=1))
         ]
     ),
     TestSuite(

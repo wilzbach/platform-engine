@@ -12,14 +12,25 @@ class Dict:
             last = keys.pop()
             for key in keys:
                 if isinstance(_cur, list):
-                    _cur = _cur[int(key)]
+                    _cur = _cur[Dict.parse_int(key)]
                 else:
                     _cur = _cur.setdefault(key, {})
 
             if isinstance(_cur, list):
-                _cur[int(last)] = output
+                _cur[Dict.parse_int(last)] = output
             else:
                 _cur[last] = output
+
+    @staticmethod
+    def parse_int(s):
+        if isinstance(s, str):
+            return int(s)
+        elif isinstance(s, int):
+            return s
+        elif isinstance(s, dict) and s.get('$OBJECT') == 'int':
+            return s['int']
+        else:
+            raise Exception(f'Unable to parse {type(s)} as int.')
 
     @staticmethod
     def find(root, path, default_value=None):
