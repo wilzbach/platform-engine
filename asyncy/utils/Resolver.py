@@ -66,6 +66,8 @@ class Resolver:
             if 'values' in item:
                 return cls.string(item['string'], data, values=item['values'])
             return cls.string(item['string'], data)
+        elif object_type == 'dot':
+            return item['dot']
         elif object_type == 'int':
             return item['int']
         elif object_type == 'boolean':
@@ -109,7 +111,7 @@ class Resolver:
 
         left = cls.resolve(values[0], data)
 
-        if a == 'equals':
+        if a == 'equals' or a == 'equal':
             right = cls.resolve(values[1], data)
             return left == right
         elif a == 'not_equal':

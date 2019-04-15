@@ -2,8 +2,7 @@
 from asyncy.Containers import Containers
 from asyncy.constants.ServiceConstants import ServiceConstants
 
-from storyscript.compiler import Compiler
-from storyscript.parser import Parser
+import storyscript
 
 
 def test_containers_format_command(story):
@@ -24,7 +23,7 @@ def test_containers_format_command(story):
         }
     }
 
-    story.tree = Compiler.compile(Parser().parse(story_text))['tree']
+    story.tree = storyscript.Api.loads(story_text)['tree']
     assert Containers.format_command(
         story, story.line('1'), 'alpine', 'echo'
     ) == ['echo', '{"msg":"foo"}']
@@ -42,7 +41,7 @@ def test_containers_format_command_no_arguments(story):
             }
         }
     }
-    story.tree = Compiler.compile(Parser().parse(story_text))['tree']
+    story.tree = storyscript.Api.loads(story_text)['tree']
     assert Containers.format_command(
         story, story.line('1'), 'alpine', 'echo'
     ) == ['echo']

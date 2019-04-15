@@ -216,14 +216,15 @@ class Stories:
         return self.line(line_number)
 
     def argument_by_name(self, line, argument_name, encode=False):
-        args = line.get('args', line.get('arguments'))
+        args = line.get('args', line.get('arguments', line.get('arg')))
         if args is None:
             return None
 
         for arg in args:
-            if arg['$OBJECT'] == 'argument' and \
+            if (arg['$OBJECT'] == 'argument' or arg['$OBJECT'] == 'arg') and \
                     arg['name'] == argument_name:
-                return self.resolve(arg['argument'], encode=encode)
+                return self.resolve(arg.get('argument', arg.get('arg')),
+                                    encode=encode)
 
         return None
 
@@ -243,9 +244,9 @@ class Stories:
         :return: A new context, which contains the arguments required (if any)
         """
         new_context = {}
-        args = function_line.get('args', [])
+        args = function_line.get('args', function_line.get('arg', []))
         for arg in args:
-            if arg['$OBJECT'] == 'argument':
+            if arg['$OBJECT'] == 'argument' or arg['$OBJECT'] == 'arg':
                 arg_name = arg['name']
                 actual = self.argument_by_name(line, arg_name)
                 Dict.set(new_context, [arg_name], actual)
