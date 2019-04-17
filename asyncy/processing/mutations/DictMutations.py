@@ -34,5 +34,5 @@ class DictMutations:
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
-        key = story.argument_by_name(mutation, 'key')
+        key = story.argument_by_name(mutation, 'item')
         return value.get(key) is not None
