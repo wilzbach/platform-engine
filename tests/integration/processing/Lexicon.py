@@ -271,11 +271,11 @@ class TestCase:
             TestCase(append='len = str length',
                      assertion=ContextAssertion(key='len', expected=12)),
 
-            TestCase(append='has = str contains pattern: "hello"',
-                     assertion=ContextAssertion(key='has', expected=True)),
+            TestCase(append='r = str contains item: "hello"',
+                     assertion=ContextAssertion(key='r', expected=True)),
 
-            TestCase(append='has = str contains pattern: "hello1"',
-                     assertion=ContextAssertion(key='has', expected=False)),
+            TestCase(append='r = str contains item: "hello1"',
+                     assertion=ContextAssertion(key='r', expected=False)),
 
             TestCase(append='parts = str split by: " "',
                      assertion=ContextAssertion(
@@ -389,7 +389,7 @@ class TestCase:
                          ContextAssertion(key='m', expected={'b': 2})
                      ]),
 
-            TestCase(append='s = m get key: "a"',
+            TestCase(append='s = m["a"]',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'a': 1, 'b': 2})
@@ -399,6 +399,12 @@ class TestCase:
                      assertion=ContextAssertion(key='s', expected=False)),
 
             TestCase(append='s = m contains key: "a"',
+                     assertion=ContextAssertion(key='s', expected=True)),
+
+            TestCase(append='s = m contains item: 3',
+                     assertion=ContextAssertion(key='s', expected=False)),
+
+            TestCase(append='s = m contains item: 1',
                      assertion=ContextAssertion(key='s', expected=True))
         ]
     ),

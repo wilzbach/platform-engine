@@ -15,6 +15,12 @@ class StringMutations:
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
+        item = story.argument_by_name(mutation, 'item')
+        if item is not None:
+            # string contains item:string -> boolean
+            return item in value
+
+        # string contains pattern:regexp -> boolean
         pattern = story.argument_by_name(mutation, 'pattern')
         return pattern in value
 
