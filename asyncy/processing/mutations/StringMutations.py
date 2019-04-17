@@ -22,7 +22,7 @@ class StringMutations:
 
         # string contains pattern:regexp -> boolean
         pattern = story.argument_by_name(mutation, 'pattern')
-        return pattern in value
+        return pattern.search(value) is not None
 
     @classmethod
     def split(cls, mutation, value, story, line, operator):

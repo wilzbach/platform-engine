@@ -279,6 +279,12 @@ class TestCase:
             TestCase(append='r = str contains item: "hello1"',
                      assertion=ContextAssertion(key='r', expected=False)),
 
+            TestCase(append='r = str contains pattern: /llo/',
+                     assertion=ContextAssertion(key='r', expected=True)),
+
+            TestCase(append='r = str contains pattern: /f/',
+                     assertion=ContextAssertion(key='r', expected=False)),
+
             TestCase(append='parts = str split by: " "',
                      assertion=ContextAssertion(
                          key='parts', expected=['hello', 'world!'])),
@@ -720,7 +726,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
         preparation_lines='a = /foo/',
         cases=[
             TestCase(assertion=ContextAssertion(key='a',
-                                                expected=re.compile('/foo/')))
+                                                expected=re.compile('foo')))
         ]
     ),
     TestSuite(
