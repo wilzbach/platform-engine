@@ -101,7 +101,9 @@ class TestCase:
             TestCase(append='a = (my_list length) + 4',
                      assertion=ContextAssertion(key='a', expected=7)),
             TestCase(append='a = my_list[0]',
-                     assertion=ContextAssertion(key='a', expected=1))
+                     assertion=ContextAssertion(key='a', expected=1)),
+            TestCase(append='a = my_list[-1]',
+                     assertion=ContextAssertion(key='a', expected=3)),
         ]
     ),
     TestSuite(
