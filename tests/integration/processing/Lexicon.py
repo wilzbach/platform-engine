@@ -291,7 +291,39 @@ class TestCase:
 
             TestCase(append='a = str capitalize',
                      assertion=ContextAssertion(
-                         key='a', expected='Hello World!'))
+                         key='a', expected='Hello World!')),
+
+            TestCase(append='a = str substring start: 2',
+                     assertion=ContextAssertion(
+                         key='a', expected='llo world!')),
+
+            TestCase(append='a = str substring end: 5',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello')),
+
+            TestCase(append='a = str substring start: 6 end: 11',
+                     assertion=ContextAssertion(
+                         key='a', expected='world')),
+
+            TestCase(append='a = str substring start: 6 end: -2',
+                     assertion=ContextAssertion(
+                         key='a', expected='worl')),
+
+            TestCase(append='a = str substring start: 6 end: -6',
+                     assertion=ContextAssertion(
+                         key='a', expected='')),
+
+            TestCase(append='a = str substring start: 20',
+                     assertion=ContextAssertion(
+                         key='a', expected='')),
+
+            TestCase(append='a = str substring start: 10 end:20',
+                     assertion=ContextAssertion(
+                         key='a', expected='d!')),
+
+            TestCase(append='a = str substring start: -3',
+                     assertion=ContextAssertion(
+                         key='a', expected='ld!')),
         ]
     ),
     TestSuite(
