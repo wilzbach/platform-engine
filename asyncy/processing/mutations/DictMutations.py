@@ -30,14 +30,15 @@ class DictMutations:
     @classmethod
     def get(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
-        return value.get(key)
+        default = story.argument_by_name(mutation, 'default')
+        return value.get(key, default)
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
         if key is not None:
             return value.get(key) is not None
-        item = story.argument_by_name(mutation, 'item')
+        item = story.argument_by_name(mutation, 'value')
         for v in value.values():
             if v == item:
                 return True

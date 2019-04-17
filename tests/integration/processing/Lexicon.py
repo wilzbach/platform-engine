@@ -391,11 +391,14 @@ class TestCase:
                          ContextAssertion(key='m', expected={'b': 2})
                      ]),
 
-            TestCase(append='s = m["a"]',
+            TestCase(append='s = m get key: "a" default: 3',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'a': 1, 'b': 2})
                      ]),
+
+            TestCase(append='s = m get key: "c" default: 42',
+                     assertion=ContextAssertion(key='s', expected=42)),
 
             TestCase(append='s = m contains key: "d"',
                      assertion=ContextAssertion(key='s', expected=False)),
@@ -403,11 +406,20 @@ class TestCase:
             TestCase(append='s = m contains key: "a"',
                      assertion=ContextAssertion(key='s', expected=True)),
 
-            TestCase(append='s = m contains item: 3',
+            TestCase(append='s = m contains value: 3',
                      assertion=ContextAssertion(key='s', expected=False)),
 
-            TestCase(append='s = m contains item: 1',
+            TestCase(append='s = m contains value: 1',
                      assertion=ContextAssertion(key='s', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines=r'm = "\n\t"',
+        cases=[
+            TestCase(append='s = m',
+                     assertion=ContextAssertion(key='s', expected='\n\t')),
+            TestCase(append=r's = "{m}\n"',
+                     assertion=ContextAssertion(key='s', expected='\n\t\n')),
         ]
     ),
     TestSuite(
