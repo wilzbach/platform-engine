@@ -4,7 +4,7 @@
 class DictMutations:
 
     @classmethod
-    def size(cls, mutation, value, story, line, operator):
+    def length(cls, mutation, value, story, line, operator):
         return len(value)
 
     @classmethod

@@ -338,7 +338,7 @@ class TestCase:
     TestSuite(
         preparation_lines='m = {"a": 1, "b": 2}',
         cases=[
-            TestCase(append='s = m size',
+            TestCase(append='s = m length',
                      assertion=ContextAssertion(key='s', expected=2)),
 
             TestCase(append='s = m keys',
