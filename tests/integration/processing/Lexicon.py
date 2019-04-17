@@ -126,9 +126,9 @@ class TestCase:
             TestCase(append='a = hello + " " + world',
                      assertion=ContextAssertion(
                          key='a', expected='hello world')),
-            TestCase(append='a = hello + " "',  # Test for auto trim.
+            TestCase(append='a = hello + " "',  # Test for no auto trim.
                      assertion=ContextAssertion(
-                         key='a', expected='hello')),
+                         key='a', expected='hello ')),
             TestCase(append='a = "{hello}"',
                      assertion=ContextAssertion(
                          key='a', expected='hello')),
