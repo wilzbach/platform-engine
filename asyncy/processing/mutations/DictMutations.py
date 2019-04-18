@@ -37,7 +37,7 @@ class DictMutations:
     def contains(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
         if key is not None:
-            return value.get(key) is not None
+            return key in value
         item = story.argument_by_name(mutation, 'value')
         for v in value.values():
             if v == item:
