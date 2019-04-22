@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import os
+from io import StringIO
 from logging import LoggerAdapter
 
-from asyncy.Logger import Adapter, Logger
+from asyncy.Config import Config
+from asyncy.Logger import Adapter, JSONFormatter, Logger
 
 from frustum import Frustum
 
@@ -156,6 +159,25 @@ def test_logger_start(patch, logger, log_json):
         logger.set_json_formatter.assert_called_with()
     else:
         logger.set_json_formatter.assert_not_called()
+
+
+def test_logger_json_formatter():
+    config = Config()
+    logger = Logger(config)
+    logger.start()
+    logger.adapt('app', '1.0')
+    buffer = StringIO()
+    log_handler = logging.StreamHandler(buffer)
+    formatter = JSONFormatter()
+    log_handler.setFormatter(formatter)
+    logger.frustum.logger.logger.addHandler(log_handler)
+    logger.info('my-event')
+    json_log = json.loads(buffer.getvalue())
+    assert json_log == {
+        'message': 'app::1.0 => my-event',
+        'app_id': 'app',
+        'version': '1.0'
+    }
 
 
 def test_logger_set_json_formatter(magic, logger):
