@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-from logging import LoggerAdapter, getLevelName
+import json
+import os
+from distutils.util import strtobool
+from logging import Formatter, LoggerAdapter, StreamHandler, getLevelName
 
 from frustum import Frustum
 
@@ -61,6 +64,16 @@ class Adapter(LoggerAdapter):
         self.logger.log(level, message_pretty, *args, **kwargs)
 
 
+class JSONFormatter(Formatter):
+
+    def format(self, record):
+        return json.dumps({
+            'message': record.msg,
+            'app_id': record.app_id,
+            'version': record.version
+        })
+
+
 class Logger:
     events = [
         ('container-start', 'info', 'Container {} is executing'),
@@ -94,6 +107,16 @@ class Logger:
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
         self.frustum.start_logger()
+        log_json = strtobool(os.getenv('LOG_FORMAT_JSON', 'False'))
+        if log_json:
+            self.set_json_formatter()
+
+    def set_json_formatter(self):
+        log_handler = StreamHandler()
+        formatter = JSONFormatter()
+        log_handler.setFormatter(formatter)
+        self.frustum.logger.addHandler(log_handler)
+        self.frustum.logger.propagate = False
 
     def adapt(self, app_id, version):
         self.frustum.logger = self.adapter(app_id, version)
