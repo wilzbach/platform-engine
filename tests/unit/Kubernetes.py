@@ -579,7 +579,8 @@ async def test_create_deployment(patch, async_mock, story):
             'template': {
                 'metadata': {
                     'labels': {
-                        'app': container_name
+                        'app': container_name,
+                        'logstash-enabled': 'true'
                     }
                 },
                 'spec': {

@@ -478,7 +478,8 @@ class Kubernetes:
                 'template': {
                     'metadata': {
                         'labels': {
-                            'app': container_name
+                            'app': container_name,
+                            'logstash-enabled': 'true'
                         }
                     },
                     'spec': {
