@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import traceback
 from distutils.util import strtobool
 from logging import Formatter, LoggerAdapter, StreamHandler, getLevelName
 
@@ -20,6 +21,8 @@ try:
         gcloud_logging_client, 'engine')
 except DefaultCredentialsError:
     print('Cloud logging disabled')
+
+log_json = strtobool(os.getenv('LOG_FORMAT_JSON', 'False'))
 
 
 class Adapter(LoggerAdapter):
@@ -60,18 +63,28 @@ class Adapter(LoggerAdapter):
                 }
             )
 
-        message_pretty = f'{app_id}::{version} => {message}'
-        self.logger.log(level, message_pretty, *args, **kwargs)
+        if log_json:
+            json_log = {
+                'app_id': app_id,
+                'version': version,
+                'level': getLevelName(level),
+                'message': message
+            }
+
+            if kwargs.get('exc_info') is not None:
+                tb = traceback.format_exc()
+                json_log['message'] += '\n' + tb
+
+            self.logger.log(level, json_log, *args, **kwargs)
+        else:
+            message_pretty = f'{app_id}::{version} => {message}'
+            self.logger.log(level, message_pretty, *args, **kwargs)
 
 
 class JSONFormatter(Formatter):
 
     def format(self, record):
-        return json.dumps({
-            'message': record.msg,
-            'app_id': record.app_id,
-            'version': record.version
-        })
+        return json.dumps(record.msg)
 
 
 class Logger:
@@ -107,7 +120,6 @@ class Logger:
         for event in self.events:
             self.frustum.register_event(event[0], event[1], event[2])
         self.frustum.start_logger()
-        log_json = strtobool(os.getenv('LOG_FORMAT_JSON', 'False'))
         if log_json:
             self.set_json_formatter()
 
