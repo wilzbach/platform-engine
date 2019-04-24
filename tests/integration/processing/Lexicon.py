@@ -576,6 +576,12 @@ async def test_arrays(suite, logger):
         ]
     ),
     TestSuite(
+        preparation_lines='a = 2.5 ^ 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=6.25))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = 20 / 1000',
         cases=[
             TestCase(assertion=ContextAssertion(key='a', expected=0.02))

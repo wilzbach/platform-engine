@@ -104,6 +104,7 @@ class Resolver:
         - sum
         - division
         - multiplication
+        - exponential
         """
         a = item.get('assertion', item.get('expression'))
 
@@ -183,6 +184,11 @@ class Resolver:
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left / right
+        elif a == 'exponential':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float)
+            assert type(right) in (int, float)
+            return left ** right
         else:
             assert False, f'Unsupported operation: {a}'
 
