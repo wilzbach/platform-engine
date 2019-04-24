@@ -101,7 +101,9 @@ class TestCase:
             TestCase(append='a = (my_list length) + 4',
                      assertion=ContextAssertion(key='a', expected=7)),
             TestCase(append='a = my_list[0]',
-                     assertion=ContextAssertion(key='a', expected=1))
+                     assertion=ContextAssertion(key='a', expected=1)),
+            TestCase(append='a = my_list[-1]',
+                     assertion=ContextAssertion(key='a', expected=3)),
         ]
     ),
     TestSuite(
@@ -124,9 +126,9 @@ class TestCase:
             TestCase(append='a = hello + " " + world',
                      assertion=ContextAssertion(
                          key='a', expected='hello world')),
-            TestCase(append='a = hello + " "',  # Test for auto trim.
+            TestCase(append='a = hello + " "',  # Test for no auto trim.
                      assertion=ContextAssertion(
-                         key='a', expected='hello')),
+                         key='a', expected='hello ')),
             TestCase(append='a = "{hello}"',
                      assertion=ContextAssertion(
                          key='a', expected='hello')),
@@ -271,11 +273,17 @@ class TestCase:
             TestCase(append='len = str length',
                      assertion=ContextAssertion(key='len', expected=12)),
 
-            TestCase(append='has = str contains pattern: "hello"',
-                     assertion=ContextAssertion(key='has', expected=True)),
+            TestCase(append='r = str contains item: "hello"',
+                     assertion=ContextAssertion(key='r', expected=True)),
 
-            TestCase(append='has = str contains pattern: "hello1"',
-                     assertion=ContextAssertion(key='has', expected=False)),
+            TestCase(append='r = str contains item: "hello1"',
+                     assertion=ContextAssertion(key='r', expected=False)),
+
+            TestCase(append='r = str contains pattern: /llo/',
+                     assertion=ContextAssertion(key='r', expected=True)),
+
+            TestCase(append='r = str contains pattern: /f/',
+                     assertion=ContextAssertion(key='r', expected=False)),
 
             TestCase(append='parts = str split by: " "',
                      assertion=ContextAssertion(
@@ -291,7 +299,39 @@ class TestCase:
 
             TestCase(append='a = str capitalize',
                      assertion=ContextAssertion(
-                         key='a', expected='Hello World!'))
+                         key='a', expected='Hello World!')),
+
+            TestCase(append='a = str substring start: 2',
+                     assertion=ContextAssertion(
+                         key='a', expected='llo world!')),
+
+            TestCase(append='a = str substring end: 5',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello')),
+
+            TestCase(append='a = str substring start: 6 end: 11',
+                     assertion=ContextAssertion(
+                         key='a', expected='world')),
+
+            TestCase(append='a = str substring start: 6 end: -2',
+                     assertion=ContextAssertion(
+                         key='a', expected='worl')),
+
+            TestCase(append='a = str substring start: 6 end: -6',
+                     assertion=ContextAssertion(
+                         key='a', expected='')),
+
+            TestCase(append='a = str substring start: 20',
+                     assertion=ContextAssertion(
+                         key='a', expected='')),
+
+            TestCase(append='a = str substring start: 10 end:20',
+                     assertion=ContextAssertion(
+                         key='a', expected='d!')),
+
+            TestCase(append='a = str substring start: -3',
+                     assertion=ContextAssertion(
+                         key='a', expected='ld!')),
         ]
     ),
     TestSuite(
@@ -338,7 +378,7 @@ class TestCase:
     TestSuite(
         preparation_lines='m = {"a": 1, "b": 2}',
         cases=[
-            TestCase(append='s = m size',
+            TestCase(append='s = m length',
                      assertion=ContextAssertion(key='s', expected=2)),
 
             TestCase(append='s = m keys',
@@ -357,17 +397,35 @@ class TestCase:
                          ContextAssertion(key='m', expected={'b': 2})
                      ]),
 
-            TestCase(append='s = m get key: "a"',
+            TestCase(append='s = m get key: "a" default: 3',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'a': 1, 'b': 2})
                      ]),
 
+            TestCase(append='s = m get key: "c" default: 42',
+                     assertion=ContextAssertion(key='s', expected=42)),
+
             TestCase(append='s = m contains key: "d"',
                      assertion=ContextAssertion(key='s', expected=False)),
 
             TestCase(append='s = m contains key: "a"',
+                     assertion=ContextAssertion(key='s', expected=True)),
+
+            TestCase(append='s = m contains value: 3',
+                     assertion=ContextAssertion(key='s', expected=False)),
+
+            TestCase(append='s = m contains value: 1',
                      assertion=ContextAssertion(key='s', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines=r'm = "\n\t"',
+        cases=[
+            TestCase(append='s = m',
+                     assertion=ContextAssertion(key='s', expected='\n\t')),
+            TestCase(append=r's = "{m}\n"',
+                     assertion=ContextAssertion(key='s', expected='\n\t\n')),
         ]
     ),
     TestSuite(
@@ -668,7 +726,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
         preparation_lines='a = /foo/',
         cases=[
             TestCase(assertion=ContextAssertion(key='a',
-                                                expected=re.compile('/foo/')))
+                                                expected=re.compile('foo')))
         ]
     ),
     TestSuite(

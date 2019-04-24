@@ -15,8 +15,14 @@ class StringMutations:
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
+        item = story.argument_by_name(mutation, 'item')
+        if item is not None:
+            # string contains item:string -> boolean
+            return item in value
+
+        # string contains pattern:regexp -> boolean
         pattern = story.argument_by_name(mutation, 'pattern')
-        return pattern in value
+        return pattern.search(value) is not None
 
     @classmethod
     def split(cls, mutation, value, story, line, operator):
@@ -34,3 +40,13 @@ class StringMutations:
     @classmethod
     def capitalize(cls, mutation, value, story, line, operator):
         return value.title()
+
+    @classmethod
+    def substring(cls, mutation, value, story, line, operator):
+        start = story.argument_by_name(mutation, 'start')
+        if start is None:
+            start = 0
+        end = story.argument_by_name(mutation, 'end')
+        if end is None:
+            return value[start:]
+        return value[start:end]
