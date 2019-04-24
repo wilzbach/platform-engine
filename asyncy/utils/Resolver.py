@@ -102,6 +102,7 @@ class Resolver:
         - not
         - or
         - sum
+        - subtraction
         - division
         - multiplication
         """
@@ -168,6 +169,11 @@ class Resolver:
                 result += r
 
             return result
+        elif a == 'subtraction':
+            right = cls.resolve(values[1], data)
+            assert type(left) in (int, float)
+            assert type(right) in (int, float)
+            return left - right
         elif a == 'multiplication':
             right = cls.resolve(values[1], data)
             assert type(left) in (int, float, str)
