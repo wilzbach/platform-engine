@@ -74,3 +74,11 @@ class ListMutations:
         except ValueError:
             # The value to be removed is not in the list.
             pass
+
+    @classmethod
+    def replace(cls, mutation, value, story, line, operator):
+        by = story.argument_by_name(mutation, 'by')
+        item = story.argument_by_name(mutation, 'item')
+        for i, el in enumerate(value):
+            if el == item:
+                value[i] = by

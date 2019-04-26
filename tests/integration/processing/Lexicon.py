@@ -332,7 +332,53 @@ class TestCase:
             TestCase(append='a = str substring start: -3',
                      assertion=ContextAssertion(
                          key='a', expected='ld!')),
+
+            TestCase(append='a = str startswith prefix: "hello"',
+                     assertion=ContextAssertion(
+                         key='a', expected=True)),
+
+            TestCase(append='a = str startswith prefix: "ello"',
+                     assertion=ContextAssertion(
+                         key='a', expected=False)),
+
+            TestCase(append='a = str endswith suffix: "!"',
+                     assertion=ContextAssertion(
+                         key='a', expected=True)),
+
+            TestCase(append='a = str endswith suffix: "."',
+                     assertion=ContextAssertion(
+                         key='a', expected=False)),
         ]
+    ),
+    TestSuite(
+        preparation_lines='str = "hello."',
+        cases=[
+            TestCase(append='r = str replace item: "hello" by:"foo"',
+                     assertion=ContextAssertion(key='r', expected='foo.')),
+
+            TestCase(append='r = str replace item: "l" by:"o"',
+                     assertion=ContextAssertion(key='r', expected='heooo.')),
+
+            TestCase(append='r = str replace item: "k" by:"$"',
+                     assertion=ContextAssertion(key='r', expected='hello.')),
+
+            TestCase(append='r = str replace pattern: /hello/ by:"foo"',
+                     assertion=ContextAssertion(key='r', expected='foo.')),
+
+            TestCase(append='r = str replace pattern: /l/ by:"o"',
+                     assertion=ContextAssertion(key='r', expected='heooo.')),
+
+            TestCase(append='r = str replace pattern: /k/ by:"$"',
+                     assertion=ContextAssertion(key='r', expected='hello.')),
+        ]
+    ),
+    TestSuite(
+        preparation_lines='str = " text "',
+        cases=[
+            TestCase(append='a = str trim',
+                     assertion=ContextAssertion(
+                         key='a', expected='text')),
+        ],
     ),
     TestSuite(
         preparation_lines='e = 10\n'
@@ -485,6 +531,18 @@ class TestCase:
             TestCase(append='arr remove item: 30',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='arr replace item: 3 by: 42',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 2, 2, 42, 4, 4, 5, 5])),
+
+            TestCase(append='arr replace item: 6 by: 42',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='arr replace item: 2 by: 42',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 42, 42, 3, 4, 4, 5, 5])),
         ])
 ])
 @mark.asyncio
@@ -523,17 +581,17 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     if case.prepend is not None:
         all_lines = case.prepend + '\n' + all_lines
 
-    try:
-        tree = storyscript.Api.loads(all_lines)
-    except BaseException as e:
+    story = storyscript.Api.loads(all_lines)
+    errors = story.errors()
+    if len(errors) > 0:
         print(f'Failed to compile the following story:'
               f'\n\n{all_lines}', file=sys.stderr)
-        raise e
+        raise errors[0]
 
     app = MagicMock()
 
     app.stories = {
-        story_name: tree
+        story_name: story.result()
     }
     app.environment = {}
 
