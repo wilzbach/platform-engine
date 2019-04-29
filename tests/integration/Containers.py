@@ -23,7 +23,7 @@ def test_containers_format_command(story):
         }
     }
 
-    story.tree = storyscript.Api.loads(story_text)['tree']
+    story.tree = storyscript.Api.loads(story_text).result()['tree']
     assert Containers.format_command(
         story, story.line('1'), 'alpine', 'echo'
     ) == ['echo', '{"msg":"foo"}']
@@ -41,7 +41,7 @@ def test_containers_format_command_no_arguments(story):
             }
         }
     }
-    story.tree = storyscript.Api.loads(story_text)['tree']
+    story.tree = storyscript.Api.loads(story_text).result()['tree']
     assert Containers.format_command(
         story, story.line('1'), 'alpine', 'echo'
     ) == ['echo']
