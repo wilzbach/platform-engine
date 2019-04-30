@@ -590,8 +590,8 @@ async def test_create_deployment(patch, async_mock, story):
                             'image': image,
                             'resources': {
                                 'limits': {
-                                    'memory': '150Mi',
-                                    'cpu': '500m'
+                                    'memory': '150Mi'
+                                    # 'cpu': '500m'
                                 }
                             },
                             'command': start_command,
