@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 from asyncy.Stories import Stories
 from asyncy.processing import Story
+from asyncy.processing.internal import File, Http, Json, Log
 
 from pytest import mark
 
@@ -26,6 +27,13 @@ class TestCase:
 
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
+    TestSuite(
+        preparation_lines='a = json stringify content: {"a": "b"}',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a',
+                                                expected='{"a": "b"}'))
+        ]
+    ),
     TestSuite(
         preparation_lines='a = 1\n'
                           'if false and true\n'
@@ -512,6 +520,10 @@ async def run_suite(suite: TestSuite, logger):
 
 
 async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
+    File.init()
+    Log.init()
+    Http.init()
+    Json.init()
     story_name = 'dummy_name'
 
     # Combine the preparation lines with those of the test case.
