@@ -90,7 +90,6 @@ def test_stories_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
     story.context = 'context'
     result = story.resolve('args')
-    logger.log.assert_called_with('story-resolve', 'args', 'args')
     assert result == 'args'
 
 

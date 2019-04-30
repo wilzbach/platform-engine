@@ -127,12 +127,16 @@ class Stories:
         Resolves line argument to their real value
         """
         if isinstance(arg, (str, int, float, bool)):
-            self.logger.log('story-resolve', arg, arg)
+            self.logger.info(f'Resolved "{arg}" to '
+                             f'"{arg}" '
+                             f'with type {type(arg)}')
             return arg
 
         result = Resolver.resolve(arg, self.context)
 
-        self.logger.log('story-resolve', arg, self.get_str_for_logging(result))
+        self.logger.info(f'Resolved "{arg}" to '
+                         f'"{self.get_str_for_logging(result)}" '
+                         f'with type {type(result)}')
 
         # encode and escape then format for shell
         if encode:
