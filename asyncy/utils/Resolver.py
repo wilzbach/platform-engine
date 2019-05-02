@@ -2,6 +2,8 @@
 import re
 from functools import reduce
 
+from .TypeResolver import TypeResolver
+
 
 class Resolver:
 
@@ -86,6 +88,10 @@ class Resolver:
             return list(cls.list_object(item['items'], data))
         elif object_type == 'expression' or object_type == 'assertion':
             return cls.expression(item, data)
+        elif object_type == 'type_cast':
+            return cls.type_cast(item, data)
+        elif object_type == 'type':
+            return cls.type_cast(item, data)
         return cls.dictionary(item, data)
 
     @classmethod
@@ -202,6 +208,12 @@ class Resolver:
         for item in items:
             result.append(cls.resolve(item, data))
         return ' '.join(result)
+
+    @classmethod
+    def type_cast(cls, item, data):
+        type_ = item['type']
+        item = cls.object(item['value'], data)
+        return TypeResolver.type_cast(item, type_, data)
 
     @classmethod
     def resolve(cls, item, data):

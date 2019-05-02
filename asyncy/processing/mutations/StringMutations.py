@@ -9,9 +9,13 @@ class StringMutations:
 
     @classmethod
     def replace(cls, mutation, value, story, line, operator):
-        pattern = story.argument_by_name(mutation, 'pattern')
         by = story.argument_by_name(mutation, 'by')
-        return value.replace(pattern, by)
+        item = story.argument_by_name(mutation, 'item')
+        if item is not None:
+            return value.replace(item, by)
+
+        pattern = story.argument_by_name(mutation, 'pattern')
+        return pattern.sub(by, value)
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
@@ -50,3 +54,17 @@ class StringMutations:
         if end is None:
             return value[start:]
         return value[start:end]
+
+    @classmethod
+    def startswith(cls, mutation, value, story, line, operator):
+        prefix = story.argument_by_name(mutation, 'prefix')
+        return value.startswith(prefix)
+
+    @classmethod
+    def endswith(cls, mutation, value, story, line, operator):
+        suffix = story.argument_by_name(mutation, 'suffix')
+        return value.endswith(suffix)
+
+    @classmethod
+    def trim(cls, mutation, value, story, line, operator):
+        return value.strip()

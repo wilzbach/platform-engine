@@ -4,13 +4,28 @@
 class AsyncyError(Exception):
 
     def __init__(self, message=None, story=None, line=None):
+        super().__init__(message)
+        self.message = message
         self.story = story
         self.line = line
-        super().__init__(message)
 
 
 class AsyncyRuntimeError(AsyncyError):
     pass
+
+
+class TypeAssertionRuntimeError(AsyncyRuntimeError):
+    def __init__(self, type_expected, type_received, value):
+        super().__init__(message=f'Incompatible type assertion: '
+                                 f'Received {value} ({type_received}), but '
+                                 f'expected {type_expected}')
+
+
+class TypeValueRuntimeError(AsyncyRuntimeError):
+    def __init__(self, type_expected, type_received, value):
+        super().__init__(message=f'Type conversion failed from '
+                                 f'{type_received} to '
+                                 f'{type_expected} with `{value}`')
 
 
 class InvalidKeywordUsage(AsyncyError):
