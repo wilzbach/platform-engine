@@ -9,10 +9,10 @@ class Config:
         'ASYNCY_HTTP_GW_HOST': 'gateway',
         'ASYNCY_SYNAPSE_HOST': 'synapse',
         'ASYNCY_SYNAPSE_PORT': 80,
-        'LOGGER_NAME': 'asyncy',
+        'LOGGER_NAME': 'storyscript',
         'LOGGER_LEVEL': 'debug',
         'INGRESS_GLOBAL_STATIC_IP_NAME': 'storyscript-and-storyscriptapp',
-        'APP_DOMAIN': 'asyncyapp.com',
+        'APP_DOMAIN': 'storyscriptapp.com',
         'POSTGRES': 'options='
                     '--search_path=app_public,app_hidden,app_private,public '
                     'dbname=postgres user=postgres',
