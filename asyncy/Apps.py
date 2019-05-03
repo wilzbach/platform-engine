@@ -171,9 +171,10 @@ class Apps:
                              daemon=True)
         t.start()
 
-        for release in releases:
-            app_id = release[0]
-            await cls.reload_app(config, glogger, app_id)
+        await asyncio.gather(*[
+            cls.reload_app(config, glogger, release[0])
+            for release in releases
+        ])
 
     @classmethod
     def get(cls, app_id: str):
