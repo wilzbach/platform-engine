@@ -32,6 +32,13 @@ def exc():
     return foo
 
 
+def asyncio_timeout_exc():
+    def foo(*args, **kwargs):
+        raise asyncio.TimeoutError()
+
+    return foo
+
+
 def asyncy_exc():
     def foo(*args, **kwargs):
         raise AsyncyError()
@@ -172,21 +179,25 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
     Apps.deploy_release.mock.assert_not_called()
 
 
-@mark.parametrize('raise_error', [True, False])
+@mark.parametrize('raise_exc', [None, exc, asyncio_timeout_exc])
 @mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
-                          magic, raise_error, previous_state):
+                          magic, raise_exc, previous_state):
     conn = db()
     old_app = magic()
     app_id = 'app_id'
     app_dns = 'app_dns'
     Apps.apps = {app_id: old_app}
     patch.object(Sentry, 'capture_exc')
+    app_logger = magic()
+    patch.object(Apps, 'make_logger_for_app', return_value=app_logger)
+    patch.object(Apps, 'update_release_state')
 
     patch.object(Apps, 'destroy_app', new=async_mock())
-    if raise_error:
-        patch.object(Apps, 'deploy_release', new=async_mock(side_effect=exc()))
+    if raise_exc:
+        patch.object(Apps, 'deploy_release',
+                     new=async_mock(side_effect=raise_exc()))
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
@@ -208,11 +219,15 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         config, app_id, app_dns,
         release[1], release[2], release[3], release[4], release[7], release[8])
 
-    if raise_error:
+    if raise_exc:
         logger.error.assert_called()
         Sentry.capture_exc.assert_called()
     else:
         logger.error.assert_not_called()
+
+    if raise_exc == asyncio_timeout_exc:
+        Apps.update_release_state.assert_called_with(
+            app_logger, config, 'app_id', 'version', ReleaseState.TIMED_OUT)
 
 
 def test_get_all_app_uuids_for_deployment(patch, magic, config):

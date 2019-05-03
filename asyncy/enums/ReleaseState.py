@@ -12,3 +12,4 @@ class ReleaseState(enum.Enum):
     NO_DEPLOY = 'NO_DEPLOY'
     FAILED = 'FAILED'
     SKIPPED_CONCURRENT = 'SKIPPED_CONCURRENT'
+    TIMED_OUT = 'TIMED_OUT'
