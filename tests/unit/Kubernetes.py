@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import base64
 import json
 import ssl
 import time
@@ -582,7 +583,7 @@ async def test_create_deployment(patch, async_mock, story):
                     'labels': {
                         'app': container_name,
                         'logstash-enabled': 'true',
-                        'service-name': 'alpine'
+                        'b16-service-name': base64.b16encode('alpine'.encode())
                     }
                 },
                 'spec': {
