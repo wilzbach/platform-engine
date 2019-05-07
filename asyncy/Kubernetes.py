@@ -459,6 +459,8 @@ class Kubernetes:
 
             await cls.create_volume(app, vol.name, vol.persist)
 
+        b16_service_name = base64.b16encode(service_name.encode()).decode(),
+
         payload = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
@@ -480,9 +482,7 @@ class Kubernetes:
                     'metadata': {
                         'labels': {
                             'app': container_name,
-                            'b16-service-name':
-                                base64.b16encode(service_name.encode())
-                                    .decode(),
+                            'b16-service-name': b16_service_name,
                             'logstash-enabled': 'true'
                         }
                     },
