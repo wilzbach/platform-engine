@@ -414,7 +414,7 @@ class Kubernetes:
         return False
 
     @classmethod
-    async def create_deployment(cls, app, image: str,
+    async def create_deployment(cls, app, service_name: str, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
                                 volumes: Volumes):
@@ -479,6 +479,7 @@ class Kubernetes:
                     'metadata': {
                         'labels': {
                             'app': container_name,
+                            'service-name': service_name,
                             'logstash-enabled': 'true'
                         }
                     },
@@ -564,7 +565,7 @@ class Kubernetes:
                              f'already exists, reusing')
             return
 
-        await cls.create_deployment(app, image, container_name,
+        await cls.create_deployment(app, service, image, container_name,
                                     start_command, shutdown_command, env,
                                     volumes)
 
