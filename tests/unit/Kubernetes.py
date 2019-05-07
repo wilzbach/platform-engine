@@ -561,6 +561,8 @@ async def test_create_deployment(patch, async_mock, story):
     patch.object(Kubernetes, 'remove_volume', new=async_mock())
     patch.object(Kubernetes, 'create_volume', new=async_mock())
 
+    b16_service_name = base64.b16encode('alpine'.encode()).decode()
+
     expected_payload = {
         'apiVersion': 'apps/v1',
         'kind': 'Deployment',
@@ -583,7 +585,7 @@ async def test_create_deployment(patch, async_mock, story):
                     'labels': {
                         'app': container_name,
                         'logstash-enabled': 'true',
-                        'b16-service-name': base64.b16encode('alpine'.encode())
+                        'b16-service-name': b16_service_name
                     }
                 },
                 'spec': {

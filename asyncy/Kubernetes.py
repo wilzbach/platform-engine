@@ -481,7 +481,8 @@ class Kubernetes:
                         'labels': {
                             'app': container_name,
                             'b16-service-name':
-                                base64.b16encode(service_name.encode()),
+                                base64.b16encode(service_name.encode())
+                                    .decode(),
                             'logstash-enabled': 'true'
                         }
                     },
