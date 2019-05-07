@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import base64
 import json
 import ssl
 import time
@@ -479,7 +480,8 @@ class Kubernetes:
                     'metadata': {
                         'labels': {
                             'app': container_name,
-                            'service-name': service_name,
+                            'b16-service-name':
+                                base64.b16encode(service_name.encode()),
                             'logstash-enabled': 'true'
                         }
                     },
