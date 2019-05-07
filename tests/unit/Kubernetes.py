@@ -355,7 +355,8 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
         assert Kubernetes.create_service.mock.called is False
     else:
         Kubernetes.create_deployment.mock.assert_called_with(
-            story.app, image, container_name, start_command, None, env, [])
+            story.app, line[LineConstants.service],
+            image, container_name, start_command, None, env, [])
         Kubernetes.create_service.mock.assert_called_with(
             story.app, line[LineConstants.service], container_name)
 
@@ -580,7 +581,8 @@ async def test_create_deployment(patch, async_mock, story):
                 'metadata': {
                     'labels': {
                         'app': container_name,
-                        'logstash-enabled': 'true'
+                        'logstash-enabled': 'true',
+                        'service-name': 'alpine'
                     }
                 },
                 'spec': {
@@ -651,7 +653,8 @@ async def test_create_deployment(patch, async_mock, story):
         _create_response(200, {'status': {'readyReplicas': 1}})
     ]))
 
-    await Kubernetes.create_deployment(story.app, image, container_name,
+    await Kubernetes.create_deployment(story.app, 'alpine', image,
+                                       container_name,
                                        start_command, shutdown_command, env,
                                        volumes)
 
