@@ -459,7 +459,7 @@ class Kubernetes:
 
             await cls.create_volume(app, vol.name, vol.persist)
 
-        b16_service_name = base64.b16encode(service_name.encode()).decode(),
+        b16_service_name = base64.b16encode(service_name.encode()).decode()
 
         payload = {
             'apiVersion': 'apps/v1',
