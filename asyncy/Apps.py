@@ -171,10 +171,16 @@ class Apps:
                              daemon=True)
         t.start()
 
-        await asyncio.gather(*[
-            cls.reload_app(config, glogger, release[0])
-            for release in releases
-        ])
+        # Split releases in groups of `parallel_group_size`
+        # Deploy subsequent groups sequentially,
+        # with releases in each group deployed in parallel
+        parallel_group_size = 100
+        for i in range(0, len(releases), parallel_group_size):
+            release_group = releases[i: i + parallel_group_size]
+            await asyncio.gather(*[
+                cls.reload_app(config, glogger, release[0])
+                for release in release_group
+            ])
 
     @classmethod
     def get(cls, app_id: str):
