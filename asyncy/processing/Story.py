@@ -84,7 +84,7 @@ class Story:
                 e.line = line  # Always set.
                 raise e
 
-            logger.info('Unhandled story execution error: {}', str(e))
+            logger.error(f'Unhandled story execution error: {str(e)}')
             raise AsyncyError(message='Failed to execute line',
                               story=story, line=line)
 
