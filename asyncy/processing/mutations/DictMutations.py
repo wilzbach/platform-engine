@@ -3,8 +3,13 @@
 
 class DictMutations:
 
+    # DEPRECATED: removed in SS 16.0
     @classmethod
     def size(cls, mutation, value, story, line, operator):
+        return len(value)
+
+    @classmethod
+    def length(cls, mutation, value, story, line, operator):
         return len(value)
 
     @classmethod
@@ -30,9 +35,19 @@ class DictMutations:
     @classmethod
     def get(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
-        return value.get(key)
+        default = story.argument_by_name(mutation, 'default')
+        # DEPRECATED: 'default' is always required to exist
+        if default is None:
+            value.get(key)
+        return value.get(key, default)
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
-        return value.get(key) is not None
+        if key is not None:
+            return key in value
+        item = story.argument_by_name(mutation, 'value')
+        for v in value.values():
+            if v == item:
+                return True
+        return False

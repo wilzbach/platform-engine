@@ -52,3 +52,16 @@ class IsANumberAssertion(Assertion):
     def verify(self, context):
         val = context[self.key]
         assert type(val) == int or type(val) == float
+
+
+class RuntimeExceptionAssertion():
+
+    def __init__(self, exception_type, **fields_to_check):
+        self.exception_type = exception_type
+        self.fields_to_check = fields_to_check
+
+    def verify(self, exception):
+        assert isinstance(exception, self.exception_type), str(exception)
+        for k, v in self.fields_to_check.items():
+            attr = getattr(exception, k)
+            assert attr == v

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import base64
 import json
 import ssl
 import time
@@ -414,7 +415,7 @@ class Kubernetes:
         return False
 
     @classmethod
-    async def create_deployment(cls, app, image: str,
+    async def create_deployment(cls, app, service_name: str, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
                                 volumes: Volumes):
@@ -458,6 +459,8 @@ class Kubernetes:
 
             await cls.create_volume(app, vol.name, vol.persist)
 
+        b16_service_name = base64.b16encode(service_name.encode()).decode()
+
         payload = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
@@ -478,7 +481,9 @@ class Kubernetes:
                 'template': {
                     'metadata': {
                         'labels': {
-                            'app': container_name
+                            'app': container_name,
+                            'b16-service-name': b16_service_name,
+                            'logstash-enabled': 'true'
                         }
                     },
                     'spec': {
@@ -489,7 +494,7 @@ class Kubernetes:
                                 'resources': {
                                     'limits': {
                                         'memory': '150Mi',  # During beta.
-                                        'cpu': '50m',  # During beta.
+                                        # 'cpu': '500m',  # During beta.
                                     }
                                 },
                                 'command': start_command,
@@ -563,7 +568,7 @@ class Kubernetes:
                              f'already exists, reusing')
             return
 
-        await cls.create_deployment(app, image, container_name,
+        await cls.create_deployment(app, service, image, container_name,
                                     start_command, shutdown_command, env,
                                     volumes)
 

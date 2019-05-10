@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
 import re
 import sys
-from collections import namedtuple
 from unittest.mock import MagicMock
 
+from asyncy.Exceptions import AsyncyError, \
+    TypeAssertionRuntimeError, TypeValueRuntimeError
 from asyncy.Stories import Stories
 from asyncy.processing import Story
+from asyncy.processing.internal import File, Http, Json, Log
 
 from pytest import mark
 
 import storyscript
 
 from .Assertions import ContextAssertion, IsANumberAssertion, \
-    ListItemAssertion, MapValueAssertion
-
-
-TestSuite = namedtuple('TestSuite', ['preparation_lines', 'cases'])
+    ListItemAssertion, MapValueAssertion, RuntimeExceptionAssertion
 
 
 class TestCase:
@@ -25,7 +24,20 @@ class TestCase:
         self.assertion = assertion
 
 
+class TestSuite:
+    def __init__(self, cases, preparation_lines=''):
+        self.cases = cases
+        self.preparation_lines = preparation_lines
+
+
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
+    TestSuite(
+        preparation_lines='a = json stringify content: {"a": "b"}',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a',
+                                                expected='{"a": "b"}'))
+        ]
+    ),
     TestSuite(
         preparation_lines='a = 1\n'
                           'if false and true\n'
@@ -101,7 +113,9 @@ class TestCase:
             TestCase(append='a = (my_list length) + 4',
                      assertion=ContextAssertion(key='a', expected=7)),
             TestCase(append='a = my_list[0]',
-                     assertion=ContextAssertion(key='a', expected=1))
+                     assertion=ContextAssertion(key='a', expected=1)),
+            TestCase(append='a = my_list[-1]',
+                     assertion=ContextAssertion(key='a', expected=3)),
         ]
     ),
     TestSuite(
@@ -124,9 +138,9 @@ class TestCase:
             TestCase(append='a = hello + " " + world',
                      assertion=ContextAssertion(
                          key='a', expected='hello world')),
-            TestCase(append='a = hello + " "',  # Test for auto trim.
+            TestCase(append='a = hello + " "',  # Test for no auto trim.
                      assertion=ContextAssertion(
-                         key='a', expected='hello')),
+                         key='a', expected='hello ')),
             TestCase(append='a = "{hello}"',
                      assertion=ContextAssertion(
                          key='a', expected='hello')),
@@ -271,11 +285,17 @@ class TestCase:
             TestCase(append='len = str length',
                      assertion=ContextAssertion(key='len', expected=12)),
 
-            TestCase(append='has = str contains pattern: "hello"',
-                     assertion=ContextAssertion(key='has', expected=True)),
+            TestCase(append='r = str contains item: "hello"',
+                     assertion=ContextAssertion(key='r', expected=True)),
 
-            TestCase(append='has = str contains pattern: "hello1"',
-                     assertion=ContextAssertion(key='has', expected=False)),
+            TestCase(append='r = str contains item: "hello1"',
+                     assertion=ContextAssertion(key='r', expected=False)),
+
+            TestCase(append='r = str contains pattern: /llo/',
+                     assertion=ContextAssertion(key='r', expected=True)),
+
+            TestCase(append='r = str contains pattern: /f/',
+                     assertion=ContextAssertion(key='r', expected=False)),
 
             TestCase(append='parts = str split by: " "',
                      assertion=ContextAssertion(
@@ -291,8 +311,86 @@ class TestCase:
 
             TestCase(append='a = str capitalize',
                      assertion=ContextAssertion(
-                         key='a', expected='Hello World!'))
+                         key='a', expected='Hello World!')),
+
+            TestCase(append='a = str substring start: 2',
+                     assertion=ContextAssertion(
+                         key='a', expected='llo world!')),
+
+            TestCase(append='a = str substring end: 5',
+                     assertion=ContextAssertion(
+                         key='a', expected='hello')),
+
+            TestCase(append='a = str substring start: 6 end: 11',
+                     assertion=ContextAssertion(
+                         key='a', expected='world')),
+
+            TestCase(append='a = str substring start: 6 end: -2',
+                     assertion=ContextAssertion(
+                         key='a', expected='worl')),
+
+            TestCase(append='a = str substring start: 6 end: -6',
+                     assertion=ContextAssertion(
+                         key='a', expected='')),
+
+            TestCase(append='a = str substring start: 20',
+                     assertion=ContextAssertion(
+                         key='a', expected='')),
+
+            TestCase(append='a = str substring start: 10 end:20',
+                     assertion=ContextAssertion(
+                         key='a', expected='d!')),
+
+            TestCase(append='a = str substring start: -3',
+                     assertion=ContextAssertion(
+                         key='a', expected='ld!')),
+
+            TestCase(append='a = str startswith prefix: "hello"',
+                     assertion=ContextAssertion(
+                         key='a', expected=True)),
+
+            TestCase(append='a = str startswith prefix: "ello"',
+                     assertion=ContextAssertion(
+                         key='a', expected=False)),
+
+            TestCase(append='a = str endswith suffix: "!"',
+                     assertion=ContextAssertion(
+                         key='a', expected=True)),
+
+            TestCase(append='a = str endswith suffix: "."',
+                     assertion=ContextAssertion(
+                         key='a', expected=False)),
         ]
+    ),
+    TestSuite(
+        preparation_lines='str = "hello."',
+        cases=[
+            TestCase(append='r = str replace item: "hello" by:"foo"',
+                     assertion=ContextAssertion(key='r', expected='foo.')),
+
+            TestCase(append='r = str replace item: "l" by:"o"',
+                     assertion=ContextAssertion(key='r', expected='heooo.')),
+
+            TestCase(append='r = str replace item: "k" by:"$"',
+                     assertion=ContextAssertion(key='r', expected='hello.')),
+
+            TestCase(append='r = str replace pattern: /hello/ by:"foo"',
+                     assertion=ContextAssertion(key='r', expected='foo.')),
+
+            TestCase(append='r = str replace pattern: /l/ by:"o"',
+                     assertion=ContextAssertion(key='r', expected='heooo.')),
+
+            TestCase(append='r = str replace pattern: /k/ by:"$"',
+                     assertion=ContextAssertion(key='r', expected='hello.')),
+        ]
+    ),
+    TestSuite(
+        preparation_lines='str = " text "',
+        cases=[
+            TestCase(append='a = str trim',
+                     assertion=ContextAssertion(
+                         key='a', expected='text')),
+        ],
     ),
     TestSuite(
         preparation_lines='e = 10\n'
@@ -338,7 +436,7 @@ class TestCase:
     TestSuite(
         preparation_lines='m = {"a": 1, "b": 2}',
         cases=[
-            TestCase(append='s = m size',
+            TestCase(append='s = m length',
                      assertion=ContextAssertion(key='s', expected=2)),
 
             TestCase(append='s = m keys',
@@ -357,17 +455,35 @@ class TestCase:
                          ContextAssertion(key='m', expected={'b': 2})
                      ]),
 
-            TestCase(append='s = m get key: "a"',
+            TestCase(append='s = m get key: "a" default: 3',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'a': 1, 'b': 2})
                      ]),
 
+            TestCase(append='s = m get key: "c" default: 42',
+                     assertion=ContextAssertion(key='s', expected=42)),
+
             TestCase(append='s = m contains key: "d"',
                      assertion=ContextAssertion(key='s', expected=False)),
 
             TestCase(append='s = m contains key: "a"',
+                     assertion=ContextAssertion(key='s', expected=True)),
+
+            TestCase(append='s = m contains value: 3',
+                     assertion=ContextAssertion(key='s', expected=False)),
+
+            TestCase(append='s = m contains value: 1',
                      assertion=ContextAssertion(key='s', expected=True))
+        ]
+    ),
+    TestSuite(
+        preparation_lines=r'm = "\n\t"',
+        cases=[
+            TestCase(append='s = m',
+                     assertion=ContextAssertion(key='s', expected='\n\t')),
+            TestCase(append=r's = "{m}\n"',
+                     assertion=ContextAssertion(key='s', expected='\n\t\n')),
         ]
     ),
     TestSuite(
@@ -427,6 +543,18 @@ class TestCase:
             TestCase(append='arr remove item: 30',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='arr replace item: 3 by: 42',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 2, 2, 42, 4, 4, 5, 5])),
+
+            TestCase(append='arr replace item: 6 by: 42',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='arr replace item: 2 by: 42',
+                     assertion=ContextAssertion(
+                         key='arr', expected=[1, 42, 42, 3, 4, 4, 5, 5])),
         ])
 ])
 @mark.asyncio
@@ -454,6 +582,10 @@ async def run_suite(suite: TestSuite, logger):
 
 
 async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
+    File.init()
+    Log.init()
+    Http.init()
+    Json.init()
     story_name = 'dummy_name'
 
     # Combine the preparation lines with those of the test case.
@@ -465,17 +597,17 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     if case.prepend is not None:
         all_lines = case.prepend + '\n' + all_lines
 
-    try:
-        tree = storyscript.Api.loads(all_lines)
-    except BaseException as e:
+    story = storyscript.Api.loads(all_lines)
+    errors = story.errors()
+    if len(errors) > 0:
         print(f'Failed to compile the following story:'
               f'\n\n{all_lines}', file=sys.stderr)
-        raise e
+        raise errors[0]
 
     app = MagicMock()
 
     app.stories = {
-        story_name: tree
+        story_name: story.result()
     }
     app.environment = {}
 
@@ -485,6 +617,10 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     story.prepare(context)
     try:
         await Story.execute(logger, story)
+    except AsyncyError as e:
+        assert isinstance(case.assertion, RuntimeExceptionAssertion)
+        case.assertion.verify(e)
+        return
     except BaseException as e:
         print(f'Failed to run the following story:'
               f'\n\n{all_lines}', file=sys.stderr)
@@ -531,6 +667,12 @@ async def test_arrays(suite, logger):
         preparation_lines='a = 0 + 2',
         cases=[
             TestCase(assertion=ContextAssertion(key='a', expected=2))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = 2 - 2',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='a', expected=0))
         ]
     ),
     TestSuite(
@@ -674,7 +816,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
         preparation_lines='a = /foo/',
         cases=[
             TestCase(assertion=ContextAssertion(key='a',
-                                                expected=re.compile('/foo/')))
+                                                expected=re.compile('foo')))
         ]
     ),
     TestSuite(
@@ -858,4 +1000,89 @@ async def test_resolve_expressions(suite: TestSuite, logger):
 ])
 @mark.asyncio
 async def test_resolve_all_objects(suite: TestSuite, logger):
+    await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    TestSuite(
+        cases=[
+            TestCase(append='a = [0] as List[int]',
+                     assertion=ContextAssertion(key='a', expected=[0])),
+            TestCase(append='a = [] as List[int]',
+                     assertion=ContextAssertion(key='a', expected=[])),
+            TestCase(append='a = ["3", "2"] as List[int]',
+                     assertion=ContextAssertion(key='a', expected=[3, 2])),
+            TestCase(append='a = 2 as float',
+                     assertion=ContextAssertion(key='a', expected=2.)),
+            TestCase(append='a = 2.5 as int',
+                     assertion=ContextAssertion(key='a', expected=2)),
+            TestCase(append='a = 2 as boolean',
+                     assertion=ContextAssertion(key='a', expected=True)),
+            TestCase(append='a = 2 as string',
+                     assertion=ContextAssertion(key='a', expected='2')),
+            TestCase(append='a = [1, 2] as boolean',
+                     assertion=ContextAssertion(key='a', expected=True)),
+            TestCase(append='a = [] as boolean',
+                     assertion=ContextAssertion(key='a', expected=False)),
+            TestCase(append='a = 2 as boolean',
+                     assertion=ContextAssertion(key='a', expected=True)),
+            TestCase(append='a = {2: "42"} as Map[float,float]',
+                     assertion=ContextAssertion(key='a', expected={2.: 42.})),
+            TestCase(append='a = "foo" as regex',
+                     assertion=ContextAssertion(key='a',
+                                                expected=re.compile('foo'))),
+            TestCase(append='a = /foo/ as regex',
+                     assertion=ContextAssertion(key='a',
+                                                expected=re.compile('foo'))),
+            TestCase(append='a = 2 as any',
+                     assertion=ContextAssertion(key='a', expected=2)),
+            TestCase(append='a = true as int',
+                     assertion=ContextAssertion(key='a', expected=1)),
+            TestCase(append='a = false as int',
+                     assertion=ContextAssertion(key='a', expected=0)),
+            TestCase(append='a = {"foo": 42} as Map[string,int]',
+                     assertion=ContextAssertion(key='a',
+                                                expected={'foo': 42})),
+            TestCase(append='a = {} as Map[int,boolean]',
+                     assertion=ContextAssertion(key='a',
+                                                expected={}))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='arr = []\narr append item: 42\nb = arr[0]',
+        cases=[
+            TestCase(append='c = b as List[int]',
+                     assertion=RuntimeExceptionAssertion(
+                         TypeAssertionRuntimeError,
+                         message='Incompatible type assertion: Received 42 '
+                                 '(int), but expected List[int]')),
+            TestCase(append='c = b as Map[int,string]',
+                     assertion=RuntimeExceptionAssertion(
+                         TypeAssertionRuntimeError,
+                         message='Incompatible type assertion: Received 42 '
+                                 '(int), but expected Map[int,string]')),
+            TestCase(append='b=/foo/\nc = b as List[int]',
+                     assertion=RuntimeExceptionAssertion(
+                         TypeAssertionRuntimeError,
+                         message='Incompatible type assertion: Received /foo/ '
+                                 '(regexp), but expected List[int]')),
+        ]
+    ),
+    TestSuite(
+        cases=[
+            TestCase(append='c = "foo" as float',
+                     assertion=RuntimeExceptionAssertion(
+                         TypeValueRuntimeError,
+                         message='Type conversion failed from str to float '
+                                 'with `foo`')),
+            TestCase(append='c = "foo" as int',
+                     assertion=RuntimeExceptionAssertion(
+                         TypeValueRuntimeError,
+                         message='Type conversion failed from str to int '
+                                 'with `foo`')),
+        ]
+    )
+])
+@mark.asyncio
+async def test_type_casts(suite: TestSuite, logger):
     await run_suite(suite, logger)

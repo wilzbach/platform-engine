@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
+import os
+from io import StringIO
 from logging import LoggerAdapter
 
-from asyncy.Logger import Adapter, Logger
+from asyncy.Config import Config
+from asyncy.Logger import Adapter, JSONFormatter, Logger
 
 from frustum import Frustum
 
@@ -142,12 +146,65 @@ def test_logger_adapter(patch, magic, logger):
     Adapter.__init__.assert_called_with(logger.frustum.logger, extra)
 
 
-def test_logger_start(patch, logger):
+@mark.parametrize('log_json', [True, False])
+def test_logger_start(patch, logger, log_json):
     patch.many(Frustum, ['register_event', 'start_logger'])
+    patch.object(logger, 'set_json_formatter')
+    import asyncy.Logger as LoggerFile
+    LoggerFile.log_json = log_json
     logger.events = [('event', 'level', 'message')]
     logger.start()
     Frustum.register_event.assert_called_with('event', 'level', 'message')
     Frustum.start_logger.assert_called_with()
+    if log_json:
+        logger.set_json_formatter.assert_called_with()
+    else:
+        logger.set_json_formatter.assert_not_called()
+
+
+@mark.parametrize('with_exception', [True, False])
+def test_logger_json_formatter(patch, with_exception):
+    import asyncy.Logger as LoggerFile
+    LoggerFile.log_json = True
+    config = Config()
+    logger = Logger(config)
+    logger.start()
+    logger.adapt('app', '1.0')
+    buffer = StringIO()
+    log_handler = logging.StreamHandler(buffer)
+    formatter = JSONFormatter()
+    log_handler.setFormatter(formatter)
+    logger.frustum.logger.logger.addHandler(log_handler)
+
+    import traceback
+    patch.object(traceback, 'format_exc', return_value='exception_tb_content')
+    expected_message = 'my-event'
+    expected_level = 'INFO'
+    if with_exception:
+        expected_message = 'my-event\nexception_tb_content'
+        expected_level = 'ERROR'
+        try:
+            raise Exception()
+        except Exception as e:
+            logger.error('my-event', e)
+    else:
+        logger.info('my-event')
+
+    json_log = json.loads(buffer.getvalue())
+
+    assert json_log == {
+        'message': expected_message,
+        'app_id': 'app',
+        'level': expected_level,
+        'version': '1.0'
+    }
+
+
+def test_logger_set_json_formatter(magic, logger):
+    logger.frustum = magic()
+    logger.set_json_formatter()
+    assert logger.frustum.logger.addHandler.call_count == 1
+    assert logger.frustum.logger.propagate is False
 
 
 def test_logger_adapt(patch, logger):

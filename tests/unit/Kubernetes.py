@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import base64
 import json
 import ssl
 import time
@@ -355,7 +356,8 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
         assert Kubernetes.create_service.mock.called is False
     else:
         Kubernetes.create_deployment.mock.assert_called_with(
-            story.app, image, container_name, start_command, None, env, [])
+            story.app, line[LineConstants.service],
+            image, container_name, start_command, None, env, [])
         Kubernetes.create_service.mock.assert_called_with(
             story.app, line[LineConstants.service], container_name)
 
@@ -559,6 +561,8 @@ async def test_create_deployment(patch, async_mock, story):
     patch.object(Kubernetes, 'remove_volume', new=async_mock())
     patch.object(Kubernetes, 'create_volume', new=async_mock())
 
+    b16_service_name = base64.b16encode('alpine'.encode()).decode()
+
     expected_payload = {
         'apiVersion': 'apps/v1',
         'kind': 'Deployment',
@@ -579,7 +583,9 @@ async def test_create_deployment(patch, async_mock, story):
             'template': {
                 'metadata': {
                     'labels': {
-                        'app': container_name
+                        'app': container_name,
+                        'logstash-enabled': 'true',
+                        'b16-service-name': b16_service_name
                     }
                 },
                 'spec': {
@@ -589,8 +595,8 @@ async def test_create_deployment(patch, async_mock, story):
                             'image': image,
                             'resources': {
                                 'limits': {
-                                    'memory': '150Mi',
-                                    'cpu': '50m'
+                                    'memory': '150Mi'
+                                    # 'cpu': '500m'
                                 }
                             },
                             'command': start_command,
@@ -650,7 +656,8 @@ async def test_create_deployment(patch, async_mock, story):
         _create_response(200, {'status': {'readyReplicas': 1}})
     ]))
 
-    await Kubernetes.create_deployment(story.app, image, container_name,
+    await Kubernetes.create_deployment(story.app, 'alpine', image,
+                                       container_name,
                                        start_command, shutdown_command, env,
                                        volumes)
 

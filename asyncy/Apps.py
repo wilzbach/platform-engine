@@ -171,9 +171,16 @@ class Apps:
                              daemon=True)
         t.start()
 
-        for release in releases:
-            app_id = release[0]
-            await cls.reload_app(config, glogger, app_id)
+        # Split releases in groups of `parallel_group_size`
+        # Deploy subsequent groups sequentially,
+        # with releases in each group deployed in parallel
+        parallel_group_size = 100
+        for i in range(0, len(releases), parallel_group_size):
+            release_group = releases[i: i + parallel_group_size]
+            await asyncio.gather(*[
+                cls.reload_app(config, glogger, release[0])
+                for release in release_group
+            ])
 
     @classmethod
     def get(cls, app_id: str):
@@ -295,14 +302,20 @@ class Apps:
                 glogger.info(f'No story found for deployment for '
                              f'app {app_id}@{version}. Halting deployment.')
                 return
-            await cls.deploy_release(
-                config, app_id, app_dns, version,
-                environment, stories, maintenance, deleted, owner_uuid)
+            await asyncio.wait_for(
+                cls.deploy_release(
+                    config, app_id, app_dns, version,
+                    environment, stories, maintenance, deleted, owner_uuid),
+                timeout=5 * 60)
             glogger.info(f'Reloaded app {app_id}@{version}')
         except BaseException as e:
             glogger.error(
                 f'Failed to reload app {app_id}', exc=e)
             Sentry.capture_exc(e)
+            if isinstance(e, asyncio.TimeoutError):
+                logger = cls.make_logger_for_app(config, app_id, version)
+                cls.update_release_state(logger, config, app_id, version,
+                                         ReleaseState.TIMED_OUT)
         finally:
             if can_deploy:
                 # If we did acquire the lock, then we must release it.
