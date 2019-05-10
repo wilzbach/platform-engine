@@ -39,8 +39,7 @@ setup(
         'ujson==1.35',
         'certifi>=2018.8.24',
         'psycopg2==2.7.5',
-        'requests==2.21.0',  # Used for structures like CaseInsensitiveDict.
-        'google-cloud-logging==1.9.0'
+        'requests==2.21.0'  # Used for structures like CaseInsensitiveDict.
     ],
     classifiers=[
         'Environment :: Console',
