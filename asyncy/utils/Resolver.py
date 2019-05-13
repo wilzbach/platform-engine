@@ -169,7 +169,7 @@ class Resolver:
             for i in range(1, len(values)):
                 r = cls.resolve(values[i], data)
                 assert type(r) in (int, float, str), \
-                    f'type {type(r)} is not supported for sum'
+                    f'type {type(r)} is not supported for sum; r={r}; values[i]={values[i]}'
                 if isinstance(result, str):
                     r = str(r)
                 elif isinstance(r, str):
