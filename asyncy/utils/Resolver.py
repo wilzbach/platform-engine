@@ -168,13 +168,11 @@ class Resolver:
             # including arithmetic is compiled as a nested expression.
             for i in range(1, len(values)):
                 r = cls.resolve(values[i], data)
-                assert type(r) in (int, float, str), \
-                    f'type {type(r)} is not supported for sum; r={r}; values[i]={values[i]}'
-                if isinstance(result, str):
-                    r = str(r)
-                elif isinstance(r, str):
-                    result = str(result)
-                result += r
+
+                if type(r) in (int, float) and type(result) in (int, float):
+                    result += r
+                else:
+                    result = f'{str(result)}{str(r)}'
 
             return result
         elif a == 'subtraction':
