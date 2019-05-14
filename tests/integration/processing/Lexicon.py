@@ -769,6 +769,28 @@ async def test_arrays(suite, logger):
             TestCase(assertion=ContextAssertion(key='a', expected=21))
         ]
     ),
+    TestSuite(
+        preparation_lines='a = {}\n',
+        cases=[
+            TestCase(append='a["b"] = 1',
+                     assertion=MapValueAssertion(key='a',
+                                                 map_key='b',
+                                                 expected=1)),
+            TestCase(append='a[0] = 2',
+                     assertion=MapValueAssertion(key='a',
+                                                 map_key=0,
+                                                 expected=2)),
+            TestCase(append='a[0.5] = 3',
+                     assertion=MapValueAssertion(key='a',
+                                                 map_key=0.5,
+                                                 expected=3)),
+            TestCase(append='b = "key"\n'
+                            'a[b] = 4',
+                     assertion=MapValueAssertion(key='a',
+                                                 map_key='key',
+                                                 expected=4))
+        ]
+    )
 ])
 @mark.asyncio
 async def test_resolve_expressions(suite: TestSuite, logger):
