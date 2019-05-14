@@ -32,6 +32,14 @@ class TestSuite:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = {"a": "b"}',
+        cases=[
+            TestCase(append='b = "{1} {a}"',
+                     assertion=ContextAssertion(key='b',
+                                                expected='1 {\'a\': \'b\'}'))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = json stringify content: {"a": "b"}',
         cases=[
             TestCase(assertion=ContextAssertion(key='a',
