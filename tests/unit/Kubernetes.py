@@ -595,7 +595,7 @@ async def test_create_deployment(patch, async_mock, story):
                             'image': image,
                             'resources': {
                                 'limits': {
-                                    'memory': '150Mi'
+                                    'memory': '200Mi'
                                     # 'cpu': '500m'
                                 }
                             },

@@ -493,7 +493,7 @@ class Kubernetes:
                                 'image': image,
                                 'resources': {
                                     'limits': {
-                                        'memory': '150Mi',  # During beta.
+                                        'memory': '200Mi',  # During beta.
                                         # 'cpu': '500m',  # During beta.
                                     }
                                 },
