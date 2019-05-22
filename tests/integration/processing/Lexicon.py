@@ -556,7 +556,7 @@ class TestSuite:
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 42, 4, 4, 5, 5])),
 
-            TestCase(append='arr replace item: 6 by: 42',
+            TestCase(append='arr.replace(item: 6 by: 42)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
