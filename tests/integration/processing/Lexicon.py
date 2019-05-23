@@ -116,6 +116,14 @@ class TestSuite:
         ]
     ),
     TestSuite(
+        cases=[
+            TestCase(append='a = echo(i: 200)\n'
+                            'function echo i:int returns int\n'
+                            '    return i\n',
+                     assertion=ContextAssertion(key='a', expected=200)),
+        ]
+    ),
+    TestSuite(
         preparation_lines='my_list = [1, 2, 3]',
         cases=[
             TestCase(append='a = (my_list length) + 4',
