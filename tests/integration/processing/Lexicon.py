@@ -605,7 +605,7 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     if case.prepend is not None:
         all_lines = case.prepend + '\n' + all_lines
 
-    story = storyscript.Api.loads(all_lines)
+    story = storyscript.Api.loads(all_lines, features={'globals': True})
     errors = story.errors()
     if len(errors) > 0:
         print(f'Failed to compile the following story:'
