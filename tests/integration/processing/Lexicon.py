@@ -612,6 +612,8 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     all_lines = suite.preparation_lines
 
     if case.append is not None:
+        if case.append == 'c = a[0]["id"] as string':
+            print('found')
         all_lines = all_lines + '\n' + case.append
 
     if case.prepend is not None:
@@ -1111,6 +1113,7 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
         ]
     ),
     TestSuite(
+        preparation_lines='a = {}',
         cases=[
             TestCase(append='c = "foo" as float',
                      assertion=RuntimeExceptionAssertion(
@@ -1122,6 +1125,8 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
                          TypeValueRuntimeError,
                          message='Type conversion failed from str to int '
                                  'with `foo`')),
+            TestCase(append='c = a[0]["id"] as string',
+                     assertion=ContextAssertion(key='c', expected=None)),
         ]
     )
 ])
