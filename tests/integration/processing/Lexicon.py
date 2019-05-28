@@ -612,8 +612,6 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     all_lines = suite.preparation_lines
 
     if case.append is not None:
-        if case.append == 'c = a[0]["id"] as string':
-            print('found')
         all_lines = all_lines + '\n' + case.append
 
     if case.prepend is not None:
