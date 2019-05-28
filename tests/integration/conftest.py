@@ -27,17 +27,48 @@ def app(magic):
 
 
 @fixture
+def services(app, logger):
+    asset_dir = examples.__path__[0]
+
+    with open(asset_dir + '/services.json', 'r') as file:
+        return ujson.loads(file.read())
+
+
+@fixture
 def story(app, logger):
     asset_dir = examples.__path__[0]
 
     with open(asset_dir + '/stories.json', 'r') as file:
         app.stories = ujson.loads(file.read())['stories']
-
+    # assert 0
     return Stories(app, 'hello.story', logger)
+
+
+@fixture
+def stories_raw(app, logger):
+    asset_dir = examples.__path__[0]
+
+    with open(asset_dir + '/stories.json', 'r') as file:
+        return ujson.loads(file.read())
+
+
+@fixture
+def bad_story(app, logger):
+    asset_dir = examples.__path__[0]
+
+    with open(asset_dir + '/stories.json', 'r') as file:
+        app.stories = ujson.loads(file.read())['stories']
+    return Stories(app, 'broken.story', logger)
 
 
 @fixture
 def logger(config):
     logger = Logger(config)
+
+    def logger_error(msg, exc=None):
+        if exc is not None:
+            raise exc
+
+    logger.error = logger_error
     logger.start()
     return logger

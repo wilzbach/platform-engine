@@ -34,7 +34,7 @@ class Adapter(LoggerAdapter):
                 'message': message
             }
 
-            if kwargs.get('exc_info') is not None:
+            if kwargs.get('exc_info') is not None and kwargs.get('exc_info').get('stack_trace') is None:
                 tb = traceback.format_exc()
                 json_log['message'] += '\n' + tb
 
