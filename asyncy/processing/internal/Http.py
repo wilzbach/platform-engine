@@ -50,7 +50,13 @@ async def http_post(story, line, resolved_args):
             f'response code={response.code}; response body={response_body}')
 
     if 'application/json' in response.headers.get('Content-Type'):
-        return json.loads(response.body.decode('utf-8'))
+        try:
+            return json.loads(response.body.decode('utf-8'))
+        except json.decoder.JSONDecodeError:
+            story.logger.warn(
+                f'Failed to parse response as JSON, '
+                f'although application/json was specified! '
+                f'response={response.body.decode("utf-8")}')
 
     return response.body.decode('utf-8')
 
