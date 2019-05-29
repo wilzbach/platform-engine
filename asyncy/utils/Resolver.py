@@ -7,14 +7,6 @@ from .TypeResolver import TypeResolver
 
 class Resolver:
 
-    @staticmethod
-    def _walk(item, index):
-        if isinstance(index, dict):
-            return item[Resolver.object(index, item)]
-        elif index.isdigit():
-            return item[int(index)]
-        return item[index]
-
     @classmethod
     def values(cls, items_list, data):
         """
@@ -43,7 +35,19 @@ class Resolver:
         with data {'a': {'b': 'value'}} produces 'value'
         """
         try:
-            return reduce(cls._walk, paths, data)
+            item = data[paths[0]]
+            for path in paths[1:]:
+                if isinstance(path, str):
+                    item = item[path]
+
+                assert isinstance(path, dict)
+                object_type = path.get('$OBJECT')
+                if object_type == 'range':
+                    item = cls.range(path['range'], item, data)
+                else:
+                    resolved = Resolver.object(path, data)
+                    item = item[resolved]
+            return item
         except (KeyError, TypeError, IndexError):
             return None
 
@@ -225,6 +229,16 @@ class Resolver:
         type_ = item['type']
         item = cls.object(item['value'], data)
         return TypeResolver.type_cast(item, type_, data)
+
+    @classmethod
+    def range(cls, path, item, data):
+        start = 0
+        end = len(item)
+        if 'start' in path:
+            start = cls.object(path['start'], data)
+        if 'end' in path:
+            end = cls.object(path['end'], data)
+        return item[start:end]
 
     @classmethod
     def resolve(cls, item, data):
