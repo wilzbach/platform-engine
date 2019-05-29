@@ -32,6 +32,18 @@ class TestSuite:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = {}\n'
+                          'b = 0\n',
+        cases=[
+            TestCase(append='if a["foo"] != null\n'
+                            '    b = 1',
+                     assertion=ContextAssertion(key='b', expected=0)),
+            TestCase(append='if a["foo"] == null\n'
+                            '    b = 1',
+                     assertion=ContextAssertion(key='b', expected=1))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = {"a": "b"}',
         cases=[
             TestCase(append='b = "{1} {a}"',
@@ -1112,6 +1124,7 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
         ]
     ),
     TestSuite(
+        preparation_lines='a = {}',
         cases=[
             TestCase(append='c = "foo" as float',
                      assertion=RuntimeExceptionAssertion(
@@ -1123,6 +1136,8 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
                          TypeValueRuntimeError,
                          message='Type conversion failed from str to int '
                                  'with `foo`')),
+            TestCase(append='c = a[0]["id"] as string',
+                     assertion=ContextAssertion(key='c', expected=None)),
         ]
     )
 ])

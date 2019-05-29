@@ -75,13 +75,16 @@ class TypeResolver:
             return 'float'
         elif isinstance(item, str):
             return 'str'
-        else:
-            assert isinstance(item, RE_PATTERN)
+        elif isinstance(item, RE_PATTERN):
             return 'regexp'
+        else:
+            return f'unknown type {type(item)}'
 
     @classmethod
     def check_type_cast(cls, type_exp, item):
-        if isinstance(type_exp, types.ListType):
+        if item is None:
+            return None
+        elif isinstance(type_exp, types.ListType):
             cls.assert_type([list], item)
             li = []
             for el in item:
