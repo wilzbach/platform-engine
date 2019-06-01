@@ -642,6 +642,7 @@ async def test_create_deployment(patch, async_mock, story):
     }
 
     patch.object(asyncio, 'sleep', new=async_mock())
+    patch.object(Kubernetes, 'check_for_image_errors', new=async_mock())
 
     expected_create_path = f'/apis/apps/v1/namespaces/' \
                            f'{story.app.app_id}/deployments'
@@ -755,6 +756,48 @@ async def test_create_service(patch, story, async_mock):
         mock.call(container_name, 20),
         mock.call(container_name, 30)
     ]
+
+
+@mark.asyncio
+async def test_check_for_image_errors(patch, app, async_mock):
+
+    app.app_id = 'my_app'
+
+    patch.object(Kubernetes, 'make_k8s_call', new=async_mock(side_effect=[
+        _create_response(200, {
+            'items': [{
+                'status': {
+                    'containerStatuses': [{
+                        'image': 'test',
+                        'state': {
+                            'waiting': {
+                                'reason': 'ContainerCreating'
+                            }
+                        }
+                    }]
+                }
+            }]
+        }),
+        _create_response(200, {
+            'items': [{
+                'status': {
+                    'containerStatuses': [{
+                        'image': 'test',
+                        'state': {
+                            'waiting': {
+                                'reason': 'ImagePullBackOff'
+                            }
+                        }
+                    }]
+                }
+            }]
+        }),
+    ]))
+
+    await Kubernetes.check_for_image_errors(app, 'my_container')
+    with pytest.raises(K8sError) as exc:
+        await Kubernetes.check_for_image_errors(app, 'my_container')
+    assert exc.value.message == "Failed to pull image 'test'"
 
 
 def test_is_2xx():
