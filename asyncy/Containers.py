@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import hashlib
+import psycopg2
 import re
-
 import ujson
 
 from .AppConfig import Expose
+from .Config import Config
 from .Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from .Kubernetes import Kubernetes
@@ -71,6 +72,8 @@ class Containers:
                 volumes.append(Volume(persist=persist, name=vol_name,
                                       mount_path=target))
 
+        docker_configs = await cls.get_docker_configs(app, image)
+
         env = {}
         for key, omg_config in omg.get('environment', {}).items():
             actual_val = app.environment.get(service, {}).get(key)
@@ -87,7 +90,8 @@ class Containers:
                                     container_name=container_name,
                                     start_command=start_command,
                                     shutdown_command=shutdown_command, env=env,
-                                    volumes=volumes)
+                                    volumes=volumes,
+                                    docker_configs=docker_configs)
 
     @classmethod
     async def clean_app(cls, app):
@@ -118,6 +122,37 @@ class Containers:
         container = cls.get_container_name(story.app, story.name, line,
                                            service_alias)
         return Kubernetes.get_hostname(story.app, container)
+
+    @classmethod
+    def get_registry_url(cls, image):
+        official = ["docker.io", "index.docker.io"]
+        i = image.find('/')
+        if i == -1 or (not any(c in image[:i] for c in '.:') and
+                       image[:i] != "localhost") or image[:i] in official:
+            return 'https://index.docker.io/v1/'
+        else:
+            return image[:i]
+
+    @classmethod
+    async def get_docker_configs(cls, app, image):
+        registry_url = cls.get_registry_url(image)
+        conn = cls.new_pg_conn(app.config)
+        cur = conn.cursor()
+        query = f"""
+        with dockerconfigs as (select name, owner_uuid, dockerconfig,
+                                      json_object_keys(
+                                        (dockerconfig->>'auths')::json
+                                      ) registry
+                               from app_public.owner_dockerconfig)
+        select name, dockerconfig
+        from dockerconfigs
+        where owner_uuid='{app.owner_uuid}'
+              and
+              registry='{registry_url}'
+        """
+        cur.execute(query)
+        all_configs = cur.fetchall()
+        return [{'name': c[0], 'dockerconfig': c[1]} for c in all_configs]
 
     @classmethod
     async def expose_service(cls, app, expose: Expose):
@@ -253,6 +288,10 @@ class Containers:
         simple_name = cls.get_simple_name(volume_name)[:20]
         h = hashlib.sha1(key.encode('utf-8')).hexdigest()
         return f'{simple_name}-{h}'
+
+    @classmethod
+    def new_pg_conn(cls, config: Config):
+        return psycopg2.connect(config.POSTGRES)
 
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):

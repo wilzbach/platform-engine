@@ -75,6 +75,24 @@ async def test_container_get_hostname(patch, story, line):
     assert ret == 'foo.my_app.svc.cluster.local'
 
 
+@mark.parametrize('image', [
+    'postgres',
+    'library/postgres',
+    'docker.io/postgres',
+    'docker.io/library/postgres',
+    'index.docker.io/postgres',
+])
+def test_get_registry_url_official(image):
+    ret = Containers.get_registry_url(image)
+    assert ret == 'https://index.docker.io/v1/'
+
+
+def test_get_registry_url_custom():
+    image = 'cloud.canister.io:5000/repository/image'
+    ret = Containers.get_registry_url(image)
+    assert ret == 'cloud.canister.io:5000'
+
+
 @mark.asyncio
 async def test_clean_app(patch, async_mock):
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
@@ -247,6 +265,9 @@ async def test_start(patch, story, async_mock,
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
+    patch.object(Containers, 'get_docker_configs',
+                 new=async_mock(return_value=[]))
+
     expected_volumes = []
     if with_volumes:
         hash_db = Containers.hash_volume_name(story.app, line, 'alpine', 'db')
@@ -270,7 +291,8 @@ async def test_start(patch, story, async_mock,
         start_command=run_command or ['tail', '-f', '/dev/null'],
         shutdown_command=None,
         env={'alpine_only': True, 'param_1': 'hello_world'},
-        volumes=expected_volumes)
+        volumes=expected_volumes,
+        docker_configs=[])
 
 
 @mark.asyncio
