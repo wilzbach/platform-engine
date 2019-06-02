@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import hashlib
-import psycopg2
 import re
+
+import psycopg2
+
 import ujson
 
 from .AppConfig import Expose
@@ -125,10 +127,10 @@ class Containers:
 
     @classmethod
     def get_registry_url(cls, image):
-        official = ["docker.io", "index.docker.io"]
+        official = ['docker.io', 'index.docker.io']
         i = image.find('/')
         if i == -1 or (not any(c in image[:i] for c in '.:') and
-                       image[:i] != "localhost") or image[:i] in official:
+                       image[:i] != 'localhost') or image[:i] in official:
             return 'https://index.docker.io/v1/'
         else:
             return image[:i]
