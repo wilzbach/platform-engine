@@ -26,6 +26,23 @@ def test_get_ce_event_payload_json(handler: StoryEventHandler):
     assert handler.get_ce_event_payload() == {'foo': 'bar'}
 
 
+def test_get_ce_event_payload_insensitive_headers(handler: StoryEventHandler):
+    handler.request.headers = {'Content-Type': 'application/json'}
+    json_body = {
+        'eventType': 'http_request',
+        'source': 'gateway',
+        'data': {
+            'headers': {
+                'HelloWORLd-123': 'my_sensitive_value'
+            }
+        }
+    }
+    handler.request.body = json.dumps(json_body)
+    parsed_payload = handler.get_ce_event_payload()
+    parsed_payload['data']['headers']['helloworld-123'] = 'my_sensitive_value'
+    parsed_payload['data']['headers']['HELLOWORLD-123'] = 'my_sensitive_value'
+
+
 def test_get_ce_event_payload_invalid(handler: StoryEventHandler):
     handler.request.headers = {'Content-Type': 'foo/bar'}
     with pytest.raises(Exception):

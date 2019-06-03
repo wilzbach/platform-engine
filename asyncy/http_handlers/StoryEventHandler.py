@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import time
 
+from requests.structures import CaseInsensitiveDict
+
 import tornado
 from tornado.httputil import HTTPServerRequest
 
@@ -73,17 +75,28 @@ class StoryEventHandler(BaseHandler):
         """
         return self.request
 
-    def get_ce_event_payload(self):
+    def get_ce_event_payload(self) -> dict:
         ct = self.get_req().headers.get('Content-Type')
         assert isinstance(ct, str)
+
+        payload: dict
         if ct.startswith('application/json'):
-            return ujson.loads(self.request.body)
+            payload = ujson.loads(self.request.body)
         elif ct.startswith('multipart/form-data'):
             file = self.get_req().files.get(CLOUD_EVENTS_FILE_KEY)
             assert file is not None  # If not there, then we need to raise.
             assert len(file) == 1  # There can be only one payload.
             assert file[0].content_type == 'application/json'
-            return ujson.loads(file[0].body.decode('utf-8'))
+            payload = ujson.loads(file[0].body.decode('utf-8'))
         else:
             raise Exception(f'Unsupported Content-Type ({ct}) '
                             f'for CloudEvents payload!')
+
+        if payload.get('eventType') == 'http_request' \
+                and payload.get('source') == 'gateway':
+            headers = payload.get('data', {}).get('headers', None)
+            if headers is not None:
+                headers = CaseInsensitiveDict(data=headers)
+                payload['data']['headers'] = headers
+
+        return payload
