@@ -428,7 +428,9 @@ class Kubernetes:
         path = f'/api/v1/namespaces/{app.app_id}/secrets'
         res = await cls.make_k8s_call(app, path, payload)
         if not cls.is_2xx(res):
-            raise K8sError(message=f'Failed to create imagePullSecret!')
+            raise K8sError(
+                message=f'Failed to create imagePullSecret {config["name"]} '
+                        f'in namespace {app.app_id}!')
 
     @classmethod
     async def wait_for_port(cls, host, port):
