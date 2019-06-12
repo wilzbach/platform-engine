@@ -11,6 +11,7 @@ from .App import App
 from .AppConfig import AppConfig, KEY_EXPOSE
 from .Config import Config
 from .Containers import Containers
+from .Database import Database
 from .DeploymentLock import DeploymentLock
 from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
@@ -40,12 +41,8 @@ class Apps:
     """
 
     @classmethod
-    def new_pg_conn(cls, config: Config):
-        return psycopg2.connect(config.POSTGRES)
-
-    @classmethod
     def get_all_app_uuids_for_deployment(cls, config: Config):
-        conn = cls.new_pg_conn(config)
+        conn = Database.new_pg_conn(config)
         cur = conn.cursor()
 
         query = 'select app_uuid from releases group by app_uuid;'
@@ -56,7 +53,7 @@ class Apps:
     @classmethod
     def update_release_state(cls, glogger, config, app_id, version,
                              state: ReleaseState):
-        conn = cls.new_pg_conn(config)
+        conn = Database.new_pg_conn(config)
         cur = conn.cursor()
         query = 'update releases ' \
                 'set state = %s ' \
@@ -266,7 +263,7 @@ class Apps:
                 glogger.warn(f'Another deployment for app {app_id} is in '
                              f'progress. Will not reload.')
                 return
-            conn = cls.new_pg_conn(config)
+            conn = Database.new_pg_conn(config)
 
             curs = conn.cursor()
             query = """
@@ -333,7 +330,7 @@ class Apps:
     @classmethod
     def listen_to_releases(cls, config: Config, glogger: Logger, loop):
         glogger.info('Listening for new releases...')
-        conn = cls.new_pg_conn(config)
+        conn = Database.new_pg_conn(config)
         conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 

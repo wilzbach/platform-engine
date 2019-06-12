@@ -2,12 +2,10 @@
 import hashlib
 import re
 
-import psycopg2
-
 import ujson
 
 from .AppConfig import Expose
-from .Config import Config
+from .Database import Database
 from .Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from .Kubernetes import Kubernetes
@@ -138,7 +136,7 @@ class Containers:
     @classmethod
     async def get_docker_configs(cls, app, image):
         registry_url = cls.get_registry_url(image)
-        conn = cls.new_pg_conn(app.config)
+        conn = Database.new_pg_conn(app.config)
         cur = conn.cursor()
         query = f"""
         with dockerconfigs as (select name, owner_uuid, dockerconfig,
@@ -290,10 +288,6 @@ class Containers:
         simple_name = cls.get_simple_name(volume_name)[:20]
         h = hashlib.sha1(key.encode('utf-8')).hexdigest()
         return f'{simple_name}-{h}'
-
-    @classmethod
-    def new_pg_conn(cls, config: Config):
-        return psycopg2.connect(config.POSTGRES)
 
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):

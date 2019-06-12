@@ -10,6 +10,7 @@ from asyncy.App import App
 from asyncy.AppConfig import AppConfig
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
+from asyncy.Database import Database
 from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
     TooManyServices, TooManyVolumes
 from asyncy.GraphQLAPI import GraphQLAPI
@@ -151,14 +152,14 @@ def test_get(magic):
 @mark.asyncio
 async def test_reload_app_ongoing_deployment(config, logger, patch):
     app_id = 'my_app'
-    patch.object(Apps, 'new_pg_conn')
+    patch.object(Database, 'new_pg_conn')
 
     await Apps.deployment_lock.try_acquire(app_id)
 
     await Apps.reload_app(config, logger, app_id)
 
     logger.warn.assert_called()
-    Apps.new_pg_conn.assert_not_called()
+    Database.new_pg_conn.assert_not_called()
 
 
 @mark.asyncio
@@ -232,7 +233,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
 def test_get_all_app_uuids_for_deployment(patch, magic, config):
     conn = magic()
-    patch.object(Apps, 'new_pg_conn', return_value=conn)
+    patch.object(Database, 'new_pg_conn', return_value=conn)
     query = 'select app_uuid from releases group by app_uuid;'
     ret = Apps.get_all_app_uuids_for_deployment(config)
     conn.cursor().execute.assert_called_with(query)
@@ -382,7 +383,7 @@ def test_make_logger_for_app(patch, config):
 
 @mark.asyncio
 async def test_update_release_state(patch, logger, config):
-    patch.object(Apps, 'new_pg_conn')
+    patch.object(Database, 'new_pg_conn')
     expected_query = 'update releases ' \
                      'set state = %s ' \
                      'where app_uuid = %s and id = %s;'
@@ -390,15 +391,15 @@ async def test_update_release_state(patch, logger, config):
     Apps.update_release_state(logger, config, 'app_id', 'version',
                               ReleaseState.DEPLOYED)
 
-    Apps.new_pg_conn.assert_called_with(config)
-    Apps.new_pg_conn.return_value.cursor.assert_called()
-    Apps.new_pg_conn.return_value.cursor \
+    Database.new_pg_conn.assert_called_with(config)
+    Database.new_pg_conn.return_value.cursor.assert_called()
+    Database.new_pg_conn.return_value.cursor \
         .return_value.execute.assert_called_with(
             expected_query, (ReleaseState.DEPLOYED.value, 'app_id', 'version'))
 
-    Apps.new_pg_conn.return_value.commit.assert_called()
-    Apps.new_pg_conn.return_value.cursor.return_value.close.assert_called()
-    Apps.new_pg_conn.return_value.close.assert_called()
+    Database.new_pg_conn.return_value.commit.assert_called()
+    Database.new_pg_conn.return_value.cursor.return_value.close.assert_called()
+    Database.new_pg_conn.return_value.close.assert_called()
 
 
 @mark.asyncio
