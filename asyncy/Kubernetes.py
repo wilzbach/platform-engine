@@ -417,6 +417,8 @@ class Kubernetes:
 
     @classmethod
     async def check_for_image_errors(cls, app, container_name):
+        # List of image pull errors taken from the kubernetes source code
+        # github/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
         image_errors = [
             'ImagePullBackOff',
             'ImageInspectError',
