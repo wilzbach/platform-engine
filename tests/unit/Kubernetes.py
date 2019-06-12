@@ -797,7 +797,7 @@ async def test_check_for_image_errors(patch, app, async_mock):
     await Kubernetes.check_for_image_errors(app, 'my_container')
     with pytest.raises(K8sError) as exc:
         await Kubernetes.check_for_image_errors(app, 'my_container')
-    assert exc.value.message == "Failed to pull image 'test'"
+    assert exc.value.message == 'ImagePullBackOff - Failed to pull image test'
 
 
 def test_is_2xx():

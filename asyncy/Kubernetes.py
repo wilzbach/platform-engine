@@ -417,6 +417,14 @@ class Kubernetes:
 
     @classmethod
     async def check_for_image_errors(cls, app, container_name):
+        image_errors = [
+            'ImagePullBackOff',
+            'ImageInspectError',
+            'ErrImagePull',
+            'ErrImageNeverPull',
+            'RegistryUnavailable',
+            'InvalidImageName'
+        ]
         prefix = cls._get_api_path_prefix('pods')
         qs = urllib.parse.urlencode({
             'labelSelector': f'app={container_name}'
@@ -427,10 +435,10 @@ class Kubernetes:
         for pod in body['items']:
             for container_status in pod['status'].get('containerStatuses', []):
                 is_waiting = container_status['state'].get('waiting', False)
-                if is_waiting and is_waiting['reason'] == 'ImagePullBackOff':
+                if is_waiting and is_waiting['reason'] in image_errors:
                     raise K8sError(
-                        message=f'Failed to pull image '
-                        f"'{container_status['image']}'"
+                        message=f'{is_waiting["reason"]} - '
+                        f'Failed to pull image {container_status["image"]}'
                     )
 
     @classmethod
