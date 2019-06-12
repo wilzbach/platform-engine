@@ -139,16 +139,14 @@ class Containers:
         conn = Database.new_pg_conn(app.config)
         cur = conn.cursor()
         query = f"""
-        with dockerconfigs as (select name, owner_uuid, dockerconfig,
-                                      json_object_keys(
-                                        (dockerconfig->>'auths')::json
-                                      ) registry
-                               from app_public.owner_dockerconfig)
-        select name, dockerconfig
-        from dockerconfigs
-        where owner_uuid='{app.owner_uuid}'
-              and
-              registry='{registry_url}'
+        with containerconfigs as (select name, owner_uuid, containerconfig,
+                                         json_object_keys(
+                                             (containerconfig->>'auths')::json
+                                         ) registry
+                                  from app_public.owner_containerconfigs)
+        select name, containerconfig
+        from containerconfigs
+        where owner_uuid='{app.owner_uuid}' and registry='{registry_url}'
         """
         cur.execute(query)
         all_configs = cur.fetchall()
