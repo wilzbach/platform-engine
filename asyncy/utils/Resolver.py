@@ -48,7 +48,7 @@ class Resolver:
                     resolved = Resolver.object(path, data)
                     item = item[resolved]
             return item
-        except (KeyError, TypeError, IndexError):
+        except (KeyError, TypeError):
             return None
 
     @classmethod
