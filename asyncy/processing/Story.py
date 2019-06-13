@@ -29,7 +29,9 @@ class Story:
         Executes each line in the story
         """
         line_number = story.first_line()
+        first_line = story.tree[line_number]['src']
         while line_number:
+            line = story.tree[line_number]['src']
             result = await Story.execute_line(logger, story, line_number)
 
             # Sentinels are not allowed to escape from here.
@@ -39,6 +41,10 @@ class Story:
                     story=story, line=story.line(line_number))
 
             line_number = result
+            if 'y=30' in line:
+                x=5
+            if not result and 'function echo i:int returns' in first_line:
+                x=5
             logger.log('story-execution', line_number)
 
     @staticmethod

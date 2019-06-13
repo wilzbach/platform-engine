@@ -3,37 +3,17 @@
 class AsyncyError(Exception):
 
     def __init__(self, message=None, story=None, line=None):
-
         self.message = message
         self.story = story
-        self.line_number = line
+        self.line = line
         self.story_name = None if not self.story else self.story.get('name')
-        self.stack_trace = self.trace_stack()
-        super().__init__(f'{type(self)}: {self.message}{self.format_stack_trace(self.story_name, self.stack_trace)}')
-
-    def trace_stack(self):
-        if not self.line_number or not self.story:
-            return []
-
-        def r_trace(line_num, story):
-            stack_trace = []
-            if line_num in story.get('tree'):  # {self.story_name}:{line}
-                line = story.get('tree').get(line_num)
-                stack_trace = [(line_num, line.get('src'))] + r_trace(line.get('parent'), story)
-
-            return stack_trace
-
-        return r_trace(self.line_number, self.story)
-
-    @staticmethod
-    def format_stack_trace(story_name, stack_trace):
-        fmt = ''
-        for (line_num, src) in stack_trace:
-            # a line number like 12.2 is compiler generated
-            if line_num.isdigit():
-                fmt += f'\n  in {story_name}:{line_num}: {src}'
-
-        return fmt
+        self.stacktrace = []
+        if hasattr(story, 'next_block'):
+            if story.stacktrace.length:
+                self.stack_trace = story.stacktrace.length
+            elif line and line.get('ln'):
+                self.stacktrace = story.stacktrace.trace_back_from(line.get('ln'))
+        super().__init__(f'{type(self)}: {self.message}')
 
 
 class AsyncyRuntimeError(AsyncyError):

@@ -88,12 +88,14 @@ class TestSuite:
         preparation_lines='function echo i:int returns int\n'
                           '    return i\n'
                           '\n'
+                          'x = 500\n'
                           'function add a:int b:int returns int\n'
                           '    return a + b\n'
                           '\n'
                           'function get_28 returns int\n'
                           '    return 28\n'
                           '\n'
+                          'y=30*x\n'
                           'function do_nothing\n'
                           '    a = "nothing meaningful happened"\n',
         cases=[

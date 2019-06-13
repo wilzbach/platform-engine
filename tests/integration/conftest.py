@@ -45,12 +45,19 @@ def story(app, logger):
 
 
 @fixture
-def stories_raw(app, logger):
+def raw_stories(app, logger):
     asset_dir = examples.__path__[0]
 
     with open(asset_dir + '/stories.json', 'r') as file:
         return ujson.loads(file.read())
 
+@fixture
+def raw_bad_story(app, logger):
+    asset_dir = examples.__path__[0]
+
+    with open(asset_dir + '/stories.json', 'r') as file:
+        app.stories = ujson.loads(file.read())['stories']
+    return app.stories['broken.story']
 
 @fixture
 def bad_story(app, logger):

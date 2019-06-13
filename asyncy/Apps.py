@@ -212,7 +212,7 @@ class Apps:
             except ServiceNotFound:
                 story, line_num = cls._loc_service(stories, service)
                 raise ServiceNotFound(service=service, tag=tag,
-                                      story=story, line=line_num)
+                                      story=story, line=story.get(line_num))
 
             if conf.get('image') is not None:
                 image = f'{conf.get("image")}:{tag}'
