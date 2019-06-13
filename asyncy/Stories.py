@@ -3,6 +3,7 @@ import pathlib
 import time
 import uuid
 from json import dumps
+
 from .utils import Dict
 from .utils.Resolver import Resolver
 from .utils.StringUtils import StringUtils
@@ -11,10 +12,14 @@ MAX_BYTES_LOGGING = 160
 
 
 class AsyncyStackTraceItem:
-    def __init__(self, loc: dict, form: dict, src: str = ""):
-        self.loc = dict(story_name=loc['story_name'], story_version=loc['story_version'], line_num=loc['line_num'],
+    def __init__(self, loc: dict, form: dict, src: str = ''):
+        self.loc = dict(story_name=loc['story_name'],
+                        story_version=loc['story_version'],
+                        line_num=loc['line_num'],
                         col=loc.get('col'))
-        self.form = dict(method=form['method'], method_args=form.get('method_args'), datum=form.get('datum'))
+        self.form = dict(method=form['method'],
+                         method_args=form.get('method_args'),
+                         datum=form.get('datum'))
         self.src = src
 
 
@@ -36,7 +41,8 @@ class AsyncyStackTrace:
             line = tree[line_num]
             stack_trace = [
                               AsyncyStackTraceItem(
-                                  dict(story_name=self.story['name'], story_version=self.story['version'],
+                                  dict(story_name=self.story['name'],
+                                       story_version=self.story['version'],
                                        line=line_num, col=line.get('col')),
                                   dict(method=line['method']),
                                   line.get('src'))
@@ -299,8 +305,10 @@ class Stories:
         self.set_context(context)
         self.environment = self.app.environment or {}
 
-    def push_stacktrace(self, method, line_num, method_args=None, datum=None, col=None, src=None):
-        loc = dict(story_name=self.name, story_version=self.version, line_num=line_num,
+    def push_stacktrace(self, method, line_num, method_args=None, datum=None,
+                        col=None, src=None):
+        loc = dict(story_name=self.name, story_version=self.version,
+                   line_num=line_num,
                    col=col)
         form = dict(method=method, method_args=method_args, datum=datum)
         self.stacktrace.push(AsyncyStackTraceItem(loc, form, src))

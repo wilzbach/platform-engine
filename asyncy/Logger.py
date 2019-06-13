@@ -8,7 +8,7 @@ from logging import Formatter, LoggerAdapter, StreamHandler, getLevelName
 from frustum import Frustum
 
 log_json = strtobool(os.getenv('LOG_FORMAT_JSON', 'False'))
-log_json = True
+
 
 class Adapter(LoggerAdapter):
 
@@ -39,7 +39,8 @@ class Adapter(LoggerAdapter):
 
             if exc:
                 if exc.stack_trace:
-                    json_log['stack_trace'] = exc.stack_trace.stack_trace
+                    # TODO: see the output and adjust
+                    json_log['message'] = exc.stack_trace.stack_trace
                 else:
                     tb = traceback.format_exc()
                     json_log['message'] += '\n' + tb

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 class AsyncyError(Exception):
 
     def __init__(self, message=None, story=None, line=None):
@@ -12,7 +13,8 @@ class AsyncyError(Exception):
             if story.stacktrace.length:
                 self.stack_trace = story.stacktrace.length
             elif line and line.get('ln'):
-                self.stacktrace = story.stacktrace.trace_back_from(line.get('ln'))
+                self.stacktrace = story.stacktrace.trace_back_from(
+                    line.get('ln'))
         super().__init__(f'{type(self)}: {self.message}')
 
 
@@ -22,16 +24,18 @@ class AsyncyRuntimeError(AsyncyError):
 
 class TypeAssertionRuntimeError(AsyncyRuntimeError):
     def __init__(self, type_expected, type_received, value):
-        super().__init__(message=f'Incompatible type assertion: '
-                                 f'Received {value} ({type_received}), but '
-                                 f'expected {type_expected}')
+        super().__init__(
+            message=f'Incompatible type assertion: '
+            f'Received {value} ({type_received}), but '
+            f'expected {type_expected}')
 
 
 class TypeValueRuntimeError(AsyncyRuntimeError):
     def __init__(self, type_expected, type_received, value):
-        super().__init__(message=f'Type conversion failed from '
-                                 f'{type_received} to '
-                                 f'{type_expected} with `{value}`')
+        super().__init__(
+            message=f'Type conversion failed from '
+            f'{type_received} to '
+            f'{type_expected} with `{value}`')
 
 
 class InvalidKeywordUsage(AsyncyError):
@@ -49,26 +53,26 @@ class TooManyVolumes(AsyncyError):
     def __init__(self, volume_count, max_volumes):
         super().__init__(
             message=f'Your app makes use of {volume_count} volumes. '
-                    f'The total permissible limit during Asyncy Beta is '
-                    f'{max_volumes} volumes. Please see '
-                    f'https://docs.asyncy.com/faq/ for more information.')
+            f'The total permissible limit during Asyncy Beta is '
+            f'{max_volumes} volumes. Please see '
+            f'https://docs.asyncy.com/faq/ for more information.')
 
 
 class TooManyActiveApps(AsyncyError):
     def __init__(self, active_apps, max_apps):
         super().__init__(
             message=f'Only {max_apps} active apps are allowed during Asyncy '
-                    f'Beta. Please see '
-                    f'https://docs.asyncy.com/faq/ for more information.')
+            f'Beta. Please see '
+            f'https://docs.asyncy.com/faq/ for more information.')
 
 
 class TooManyServices(AsyncyError):
     def __init__(self, service_count, max_services):
         super().__init__(
             message=f'Your app makes use of {service_count} services. '
-                    f'The total permissible limit during Asyncy Beta is '
-                    f'{max_services} services. Please see '
-                    f'https://docs.asyncy.com/faq/ for more information.')
+            f'The total permissible limit during Asyncy Beta is '
+            f'{max_services} services. Please see '
+            f'https://docs.asyncy.com/faq/ for more information.')
 
 
 class ArgumentNotFoundError(AsyncyError):
@@ -85,7 +89,7 @@ class ArgumentTypeMismatchError(AsyncyError):
 
     def __init__(self, arg_name: str, omg_type: str, story=None, line=None):
         message = f'The argument "{arg_name}" does not match the expected ' \
-                  f'type "{omg_type}"'
+            f'type "{omg_type}"'
         super().__init__(message, story=story, line=line)
 
 
@@ -108,13 +112,14 @@ class K8sError(AsyncyError):
 class ServiceNotFound(AsyncyError):
 
     def __init__(self, service, tag, story=None, line=None):
-        self.service = service
-        self.tag = tag
-        super().__init__(message=
-                         f'The service "{service}:{tag}" was not found in the Asyncy Hub. '
-                         f'Hint: 1. Check with the Asyncy team if this service has '
-                         f'been made public; 2. Service names are case sensitive',
-                         story=story, line=line)
+        assert service is not None
+        assert tag is not None
+        super().__init__(
+            message=f'The service "{service}:{tag}" '
+            f'was not found in the Asyncy Hub. '
+            f'Hint: 1. Check with the Asyncy team if this service has '
+            f'been made public; 2. Service names are case sensitive',
+            story=story, line=line)
 
 
 class ActionNotFound(AsyncyError):

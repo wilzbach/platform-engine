@@ -13,7 +13,7 @@ from .Config import Config
 from .Containers import Containers
 from .DeploymentLock import DeploymentLock
 from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
-    TooManyVolumes, ServiceNotFound
+    TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
@@ -142,7 +142,7 @@ class Apps:
             cls.update_release_state(logger, config, app_id, version,
                                      ReleaseState.FAILED)
             if isinstance(e, AsyncyError):
-                logger.error(None, exc=e)
+                logger.error(str(e))
             else:
                 logger.error(f'Failed to bootstrap app ({e})', exc=e)
                 Sentry.capture_exc(e)
@@ -201,18 +201,12 @@ class Apps:
             # query the Hub for the OMG
             tag = conf.get('tag', 'latest')
 
-            try:
-                if '/' in service:
-                    pull_url, omg = await GraphQLAPI.get_by_slug(
-                        glogger, service, tag)
-                else:
-                    pull_url, omg = await GraphQLAPI.get_by_alias(
-                        glogger, service, tag)
-
-            except ServiceNotFound:
-                story, line_num = cls._loc_service(stories, service)
-                raise ServiceNotFound(service=service, tag=tag,
-                                      story=story, line=story.get(line_num))
+            if '/' in service:
+                pull_url, omg = await GraphQLAPI.get_by_slug(
+                    glogger, service, tag)
+            else:
+                pull_url, omg = await GraphQLAPI.get_by_alias(
+                    glogger, service, tag)
 
             if conf.get('image') is not None:
                 image = f'{conf.get("image")}:{tag}'
@@ -362,25 +356,3 @@ class Apps:
                 # Because _thread.interrupt_main() doesn't work.
                 os.kill(os.getpid(), signal.SIGINT)
                 break
-
-    @staticmethod
-    def _loc_service(stories: dict, service: str):
-        formatted_stories = list(map(
-            lambda ep: {**{'name': ep}, **stories['stories'].get(ep)}
-            , stories.get('entrypoint', [])))
-
-        def r_line(num, line, tree):
-            if not line:
-                return None
-            if line.get('service') == service:
-                return num
-            next_line_num = line.get('next')
-            return r_line(next_line_num, tree.get(next_line_num), tree)
-
-        for story in formatted_stories:
-            first_line_num = story['entrypoint']
-            line_num = r_line(first_line_num, story['tree'].get(first_line_num), story['tree'])
-            if line_num:
-                return story, line_num
-
-        return None, None
