@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 
-
 class AsyncyError(Exception):
 
     def __init__(self, message=None, story=None, line=None):
-        super().__init__(message)
         self.message = message
         self.story = story
         self.line = line
+        self.story_name = None if not self.story else self.story.get('name')
+        self.stacktrace = []
+        if hasattr(story, 'next_block'):
+            if story.stacktrace.length:
+                self.stack_trace = story.stacktrace.length
+            elif line and line.get('ln'):
+                self.stacktrace = story.stacktrace.trace_back_from(line.get('ln'))
+        super().__init__(f'{type(self)}: {self.message}')
 
 
 class AsyncyRuntimeError(AsyncyError):
@@ -101,13 +107,14 @@ class K8sError(AsyncyError):
 
 class ServiceNotFound(AsyncyError):
 
-    def __init__(self, story=None, line=None, name=None):
-        assert name is not None
-        super().__init__(
-            f'The service "{name}" was not found in the Asyncy Hub. '
-            f'Hint: 1. Check with the Asyncy team if this service has '
-            f'been made public; 2. Service names are case sensitive',
-            story=story, line=line)
+    def __init__(self, service, tag, story=None, line=None):
+        self.service = service
+        self.tag = tag
+        super().__init__(message=
+                         f'The service "{service}:{tag}" was not found in the Asyncy Hub. '
+                         f'Hint: 1. Check with the Asyncy team if this service has '
+                         f'been made public; 2. Service names are case sensitive',
+                         story=story, line=line)
 
 
 class ActionNotFound(AsyncyError):
