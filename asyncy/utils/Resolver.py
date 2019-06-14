@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from ..Exceptions import AsyncyRuntimeError
 import re
 from functools import reduce
 
@@ -34,6 +35,7 @@ class Resolver:
         Resolves a path against some data, for example the path ['a', 'b']
         with data {'a': {'b': 'value'}} produces 'value'
         """
+        resolved = None
         try:
             item = data[paths[0]]
             for path in paths[1:]:
@@ -48,6 +50,9 @@ class Resolver:
                     resolved = Resolver.object(path, data)
                     item = item[resolved]
             return item
+        except IndexError:
+            raise AsyncyRuntimeError(
+                message=f'List index out of bounds: {resolved}')
         except (KeyError, TypeError):
             return None
 
