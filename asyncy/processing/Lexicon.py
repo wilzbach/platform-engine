@@ -141,16 +141,14 @@ class Lexicon:
         if len(line['args']) > 1:
             # Check if args[1] is a mutation.
             if line['args'][1]['$OBJECT'] == 'mutation':
-                mutated_value = Mutations.mutate(line['args'][1], value, story, line)
-                logger.debug(f'Mutation result: {mutated_value}')
+                value = Mutations.mutate(line['args'][1], value, story, line)
+                logger.debug(f'Mutation result: {value}')
             else:
                 raise AsyncyError(
                     message=f'Unsupported argument in set: '
                             f'{line["args"][1]["$OBJECT"]}',
                     story=story, line=line)
-            story.end_line(line['ln'], output=mutated_value,
-                           assign={'$OBJECT': 'path', 'paths': line['name']})
-        else:
+
             story.end_line(line['ln'], output=value,
                            assign={'$OBJECT': 'path', 'paths': line['name']})
 
@@ -219,7 +217,6 @@ class Lexicon:
         # Note: Control can NEVER reach here.
 
     @staticmethod
-    # Not Used Currently
     def unless_condition(logger, story, line):
         logger.log('lexicon-unless', line, story.context)
         result = story.resolve(line['args'][0], encode=False)
