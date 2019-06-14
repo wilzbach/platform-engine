@@ -82,7 +82,6 @@ class Lexicon:
         function_line = story.function_line_by_name(line.get('function'))
         context = story.context_for_function_call(line, function_line)
         return_from_function_call = None
-
         try:
             story.set_context(context)
             from . import Story
@@ -138,6 +137,7 @@ class Lexicon:
     @staticmethod
     async def set(logger, story, line):
         value = story.resolve(line['args'][0])
+
         if len(line['args']) > 1:
             # Check if args[1] is a mutation.
             if line['args'][1]['$OBJECT'] == 'mutation':
@@ -149,9 +149,8 @@ class Lexicon:
                             f'{line["args"][1]["$OBJECT"]}',
                     story=story, line=line)
 
-            story.end_line(line['ln'], output=value,
-                           assign={'$OBJECT': 'path', 'paths': line['name']})
-
+        story.end_line(line['ln'], output=value,
+                       assign={'$OBJECT': 'path', 'paths': line['name']})
         return Lexicon.line_number_or_none(story.line(line.get('next')))
 
     @staticmethod
@@ -185,7 +184,6 @@ class Lexicon:
 
         # while true here because all if/elif/elif/else is executed here.
         while True:
-
             logger.log('lexicon-if', line, story.context)
 
             if line['method'] == 'else':
