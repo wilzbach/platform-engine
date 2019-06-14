@@ -22,15 +22,15 @@ class AsyncyError(Exception):
 
         for item in stack:
             line = self.story.line(item)
-            src = line["src"]
+            src = line['src']
 
             if src is None:
                 src = f'method={line["method"]} (auto generated frame)'
-            
+
             src = src.strip()
 
             trace += f'\n    at line {item}: {src} (in {self.story.name})'
-            
+
         return trace
 
 

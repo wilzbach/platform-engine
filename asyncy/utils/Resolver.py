@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from ..Exceptions import AsyncyRuntimeError
 import re
-from functools import reduce
 
 from .TypeResolver import TypeResolver
+from ..Exceptions import AsyncyRuntimeError
 
 
 class Resolver:
