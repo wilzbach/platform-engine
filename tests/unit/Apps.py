@@ -164,16 +164,22 @@ async def test_reload_app_ongoing_deployment(config, logger, patch):
 
 @mark.asyncio
 async def test_reload_app_no_story(patch, config, logger, db, async_mock):
-    conn = db()
     app_id = 'app_id'
-    app_dns = 'app_dns'
 
     patch.object(Apps, 'destroy_app', new=async_mock())
     patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = ['app_id', 'version', 'env', None, 'maintenance', app_dns,
-               'QUEUED']
-    conn.cursor().fetchone.return_value = release
+    release = {
+        'version': 'version',
+        'environment': 'env',
+        'stories': None,
+        'maintenance': 'maintenance',
+        'app_dns': 'app_dns',
+        'state': 'QUEUED',
+        'deleted': 'deleted',
+        'owner_uuid': 'owner_uuid'
+    }
+    patch.object(Database, 'get_release_for_deployment', return_value=release)
 
     await Apps.reload_app(config, logger, app_id)
 
@@ -185,7 +191,6 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
                           magic, raise_exc, previous_state):
-    conn = db()
     old_app = magic()
     app_id = 'app_id'
     app_dns = 'app_dns'
@@ -202,9 +207,17 @@ async def test_reload_app(patch, config, logger, db, async_mock,
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = ['app_id', 'version', 'env', 'stories', 'maintenance', app_dns,
-               previous_state, False, 'owner_uuid']
-    conn.cursor().fetchone.return_value = release
+    release = {
+        'version': 'version',
+        'environment': 'env',
+        'stories': 'stories',
+        'maintenance': 'maintenance',
+        'app_dns': app_dns,
+        'state': previous_state,
+        'deleted': False,
+        'owner_uuid': 'owner_uuid'
+    }
+    patch.object(Database, 'get_release_for_deployment', return_value=release)
 
     await Apps.reload_app(config, logger, app_id)
 
@@ -218,7 +231,8 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     Apps.deploy_release.mock.assert_called_with(
         config, app_id, app_dns,
-        release[1], release[2], release[3], release[4], release[7], release[8])
+        release['version'], release['environment'], release['stories'],
+        release['maintenance'], release['deleted'], release['owner_uuid'])
 
     if raise_exc:
         logger.error.assert_called()
