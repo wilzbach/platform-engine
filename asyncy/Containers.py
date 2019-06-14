@@ -72,7 +72,8 @@ class Containers:
                 volumes.append(Volume(persist=persist, name=vol_name,
                                       mount_path=target))
 
-        docker_configs = await cls.get_docker_configs(app, image)
+        registry_url = cls.get_registry_url(image)
+        docker_configs = Database.get_docker_configs(app, registry_url)
 
         env = {}
         for key, omg_config in omg.get('environment', {}).items():
@@ -132,25 +133,6 @@ class Containers:
             return 'https://index.docker.io/v1/'
         else:
             return image[:i]
-
-    @classmethod
-    async def get_docker_configs(cls, app, image):
-        registry_url = cls.get_registry_url(image)
-        conn = Database.new_pg_conn(app.config)
-        cur = conn.cursor()
-        query = f"""
-        with containerconfigs as (select name, owner_uuid, containerconfig,
-                                         json_object_keys(
-                                             (containerconfig->>'auths')::json
-                                         ) registry
-                                  from app_public.owner_containerconfigs)
-        select name, containerconfig
-        from containerconfigs
-        where owner_uuid='{app.owner_uuid}' and registry='{registry_url}'
-        """
-        cur.execute(query)
-        all_configs = cur.fetchall()
-        return [{'name': c[0], 'dockerconfig': c[1]} for c in all_configs]
 
     @classmethod
     async def expose_service(cls, app, expose: Expose):

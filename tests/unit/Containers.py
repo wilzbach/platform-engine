@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 from asyncy.AppConfig import Expose
 from asyncy.Containers import Containers
+from asyncy.Database import Database
 from asyncy.Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from asyncy.Kubernetes import Kubernetes
@@ -265,8 +266,8 @@ async def test_start(patch, story, async_mock,
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
-    patch.object(Containers, 'get_docker_configs',
-                 new=async_mock(return_value=[]))
+    patch.object(Database, 'get_docker_configs',
+                 return_value=[])
 
     expected_volumes = []
     if with_volumes:

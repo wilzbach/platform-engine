@@ -41,32 +41,6 @@ class Apps:
     """
 
     @classmethod
-    def get_all_app_uuids_for_deployment(cls, config: Config):
-        conn = Database.new_pg_conn(config)
-        cur = conn.cursor()
-
-        query = 'select app_uuid from releases group by app_uuid;'
-        cur.execute(query)
-
-        return cur.fetchall()
-
-    @classmethod
-    def update_release_state(cls, glogger, config, app_id, version,
-                             state: ReleaseState):
-        conn = Database.new_pg_conn(config)
-        cur = conn.cursor()
-        query = 'update releases ' \
-                'set state = %s ' \
-                'where app_uuid = %s and id = %s;'
-        cur.execute(query, (state.value, app_id, version))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
-
-    @classmethod
     def get_app_config(cls, raw):
         return AppConfig(raw)
 
@@ -83,15 +57,15 @@ class Apps:
             return
 
         if deleted:
-            cls.update_release_state(logger, config, app_id, version,
-                                     ReleaseState.NO_DEPLOY)
+            Database.update_release_state(logger, config, app_id, version,
+                                          ReleaseState.NO_DEPLOY)
             logger.warn(f'Deployment halted {app_id}@{version}; '
                         f'deleted={deleted}; maintenance={maintenance}')
             logger.warn(f'State changed to NO_DEPLOY for {app_id}@{version}')
             return
 
-        cls.update_release_state(logger, config, app_id, version,
-                                 ReleaseState.DEPLOYING)
+        Database.update_release_state(logger, config, app_id, version,
+                                      ReleaseState.DEPLOYING)
 
         try:
             # Check for the currently active apps by the same owner.
@@ -131,13 +105,13 @@ class Apps:
             await app.bootstrap()
 
             cls.apps[app_id] = app
-            cls.update_release_state(logger, config, app_id, version,
-                                     ReleaseState.DEPLOYED)
+            Database.update_release_state(logger, config, app_id, version,
+                                          ReleaseState.DEPLOYED)
 
             logger.info(f'Successfully deployed app {app_id}@{version}')
         except BaseException as e:
-            cls.update_release_state(logger, config, app_id, version,
-                                     ReleaseState.FAILED)
+            Database.update_release_state(logger, config, app_id, version,
+                                          ReleaseState.FAILED)
             if isinstance(e, AsyncyError):
                 logger.error(str(e))
             else:
@@ -156,7 +130,7 @@ class Apps:
                        config: Config, glogger: Logger):
         Sentry.init(sentry_dsn, release)
 
-        releases = cls.get_all_app_uuids_for_deployment(config)
+        releases = Database.get_all_app_uuids_for_deployment(config)
 
         # We must start listening for releases straight away,
         # before an app is even deployed.
@@ -225,9 +199,9 @@ class Apps:
         app.logger.info(f'Destroying app {app.app_id}')
         try:
             if update_db_state:
-                cls.update_release_state(app.logger, app.config, app.app_id,
-                                         app.version,
-                                         ReleaseState.TERMINATING)
+                Database.update_release_state(app.logger, app.config,
+                                              app.app_id, app.version,
+                                              ReleaseState.TERMINATING)
 
             await app.destroy()
 
@@ -241,9 +215,9 @@ class Apps:
                 exc=e)
         finally:
             if update_db_state:
-                cls.update_release_state(app.logger, app.config, app.app_id,
-                                         app.version,
-                                         ReleaseState.TERMINATED)
+                Database.update_release_state(app.logger, app.config,
+                                              app.app_id, app.version,
+                                              ReleaseState.TERMINATED)
 
         app.logger.info(f'Completed destroying app {app.app_id}')
         cls.apps[app.app_id] = None
@@ -263,56 +237,36 @@ class Apps:
                 glogger.warn(f'Another deployment for app {app_id} is in '
                              f'progress. Will not reload.')
                 return
-            conn = Database.new_pg_conn(config)
-
-            curs = conn.cursor()
-            query = """
-            with latest as (select app_uuid, max(id) as id
-                            from releases
-                            where state != 'NO_DEPLOY'::release_state
-                            group by app_uuid)
-            select app_uuid, id, config, payload, maintenance,
-                   hostname, state, deleted, apps.owner_uuid
-            from latest
-                   inner join releases using (app_uuid, id)
-                   inner join apps on (latest.app_uuid = apps.uuid)
-                   inner join app_dns using (app_uuid)
-            where app_uuid = %s;
-            """
-            curs.execute(query, (app_id,))
-            release = curs.fetchone()
-            version = release[1]
-            environment = release[2]
-            stories = release[3]
-            maintenance = release[4]
-            app_dns = release[5]
-            state = release[6]
-            deleted = release[7]
-            owner_uuid = release[8]
-            if state == ReleaseState.FAILED.value:
+            release = Database.get_release_for_deployment(config, app_id)
+            if release['state'] == ReleaseState.FAILED.value:
                 glogger.warn(f'Cowardly refusing to deploy app '
-                             f'{app_id}@{version} as it\'s '
+                             f'{app_id}@{release["version"]} as it\'s '
                              f'last state is FAILED')
                 return
 
-            if stories is None:
+            if release['stories'] is None:
                 glogger.info(f'No story found for deployment for '
-                             f'app {app_id}@{version}. Halting deployment.')
+                             f'app {app_id}@{release["version"]}. '
+                             f'Halting deployment.')
                 return
             await asyncio.wait_for(
                 cls.deploy_release(
-                    config, app_id, app_dns, version,
-                    environment, stories, maintenance, deleted, owner_uuid),
+                    config, app_id, release['app_dns'], release['version'],
+                    release['environment'], release['stories'],
+                    release['maintenance'], release['deleted'],
+                    release['owner_uuid']),
                 timeout=5 * 60)
-            glogger.info(f'Reloaded app {app_id}@{version}')
+            glogger.info(f'Reloaded app {app_id}@{release["version"]}')
         except BaseException as e:
             glogger.error(
                 f'Failed to reload app {app_id}', exc=e)
             Sentry.capture_exc(e)
             if isinstance(e, asyncio.TimeoutError):
-                logger = cls.make_logger_for_app(config, app_id, version)
-                cls.update_release_state(logger, config, app_id, version,
-                                         ReleaseState.TIMED_OUT)
+                logger = cls.make_logger_for_app(config, app_id,
+                                                 release['version'])
+                Database.update_release_state(logger, config, app_id,
+                                              release['version'],
+                                              ReleaseState.TIMED_OUT)
         finally:
             if can_deploy:
                 # If we did acquire the lock, then we must release it.
