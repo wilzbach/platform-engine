@@ -243,6 +243,7 @@ def test_get_all_app_uuids_for_deployment(patch, magic, config):
 async def test_deploy_release_many_services(patch):
     patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
     patch.init(TooManyServices)
+    patch.object(TooManyServices, '__str__', return_value='too_many_services')
 
     stories = {'services': {}}
 
@@ -260,6 +261,7 @@ async def test_deploy_release_many_services(patch):
 async def test_deploy_release_many_apps(patch, magic):
     patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
     patch.init(TooManyActiveApps)
+    patch.object(TooManyActiveApps, '__str__', return_value='too_many')
 
     stories = {'services': {}}
 
@@ -292,6 +294,7 @@ def test_get_app_config(patch):
 async def test_deploy_release_many_volumes(patch, async_mock):
     patch.many(Apps, ['make_logger_for_app', 'update_release_state'])
     patch.init(TooManyVolumes)
+    patch.object(TooManyVolumes, '__str__', return_value='too_many_vols')
 
     stories = {'services': {}}
 
