@@ -10,6 +10,29 @@ class AsyncyError(Exception):
         self.root = root
         super().__init__(f'{type(self)}: {self.message}')
 
+    def __str__(self):
+        if self.story is None:
+            return super().__str__()
+
+        stack = self.story.get_stack()
+        trace = f'An exception has occurred:\n{self.message}'
+
+        if self.root is not None:
+            trace += f' {str(self.root)}'
+
+        for item in stack:
+            line = self.story.line(item)
+            src = line["src"]
+
+            if src is None:
+                src = f'method={line["method"]} (auto generated frame)'
+            
+            src = src.strip()
+
+            trace += f'\n    at line {item}: {src} (in {self.story.name})'
+            
+        return trace
+
 
 class AsyncyRuntimeError(AsyncyError):
     pass
