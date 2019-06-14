@@ -9,17 +9,6 @@ def test_asyncy_error():
     with raises(AsyncyError):
         raise AsyncyError('things happen')
 
-# def test_asyncy_error_stack_trace(story):
-#     with raises(AsyncyError):
-#         story.name = 'trace.story'
-#         story.tree = {
-#             2: {'ln': 2},
-#             3: {'ln': 3, 'parent': 2},
-#             4: {'ln': 4, 'parent': 3}
-#         }
-#         raise AsyncyError('things happen and stack traces appear',
-#                           story,
-#                           story.line(4))
 
 def test_many_volumes():
     with raises(TooManyVolumes):
