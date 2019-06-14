@@ -5,6 +5,7 @@ import json
 import ssl
 import time
 import typing
+import urllib.parse
 from asyncio import TimeoutError
 
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
@@ -415,6 +416,34 @@ class Kubernetes:
         return False
 
     @classmethod
+    async def check_for_image_errors(cls, app, container_name):
+        # List of image pull errors taken from the kubernetes source code
+        # github/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
+        image_errors = [
+            'ImagePullBackOff',
+            'ImageInspectError',
+            'ErrImagePull',
+            'ErrImageNeverPull',
+            'RegistryUnavailable',
+            'InvalidImageName'
+        ]
+        prefix = cls._get_api_path_prefix('pods')
+        qs = urllib.parse.urlencode({
+            'labelSelector': f'app={container_name}'
+        })
+        res = await cls.make_k8s_call(app, f'{prefix}/{app.app_id}/pods?{qs}')
+        cls.raise_if_not_2xx(res)
+        body = json.loads(res.body, encoding='utf-8')
+        for pod in body['items']:
+            for container_status in pod['status'].get('containerStatuses', []):
+                is_waiting = container_status['state'].get('waiting', False)
+                if is_waiting and is_waiting['reason'] in image_errors:
+                    raise K8sError(
+                        message=f'{is_waiting["reason"]} - '
+                        f'Failed to pull image {container_status["image"]}'
+                    )
+
+    @classmethod
     async def create_deployment(cls, app, service_name: str, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
@@ -549,6 +578,7 @@ class Kubernetes:
             if body['status'].get('readyReplicas', 0) > 0:
                 break
 
+            await cls.check_for_image_errors(app, container_name)
             await asyncio.sleep(1)
 
         app.logger.debug('Deployment is ready')
