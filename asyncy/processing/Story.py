@@ -51,8 +51,12 @@ class Story:
         :return: Returns the next line number to be executed
         (return value from Lexicon), or None if there is none.
         """
-        line = story.line(line_number)
+        line: dict = story.line(line_number)
         story.start_line(line_number)
+
+        ex_occurred = False
+        story.push_line_number_on_stack(line_number)
+
         try:
             method = line['method']
             if method == 'if' or method == 'else' or method == 'elif':
@@ -79,14 +83,17 @@ class Story:
                     f'Unknown method to execute: {method}'
                 )
         except BaseException as e:
+            ex_occurred = True
             if isinstance(e, AsyncyError):  # Don't wrap AsyncyError.
                 e.story = story  # Always set.
                 e.line = line  # Always set.
                 raise e
 
-            logger.error(f'Unhandled story execution error: {str(e)}', e)
-            raise AsyncyError(message='Failed to execute line',
-                              story=story, line=line)
+            raise AsyncyRuntimeError(message='Failed to execute line',
+                                     story=story, line=line, root=e)
+        finally:
+            if not ex_occurred:
+                story.pop_line_number_from_stack()
 
     @staticmethod
     async def execute_block(logger, story, parent_line: dict):
@@ -140,7 +147,9 @@ class Story:
             if function_name:
                 raise AsyncyRuntimeError('No longer supported')
             elif block:
+                story.push_line_number_on_stack(block)
                 await cls.execute_block(logger, story, story.line(block))
+                story.pop_line_number_from_stack()
             else:
                 await cls.execute(logger, story)
 

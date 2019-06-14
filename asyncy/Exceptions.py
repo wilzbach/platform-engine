@@ -3,18 +3,11 @@
 
 class AsyncyError(Exception):
 
-    def __init__(self, message=None, story=None, line=None):
+    def __init__(self, message='', story=None, line=None, root=None):
         self.message = message
         self.story = story
         self.line = line
-        self.story_name = None if not self.story else self.story.get('name')
-        self.stacktrace = []
-        if hasattr(story, 'next_block'):
-            if story.stacktrace.length:
-                self.stack_trace = story.stacktrace.length
-            elif line and line.get('ln'):
-                self.stacktrace = story.stacktrace.trace_back_from(
-                    line.get('ln'))
+        self.root = root
         super().__init__(f'{type(self)}: {self.message}')
 
 

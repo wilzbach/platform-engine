@@ -24,7 +24,6 @@ class Lexicon:
         service = line[LineConstants.service]
 
         start = time.time()
-        story.push_stacktrace(method=line['method'], method_args=service, line_num=line['ln'], src=line['src'])
 
         if line.get('enter') is not None:
             """
@@ -84,9 +83,6 @@ class Lexicon:
         context = story.context_for_function_call(line, function_line)
         return_from_function_call = None
 
-        story.push_stacktrace(method=line['method'], method_args=line.get('function'), datum=context,
-                              line_num=line['ln'], src=line['src'])
-
         try:
             story.set_context(context)
             from . import Story
@@ -124,7 +120,6 @@ class Lexicon:
 
     @staticmethod
     async def break_(logger, story, line):
-        story.push_stacktrace(method=line['method'], line_num=line['ln'], src=line['src'])
         # Ensure that we're in a foreach loop. If we are, return BREAK,
         # otherwise raise an exception.
         if Lexicon._does_line_have_parent_method(story, line, 'for'):
@@ -155,12 +150,9 @@ class Lexicon:
                     story=story, line=line)
             story.end_line(line['ln'], output=mutated_value,
                            assign={'$OBJECT': 'path', 'paths': line['name']})
-            story.push_stacktrace(method=line['method'], method_args=value, datum=mutated_value, line_num=line['ln'],
-                                  src=line['src'])
         else:
             story.end_line(line['ln'], output=value,
                            assign={'$OBJECT': 'path', 'paths': line['name']})
-            story.push_stacktrace(method=line['method'], method_args=value, line_num=line['ln'], src=line['src'])
 
         return Lexicon.line_number_or_none(story.line(line.get('next')))
 
@@ -200,11 +192,8 @@ class Lexicon:
 
             if line['method'] == 'else':
                 result = True
-                story.push_stacktrace(method=line['method'], line_num=line['ln'], src=line['src'])
             else:
                 result = Lexicon._is_if_condition_true(story, line)
-                story.push_stacktrace(method=line['method'], line_num=line['ln'],
-                                      method_args=line.get('args', [])[0], src=line['src'])
 
             if result:
                 return line['enter']
@@ -245,7 +234,6 @@ class Lexicon:
         """
         _list = story.resolve(line['args'][0], encode=False)
         output = line['output'][0]
-        story.push_stacktrace(line['method'], line_num=line['ln'], method_args=_list, datum=output, src=None)
 
         from . import Story
 
@@ -271,7 +259,6 @@ class Lexicon:
     @staticmethod
     async def when(logger, story, line):
         service = line[LineConstants.service]
-        story.push_stacktrace(method='when', line_num=line['ln'], method_args=service, src=line['src'])
 
         # Does this service belong to a streaming service?
         s = story.context.get(service)
@@ -298,8 +285,6 @@ class Lexicon:
         args = line.get('args', line.get('arguments'))
         if args is None:
             args = []
-
-        story.push_stacktrace(line['method'], line_num=line['ln'], method_args=args, src=line.get('src'))
 
         if cls._does_line_have_parent_method(story, line, 'when'):
             assert len(args) == 0, \
