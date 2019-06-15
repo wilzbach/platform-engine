@@ -123,11 +123,11 @@ async def test_init_all(patch, magic, async_mock, config, logger, db):
     patch.init(Thread)
     patch.object(Thread, 'start')
 
-    releases = [
-        ['my_app_uuid']
-    ]
+    apps = [{
+        'uuid': 'my_app_uuid'
+    }]
     patch.object(Database, 'get_all_app_uuids_for_deployment',
-                 return_value=releases)
+                 return_value=apps)
     patch.object(Apps, 'reload_app', new=async_mock())
 
     await Apps.init_all('sentry_dsn', 'release_ver', config, logger)

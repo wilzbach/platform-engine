@@ -24,6 +24,7 @@ from .enums.ReleaseState import ReleaseState
 MAX_VOLUMES_BETA = 15
 MAX_SERVICES_BETA = 15
 MAX_ACTIVE_APPS = 5
+DEPLOYMENT_BATCH_SIZE = 100
 
 
 class Apps:
@@ -126,32 +127,36 @@ class Apps:
         return logger
 
     @classmethod
+    async def reload_apps(cls, config, glogger):
+        """
+        Split apps in batches, where all apps in a batch
+        are deployed together in parallel
+        and subsequent batches are deployed sequentially
+        """
+        apps = Database.get_all_app_uuids_for_deployment(config)
+        for i in range(0, len(apps), DEPLOYMENT_BATCH_SIZE):
+            current_batch = apps[i: i + DEPLOYMENT_BATCH_SIZE]
+            await asyncio.gather(*[
+                cls.reload_app(config, glogger, app['uuid'])
+                for app in current_batch
+            ])
+
+    @classmethod
     async def init_all(cls, sentry_dsn: str, release: str,
                        config: Config, glogger: Logger):
         Sentry.init(sentry_dsn, release)
-
-        releases = Database.get_all_app_uuids_for_deployment(config)
 
         # We must start listening for releases straight away,
         # before an app is even deployed.
         # If we start listening after all the apps are deployed,
         # then we might miss some notifications about releases.
         loop = asyncio.get_event_loop()
-        t = threading.Thread(target=cls.listen_to_releases,
-                             args=[config, glogger, loop],
-                             daemon=True)
-        t.start()
+        release_listener = threading.Thread(target=cls.listen_to_releases,
+                                            args=[config, glogger, loop],
+                                            daemon=True)
+        release_listener.start()
 
-        # Split releases in groups of `parallel_group_size`
-        # Deploy subsequent groups sequentially,
-        # with releases in each group deployed in parallel
-        parallel_group_size = 100
-        for i in range(0, len(releases), parallel_group_size):
-            release_group = releases[i: i + parallel_group_size]
-            await asyncio.gather(*[
-                cls.reload_app(config, glogger, release[0])
-                for release in release_group
-            ])
+        await cls.reload_apps(config, glogger)
 
     @classmethod
     def get(cls, app_id: str):
