@@ -289,12 +289,11 @@ class Apps:
     @classmethod
     def listen_to_releases(cls, config: Config, glogger: Logger, loop):
         glogger.info('Listening for new releases...')
-        conn = Database.new_pg_conn(config)
+        conn, cur = Database.new_pg_conn(config)
         conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-        curs = conn.cursor()
-        curs.execute('listen release;')
+        cur.execute('listen release;')
 
         while True:
             try:
