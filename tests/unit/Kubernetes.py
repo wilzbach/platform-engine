@@ -463,7 +463,7 @@ async def test_create_imagepullsecret(story, patch, async_mock):
     await Kubernetes.create_imagepullsecret(story.app, docker_config)
 
     Kubernetes.make_k8s_call.mock.assert_called_with(
-        story.app, expected_path, expected_payload)
+        story.app.config, story.app.logger, expected_path, expected_payload)
 
 
 @mark.asyncio

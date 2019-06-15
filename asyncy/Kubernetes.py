@@ -426,7 +426,7 @@ class Kubernetes:
         }
 
         path = f'/api/v1/namespaces/{app.app_id}/secrets'
-        res = await cls.make_k8s_call(app, path, payload)
+        res = await cls.make_k8s_call(app.config, app.logger, path, payload)
         if not cls.is_2xx(res):
             raise K8sError(
                 message=f'Failed to create imagePullSecret {config["name"]} '
