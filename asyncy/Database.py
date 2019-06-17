@@ -10,12 +10,12 @@ class Database:
     @classmethod
     def new_pg_conn(cls, config: Config):
         conn = psycopg2.connect(config.POSTGRES)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        return conn, cur
+        return conn
 
     @classmethod
     def get_all_app_uuids_for_deployment(cls, config: Config):
-        conn, cur = cls.new_pg_conn(config)
+        conn = cls.new_pg_conn(config)
+        cur = conn.cursor(cursor_factory=RealDictCursor)
 
         query = 'select app_uuid uuid from releases group by app_uuid;'
         cur.execute(query)
@@ -25,7 +25,8 @@ class Database:
     @classmethod
     def update_release_state(cls, glogger, config, app_id, version,
                              state: ReleaseState):
-        conn, cur = cls.new_pg_conn(config)
+        conn = cls.new_pg_conn(config)
+        cur = conn.cursor(cursor_factory=RealDictCursor)
         query = 'update releases ' \
                 'set state = %s ' \
                 'where app_uuid = %s and id = %s;'
@@ -39,7 +40,8 @@ class Database:
 
     @classmethod
     def get_docker_configs(cls, app, registry_url):
-        conn, cur = cls.new_pg_conn(app.config)
+        conn = cls.new_pg_conn(app.config)
+        cur = conn.cursor(cursor_factory=RealDictCursor)
         query = f"""
         with containerconfigs as (select name, owner_uuid, containerconfig,
                                          json_object_keys(
@@ -55,7 +57,8 @@ class Database:
 
     @classmethod
     def get_release_for_deployment(cls, config, app_id):
-        conn, cur = cls.new_pg_conn(config)
+        conn = cls.new_pg_conn(config)
+        cur = conn.cursor(cursor_factory=RealDictCursor)
         query = """
         with latest as (select app_uuid, max(id) as id
                         from releases
