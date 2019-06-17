@@ -17,6 +17,7 @@ from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
+from .Release import Release
 from .Sentry import Sentry
 from .constants.ServiceConstants import ServiceConstants
 from .enums.ReleaseState import ReleaseState
@@ -242,35 +243,40 @@ class Apps:
                 glogger.warn(f'Another deployment for app {app_id} is in '
                              f'progress. Will not reload.')
                 return
-            release = Database.get_release_for_deployment(config, app_id)
-            if release['state'] == ReleaseState.FAILED.value:
+            data = Database.get_release_for_deployment(config, app_id)
+            release = Release(data['app_uuid'], data['version'],
+                              data['environment'], data['stories'],
+                              data['maintenance'], data['app_dns'],
+                              data['state'], data['deleted'],
+                              data['owner_uuid'])
+            if release.state == ReleaseState.FAILED.value:
                 glogger.warn(f'Cowardly refusing to deploy app '
-                             f'{app_id}@{release["version"]} as it\'s '
+                             f'{app_id}@{release.version} as it\'s '
                              f'last state is FAILED')
                 return
 
-            if release['stories'] is None:
+            if release.stories is None:
                 glogger.info(f'No story found for deployment for '
-                             f'app {app_id}@{release["version"]}. '
+                             f'app {app_id}@{release.version}. '
                              f'Halting deployment.')
                 return
             await asyncio.wait_for(
                 cls.deploy_release(
-                    config, app_id, release['app_dns'], release['version'],
-                    release['environment'], release['stories'],
-                    release['maintenance'], release['deleted'],
-                    release['owner_uuid']),
+                    config, app_id, release.app_dns, release.version,
+                    release.environment, release.stories,
+                    release.maintenance, release.deleted,
+                    release.owner_uuid),
                 timeout=5 * 60)
-            glogger.info(f'Reloaded app {app_id}@{release["version"]}')
+            glogger.info(f'Reloaded app {app_id}@{release.version}')
         except BaseException as e:
             glogger.error(
                 f'Failed to reload app {app_id}', exc=e)
             Sentry.capture_exc(e)
             if isinstance(e, asyncio.TimeoutError):
                 logger = cls.make_logger_for_app(config, app_id,
-                                                 release['version'])
+                                                 release.version)
                 Database.update_release_state(logger, config, app_id,
-                                              release['version'],
+                                              release.version,
                                               ReleaseState.TIMED_OUT)
         finally:
             if can_deploy:

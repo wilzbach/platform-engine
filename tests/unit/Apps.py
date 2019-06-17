@@ -16,6 +16,7 @@ from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
+from asyncy.Release import Release
 from asyncy.Sentry import Sentry
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.enums.ReleaseState import ReleaseState
@@ -170,6 +171,7 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
     patch.object(Apps, 'deploy_release', new=async_mock())
 
     release = {
+        'app_uuid': app_id,
         'version': 'version',
         'environment': 'env',
         'stories': None,
@@ -208,6 +210,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         patch.object(Apps, 'deploy_release', new=async_mock())
 
     release = {
+        'app_uuid': app_id,
         'version': 'version',
         'environment': 'env',
         'stories': 'stories',
