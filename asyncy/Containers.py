@@ -74,6 +74,11 @@ class Containers:
 
         registry_url = cls.get_registry_url(image)
         docker_configs = Database.get_docker_configs(app, registry_url)
+        for config in docker_configs:
+            config.update({
+                'name': cls.get_dockerconfig_name(config['name'],
+                                                  config['dockerconfig'])
+            })
 
         env = {}
         for key, omg_config in omg.get('environment', {}).items():
@@ -208,6 +213,12 @@ class Containers:
         return command_parts
 
     @classmethod
+    def get_dockerconfig_name(cls, name, config):
+        simple_name = cls.get_simple_name(name)[:20]
+        h = cls.hash_dockerconfig_name(name, config)
+        return f'{simple_name}-{h}'
+
+    @classmethod
     def get_container_name(cls, app, story_name, line, name):
         """
         If a container can be reused (where reuse is defined as a command
@@ -268,6 +279,11 @@ class Containers:
         simple_name = cls.get_simple_name(volume_name)[:20]
         h = hashlib.sha1(key.encode('utf-8')).hexdigest()
         return f'{simple_name}-{h}'
+
+    @classmethod
+    def hash_dockerconfig_name(cls, name, config):
+        return hashlib.sha1(f'{name}-{ujson.dumps(config)}'
+                            .encode('utf-8')).hexdigest()
 
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):

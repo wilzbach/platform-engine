@@ -62,6 +62,22 @@ def test_get_container_name(patch, story, line, reusable, name):
         assert ret == f'alpine-{h}'
 
 
+def test_get_dockerconfig_name():
+    config = {
+        'name': 'name_with_special_!!!_characters',
+        'dockerconfig': {
+            'auths': {
+                'registry_url': {
+                    'auth': 'base64_string'
+                }
+            }
+        }
+    }
+    r = Containers.get_dockerconfig_name(config['name'],
+                                         config['dockerconfig'])
+    assert r == 'namewithspecialchara-6673daa71fd5d0ca485a805ba56cd5ffb334a450'
+
+
 @mark.asyncio
 async def test_exec():
     with pytest.raises(K8sError):
