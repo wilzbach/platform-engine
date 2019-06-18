@@ -8,7 +8,7 @@ class AsyncyError(Exception):
         self.story = story
         self.line = line
         self.root = root
-        super().__init__(f'{type(self)}: {self.message}')
+        super().__init__(f'{type(self).__name__}: {self.message}')
 
     def __str__(self):
         if self.story is None:
@@ -18,11 +18,11 @@ class AsyncyError(Exception):
         trace = f'An exception has occurred:\n{self.message}'
 
         if self.root is not None:
-            trace += f' {str(self.root)}'
+            trace += f': {str(self.root)}'
 
         for item in stack:
             line = self.story.line(item)
-            src = line['src']
+            src = line.get('src')
 
             if src is None:
                 src = f'method={line["method"]} (auto generated frame)'
