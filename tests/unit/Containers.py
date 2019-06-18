@@ -10,6 +10,7 @@ from asyncy.Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Volume import Volume
 from asyncy.processing import Story
 
@@ -64,17 +65,14 @@ def test_get_container_name(patch, story, line, reusable, name):
 
 def test_get_containerconfig_name(app):
     app.version = 'v1'
-    config = {
-        'name': 'name_with_special_!!!_characters',
-        'containerconfig': {
-            'auths': {
-                'registry_url': {
-                    'auth': 'base64_string'
-                }
+    config = ContainerConfig(name='name_with_special_!!!_characters', data={
+        'auths': {
+            'registry_url': {
+                'auth': 'base64_string'
             }
         }
-    }
-    r = Containers.get_containerconfig_name(app, config['name'])
+    })
+    r = Containers.get_containerconfig_name(app, config.name)
     assert r == 'namewithspecialchara-95b9733c79792f385564973c20be433f6f6832e9'
 
 

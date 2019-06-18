@@ -14,6 +14,7 @@ from . import AppConfig
 from .AppConfig import Expose
 from .Exceptions import K8sError
 from .constants.ServiceConstants import ServiceConstants
+from .entities.ContainerConfig import ContainerConfig, ContainerConfigs
 from .entities.Volume import Volumes
 from .utils.HttpUtils import HttpUtils
 
@@ -406,10 +407,10 @@ class Kubernetes:
                     f'Some actions of {service} might fail!')
 
     @classmethod
-    async def create_imagepullsecret(cls, app, config: dict):
+    async def create_imagepullsecret(cls, app, config: ContainerConfig):
 
         b64_container_config = base64.b64encode(
-            json.dumps(config['containerconfig']).encode()
+            json.dumps(config.data).encode()
         ).decode()
 
         payload = {
@@ -417,7 +418,7 @@ class Kubernetes:
             'kind': 'Secret',
             'type': 'kubernetes.io/dockerconfigjson',
             'metadata': {
-                'name': config['name'],
+                'name': config.name,
                 'namespace': app.app_id
             },
             'data': {
@@ -480,7 +481,8 @@ class Kubernetes:
     async def create_deployment(cls, app, service_name: str, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
-                                volumes: Volumes, container_configs: []):
+                                volumes: Volumes,
+                                container_configs: ContainerConfigs):
         # Note: We don't check if this deployment exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a deployment.
@@ -525,7 +527,7 @@ class Kubernetes:
         for config in container_configs:
             await cls.create_imagepullsecret(app, config)
             image_pull_secrets.append({
-                'name': config['name']
+                'name': config.name
             })
 
         b16_service_name = base64.b16encode(service_name.encode()).decode()
@@ -629,7 +631,8 @@ class Kubernetes:
     async def create_pod(cls, app, service: str, image: str,
                          container_name: str, start_command: [] or str,
                          shutdown_command: [] or str, env: dict,
-                         volumes: Volumes, container_configs: []):
+                         volumes: Volumes,
+                         container_configs: ContainerConfigs):
         res = await cls.make_k8s_call(
             app.config, app.logger,
             f'/apis/apps/v1/namespaces/{app.app_id}'

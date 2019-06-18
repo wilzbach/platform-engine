@@ -13,6 +13,7 @@ from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Volume import Volume
 from asyncy.utils.HttpUtils import HttpUtils
 
@@ -430,19 +431,16 @@ async def test_create_imagepullsecret(story, patch, async_mock):
     res.code = 200
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
 
-    container_config = {
-        'name': 'first',
-        'containerconfig': {
-            'auths': {
-                'https://index.docker.io/v1/': {
-                    'auth': 'username_password_base64'
-                }
+    container_config = ContainerConfig(name='first', data={
+        'auths': {
+            'https://index.docker.io/v1/': {
+                'auth': 'username_password_base64'
             }
         }
-    }
+    })
 
     b64_container_config = base64.b64encode(
-        json.dumps(container_config['containerconfig']).encode()
+        json.dumps(container_config.data).encode()
     ).decode()
 
     expected_path = f'/api/v1/namespaces/{story.app.app_id}/secrets'
@@ -452,7 +450,7 @@ async def test_create_imagepullsecret(story, patch, async_mock):
         'kind': 'Secret',
         'type': 'kubernetes.io/dockerconfigjson',
         'metadata': {
-            'name': container_config['name'],
+            'name': container_config.name,
             'namespace': story.app.app_id
         },
         'data': {
@@ -611,25 +609,22 @@ async def test_create_deployment(patch, async_mock, story):
     volumes = [Volume(persist=False, name='tmp', mount_path='/tmp'),
                Volume(persist=True, name='db', mount_path='/db')]
 
-    container_configs = [{
-        'name': 'first',
-        'containerconfig': {
+    container_configs = [
+        ContainerConfig(name='first', data={
             'auths': {
                 'https://index.docker.io/v1/': {
                     'auth': 'username_password_base64'
                 }
             }
-        }
-    }, {
-        'name': 'second',
-        'containerconfig': {
+        }),
+        ContainerConfig(name='second', data={
             'auths': {
                 'https://index.docker.io/v1/': {
                     'auth': 'new_username_password_base64'
                 }
             }
-        }
-    }]
+        })
+    ]
 
     patch.object(Kubernetes, 'remove_volume', new=async_mock())
     patch.object(Kubernetes, 'create_volume', new=async_mock())
@@ -712,10 +707,10 @@ async def test_create_deployment(patch, async_mock, story):
                     ],
                     'imagePullSecrets': [
                         {
-                            'name': container_configs[0]['name']
+                            'name': container_configs[0].name
                         },
                         {
-                            'name': container_configs[1]['name']
+                            'name': container_configs[1].name
                         }
                     ]
                 }

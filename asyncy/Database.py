@@ -2,7 +2,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from .Config import Config
-from .Release import Release
+from .entities.ContainerConfig import ContainerConfig
+from .entities.Release import Release
 from .enums.ReleaseState import ReleaseState
 
 
@@ -54,7 +55,12 @@ class Database:
         where owner_uuid = %s and registry = %s
         """
         cur.execute(query, (app.owner_uuid, registry_url))
-        return cur.fetchall()
+        data = cur.fetchall()
+        result = []
+        for config in data:
+            result.append(ContainerConfig(name=config['name'],
+                                          data=config['containerconfig']))
+        return result
 
     @classmethod
     def get_release_for_deployment(cls, config, app_id):
@@ -75,8 +81,10 @@ class Database:
         """
         cur.execute(query, (app_id,))
         data = cur.fetchone()
-        return Release(data['app_uuid'], data['version'],
-                       data['environment'], data['stories'],
-                       data['maintenance'], data['app_dns'],
-                       data['state'], data['deleted'],
-                       data['owner_uuid'])
+        return Release(app_uuid=data['app_uuid'], version=data['version'],
+                       environment=data['environment'],
+                       stories=data['stories'],
+                       maintenance=data['maintenance'],
+                       app_dns=data['app_dns'],
+                       state=data['state'], deleted=data['deleted'],
+                       owner_uuid=data['owner_uuid'])

@@ -12,6 +12,7 @@ from .Kubernetes import Kubernetes
 from .Types import StreamingService
 from .constants.LineConstants import LineConstants
 from .constants.ServiceConstants import ServiceConstants
+from .entities.ContainerConfig import ContainerConfig
 from .entities.Volume import Volume
 from .utils import Dict
 
@@ -73,11 +74,10 @@ class Containers:
                                       mount_path=target))
 
         registry_url = cls.get_registry_url(image)
-        container_configs = Database.get_container_configs(app, registry_url)
-        for config in container_configs:
-            config.update({
-                'name': cls.get_containerconfig_name(app, config['name'])
-            })
+        container_configs = list(map(lambda config: ContainerConfig(
+            name=cls.get_containerconfig_name(app, config.name),
+            data=config.data
+        ), Database.get_container_configs(app, registry_url)))
 
         env = {}
         for key, omg_config in omg.get('environment', {}).items():

@@ -17,7 +17,6 @@ from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
-from .Release import Release
 from .Sentry import Sentry
 from .constants.ServiceConstants import ServiceConstants
 from .enums.ReleaseState import ReleaseState
