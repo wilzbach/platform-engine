@@ -32,6 +32,18 @@ class TestSuite:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
+        preparation_lines='a = {}\n'
+                          'b = 0\n',
+        cases=[
+            TestCase(append='if a["foo"] != null\n'
+                            '    b = 1',
+                     assertion=ContextAssertion(key='b', expected=0)),
+            TestCase(append='if a["foo"] == null\n'
+                            '    b = 1',
+                     assertion=ContextAssertion(key='b', expected=1))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = {"a": "b"}',
         cases=[
             TestCase(append='b = "{1} {a}"',
@@ -237,6 +249,8 @@ class TestSuite:
         preparation_lines='a = [1, 1, 1, 2, 3, 4, 5]\n'
                           'b = 0\n',
         cases=[
+            TestCase(append='b = a[b]',
+                     assertion=ContextAssertion(key='b', expected=1)),
             TestCase(append='foreach a as elem\n'
                             '   b = b + elem\n'
                             '   if b == 3\n'
@@ -490,7 +504,10 @@ class TestSuite:
                      assertion=ContextAssertion(key='s', expected=False)),
 
             TestCase(append='s = m contains value: 1',
-                     assertion=ContextAssertion(key='s', expected=True))
+                     assertion=ContextAssertion(key='s', expected=True)),
+
+            TestCase(append='key = "a"\ns = m[key]',
+                     assertion=ContextAssertion(key='s', expected=1)),
         ]
     ),
     TestSuite(
@@ -613,7 +630,7 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     if case.prepend is not None:
         all_lines = case.prepend + '\n' + all_lines
 
-    story = storyscript.Api.loads(all_lines)
+    story = storyscript.Api.loads(all_lines, features={'globals': True})
     errors = story.errors()
     if len(errors) > 0:
         print(f'Failed to compile the following story:'
@@ -1107,6 +1124,7 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
         ]
     ),
     TestSuite(
+        preparation_lines='a = {}',
         cases=[
             TestCase(append='c = "foo" as float',
                      assertion=RuntimeExceptionAssertion(
@@ -1118,9 +1136,60 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
                          TypeValueRuntimeError,
                          message='Type conversion failed from str to int '
                                  'with `foo`')),
+            TestCase(append='c = a[0]["id"] as string',
+                     assertion=ContextAssertion(key='c', expected=None)),
         ]
     )
 ])
 @mark.asyncio
 async def test_type_casts(suite: TestSuite, logger):
+    await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    TestSuite(
+        preparation_lines='a = [1, 2, 3, 4, 5]',
+        cases=[
+            TestCase(append='c=a[0]\nb = a[:2]',
+                     assertion=ContextAssertion(key='b', expected=[1, 2])),
+            TestCase(append='b = a[1:2]',
+                     assertion=ContextAssertion(key='b', expected=[2])),
+            TestCase(append='b = a[3:]',
+                     assertion=ContextAssertion(key='b', expected=[4, 5])),
+            TestCase(append='b = a[10:]',
+                     assertion=ContextAssertion(key='b', expected=[])),
+            TestCase(append='b = a[10:20]',
+                     assertion=ContextAssertion(key='b', expected=[])),
+            TestCase(append='b = a[:-2]',
+                     assertion=ContextAssertion(key='b', expected=[1, 2, 3])),
+            TestCase(append='b = a[-2:5]',
+                     assertion=ContextAssertion(key='b', expected=[4, 5])),
+            TestCase(append='c=1\nd=3\nb = a[c:d]',
+                     assertion=ContextAssertion(key='b', expected=[2, 3])),
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = "abcde"',
+        cases=[
+            TestCase(append='b = a[:2]',
+                     assertion=ContextAssertion(key='b', expected='ab')),
+            TestCase(append='b = a[1:2]',
+                     assertion=ContextAssertion(key='b', expected='b')),
+            TestCase(append='b = a[3:]',
+                     assertion=ContextAssertion(key='b', expected='de')),
+            TestCase(append='b = a[10:]',
+                     assertion=ContextAssertion(key='b', expected='')),
+            TestCase(append='b = a[10:20]',
+                     assertion=ContextAssertion(key='b', expected='')),
+            TestCase(append='b = a[:-2]',
+                     assertion=ContextAssertion(key='b', expected='abc')),
+            TestCase(append='b = a[-2:5]',
+                     assertion=ContextAssertion(key='b', expected='de')),
+            TestCase(append='c=1\nd=3\nb = a[c:d]',
+                     assertion=ContextAssertion(key='b', expected='bc')),
+        ]
+    )
+])
+@mark.asyncio
+async def test_range_mutations(suite: TestSuite, logger):
     await run_suite(suite, logger)
