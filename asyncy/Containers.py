@@ -76,8 +76,7 @@ class Containers:
         container_configs = Database.get_container_configs(app, registry_url)
         for config in container_configs:
             config.update({
-                'name': cls.get_containerconfig_name(config['name'],
-                                                     config['containerconfig'])
+                'name': cls.get_containerconfig_name(app, config['name'])
             })
 
         env = {}
@@ -213,9 +212,9 @@ class Containers:
         return command_parts
 
     @classmethod
-    def get_containerconfig_name(cls, name, config):
+    def get_containerconfig_name(cls, app, name):
         simple_name = cls.get_simple_name(name)[:20]
-        h = cls.hash_containerconfig_name(name, config)
+        h = cls.hash_containerconfig_name(app, name)
         return f'{simple_name}-{h}'
 
     @classmethod
@@ -281,8 +280,8 @@ class Containers:
         return f'{simple_name}-{h}'
 
     @classmethod
-    def hash_containerconfig_name(cls, name, config):
-        return hashlib.sha1(f'{name}-{ujson.dumps(config)}'
+    def hash_containerconfig_name(cls, app, name):
+        return hashlib.sha1(f'{app.version}-{name}'
                             .encode('utf-8')).hexdigest()
 
     @classmethod

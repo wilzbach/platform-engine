@@ -62,7 +62,8 @@ def test_get_container_name(patch, story, line, reusable, name):
         assert ret == f'alpine-{h}'
 
 
-def test_get_containerconfig_name():
+def test_get_containerconfig_name(app):
+    app.version = 'v1'
     config = {
         'name': 'name_with_special_!!!_characters',
         'containerconfig': {
@@ -73,9 +74,8 @@ def test_get_containerconfig_name():
             }
         }
     }
-    r = Containers.get_containerconfig_name(config['name'],
-                                            config['containerconfig'])
-    assert r == 'namewithspecialchara-6673daa71fd5d0ca485a805ba56cd5ffb334a450'
+    r = Containers.get_containerconfig_name(app, config['name'])
+    assert r == 'namewithspecialchara-95b9733c79792f385564973c20be433f6f6832e9'
 
 
 @mark.asyncio
