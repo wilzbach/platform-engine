@@ -93,7 +93,7 @@ class Story:
                                      story=story, line=line, root=e)
         finally:
             if not ex_occurred:
-                story.pop_line_number_from_stack()
+                story.pop_line_from_stack()
 
     @staticmethod
     async def execute_block(logger, story, parent_line: dict):
@@ -149,7 +149,7 @@ class Story:
             elif block:
                 story.push_line_number_on_stack(block)
                 await cls.execute_block(logger, story, story.line(block))
-                story.pop_line_number_from_stack()
+                story.pop_line_from_stack()
             else:
                 await cls.execute(logger, story)
 

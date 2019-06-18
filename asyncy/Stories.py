@@ -35,7 +35,7 @@ class Stories:
     def get_stack(self) -> []:
         return self._stack
 
-    def pop_line_number_from_stack(self):
+    def pop_line_from_stack(self):
         return self._stack.pop()
 
     def create_tmp_dir(self):
