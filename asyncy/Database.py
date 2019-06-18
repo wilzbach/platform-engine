@@ -43,7 +43,7 @@ class Database:
     def get_container_configs(cls, app, registry_url):
         conn = cls.new_pg_conn(app.config)
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        query = f"""
+        query = """
         with containerconfigs as (select name, owner_uuid, containerconfig,
                                          json_object_keys(
                                              (containerconfig->>'auths')::json
@@ -51,9 +51,9 @@ class Database:
                                   from app_public.owner_containerconfigs)
         select name, containerconfig
         from containerconfigs
-        where owner_uuid='{app.owner_uuid}' and registry='{registry_url}'
+        where owner_uuid = %s and registry = %s
         """
-        cur.execute(query)
+        cur.execute(query, (app.owner_uuid, registry_url))
         return cur.fetchall()
 
     @classmethod
