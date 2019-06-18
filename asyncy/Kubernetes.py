@@ -568,8 +568,7 @@ class Kubernetes:
 
         liveness_probe = cls.get_liveness_probe(app, service_name)
 
-        cpu_limit, memory_limit = Database.get_service_limits(app.config,
-                                                              service_name)
+        limits = Database.get_service_limits(app.config, service_name)
 
         payload = {
             'apiVersion': 'apps/v1',
@@ -603,8 +602,8 @@ class Kubernetes:
                                 'image': image,
                                 'resources': {
                                     'limits': {
-                                        'memory': memory_limit,
-                                        'cpu': cpu_limit
+                                        'memory': limits['memory'],
+                                        'cpu': limits['cpu']
                                     }
                                 },
                                 'command': start_command,
