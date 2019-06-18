@@ -430,9 +430,9 @@ async def test_create_imagepullsecret(story, patch, async_mock):
     res.code = 200
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
 
-    docker_config = {
+    container_config = {
         'name': 'first',
-        'dockerconfig': {
+        'containerconfig': {
             'auths': {
                 'https://index.docker.io/v1/': {
                     'auth': 'username_password_base64'
@@ -441,8 +441,8 @@ async def test_create_imagepullsecret(story, patch, async_mock):
         }
     }
 
-    b64_docker_config = base64.b64encode(
-        json.dumps(docker_config['dockerconfig']).encode()
+    b64_container_config = base64.b64encode(
+        json.dumps(container_config['containerconfig']).encode()
     ).decode()
 
     expected_path = f'/api/v1/namespaces/{story.app.app_id}/secrets'
@@ -452,15 +452,15 @@ async def test_create_imagepullsecret(story, patch, async_mock):
         'kind': 'Secret',
         'type': 'kubernetes.io/dockerconfigjson',
         'metadata': {
-            'name': docker_config['name'],
+            'name': container_config['name'],
             'namespace': story.app.app_id
         },
         'data': {
-            '.dockerconfigjson': b64_docker_config
+            '.dockerconfigjson': b64_container_config
         }
     }
 
-    await Kubernetes.create_imagepullsecret(story.app, docker_config)
+    await Kubernetes.create_imagepullsecret(story.app, container_config)
 
     Kubernetes.make_k8s_call.mock.assert_called_with(
         story.app.config, story.app.logger, expected_path, expected_payload)
@@ -611,9 +611,9 @@ async def test_create_deployment(patch, async_mock, story):
     volumes = [Volume(persist=False, name='tmp', mount_path='/tmp'),
                Volume(persist=True, name='db', mount_path='/db')]
 
-    docker_configs = [{
+    container_configs = [{
         'name': 'first',
-        'dockerconfig': {
+        'containerconfig': {
             'auths': {
                 'https://index.docker.io/v1/': {
                     'auth': 'username_password_base64'
@@ -622,7 +622,7 @@ async def test_create_deployment(patch, async_mock, story):
         }
     }, {
         'name': 'second',
-        'dockerconfig': {
+        'containerconfig': {
             'auths': {
                 'https://index.docker.io/v1/': {
                     'auth': 'new_username_password_base64'
@@ -712,10 +712,10 @@ async def test_create_deployment(patch, async_mock, story):
                     ],
                     'imagePullSecrets': [
                         {
-                            'name': docker_configs[0]['name']
+                            'name': container_configs[0]['name']
                         },
                         {
-                            'name': docker_configs[1]['name']
+                            'name': container_configs[1]['name']
                         }
                     ]
                 }
@@ -742,7 +742,7 @@ async def test_create_deployment(patch, async_mock, story):
     await Kubernetes.create_deployment(story.app, 'alpine', image,
                                        container_name,
                                        start_command, shutdown_command, env,
-                                       volumes, docker_configs)
+                                       volumes, container_configs)
 
     Kubernetes.remove_volume.mock.assert_called_once()
     Kubernetes.remove_volume.mock.assert_called_with(
@@ -754,8 +754,8 @@ async def test_create_deployment(patch, async_mock, story):
     ]
 
     assert Kubernetes.create_imagepullsecret.mock.mock_calls == [
-        mock.call(story.app, docker_configs[0]),
-        mock.call(story.app, docker_configs[1]),
+        mock.call(story.app, container_configs[0]),
+        mock.call(story.app, container_configs[1]),
     ]
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [

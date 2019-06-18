@@ -408,8 +408,8 @@ class Kubernetes:
     @classmethod
     async def create_imagepullsecret(cls, app, config: dict):
 
-        b64_docker_config = base64.b64encode(
-            json.dumps(config['dockerconfig']).encode()
+        b64_container_config = base64.b64encode(
+            json.dumps(config['containerconfig']).encode()
         ).decode()
 
         payload = {
@@ -421,7 +421,7 @@ class Kubernetes:
                 'namespace': app.app_id
             },
             'data': {
-                '.dockerconfigjson': b64_docker_config
+                '.dockerconfigjson': b64_container_config
             }
         }
 
@@ -480,7 +480,7 @@ class Kubernetes:
     async def create_deployment(cls, app, service_name: str, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
-                                volumes: Volumes, docker_configs: []):
+                                volumes: Volumes, container_configs: []):
         # Note: We don't check if this deployment exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a deployment.
@@ -522,7 +522,7 @@ class Kubernetes:
             await cls.create_volume(app, vol.name, vol.persist)
 
         image_pull_secrets = []
-        for config in docker_configs:
+        for config in container_configs:
             await cls.create_imagepullsecret(app, config)
             image_pull_secrets.append({
                 'name': config['name']
@@ -629,7 +629,7 @@ class Kubernetes:
     async def create_pod(cls, app, service: str, image: str,
                          container_name: str, start_command: [] or str,
                          shutdown_command: [] or str, env: dict,
-                         volumes: Volumes, docker_configs: []):
+                         volumes: Volumes, container_configs: []):
         res = await cls.make_k8s_call(
             app.config, app.logger,
             f'/apis/apps/v1/namespaces/{app.app_id}'
@@ -642,6 +642,6 @@ class Kubernetes:
 
         await cls.create_deployment(app, service, image, container_name,
                                     start_command, shutdown_command, env,
-                                    volumes, docker_configs)
+                                    volumes, container_configs)
 
         await cls.create_service(app, service, container_name)

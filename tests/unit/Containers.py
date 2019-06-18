@@ -62,10 +62,10 @@ def test_get_container_name(patch, story, line, reusable, name):
         assert ret == f'alpine-{h}'
 
 
-def test_get_dockerconfig_name():
+def test_get_containerconfig_name():
     config = {
         'name': 'name_with_special_!!!_characters',
-        'dockerconfig': {
+        'containerconfig': {
             'auths': {
                 'registry_url': {
                     'auth': 'base64_string'
@@ -73,8 +73,8 @@ def test_get_dockerconfig_name():
             }
         }
     }
-    r = Containers.get_dockerconfig_name(config['name'],
-                                         config['dockerconfig'])
+    r = Containers.get_containerconfig_name(config['name'],
+                                            config['containerconfig'])
     assert r == 'namewithspecialchara-6673daa71fd5d0ca485a805ba56cd5ffb334a450'
 
 
@@ -282,7 +282,7 @@ async def test_start(patch, story, async_mock,
     patch.object(Containers, 'get_container_name',
                  return_value='asyncy-alpine')
 
-    patch.object(Database, 'get_docker_configs',
+    patch.object(Database, 'get_container_configs',
                  return_value=[])
 
     expected_volumes = []
@@ -309,7 +309,7 @@ async def test_start(patch, story, async_mock,
         shutdown_command=None,
         env={'alpine_only': True, 'param_1': 'hello_world'},
         volumes=expected_volumes,
-        docker_configs=[])
+        container_configs=[])
 
 
 @mark.asyncio

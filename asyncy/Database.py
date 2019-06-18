@@ -39,7 +39,7 @@ class Database:
         glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
 
     @classmethod
-    def get_docker_configs(cls, app, registry_url):
+    def get_container_configs(cls, app, registry_url):
         conn = cls.new_pg_conn(app.config)
         cur = conn.cursor(cursor_factory=RealDictCursor)
         query = f"""
@@ -48,7 +48,7 @@ class Database:
                                              (containerconfig->>'auths')::json
                                          ) registry
                                   from app_public.owner_containerconfigs)
-        select name, containerconfig dockerconfig
+        select name, containerconfig
         from containerconfigs
         where owner_uuid='{app.owner_uuid}' and registry='{registry_url}'
         """

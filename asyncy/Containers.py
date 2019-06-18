@@ -73,11 +73,11 @@ class Containers:
                                       mount_path=target))
 
         registry_url = cls.get_registry_url(image)
-        docker_configs = Database.get_docker_configs(app, registry_url)
-        for config in docker_configs:
+        container_configs = Database.get_container_configs(app, registry_url)
+        for config in container_configs:
             config.update({
-                'name': cls.get_dockerconfig_name(config['name'],
-                                                  config['dockerconfig'])
+                'name': cls.get_containerconfig_name(config['name'],
+                                                     config['containerconfig'])
             })
 
         env = {}
@@ -97,7 +97,7 @@ class Containers:
                                     start_command=start_command,
                                     shutdown_command=shutdown_command, env=env,
                                     volumes=volumes,
-                                    docker_configs=docker_configs)
+                                    container_configs=container_configs)
 
     @classmethod
     async def clean_app(cls, app):
@@ -213,9 +213,9 @@ class Containers:
         return command_parts
 
     @classmethod
-    def get_dockerconfig_name(cls, name, config):
+    def get_containerconfig_name(cls, name, config):
         simple_name = cls.get_simple_name(name)[:20]
-        h = cls.hash_dockerconfig_name(name, config)
+        h = cls.hash_containerconfig_name(name, config)
         return f'{simple_name}-{h}'
 
     @classmethod
@@ -281,7 +281,7 @@ class Containers:
         return f'{simple_name}-{h}'
 
     @classmethod
-    def hash_dockerconfig_name(cls, name, config):
+    def hash_containerconfig_name(cls, name, config):
         return hashlib.sha1(f'{name}-{ujson.dumps(config)}'
                             .encode('utf-8')).hexdigest()
 
