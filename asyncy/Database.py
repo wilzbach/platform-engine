@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from .Config import Config
+from .Release import Release
 from .enums.ReleaseState import ReleaseState
 
 
@@ -73,4 +74,9 @@ class Database:
         where app_uuid = %s;
         """
         cur.execute(query, (app_id,))
-        return cur.fetchone()
+        data = cur.fetchone()
+        return Release(data['app_uuid'], data['version'],
+                       data['environment'], data['stories'],
+                       data['maintenance'], data['app_dns'],
+                       data['state'], data['deleted'],
+                       data['owner_uuid'])

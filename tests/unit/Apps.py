@@ -170,17 +170,17 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
     patch.object(Apps, 'destroy_app', new=async_mock())
     patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = {
-        'app_uuid': app_id,
-        'version': 'version',
-        'environment': 'env',
-        'stories': None,
-        'maintenance': 'maintenance',
-        'app_dns': 'app_dns',
-        'state': 'QUEUED',
-        'deleted': 'deleted',
-        'owner_uuid': 'owner_uuid'
-    }
+    release = Release(
+        app_uuid=app_id,
+        version=1,
+        environment={},
+        stories=None,
+        maintenance=False,
+        app_dns='app_dns',
+        state='QUEUED',
+        deleted=True,
+        owner_uuid='owner_uuid'
+    )
     patch.object(Database, 'get_release_for_deployment', return_value=release)
 
     await Apps.reload_app(config, logger, app_id)
@@ -209,17 +209,17 @@ async def test_reload_app(patch, config, logger, db, async_mock,
     else:
         patch.object(Apps, 'deploy_release', new=async_mock())
 
-    release = {
-        'app_uuid': app_id,
-        'version': 'version',
-        'environment': 'env',
-        'stories': 'stories',
-        'maintenance': 'maintenance',
-        'app_dns': app_dns,
-        'state': previous_state,
-        'deleted': False,
-        'owner_uuid': 'owner_uuid'
-    }
+    release = Release(
+        app_uuid=app_id,
+        version=1,
+        environment={},
+        stories={},
+        maintenance=False,
+        app_dns=app_dns,
+        state=previous_state,
+        deleted=True,
+        owner_uuid='owner_uuid'
+    )
     patch.object(Database, 'get_release_for_deployment', return_value=release)
 
     await Apps.reload_app(config, logger, app_id)
@@ -234,8 +234,8 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     Apps.deploy_release.mock.assert_called_with(
         config, app_id, app_dns,
-        release['version'], release['environment'], release['stories'],
-        release['maintenance'], release['deleted'], release['owner_uuid'])
+        release.version, release.environment, release.stories,
+        release.maintenance, release.deleted, release.owner_uuid)
 
     if raise_exc:
         logger.error.assert_called()
@@ -245,7 +245,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     if raise_exc == asyncio_timeout_exc:
         Database.update_release_state.assert_called_with(
-            app_logger, config, 'app_id', 'version', ReleaseState.TIMED_OUT)
+            app_logger, config, 'app_id', 1, ReleaseState.TIMED_OUT)
 
 
 @mark.asyncio

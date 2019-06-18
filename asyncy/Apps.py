@@ -243,12 +243,7 @@ class Apps:
                 glogger.warn(f'Another deployment for app {app_id} is in '
                              f'progress. Will not reload.')
                 return
-            data = Database.get_release_for_deployment(config, app_id)
-            release = Release(data['app_uuid'], data['version'],
-                              data['environment'], data['stories'],
-                              data['maintenance'], data['app_dns'],
-                              data['state'], data['deleted'],
-                              data['owner_uuid'])
+            release = Database.get_release_for_deployment(config, app_id)
             if release.state == ReleaseState.FAILED.value:
                 glogger.warn(f'Cowardly refusing to deploy app '
                              f'{app_id}@{release.version} as it\'s '
