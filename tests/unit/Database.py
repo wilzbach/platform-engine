@@ -1,4 +1,4 @@
-from asyncy.Database import Database
+from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
 from asyncy.enums.ReleaseState import ReleaseState

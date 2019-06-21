@@ -11,7 +11,6 @@ from .App import App
 from .AppConfig import AppConfig, KEY_EXPOSE
 from .Config import Config
 from .Containers import Containers
-from .Database import Database
 from .DeploymentLock import DeploymentLock
 from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
@@ -19,6 +18,7 @@ from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
 from .constants.ServiceConstants import ServiceConstants
+from .db.Database import Database
 from .enums.ReleaseState import ReleaseState
 
 MAX_VOLUMES_BETA = 15

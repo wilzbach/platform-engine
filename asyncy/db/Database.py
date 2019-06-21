@@ -1,10 +1,11 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
+# -*- coding: utf-8 -*-
+from asyncy.Config import Config
+from asyncy.db.SimpleConnCursor import SimpleConnCursor
+from asyncy.entities.ContainerConfig import ContainerConfig
+from asyncy.entities.Release import Release
+from asyncy.enums.ReleaseState import ReleaseState
 
-from .Config import Config
-from .entities.ContainerConfig import ContainerConfig
-from .entities.Release import Release
-from .enums.ReleaseState import ReleaseState
+import psycopg2
 
 
 class Database:
@@ -16,38 +17,26 @@ class Database:
 
     @classmethod
     def get_all_app_uuids_for_deployment(cls, config: Config):
-        conn = cls.new_pg_conn(config)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        try:
+        with SimpleConnCursor(cls.new_pg_conn(config)) as db:
             query = 'select app_uuid uuid from releases group by app_uuid;'
-            cur.execute(query)
-            return cur.fetchall()
-        finally:
-            cur.close()
-            conn.close()
+            db.cur.execute(query)
+            return db.cur.fetchall()
 
     @classmethod
     def update_release_state(cls, glogger, config, app_id, version,
                              state: ReleaseState):
-        conn = cls.new_pg_conn(config)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        try:
+        with SimpleConnCursor(cls.new_pg_conn(config)) as db:
             query = 'update releases ' \
                     'set state = %s ' \
                     'where app_uuid = %s and id = %s;'
-            cur.execute(query, (state.value, app_id, version))
-            conn.commit()
-        finally:
-            cur.close()
-            conn.close()
+            db.cur.execute(query, (state.value, app_id, version))
+            db.conn.commit()
 
         glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
 
     @classmethod
     def get_container_configs(cls, app, registry_url):
-        conn = cls.new_pg_conn(app.config)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        try:
+        with SimpleConnCursor(cls.new_pg_conn(app.config)) as db:
             query = """
             with containerconfigs as (select name, owner_uuid, containerconfig,
                                              json_object_keys(
@@ -58,22 +47,17 @@ class Database:
             from containerconfigs
             where owner_uuid = %s and registry = %s
             """
-            cur.execute(query, (app.owner_uuid, registry_url))
-            data = cur.fetchall()
+            db.cur.execute(query, (app.owner_uuid, registry_url))
+            data = db.cur.fetchall()
             result = []
             for config in data:
                 result.append(ContainerConfig(name=config['name'],
                                               data=config['containerconfig']))
             return result
-        finally:
-            cur.close()
-            conn.close()
 
     @classmethod
     def get_release_for_deployment(cls, config, app_id):
-        conn = cls.new_pg_conn(config)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        try:
+        with SimpleConnCursor(cls.new_pg_conn(config)) as db:
             query = """
             with latest as (select app_uuid, max(id) as id
                             from releases
@@ -89,8 +73,8 @@ class Database:
                    inner join app_dns using (app_uuid)
             where app_uuid = %s;
             """
-            cur.execute(query, (app_id,))
-            data = cur.fetchone()
+            db.cur.execute(query, (app_id,))
+            data = db.cur.fetchone()
             return Release(app_uuid=data['app_uuid'], version=data['version'],
                            environment=data['environment'],
                            stories=data['stories'],
@@ -98,6 +82,3 @@ class Database:
                            app_dns=data['app_dns'],
                            state=data['state'], deleted=data['deleted'],
                            owner_uuid=data['owner_uuid'])
-        finally:
-            cur.close()
-            conn.close()
