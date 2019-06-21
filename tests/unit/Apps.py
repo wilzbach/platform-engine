@@ -10,7 +10,6 @@ from asyncy.App import App
 from asyncy.AppConfig import AppConfig
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
-from asyncy.Database import Database
 from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
     TooManyServices, TooManyVolumes
 from asyncy.GraphQLAPI import GraphQLAPI
@@ -18,6 +17,7 @@ from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
 from asyncy.Sentry import Sentry
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.db.Database import Database
 from asyncy.entities.Release import Release
 from asyncy.enums.ReleaseState import ReleaseState
 
