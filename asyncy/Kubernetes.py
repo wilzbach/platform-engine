@@ -478,6 +478,32 @@ class Kubernetes:
                     )
 
     @classmethod
+    def get_liveness_probe(cls, app, service: str):
+        """
+        livenessProbe: Indicates whether the Container is running.
+        If the liveness probe fails, the kubelet kills the Container,
+        and the Container is subjected to its restart policy.
+        If a Container does not provide a liveness probe,
+        the default state is Success.
+        """
+        omg = app.services[service][ServiceConstants.config]
+        health_check = omg.get('health', {}).get('http')
+        if health_check is None:
+            return None
+        assert health_check['method'] == 'get'
+        return {
+            'httpGet': {
+                'path': health_check['path'],
+                'port': health_check['port']
+            },
+            'initialDelaySeconds': 2,
+            'timeoutSeconds': 10,
+            'periodSeconds': 30,
+            'successThreshold': 1,
+            'failureThreshold': 1
+        }
+
+    @classmethod
     async def create_deployment(cls, app, service_name: str, image: str,
                                 container_name: str, start_command: [] or str,
                                 shutdown_command: [] or str, env: dict,
@@ -532,6 +558,8 @@ class Kubernetes:
 
         b16_service_name = base64.b16encode(service_name.encode()).decode()
 
+        liveness_probe = cls.get_liveness_probe(app, service_name)
+
         payload = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
@@ -582,6 +610,10 @@ class Kubernetes:
                 }
             }
         }
+
+        if liveness_probe is not None:
+            payload['spec']['template']['spec']['containers'][0][
+                'livenessProbe'] = liveness_probe
 
         if shutdown_command is not None:
             payload['spec']['template']['spec']['containers'][0]['lifecycle'][
