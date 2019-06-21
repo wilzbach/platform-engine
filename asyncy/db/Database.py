@@ -16,8 +16,12 @@ class Database:
         return conn
 
     @classmethod
+    def new_pg_cur(cls, config: Config) -> SimpleConnCursor:
+        return SimpleConnCursor(cls.new_pg_conn(config))
+
+    @classmethod
     def get_all_app_uuids_for_deployment(cls, config: Config):
-        with SimpleConnCursor(cls.new_pg_conn(config)) as db:
+        with cls.new_pg_cur(config) as db:
             query = 'select app_uuid uuid from releases group by app_uuid;'
             db.cur.execute(query)
             return db.cur.fetchall()
@@ -25,7 +29,7 @@ class Database:
     @classmethod
     def update_release_state(cls, glogger, config, app_id, version,
                              state: ReleaseState):
-        with SimpleConnCursor(cls.new_pg_conn(config)) as db:
+        with cls.new_pg_cur(config) as db:
             query = 'update releases ' \
                     'set state = %s ' \
                     'where app_uuid = %s and id = %s;'
@@ -36,7 +40,7 @@ class Database:
 
     @classmethod
     def get_container_configs(cls, app, registry_url):
-        with SimpleConnCursor(cls.new_pg_conn(app.config)) as db:
+        with cls.new_pg_cur(app.config) as db:
             query = """
             with containerconfigs as (select name, owner_uuid, containerconfig,
                                              json_object_keys(
@@ -57,7 +61,7 @@ class Database:
 
     @classmethod
     def get_release_for_deployment(cls, config, app_id):
-        with SimpleConnCursor(cls.new_pg_conn(config)) as db:
+        with cls.new_pg_cur(config) as db:
             query = """
             with latest as (select app_uuid, max(id) as id
                             from releases
