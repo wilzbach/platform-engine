@@ -90,8 +90,8 @@ class App:
                 message=f'Configuration for expose "{e.service_expose_name}" '
                 f'not found in service "{e.service}"')
 
-        target_path = conf.get('http', {}).get('path')
-        target_port = conf.get('http', {}).get('port')
+        target_path = Dict.find(conf, 'http.path')
+        target_port = Dict.find(conf, 'http.port')
 
         if target_path is None or target_port is None:
             raise AsyncyError(

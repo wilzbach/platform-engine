@@ -16,6 +16,7 @@ from .Exceptions import K8sError
 from .constants.ServiceConstants import ServiceConstants
 from .entities.ContainerConfig import ContainerConfig, ContainerConfigs
 from .entities.Volume import Volumes
+from .utils.Dict import Dict
 from .utils.HttpUtils import HttpUtils
 
 
@@ -348,7 +349,7 @@ class Kubernetes:
         if not inside_http:
             expose = service_config.get('expose', {})
             for name, expose_conf in expose.items():
-                expose_port = expose_conf.get('http', {}).get('port')
+                expose_port = Dict.find(expose_conf, 'http.port')
                 if expose_port is not None:
                     ports.add(expose_port)
 
@@ -470,7 +471,8 @@ class Kubernetes:
         body = json.loads(res.body, encoding='utf-8')
         for pod in body['items']:
             for container_status in pod['status'].get('containerStatuses', []):
-                is_waiting = container_status['state'].get('waiting', False)
+                is_waiting = Dict.find(container_status,
+                                       'state.waiting', False)
                 if is_waiting and is_waiting['reason'] in image_errors:
                     raise K8sError(
                         message=f'{is_waiting["reason"]} - '
@@ -487,7 +489,7 @@ class Kubernetes:
         the default state is Success.
         """
         omg = app.services[service][ServiceConstants.config]
-        health_check = omg.get('health', {}).get('http')
+        health_check = Dict.find(omg, 'health.http')
         if health_check is None:
             return None
         assert health_check['method'] == 'get'
