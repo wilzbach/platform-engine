@@ -613,13 +613,13 @@ class Kubernetes:
             }
         }
 
+        container = payload['spec']['template']['spec']['containers'][0]
+
         if liveness_probe is not None:
-            payload['spec']['template']['spec']['containers'][0][
-                'livenessProbe'] = liveness_probe
+            container['livenessProbe'] = liveness_probe
 
         if shutdown_command is not None:
-            payload['spec']['template']['spec']['containers'][0]['lifecycle'][
-                'preStop'] = {
+            container['lifecycle']['preStop'] = {
                 'exec': {
                     'command': shutdown_command
                 }
