@@ -27,14 +27,6 @@ def app(magic):
 
 
 @fixture
-def services(app, logger):
-    asset_dir = examples.__path__[0]
-
-    with open(asset_dir + '/services.json', 'r') as file:
-        return ujson.loads(file.read())
-
-
-@fixture
 def story(app, logger):
     asset_dir = examples.__path__[0]
 
