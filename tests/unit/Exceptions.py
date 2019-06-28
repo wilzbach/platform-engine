@@ -42,7 +42,7 @@ def test_exception_trace(magic, patch, story, with_root):
     story.name = 'story_name'
 
     ex = StoryscriptError(message='unknown error',
-                     story=story, line=magic(), root=root)
+                          story=story, line=magic(), root=root)
 
     # We cache the result of str(ex) because if we don't, __str__ will run
     # again, and will then throw a StopIteration exception since

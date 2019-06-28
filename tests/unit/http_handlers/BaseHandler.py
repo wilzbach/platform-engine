@@ -25,8 +25,8 @@ def test_finished(magic, logger):
     assert handler.is_not_finished() is False
 
 
-@mark.parametrize('exception', [StoryscriptError(story=MagicMock(), line={'ln': 1}),
-                                Exception()])
+@mark.parametrize('exception', [StoryscriptError(
+    story=MagicMock(), line={'ln': 1}), Exception()])
 @mark.parametrize('story_name', [None, 'super_story'])
 def test_handle_story_exc(patch, magic, logger, exception, story_name):
     handler = BaseHandler(magic(), magic(), logger=logger)
