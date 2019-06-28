@@ -55,7 +55,7 @@ class Services:
     def is_internal(cls, service, command):
         service = cls.internal_services.get(service)
         if service is not None:
-            return service.command.get(command) is not None
+            return service.commands.get(command) is not None
 
         return False
 
