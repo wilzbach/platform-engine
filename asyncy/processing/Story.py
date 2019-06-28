@@ -81,7 +81,7 @@ class Story:
                         f'Unknown method to execute: {method}'
                     )
             except BaseException as e:
-                if isinstance(e, StoryscriptError):  # Don't wrap AsyncyError.
+                if isinstance(e, StoryscriptError):  # Don't wrap StoryscriptError.
                     e.story = story  # Always set.
                     e.line = line  # Always set.
                     raise e
