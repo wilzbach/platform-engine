@@ -89,7 +89,10 @@ class InvalidKeywordUsage(StoryscriptError):
 
 class ContainerSpecNotRegisteredError(StoryscriptError):
     def __init__(self, container_name, story=None, line=None):
-        super().__init__(message=f'Service {container_name} not registered!', story=story, line=line)
+        super().__init__(
+            message=f'Service {container_name} not registered!',
+            story=story, line=line
+        )
 
 
 class ArgumentNotFoundError(StoryscriptError):
