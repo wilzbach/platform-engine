@@ -268,8 +268,11 @@ async def test_deploy_release_many_services(patch):
     for i in range(20):
         stories['services'][f'service_{i}'] = {}
 
-    await Apps.deploy_release({}, 'app_id', 'app_name', 'app_dns', 'app_version', {},
-                              stories, False, False, 'owner_uuid', 'example@example.com')
+    await Apps.deploy_release(
+        {}, 'app_id', 'app_name', 'app_dns',
+        'app_version', {}, stories, False, False,
+        'owner_uuid', 'example@example.com'
+    )
 
     TooManyServices.__init__.assert_called_with(20, 15)
     Database.update_release_state.assert_called()
@@ -292,8 +295,12 @@ async def test_deploy_release_many_apps(patch, magic):
             Apps.apps[f'app_{i}'].owner_uuid = 'owner_uuid'
             stories['services'][f'service_{i}'] = {}
 
-        await Apps.deploy_release({}, 'app_id', 'app_name', 'app_dns', 'app_version', {},
-                                  stories, False, False, 'owner_uuid', 'example@example.com')
+        await Apps.deploy_release(
+            {}, 'app_id', 'app_name',
+            'app_dns', 'app_version', {},
+            stories, False, False,
+            'owner_uuid', 'example@example.com'
+        )
 
         TooManyActiveApps.__init__.assert_called_with(20, 5)
         Database.update_release_state.assert_called()
@@ -331,8 +338,12 @@ async def test_deploy_release_many_volumes(patch, async_mock):
     patch.object(Apps, 'get_services',
                  new=async_mock(return_value=stories['services']))
 
-    await Apps.deploy_release({}, 'app_id', 'app_name', 'app_dns', 'app_version', {},
-                              stories, False, False, 'owner_uuid', 'example@example.com')
+    await Apps.deploy_release(
+        {}, 'app_id', 'app_name',
+        'app_dns', 'app_version', {},
+        stories, False, False,
+        'owner_uuid', 'example@example.com'
+    )
 
     TooManyVolumes.__init__.assert_called_with(20, 15)
     Database.update_release_state.assert_called()
@@ -381,9 +392,12 @@ async def test_deploy_release(config, magic, patch, deleted,
             app_logger, config, 'app_id', 'version', ReleaseState.DEPLOYING)
 
         App.__init__.assert_called_with(
-            'app_id', 'app_name', 'app_dns', 'version', config,
-            app_logger,
-            {'stories': True}, services, 'env', 'owner_uuid', 'example@example.com', app_config)
+            'app_id', 'app_name', 'app_dns',
+            'version', config, app_logger,
+            {'stories': True}, services,
+            'env', 'owner_uuid',
+            'example@example.com', app_config)
+
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
         if raise_exc is not None:

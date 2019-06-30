@@ -31,8 +31,9 @@ def exc(patch):
 
 @fixture
 def app(config, logger, magic):
-    return App('app_id', 'app_name', 'app_dns', logger, config,
-               magic(), magic(), magic(), {}, 'owner_uuid', 'example@example.com', magic())
+    return App('app_id', 'app_name', 'app_dns', logger, config, magic(),
+               magic(), magic(), {}, 'owner_uuid',
+               'example@example.com', magic())
 
 
 def test_add_subscription(patch, app, magic):

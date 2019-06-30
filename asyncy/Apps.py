@@ -48,7 +48,9 @@ class Apps:
     @classmethod
     async def deploy_release(cls, config, app_id, app_name, app_dns,
                              version, environment, stories,
-                             maintenance: bool, deleted: bool, owner_uuid, owner_email):
+                             maintenance: bool, deleted: bool,
+                             owner_uuid, owner_email):
+
         logger = cls.make_logger_for_app(config, app_id, version)
         logger.info(f'Deploying app {app_id}@{version}')
 
@@ -87,6 +89,7 @@ class Apps:
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
+
             volume_count = 0
             for service in services.keys():
                 omg = services[service][ServiceConstants.config]
@@ -97,8 +100,12 @@ class Apps:
 
             app_config = cls.get_app_config(raw=stories.get('yaml', {}))
 
-            app = App(app_id, app_name, app_dns, version, config, logger,
-                      stories, services, environment, owner_uuid, owner_email, app_config)
+            app = App(
+                app_id, app_name, app_dns,
+                version, config, logger,
+                stories, services, environment,
+                owner_uuid, owner_email, app_config
+            )
 
             await Containers.clean_app(app)
 
