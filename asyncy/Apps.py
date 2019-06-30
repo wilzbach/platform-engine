@@ -89,7 +89,6 @@ class Apps:
             services = await cls.get_services(
                 stories.get('yaml', {}), logger, stories)
 
-
             volume_count = 0
             for service in services.keys():
                 omg = services[service][ServiceConstants.config]
