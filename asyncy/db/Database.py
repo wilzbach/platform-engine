@@ -42,11 +42,14 @@ class Database:
     def get_container_configs(cls, app, registry_url):
         with cls.new_pg_cur(app.config) as db:
             query = """
-            with containerconfigs as (select name, owner_uuid, containerconfig,
-                                             json_object_keys(
-                                                 (containerconfig->>'auths')::json
-                                             ) registry
-                                      from app_public.owner_containerconfigs)
+            with containerconfigs as (
+            select name,
+            owner_uuid, containerconfig,
+            json_object_keys(
+                (containerconfig->>'auths')::json
+            ) registry
+            from app_public.owner_containerconfigs
+            )
             select name, containerconfig
             from containerconfigs
             where owner_uuid = %s and registry = %s
@@ -55,8 +58,10 @@ class Database:
             data = db.cur.fetchall()
             result = []
             for config in data:
-                result.append(ContainerConfig(name=config['name'],
-                                              data=config['containerconfig']))
+                result.append(ContainerConfig(
+                    name=config['name'],
+                    data=config['containerconfig'])
+                )
             return result
 
     @classmethod
@@ -81,10 +86,16 @@ class Database:
             """
             db.cur.execute(query, (app_id,))
             data = db.cur.fetchone()
-            return Release(app_uuid=data['app_uuid'], app_name=data['app_name'], version=data['version'],
-                           environment=data['environment'],
-                           stories=data['stories'],
-                           maintenance=data['maintenance'],
-                           app_dns=data['app_dns'],
-                           state=data['state'], deleted=data['deleted'],
-                           owner_uuid=data['owner_uuid'], owner_email=data['owner_email'])
+            return Release(
+                app_uuid=data['app_uuid'],
+                app_name=data['app_name'],
+                version=data['version'],
+                environment=data['environment'],
+                stories=data['stories'],
+                maintenance=data['maintenance'],
+                app_dns=data['app_dns'],
+                state=data['state'],
+                deleted=data['deleted'],
+                owner_uuid=data['owner_uuid'],
+                owner_email=data['owner_email']
+            )
