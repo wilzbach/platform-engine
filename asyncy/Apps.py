@@ -46,9 +46,9 @@ class Apps:
         return AppConfig(raw)
 
     @classmethod
-    async def deploy_release(cls, config, app_id, app_dns,
+    async def deploy_release(cls, config, app_id, app_name, app_dns,
                              version, environment, stories,
-                             maintenance: bool, deleted: bool, owner_uuid):
+                             maintenance: bool, deleted: bool, owner_uuid, owner_email):
         logger = cls.make_logger_for_app(config, app_id, version)
         logger.info(f'Deploying app {app_id}@{version}')
 
@@ -97,8 +97,8 @@ class Apps:
 
             app_config = cls.get_app_config(raw=stories.get('yaml', {}))
 
-            app = App(app_id, app_dns, version, config, logger,
-                      stories, services, environment, owner_uuid, app_config)
+            app = App(app_id, app_name, app_dns, version, config, logger,
+                      stories, services, environment, owner_uuid, owner_email, app_config)
 
             await Containers.clean_app(app)
 
@@ -256,16 +256,17 @@ class Apps:
                 return
             await asyncio.wait_for(
                 cls.deploy_release(
-                    config, app_id, release.app_dns, release.version,
+                    config, app_id, release.app_name,
+                    release.app_dns, release.version,
                     release.environment, release.stories,
                     release.maintenance, release.deleted,
-                    release.owner_uuid),
+                    release.owner_uuid, release.owner_email),
                 timeout=5 * 60)
             glogger.info(f'Reloaded app {app_id}@{release.version}')
         except BaseException as e:
             glogger.error(
                 f'Failed to reload app {app_id}', exc=e)
-            Sentry.capture_exc(e)
+            Sentry.capture_exc(exc_info=e)
             if isinstance(e, asyncio.TimeoutError):
                 logger = cls.make_logger_for_app(config, app_id,
                                                  release.version)

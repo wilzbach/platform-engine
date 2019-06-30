@@ -166,12 +166,14 @@ async def test_reload_app_ongoing_deployment(config, logger, patch):
 @mark.asyncio
 async def test_reload_app_no_story(patch, config, logger, db, async_mock):
     app_id = 'app_id'
+    app_name = 'app_name'
 
     patch.object(Apps, 'destroy_app', new=async_mock())
     patch.object(Apps, 'deploy_release', new=async_mock())
 
     release = Release(
         app_uuid=app_id,
+        app_name=app_name,
         version=1,
         environment={},
         stories=None,
@@ -179,7 +181,8 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
         app_dns='app_dns',
         state='QUEUED',
         deleted=True,
-        owner_uuid='owner_uuid'
+        owner_uuid='owner_uuid',
+        owner_email='owner_email'
     )
     patch.object(Database, 'get_release_for_deployment', return_value=release)
 
@@ -195,6 +198,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
                           magic, raise_exc, previous_state):
     old_app = magic()
     app_id = 'app_id'
+    app_name = 'app_name'
     app_dns = 'app_dns'
     Apps.apps = {app_id: old_app}
     patch.object(Sentry, 'capture_exc')
@@ -211,6 +215,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     release = Release(
         app_uuid=app_id,
+        app_name=app_name,
         version=1,
         environment={},
         stories={},
@@ -218,7 +223,8 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         app_dns=app_dns,
         state=previous_state,
         deleted=True,
-        owner_uuid='owner_uuid'
+        owner_uuid='owner_uuid',
+        owner_email='example@example.com'
     )
     patch.object(Database, 'get_release_for_deployment', return_value=release)
 
@@ -233,9 +239,11 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         return
 
     Apps.deploy_release.mock.assert_called_with(
-        config, app_id, app_dns,
+        config, app_id, app_name, app_dns,
         release.version, release.environment, release.stories,
-        release.maintenance, release.deleted, release.owner_uuid)
+        release.maintenance, release.deleted,
+        release.owner_uuid, release.owner_email
+    )
 
     if raise_exc:
         logger.error.assert_called()
@@ -253,15 +261,14 @@ async def test_deploy_release_many_services(patch):
     patch.object(Apps, 'make_logger_for_app')
     patch.object(Database, 'update_release_state')
     patch.init(TooManyServices)
-    patch.object(TooManyServices, '__str__', return_value='too_many_services')
 
     stories = {'services': {}}
 
     for i in range(20):
         stories['services'][f'service_{i}'] = {}
 
-    await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
-                              stories, False, False, 'owner_uuid')
+    await Apps.deploy_release({}, 'app_id', 'app_name', 'app_dns', 'app_version', {},
+                              stories, False, False, 'owner_uuid', 'example@example.com')
 
     TooManyServices.__init__.assert_called_with(20, 15)
     Database.update_release_state.assert_called()
@@ -272,7 +279,6 @@ async def test_deploy_release_many_apps(patch, magic):
     patch.object(Apps, 'make_logger_for_app')
     patch.object(Database, 'update_release_state')
     patch.init(TooManyActiveApps)
-    patch.object(TooManyActiveApps, '__str__', return_value='too_many')
 
     stories = {'services': {}}
 
@@ -284,8 +290,8 @@ async def test_deploy_release_many_apps(patch, magic):
             Apps.apps[f'app_{i}'].owner_uuid = 'owner_uuid'
             stories['services'][f'service_{i}'] = {}
 
-        await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
-                                  stories, False, False, 'owner_uuid')
+        await Apps.deploy_release({}, 'app_id', 'app_name', 'app_dns', 'app_version', {},
+                                  stories, False, False, 'owner_uuid', 'example@example.com')
 
         TooManyActiveApps.__init__.assert_called_with(20, 5)
         Database.update_release_state.assert_called()
@@ -323,8 +329,8 @@ async def test_deploy_release_many_volumes(patch, async_mock):
     patch.object(Apps, 'get_services',
                  new=async_mock(return_value=stories['services']))
 
-    await Apps.deploy_release({}, 'app_id', 'app_dns', 'app_version', {},
-                              stories, False, False, 'owner_uuid')
+    await Apps.deploy_release({}, 'app_id', 'app_name', 'app_dns', 'app_version', {},
+                              stories, False, False, 'owner_uuid', 'example@example.com')
 
     TooManyVolumes.__init__.assert_called_with(20, 15)
     Database.update_release_state.assert_called()
@@ -356,8 +362,10 @@ async def test_deploy_release(config, magic, patch, deleted,
         patch.object(App, 'bootstrap', new=async_mock())
 
     await Apps.deploy_release(
-        config, 'app_id', 'app_dns', 'version', 'env',
-        {'stories': True}, maintenance, deleted, 'owner_uuid')
+        config, 'app_id', 'app_name', 'app_dns', 'version', 'env',
+        {'stories': True}, maintenance, deleted,
+        'owner_uuid', 'example@example.com'
+    )
 
     if maintenance:
         assert Database.update_release_state.call_count == 0
@@ -373,7 +381,7 @@ async def test_deploy_release(config, magic, patch, deleted,
         App.__init__.assert_called_with(
             'app_id', 'app_dns', 'version', config,
             app_logger,
-            {'stories': True}, services, 'env', 'owner_uuid', app_config)
+            {'stories': True}, services, 'env', 'owner_uuid', 'example@example.com', app_config)
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
         if raise_exc is not None:
