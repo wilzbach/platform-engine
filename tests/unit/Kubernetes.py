@@ -635,7 +635,7 @@ async def test_create_deployment(patch, async_mock, story):
         'timeoutSeconds': 30,
         'periodSeconds': 30,
         'successThreshold': 1,
-        'failureThreshold': 1
+        'failureThreshold': 5
     }
 
     patch.object(Kubernetes, 'remove_volume', new=async_mock())
