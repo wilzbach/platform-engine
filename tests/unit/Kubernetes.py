@@ -929,7 +929,7 @@ async def test_check_for_image_errors(patch, app, async_mock):
             'port': 8000
         },
         'initialDelaySeconds': 10,
-        'timeoutSeconds': 10,
+        'timeoutSeconds': 30,
         'periodSeconds': 30,
         'successThreshold': 1,
         'failureThreshold': 5
