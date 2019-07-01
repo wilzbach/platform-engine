@@ -10,14 +10,14 @@ from asyncy.App import App
 from asyncy.AppConfig import AppConfig
 from asyncy.Apps import Apps
 from asyncy.Containers import Containers
-from asyncy.Database import Database
-from asyncy.Exceptions import AsyncyError, TooManyActiveApps, \
+from asyncy.Exceptions import StoryscriptError, TooManyActiveApps, \
     TooManyServices, TooManyVolumes
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
 from asyncy.Sentry import Sentry
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.db.Database import Database
 from asyncy.entities.Release import Release
 from asyncy.enums.ReleaseState import ReleaseState
 
@@ -43,7 +43,7 @@ def asyncio_timeout_exc():
 
 def asyncy_exc():
     def foo(*args, **kwargs):
-        raise AsyncyError()
+        raise StoryscriptError()
 
     return foo
 
@@ -253,6 +253,7 @@ async def test_deploy_release_many_services(patch):
     patch.object(Apps, 'make_logger_for_app')
     patch.object(Database, 'update_release_state')
     patch.init(TooManyServices)
+    patch.object(TooManyServices, '__str__', return_value='too_many_services')
 
     stories = {'services': {}}
 
@@ -271,6 +272,7 @@ async def test_deploy_release_many_apps(patch, magic):
     patch.object(Apps, 'make_logger_for_app')
     patch.object(Database, 'update_release_state')
     patch.init(TooManyActiveApps)
+    patch.object(TooManyActiveApps, '__str__', return_value='too_many')
 
     stories = {'services': {}}
 
@@ -304,6 +306,7 @@ async def test_deploy_release_many_volumes(patch, async_mock):
     patch.object(Apps, 'make_logger_for_app')
     patch.object(Database, 'update_release_state')
     patch.init(TooManyVolumes)
+    patch.object(TooManyVolumes, '__str__', return_value='too_many_vols')
 
     stories = {'services': {}}
 

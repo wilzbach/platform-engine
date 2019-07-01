@@ -5,13 +5,13 @@ import re
 import ujson
 
 from .AppConfig import Expose
-from .Database import Database
 from .Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from .Kubernetes import Kubernetes
 from .Types import StreamingService
 from .constants.LineConstants import LineConstants
 from .constants.ServiceConstants import ServiceConstants
+from .db.Database import Database
 from .entities.ContainerConfig import ContainerConfig
 from .entities.Volume import Volume
 from .utils import Dict
@@ -181,7 +181,9 @@ class Containers:
 
         if spec is None:
             raise ContainerSpecNotRegisteredError(
-                container_name=container_name
+                container_name=container_name,
+                story=story,
+                line=line
             )
 
         args = spec[ServiceConstants.config]['actions'][command]\

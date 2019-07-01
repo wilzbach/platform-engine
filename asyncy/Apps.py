@@ -11,14 +11,14 @@ from .App import App
 from .AppConfig import AppConfig, KEY_EXPOSE
 from .Config import Config
 from .Containers import Containers
-from .Database import Database
 from .DeploymentLock import DeploymentLock
-from .Exceptions import AsyncyError, TooManyActiveApps, TooManyServices, \
+from .Exceptions import StoryscriptError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
 from .constants.ServiceConstants import ServiceConstants
+from .db.Database import Database
 from .enums.ReleaseState import ReleaseState
 from .utils.Dict import Dict
 
@@ -114,7 +114,7 @@ class Apps:
         except BaseException as e:
             Database.update_release_state(logger, config, app_id, version,
                                           ReleaseState.FAILED)
-            if isinstance(e, AsyncyError):
+            if isinstance(e, StoryscriptError):
                 logger.error(str(e))
             else:
                 logger.error(f'Failed to bootstrap app ({e})', exc=e)

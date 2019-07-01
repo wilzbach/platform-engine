@@ -2,8 +2,8 @@
 import time
 
 from .. import Metrics
-from ..Exceptions import AsyncyError
-from ..Exceptions import AsyncyRuntimeError
+from ..Exceptions import StoryscriptError
+from ..Exceptions import StoryscriptRuntimeError
 from ..Stories import Stories
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineSentinels import LineSentinels
@@ -34,7 +34,7 @@ class Story:
 
             # Sentinels are not allowed to escape from here.
             if LineSentinels.is_sentinel(result):
-                raise AsyncyRuntimeError(
+                raise StoryscriptRuntimeError(
                     message=f'A sentinel has escaped ({result})!',
                     story=story, line=story.line(line_number))
 
@@ -51,42 +51,45 @@ class Story:
         :return: Returns the next line number to be executed
         (return value from Lexicon), or None if there is none.
         """
-        line = story.line(line_number)
+        line: dict = story.line(line_number)
         story.start_line(line_number)
-        try:
-            method = line['method']
-            if method == 'if' or method == 'else' or method == 'elif':
-                return await Lexicon.if_condition(logger, story, line)
-            elif method == 'for':
-                return await Lexicon.for_loop(logger, story, line)
-            elif method == 'execute':
-                return await Lexicon.execute(logger, story, line)
-            elif method == 'set' or method == 'expression' \
-                    or method == 'mutation':
-                return await Lexicon.set(logger, story, line)
-            elif method == 'call':
-                return await Lexicon.call(logger, story, line)
-            elif method == 'function':
-                return await Lexicon.function(logger, story, line)
-            elif method == 'when':
-                return await Lexicon.when(logger, story, line)
-            elif method == 'return':
-                return await Lexicon.ret(logger, story, line)
-            elif method == 'break':
-                return await Lexicon.break_(logger, story, line)
-            else:
-                raise NotImplementedError(
-                    f'Unknown method to execute: {method}'
-                )
-        except BaseException as e:
-            if isinstance(e, AsyncyError):  # Don't wrap AsyncyError.
-                e.story = story  # Always set.
-                e.line = line  # Always set.
-                raise e
 
-            logger.error(f'Unhandled story execution error: {str(e)}', e)
-            raise AsyncyError(message='Failed to execute line',
-                              story=story, line=line)
+        with story.new_frame(line_number):
+            try:
+                method = line['method']
+                if method == 'if' or method == 'else' or method == 'elif':
+                    return await Lexicon.if_condition(logger, story, line)
+                elif method == 'for':
+                    return await Lexicon.for_loop(logger, story, line)
+                elif method == 'execute':
+                    return await Lexicon.execute(logger, story, line)
+                elif method == 'set' or method == 'expression' \
+                        or method == 'mutation':
+                    return await Lexicon.set(logger, story, line)
+                elif method == 'call':
+                    return await Lexicon.call(logger, story, line)
+                elif method == 'function':
+                    return await Lexicon.function(logger, story, line)
+                elif method == 'when':
+                    return await Lexicon.when(logger, story, line)
+                elif method == 'return':
+                    return await Lexicon.ret(logger, story, line)
+                elif method == 'break':
+                    return await Lexicon.break_(logger, story, line)
+                else:
+                    raise NotImplementedError(
+                        f'Unknown method to execute: {method}'
+                    )
+            except BaseException as e:
+                # Don't wrap StoryscriptError.
+                if isinstance(e, StoryscriptError):
+                    e.story = story  # Always set.
+                    e.line = line  # Always set.
+                    raise e
+
+                raise StoryscriptRuntimeError(
+                    message='Failed to execute line',
+                    story=story, line=line, root=e)
 
     @staticmethod
     async def execute_block(logger, story, parent_line: dict):
@@ -138,9 +141,10 @@ class Story:
             story.prepare(context)
 
             if function_name:
-                raise AsyncyRuntimeError('No longer supported')
+                raise StoryscriptRuntimeError('No longer supported')
             elif block:
-                await cls.execute_block(logger, story, story.line(block))
+                with story.new_frame(block):
+                    await cls.execute_block(logger, story, story.line(block))
             else:
                 await cls.execute(logger, story)
 
