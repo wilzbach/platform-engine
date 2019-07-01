@@ -632,7 +632,7 @@ async def test_create_deployment(patch, async_mock, story):
             'port': 8000
         },
         'initialDelaySeconds': 2,
-        'timeoutSeconds': 10,
+        'timeoutSeconds': 30,
         'periodSeconds': 30,
         'successThreshold': 1,
         'failureThreshold': 1
