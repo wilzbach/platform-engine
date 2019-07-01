@@ -932,7 +932,7 @@ async def test_check_for_image_errors(patch, app, async_mock):
         'timeoutSeconds': 10,
         'periodSeconds': 30,
         'successThreshold': 1,
-        'failureThreshold': 1
+        'failureThreshold': 5
     }
 }])
 def test_get_liveness_probe(app, service):
