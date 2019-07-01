@@ -4,12 +4,12 @@ from unittest.mock import MagicMock
 
 from asyncy.AppConfig import Expose
 from asyncy.Containers import Containers
-from asyncy.Database import Database
 from asyncy.Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Volume import Volume
 from asyncy.processing import Story

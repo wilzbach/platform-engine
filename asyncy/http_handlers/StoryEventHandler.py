@@ -14,6 +14,7 @@ from ..Apps import Apps
 from ..constants import ContextConstants
 from ..entities.Multipart import FileFormField
 from ..processing import Story
+from ..utils.Dict import Dict
 
 CLOUD_EVENTS_FILE_KEY = '_ce_payload'
 
@@ -40,10 +41,15 @@ class StoryEventHandler(BaseHandler):
                               content_type=tf.content_type)
             event_body.setdefault('data', {})[key] = f
 
-        await Story.run(app, app.logger,
-                        story_name=story_name,
-                        context=context,
-                        block=block)
+        try:
+            await Story.run(app, app.logger,
+                            story_name=story_name,
+                            context=context,
+                            block=block)
+            return True
+        except BaseException as e:
+            app.logger.error('Failed to execute story', e)
+            return False
 
     async def post(self):
         start = time.time()
@@ -56,7 +62,12 @@ class StoryEventHandler(BaseHandler):
             self.logger.info(f'Running story for {app_id}: '
                              f'{story_name} @ {block} for '
                              f'event {event_body}')
-            await self.run_story(app_id, story_name, block, event_body)
+            success = await self.run_story(app_id, story_name, block,
+                                           event_body)
+
+            if not success:
+                self.set_status(500)
+                self.finish()
 
             if not self.is_finished():
                 self.set_status(200)
@@ -94,7 +105,7 @@ class StoryEventHandler(BaseHandler):
 
         if payload.get('eventType') == 'http_request' \
                 and payload.get('source') == 'gateway':
-            headers = payload.get('data', {}).get('headers', None)
+            headers = Dict.find(payload, 'data.headers')
             if headers is not None:
                 headers = CaseInsensitiveDict(data=headers)
                 payload['data']['headers'] = headers

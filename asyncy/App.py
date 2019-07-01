@@ -10,7 +10,7 @@ from tornado.httpclient import AsyncHTTPClient
 from .AppConfig import AppConfig, Expose
 from .Config import Config
 from .Containers import Containers
-from .Exceptions import AsyncyError
+from .Exceptions import StoryscriptError
 from .Logger import Logger
 from .Stories import Stories
 from .Types import StreamingService
@@ -86,15 +86,15 @@ class App:
                          f'.{ServiceConstants.config}'
                          f'.expose.{e.service_expose_name}')
         if conf is None:
-            raise AsyncyError(
+            raise StoryscriptError(
                 message=f'Configuration for expose "{e.service_expose_name}" '
                 f'not found in service "{e.service}"')
 
-        target_path = conf.get('http', {}).get('path')
-        target_port = conf.get('http', {}).get('port')
+        target_path = Dict.find(conf, 'http.path')
+        target_port = Dict.find(conf, 'http.port')
 
         if target_path is None or target_port is None:
-            raise AsyncyError(
+            raise StoryscriptError(
                 message=f'http.path or http.port is null '
                 f'for expose {e.service}/{e.service_expose_name}')
 
@@ -150,11 +150,7 @@ class App:
         register with the gateway, and queue cron jobs.
         """
         for story_name in self.entrypoint:
-            try:
-                await Story.run(self, self.logger, story_name)
-            except Exception as e:
-                self.logger.error('Failed to bootstrap story', exc=e)
-                raise e
+            await Story.run(self, self.logger, story_name)
 
     def add_subscription(self, sub_id: str,
                          streaming_service: StreamingService,

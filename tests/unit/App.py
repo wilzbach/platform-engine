@@ -6,7 +6,7 @@ from collections import deque
 from asyncy.App import App
 from asyncy.AppConfig import Expose
 from asyncy.Containers import Containers
-from asyncy.Exceptions import AsyncyError
+from asyncy.Exceptions import StoryscriptError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Types import StreamingService
 from asyncy.constants.ServiceConstants import ServiceConstants
@@ -291,7 +291,7 @@ async def test_expose_service(patch, app, async_mock, no_config, no_http_path):
                http_path='/expose_external_path')
 
     if no_config or no_http_path:
-        with pytest.raises(AsyncyError):
+        with pytest.raises(StoryscriptError):
             await app._expose_service(e)
     else:
         await app._expose_service(e)
@@ -332,8 +332,6 @@ async def test_app_run_stories_exc(patch, app, async_mock, exc):
 
     with pytest.raises(Exception):
         await app.run_stories()
-
-    app.logger.error.assert_called_once()
 
 
 @mark.asyncio
