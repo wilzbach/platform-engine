@@ -499,7 +499,7 @@ class Kubernetes:
                 'port': health_check['port']
             },
             'initialDelaySeconds': 10,
-            'timeoutSeconds': 10,
+            'timeoutSeconds': 30,
             'periodSeconds': 30,
             'successThreshold': 1,
             'failureThreshold': 1
