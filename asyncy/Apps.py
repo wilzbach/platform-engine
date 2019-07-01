@@ -20,6 +20,7 @@ from .Sentry import Sentry
 from .constants.ServiceConstants import ServiceConstants
 from .db.Database import Database
 from .enums.ReleaseState import ReleaseState
+from .utils.Dict import Dict
 
 MAX_VOLUMES_BETA = 15
 MAX_SERVICES_BETA = 15
@@ -173,7 +174,7 @@ class Apps:
             all_services.append(expose_conf['service'])
 
         for service in all_services:
-            conf = asyncy_yaml.get('services', {}).get(service, {})
+            conf = Dict.find(asyncy_yaml, f'services.{service}', {})
             # query the Hub for the OMG
             tag = conf.get('tag', 'latest')
 
