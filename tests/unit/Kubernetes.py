@@ -631,7 +631,7 @@ async def test_create_deployment(patch, async_mock, story):
             'path': '/healthz',
             'port': 8000
         },
-        'initialDelaySeconds': 2,
+        'initialDelaySeconds': 10,
         'timeoutSeconds': 30,
         'periodSeconds': 30,
         'successThreshold': 1,
