@@ -502,7 +502,7 @@ class Kubernetes:
             'timeoutSeconds': 30,
             'periodSeconds': 30,
             'successThreshold': 1,
-            'failureThreshold': 1
+            'failureThreshold': 5
         }
 
     @classmethod
