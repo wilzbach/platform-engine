@@ -7,7 +7,7 @@ import threading
 
 import psycopg2
 
-from .App import App
+from .App import App, AppData
 from .AppConfig import AppConfig, KEY_EXPOSE
 from .Config import Config
 from .Containers import Containers
@@ -101,10 +101,20 @@ class Apps:
             app_config = cls.get_app_config(raw=stories.get('yaml', {}))
 
             app = App(
-                app_id, app_name, app_dns,
-                version, config, logger,
-                stories, services, environment,
-                owner_uuid, owner_email, app_config
+                app_data=AppData(
+                    app_id=app_id,
+                    app_name=app_name,
+                    app_dns=app_dns,
+                    version=version,
+                    config=config,
+                    logger=logger,
+                    stories=stories,
+                    services=services,
+                    environment=environment,
+                    owner_uuid=owner_uuid,
+                    owner_email=owner_email,
+                    app_config=app_config
+                )
             )
 
             await Containers.clean_app(app)
