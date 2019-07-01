@@ -492,7 +492,7 @@ class Kubernetes:
         health_check = Dict.find(omg, 'health.http')
         if health_check is None:
             return None
-        assert health_check['method'] == 'get'
+        assert health_check.get('method', 'get') == 'get'
         return {
             'httpGet': {
                 'path': health_check['path'],
