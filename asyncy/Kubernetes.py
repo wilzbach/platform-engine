@@ -498,7 +498,7 @@ class Kubernetes:
                 'path': health_check['path'],
                 'port': health_check['port']
             },
-            'initialDelaySeconds': 2,
+            'initialDelaySeconds': 10,
             'timeoutSeconds': 10,
             'periodSeconds': 30,
             'successThreshold': 1,
