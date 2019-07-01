@@ -928,7 +928,7 @@ async def test_check_for_image_errors(patch, app, async_mock):
             'path': '/healthz',
             'port': 8000
         },
-        'initialDelaySeconds': 2,
+        'initialDelaySeconds': 10,
         'timeoutSeconds': 10,
         'periodSeconds': 30,
         'successThreshold': 1,
