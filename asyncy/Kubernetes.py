@@ -568,7 +568,8 @@ class Kubernetes:
 
         liveness_probe = cls.get_liveness_probe(app, service_name)
 
-        limits = Database.get_service_limits(app.config, service_name)
+        tag = image.split(':')[-1]
+        limits = Database.get_service_limits(app.config, service_name, tag)
 
         payload = {
             'apiVersion': 'apps/v1',
