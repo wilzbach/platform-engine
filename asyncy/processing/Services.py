@@ -444,8 +444,9 @@ class Services:
                         story=story, line=line)
 
                 expected_service_output = command_conf.get('output')
-                ServiceOutputValidator.raise_if_invalid(
-                    expected_service_output, body, chain)
+                if expected_service_output is not None:
+                    ServiceOutputValidator.raise_if_invalid(
+                        expected_service_output, body, chain)
                 return body
             else:
                 return cls.parse_output(command_conf, response.body,
