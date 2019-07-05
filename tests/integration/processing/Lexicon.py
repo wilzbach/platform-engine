@@ -1055,11 +1055,16 @@ async def test_resolve_expressions(suite: TestSuite, logger):
     ),
     TestSuite(
         preparation_lines='i = null\n'
-                          'success = true\n'
-                          'if !i\n'
-                          '    success = false',
+                          'status = 0\n',
         cases=[
-            TestCase(assertion=ContextAssertion(key='success', expected=False))
+            TestCase(append='if i == null\n'
+                            '    status = 1',
+                     assertion=ContextAssertion(key='status',
+                                                expected=1)),
+            TestCase(append='if !(i == null)\n'
+                            '    status = 2',
+                     assertion=ContextAssertion(key='status',
+                                                expected=0)),
         ]
     ),
 ])
@@ -1081,16 +1086,8 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
                      assertion=ContextAssertion(key='a', expected=2.)),
             TestCase(append='a = 2.5 as int',
                      assertion=ContextAssertion(key='a', expected=2)),
-            TestCase(append='a = 2 as boolean',
-                     assertion=ContextAssertion(key='a', expected=True)),
             TestCase(append='a = 2 as string',
                      assertion=ContextAssertion(key='a', expected='2')),
-            TestCase(append='a = [1, 2] as boolean',
-                     assertion=ContextAssertion(key='a', expected=True)),
-            TestCase(append='a = [] as boolean',
-                     assertion=ContextAssertion(key='a', expected=False)),
-            TestCase(append='a = 2 as boolean',
-                     assertion=ContextAssertion(key='a', expected=True)),
             TestCase(append='a = {2: "42"} as Map[float,float]',
                      assertion=ContextAssertion(key='a', expected={2.: 42.})),
             TestCase(append='a = "foo" as regex',
