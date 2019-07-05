@@ -464,7 +464,9 @@ class Services:
     def parse_output(cls, command_conf: dict, raw_output, story,
                      line, content_type: str):
         output = command_conf.get('output', {})
-        t = output.get('type')
+        if output is None:
+            return raw_output
+        t = output.get('type', None)
         if t is None or t == 'any':
             return raw_output  # We don't know what it is, return raw bytes.
 

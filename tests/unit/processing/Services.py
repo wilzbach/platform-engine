@@ -12,6 +12,7 @@ from asyncy.constants import ContextConstants
 from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.entities.Multipart import FileFormField, FormField
+from asyncy.omg.ServiceOutputValidator import ServiceOutputValidator
 from asyncy.processing.Services import Command, Event, \
     Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
@@ -257,9 +258,16 @@ def test_raise_for_type_mismatch(story, typ, val):
 @mark.parametrize('location', ['requestBody', 'query', 'path',
                                'invalid_loc', 'formBody', None])
 @mark.parametrize('method', ['POST', 'GET'])
+@mark.parametrize('service_output', [{
+    'properties': {
+        'foo': {
+            'type': 'string'
+        }
+    }
+}, None])
 @mark.asyncio
 async def test_services_execute_http(patch, story, async_mock,
-                                     location, method):
+                                     location, method, service_output):
     if location == 'formBody' and method == 'GET':
         return  # Invalid case.
 
@@ -268,6 +276,8 @@ async def test_services_execute_http(patch, story, async_mock,
                  new=async_mock(return_value='container_host'))
 
     patch.object(uuid, 'uuid4')
+
+    patch.object(ServiceOutputValidator, 'raise_if_invalid')
 
     command_conf = {
         'http': {
@@ -279,15 +289,11 @@ async def test_services_execute_http(patch, story, async_mock,
             'foo': {
                 'in': location
             }
-        },
-        'output': {
-            'properties': {
-                'foo': {
-                    'type': 'string'
-                }
-            }
         }
     }
+
+    if service_output is not None:
+        command_conf['output'] = service_output
 
     if location is None:
         del command_conf['arguments']
@@ -360,6 +366,12 @@ async def test_services_execute_http(patch, story, async_mock,
     else:
         HttpUtils.fetch_with_retry.mock.assert_called_with(
             3, story.logger, expected_url, client, expected_kwargs)
+
+    if service_output is not None:
+        ServiceOutputValidator.raise_if_invalid.assert_called_with(
+            command_conf['output'], ret, chain)
+    else:
+        ServiceOutputValidator.raise_if_invalid.assert_not_called()
 
     # Additionally, test for other scenarios.
     response = HTTPResponse(HTTPRequest(url=expected_url), 200,
