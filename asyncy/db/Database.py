@@ -4,8 +4,7 @@ from asyncy.db.SimpleConnCursor import SimpleConnCursor
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
 from asyncy.enums.ReleaseState import ReleaseState
-
-import numpy as np
+from asyncy.utils import Stats
 
 import psycopg2
 from psycopg2.extras import execute_values
@@ -194,10 +193,10 @@ class Database:
                 }
             else:
                 limits = {
-                    'cpu': 1.25 * np.percentile(res['cpu_units'], 95),
+                    'cpu': 1.25 * Stats.percentile(res['cpu_units'], 0.95),
                     'memory': min(
                         209715000,  # 200Mi
-                        1.25 * np.percentile(res['memory_bytes'], 95)
+                        1.25 * Stats.percentile(res['memory_bytes'], 0.95)
                     )
                 }
             return limits
