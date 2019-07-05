@@ -418,8 +418,8 @@ def test_parse_output(output_type, story):
         actual_input = f'true'
         expected_output = True
     elif output_type is None:
-        actual_input = b'empty'
-        expected_output = b'empty'
+        actual_input = None
+        expected_output = None
     elif output_type == 'any':
         actual_input = b'empty'
         expected_output = b'empty'

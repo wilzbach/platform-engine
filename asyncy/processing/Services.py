@@ -463,7 +463,7 @@ class Services:
     @classmethod
     def parse_output(cls, command_conf: dict, raw_output, story,
                      line, content_type: str):
-        output = command_conf.get('output', {})
+        output = command_conf.get('output', None)
         if output is None:
             return raw_output
         t = output.get('type', None)
