@@ -1,47 +1,53 @@
 # -*- coding: utf-8 -*-
+import asyncpg
+import json
+
 from asyncy.Config import Config
-from asyncy.db.SimpleConnCursor import SimpleConnCursor
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
 from asyncy.enums.ReleaseState import ReleaseState
+
 
 import numpy as np
 
 import psycopg2
 import psycopg2.extras
 
-
+_pg_pool = None
 class Database:
 
     @classmethod
-    def new_pg_conn(cls, config: Config):
-        conn = psycopg2.connect(config.POSTGRES)
-        return conn
+    async def pg_conn(cls, config: Config):
+        """Create a Connection Pool."""
+        global _pg_pool
+        if not _pg_pool:
+            _pg_pool = await asyncpg.create_pool(dsn=config.POSTGRES, min_size=5, max_size=15,
+                                                 max_queries=50000, max_inactive_connection_lifetime=900.0)
+        # Take a connection from the pool.
+        conn = await _pg_pool.acquire()
+
+        return await apply_codecs(conn)
 
     @classmethod
-    def new_pg_cur(cls, config: Config) -> SimpleConnCursor:
-        return SimpleConnCursor(cls.new_pg_conn(config))
+    async def get_all_app_uuids_for_deployment(cls, config: Config):
+        conn = await cls.pg_conn(config)
+        stmt = await conn.prepare("select app_uuid uuid from releases group by app_uuid;")
+        return await stmt.fetch()
 
     @classmethod
-    def get_all_app_uuids_for_deployment(cls, config: Config):
-        with cls.new_pg_cur(config) as db:
-            query = 'select app_uuid uuid from releases group by app_uuid;'
-            db.cur.execute(query)
-            return db.cur.fetchall()
+    async def update_release_state(cls, glogger, config, app_id, version,
+                                   state: ReleaseState):
+        conn = await cls.pg_conn(config)
 
-    @classmethod
-    def update_release_state(cls, glogger, config, app_id, version,
-                             state: ReleaseState):
-        with cls.new_pg_cur(config) as db:
-            query = 'update releases ' \
-                    'set state = %s ' \
-                    'where app_uuid = %s and id = %s;'
-            db.cur.execute(query, (state.value, app_id, version))
-            db.conn.commit()
+        async with conn.transaction():
+            result = await conn.execute('''\
+                update releases 
+                set state = $1
+                where app_uuid = $2 and id = $3;
+            ''', state.value, app_id, version)
+            glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
+            return result
 
-        glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
-
-    @classmethod
     def get_container_configs(cls, app, registry_url):
         with cls.new_pg_cur(app.config) as db:
             query = """
@@ -68,42 +74,62 @@ class Database:
             return result
 
     @classmethod
-    def get_release_for_deployment(cls, config, app_id):
-        with cls.new_pg_cur(config) as db:
-            query = """
-            with latest as (select app_uuid, max(id) as id
-                            from releases
-                            where state != 'NO_DEPLOY'::release_state
-                            group by app_uuid)
-            select app_uuid, id as version, config environment,
-                   payload stories, apps.name as app_name,
-                   maintenance, always_pull_images,
-                   hostname app_dns, state, deleted,
-                   apps.owner_uuid, owner_emails.email as owner_email
-            from latest
-                   inner join releases using (app_uuid, id)
-                   inner join apps on (latest.app_uuid = apps.uuid)
-                   inner join app_dns using (app_uuid)
-                   left join app_public.owner_emails on
-                    (apps.owner_uuid = owner_emails.owner_uuid)
-            where app_uuid = %s;
-            """
-            db.cur.execute(query, (app_id,))
-            data = db.cur.fetchone()
-            return Release(
-                app_uuid=data['app_uuid'],
-                app_name=data['app_name'],
-                version=data['version'],
-                environment=data['environment'],
-                stories=data['stories'],
-                maintenance=data['maintenance'],
-                always_pull_images=data['always_pull_images'],
-                app_dns=data['app_dns'],
-                state=data['state'],
-                deleted=data['deleted'],
-                owner_uuid=data['owner_uuid'],
-                owner_email=data['owner_email']
-            )
+    async def get_release_for_deployment(cls, config, app_id):
+        conn = await cls.pg_conn(config)
+        query = """
+        with latest as (select app_uuid, max(id) as id
+                        from releases
+                        where state != 'NO_DEPLOY'::release_state
+                        group by app_uuid)
+        select app_uuid, id as version, config environment,
+               payload stories, apps.name as app_name,
+               maintenance, always_pull_images,
+               hostname app_dns, state, deleted,
+               apps.owner_uuid, owner_emails.email as owner_email
+        from latest
+               inner join releases using (app_uuid, id)
+               inner join apps on (latest.app_uuid = apps.uuid)
+               inner join app_dns using (app_uuid)
+               left join app_public.owner_emails on
+                (apps.owner_uuid = owner_emails.owner_uuid)
+        where app_uuid = $1;
+        """
+        data = await conn.fetchrow(query, app_id)
+
+        return Release(app_uuid=data['app_uuid'],
+                       app_name=data['app_name'],
+                       version=data['version'],
+                       environment=data['environment'],
+                       stories=data['stories'],
+                       maintenance=data['maintenance'],
+                       always_pull_images=data['always_pull_images'],
+                       app_dns=data['app_dns'],
+                       state=data['state'],
+                       deleted=data['deleted'],
+                       owner_uuid=data['owner_uuid'],
+                       owner_email=data['owner_email'])
+
+
+async def apply_codecs(conn):
+    await conn.set_type_codec(
+        "json",
+        encoder=json.dumps,
+        decoder=json.loads,
+        schema='pg_catalog'
+    )
+    await conn.set_type_codec(
+        "jsonb",
+        encoder=json.dumps,
+        decoder=json.loads,
+        schema='pg_catalog',
+    )
+    await conn.set_type_codec(
+        "uuid",
+        encoder=str,
+        decoder=str,
+        schema='pg_catalog',
+    )
+    return conn
 
     @classmethod
     def get_all_services(cls, config: Config):
