@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import asyncpg
 import json
+
+import asyncpg
 
 from asyncy.Config import Config
 from asyncy.entities.ContainerConfig import ContainerConfig
@@ -21,8 +22,10 @@ class Database:
         """Create a Connection Pool."""
         global _pg_pool
         if not _pg_pool:
-            _pg_pool = await asyncpg.create_pool(dsn=config.POSTGRES, min_size=5, max_size=15,
-                                                 max_queries=50000, max_inactive_connection_lifetime=900.0)
+            _pg_pool = await \
+                asyncpg.create_pool(dsn=config.POSTGRES,
+                                    min_size=5, max_size=15, max_queries=50000,
+                                    max_inactive_connection_lifetime=900.0)
         # Take a connection from the pool.
         conn = await _pg_pool.acquire()
 
@@ -31,7 +34,8 @@ class Database:
     @classmethod
     async def get_all_app_uuids_for_deployment(cls, config: Config):
         conn = await cls.pg_conn(config)
-        stmt = await conn.prepare("select app_uuid uuid from releases group by app_uuid;")
+        stmt = await conn.prepare(
+            'select app_uuid uuid from releases group by app_uuid;')
         return await stmt.fetch()
 
     @classmethod
@@ -40,12 +44,13 @@ class Database:
         conn = await cls.pg_conn(config)
 
         async with conn.transaction():
-            result = await conn.execute('''\
-                update releases 
+            result = await conn.execute("""\
+                update releases
                 set state = $1
                 where app_uuid = $2 and id = $3;
-            ''', state.value, app_id, version)
-            glogger.info(f'Updated state for {app_id}@{version} to {state.name}')
+            """, state.value, app_id, version)
+            glogger.info(f'Updated state for {app_id}@{version}'
+                         f' to {state.name}')
             return result
 
     def get_container_configs(cls, app, registry_url):
@@ -112,19 +117,19 @@ class Database:
 
 async def apply_codecs(conn):
     await conn.set_type_codec(
-        "json",
+        'json',
         encoder=json.dumps,
         decoder=json.loads,
         schema='pg_catalog'
     )
     await conn.set_type_codec(
-        "jsonb",
+        'jsonb',
         encoder=json.dumps,
         decoder=json.loads,
         schema='pg_catalog',
     )
     await conn.set_type_codec(
-        "uuid",
+        'uuid',
         encoder=str,
         decoder=str,
         schema='pg_catalog',

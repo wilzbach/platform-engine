@@ -4,6 +4,8 @@ import asyncpg
 import os
 from unittest import mock
 
+import asyncpg
+
 from asyncy.App import App, AppData
 from asyncy.AppConfig import AppConfig
 from asyncy.Apps import Apps
@@ -56,7 +58,8 @@ def db(patch, magic, async_mock):
 
 
 @mark.asyncio
-async def test_listen_to_releases(patch, db, magic, config, logger, async_mock):
+async def test_listen_to_releases(patch, db, magic,
+                                  config, logger, async_mock):
     conn = db()
 
     def exc(*args, **kwargs):
@@ -66,6 +69,10 @@ async def test_listen_to_releases(patch, db, magic, config, logger, async_mock):
     patch.object(asyncio, 'run_coroutine_threadsafe')
 
     patch.object(Apps, 'reload_app')
+    patch.object(conn, 'add_listener',
+                 new=async_mock(side_effect=lambda _a, cb:
+                                cb('_conn', '_pid',
+                                    '_channel', 'payload')))
     patch.many(os, ['kill', 'getpid'])
     patch.object(conn, 'add_listener', new=async_mock(side_effect=lambda _a, cb: cb('_conn', '_pid', '_channel', 'payload')))
     loop = magic()
@@ -108,7 +115,8 @@ async def test_destroy_all_exc(patch, async_mock, magic):
 
 
 @mark.asyncio
-async def test_init_all(patch, magic, async_mock, config, logger, db):
+async def test_init_all(patch, magic, async_mock,
+                        config, logger, db):
     db()
     patch.object(Sentry, 'init')
     apps = [{
@@ -127,6 +135,8 @@ async def test_init_all(patch, magic, async_mock, config, logger, db):
     Sentry.init.assert_called_with('sentry_dsn', 'release_ver')
 
     loop = asyncio.get_event_loop()
+    asyncio.ensure_future.assert_called_with(
+        Apps.listen_to_releases(config, logger, loop))
     asyncio.ensure_future.assert_called_with(Apps.listen_to_releases(config, logger, loop))
     assert Thread.__init__.mock_calls == [
         mock.call(target=Apps.listen_to_releases,
@@ -180,7 +190,8 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
         owner_uuid='owner_uuid',
         owner_email='owner_email'
     )
-    patch.object(Database, 'get_release_for_deployment', new=async_mock(return_value=release))
+    patch.object(Database, 'get_release_for_deployment',
+                 new=async_mock(return_value=release))
 
     await Apps.reload_app(config, logger, app_id)
 
@@ -223,7 +234,9 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         owner_uuid='owner_uuid',
         owner_email='example@example.com'
     )
-    patch.object(Database, 'get_release_for_deployment', new=async_mock(return_value=release))
+
+    patch.object(Database, 'get_release_for_deployment',
+                 new=async_mock(return_value=release))
 
     await Apps.reload_app(config, logger, app_id)
 
@@ -443,11 +456,16 @@ async def test_deploy_release(config, magic, patch, deleted,
             assert Apps.apps.get('app_id') is None
             if raise_exc == exc:
                 Sentry.capture_exc.assert_called()
-            assert Database.update_release_state.mock.mock_calls[1] == mock.call(
-                app_logger, config, 'app_id', 'version', ReleaseState.FAILED)
+            assert \
+                Database.update_release_state.mock.mock_calls[1] \
+                == mock.call(app_logger, config, 'app_id',
+                             'version', ReleaseState.FAILED)
         else:
-            assert Database.update_release_state.mock.mock_calls[1] == mock.call(
-                app_logger, config, 'app_id', 'version', ReleaseState.DEPLOYED)
+            assert \
+                Database.update_release_state.mock.mock_calls[1] \
+                == mock.call(app_logger, config,
+                             'app_id', 'version', ReleaseState.DEPLOYED)
+
             assert Apps.apps.get('app_id') is not None
 
 

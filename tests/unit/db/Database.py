@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
@@ -23,11 +22,11 @@ def database(magic, patch, async_cm_mock, async_mock):
 
 @mark.asyncio
 async def test_update_release_state(logger, config, database):
-    expected_query = '''\
-                update releases 
+    expected_query = """\
+                update releases
                 set state = $1
                 where app_uuid = $2 and id = $3;
-            '''
+            """
 
     await Database.update_release_state(logger, config, 'app_id', 'version',
                                         ReleaseState.DEPLOYED)
@@ -38,7 +37,8 @@ async def test_update_release_state(logger, config, database):
 
 
 @mark.asyncio
-async def test_get_all_app_uuids_for_deployment(magic, config, database, async_mock):
+async def test_get_all_app_uuids_for_deployment(magic, config,
+                                                database, async_mock):
     stmt = magic()
     stmt.fetch = async_mock()
     database.prepare = async_mock(return_value=stmt)
@@ -46,6 +46,41 @@ async def test_get_all_app_uuids_for_deployment(magic, config, database, async_m
     await Database.get_all_app_uuids_for_deployment(config)
     database.prepare.mock.assert_called_with(query)
     stmt.fetch.mock.assert_called_once()
+
+
+@mark.asyncio
+async def test_get_container_configs(patch, magic, config,
+                                     database, async_mock):
+    stmt = magic()
+    patch.object(stmt, 'fetch', new=async_mock(return_value=[
+        {'name': 'n1', 'containerconfig': 'config'}
+    ]))
+    database.prepare = async_mock(return_value=stmt)
+
+    expected_query = """
+        with containerconfigs as (select name, owner_uuid, containerconfig,
+                                         json_object_keys(
+                                             (containerconfig->>'auths')::json
+                                         ) registry
+                                  from app_public.owner_containerconfigs)
+        select name, containerconfig
+        from containerconfigs
+        where owner_uuid = $1 and registry = $2
+        """
+
+    app = magic()
+    app.config = config
+    app.owner_uuid = 'my_owner_uuid'
+    registry_url = 'my_registry_url_here'
+    ret = await Database.get_container_configs(app, registry_url)
+
+    assert ret == [
+        ContainerConfig(name='n1', data='config')
+    ]
+
+    stmt.fetch.mock.assert_called_with(expected_query,
+                                       app.owner_uuid, registry_url)
+
 
 @mark.asyncio
 async def test_get_release_for_deployment(patch, config, database, async_mock):

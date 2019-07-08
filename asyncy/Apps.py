@@ -57,8 +57,8 @@ class Apps:
 
         if release.deleted:
             await Database.update_release_state(logger, config, app_id,
-                                          release.version,
-                                          ReleaseState.NO_DEPLOY)
+                                                release.version,
+                                                ReleaseState.NO_DEPLOY)
             logger.warn(f'Deployment halted {app_id}@{release.version}; '
                         f'deleted={release.deleted}; '
                         f'maintenance={release.maintenance}')
@@ -67,8 +67,8 @@ class Apps:
             return
 
         await Database.update_release_state(logger, config, app_id,
-                                      release.version,
-                                      ReleaseState.DEPLOYING)
+                                            release.version,
+                                            ReleaseState.DEPLOYING)
 
         try:
             # Check for the currently active apps by the same owner.
@@ -114,7 +114,8 @@ class Apps:
             await app.bootstrap()
 
             cls.apps[app_id] = app
-            await Database.update_release_state(logger, config, app_id, 
+
+            await Database.update_release_state(logger, config, app_id,
                                                 release.version,
                                                 ReleaseState.DEPLOYED)
 
@@ -122,8 +123,10 @@ class Apps:
                         f'{release.version}')
         except BaseException as e:
             await Database.update_release_state(logger, config, app_id,
-                                                release.version, ReleaseState.FAILED)
+                                                release.version,
+                                                ReleaseState.FAILED)
             if isinstance(e, StoryscriptError):
+
                 logger.error(str(e))
             else:
                 logger.error(f'Failed to bootstrap app ({e})', exc=e)
@@ -218,8 +221,8 @@ class Apps:
         try:
             if update_db_state:
                 await Database.update_release_state(app.logger, app.config,
-                                              app.app_id, app.version,
-                                              ReleaseState.TERMINATING)
+                                                    app.app_id, app.version,
+                                                    ReleaseState.TERMINATING)
 
             await app.destroy()
 
@@ -234,8 +237,8 @@ class Apps:
         finally:
             if update_db_state:
                 await Database.update_release_state(app.logger, app.config,
-                                              app.app_id, app.version,
-                                              ReleaseState.TERMINATED)
+                                                    app.app_id, app.version,
+                                                    ReleaseState.TERMINATED)
 
         app.logger.info(f'Completed destroying app {app.app_id}')
         cls.apps[app.app_id] = None
@@ -282,8 +285,8 @@ class Apps:
                 logger = cls.make_logger_for_app(config, app_id,
                                                  release.version)
                 await Database.update_release_state(logger, config, app_id,
-                                              release.version,
-                                              ReleaseState.TIMED_OUT)
+                                                    release.version,
+                                                    ReleaseState.TIMED_OUT)
         finally:
             if can_deploy:
                 # If we did acquire the lock, then we must release it.
@@ -303,6 +306,9 @@ class Apps:
         glogger.info('Listening for new releases...')
         conn = await Database.pg_conn(config)
 
-        await conn.add_listener('release', lambda _conn, _pid, _channel, payload: asyncio.run_coroutine_threadsafe(
-            cls.reload_app(config, glogger, payload),
-            loop))
+        await conn.add_listener('release',
+                                lambda _conn, _pid, _channel, payload:
+                                    asyncio.run_coroutine_threadsafe(
+                                        cls.reload_app(config,
+                                                       glogger, payload),
+                                        loop))
