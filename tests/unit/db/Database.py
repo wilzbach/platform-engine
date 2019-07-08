@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import asyncpg
+
 from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
@@ -18,6 +20,21 @@ def database(magic, patch, async_cm_mock, async_mock):
     # conn.execute = async_mock(return_value=lambda **args: args)
     patch.object(Database, 'pg_conn', new=async_mock(return_value=conn))
     return conn
+
+
+@mark.asyncio
+async def test_database_pg_conn(patch, magic, async_mock, config):
+    _pg_pool = magic()
+    conn = magic()
+    patch.object(asyncpg, 'create_pool', new=async_mock(return_value=_pg_pool))
+    patch.object(_pg_pool, 'acquire', new=async_mock(return_value=conn))
+    patch.object(conn, 'set_type_codec', new=async_mock())
+
+    await Database.pg_conn(config)
+
+    asyncpg.create_pool.mock.assert_called_once()
+    _pg_pool.acquire.mock.assert_called_once()
+    conn.set_type_codec.mock.assert_called()
 
 
 @mark.asyncio

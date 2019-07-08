@@ -29,7 +29,7 @@ class Database:
         # Take a connection from the pool.
         conn = await _pg_pool.acquire()
 
-        return await apply_codecs(conn)
+        return await cls.apply_codecs(conn)
 
     @classmethod
     async def get_all_app_uuids_for_deployment(cls, config: Config):
@@ -53,30 +53,27 @@ class Database:
                          f' to {state.name}')
             return result
 
-    def get_container_configs(cls, app, registry_url):
-        with cls.new_pg_cur(app.config) as db:
-            query = """
-            with containerconfigs as (
-            select name,
-            owner_uuid, containerconfig,
-            json_object_keys(
-                (containerconfig->>'auths')::json
-            ) registry
-            from app_public.owner_containerconfigs
-            )
-            select name, containerconfig
-            from containerconfigs
-            where owner_uuid = %s and registry = %s;
-            """
-            db.cur.execute(query, (app.owner_uuid, registry_url))
-            data = db.cur.fetchall()
-            result = []
-            for config in data:
-                result.append(ContainerConfig(
-                    name=config['name'],
-                    data=config['containerconfig'])
-                )
-            return result
+    @classmethod
+    async def get_container_configs(cls, app, registry_url):
+        conn = await cls.pg_conn(app.config)
+        query = """
+        with containerconfigs as (select name, owner_uuid, containerconfig,
+                                         json_object_keys(
+                                             (containerconfig->>'auths')::json
+                                         ) registry
+                                  from app_public.owner_containerconfigs)
+        select name, containerconfig
+        from containerconfigs
+        where owner_uuid = $1 and registry = $2
+        """
+        stmt = await conn.prepare(query)
+        data = await stmt.fetch(query, app.owner_uuid, registry_url)
+
+        result = []
+        for config in data:
+            result.append(ContainerConfig(name=config['name'],
+                                          data=config['containerconfig']))
+        return result
 
     @classmethod
     async def get_release_for_deployment(cls, config, app_id):
@@ -114,27 +111,27 @@ class Database:
                        owner_uuid=data['owner_uuid'],
                        owner_email=data['owner_email'])
 
-
-async def apply_codecs(conn):
-    await conn.set_type_codec(
-        'json',
-        encoder=json.dumps,
-        decoder=json.loads,
-        schema='pg_catalog'
-    )
-    await conn.set_type_codec(
-        'jsonb',
-        encoder=json.dumps,
-        decoder=json.loads,
-        schema='pg_catalog',
-    )
-    await conn.set_type_codec(
-        'uuid',
-        encoder=str,
-        decoder=str,
-        schema='pg_catalog',
-    )
-    return conn
+    @staticmethod
+    async def apply_codecs(conn):
+        await conn.set_type_codec(
+            'json',
+            encoder=json.dumps,
+            decoder=json.loads,
+            schema='pg_catalog'
+        )
+        await conn.set_type_codec(
+            'jsonb',
+            encoder=json.dumps,
+            decoder=json.loads,
+            schema='pg_catalog',
+        )
+        await conn.set_type_codec(
+            'uuid',
+            encoder=str,
+            decoder=str,
+            schema='pg_catalog',
+        )
+        return conn
 
     @classmethod
     def get_all_services(cls, config: Config):
