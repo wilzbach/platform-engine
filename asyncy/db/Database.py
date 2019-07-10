@@ -8,7 +8,7 @@ from asyncy.enums.ReleaseState import ReleaseState
 import numpy as np
 
 import psycopg2
-from psycopg2.extras import execute_values
+import psycopg2.extras
 
 
 class Database:
@@ -124,7 +124,7 @@ class Database:
             insert into service_usage (service_uuid, tag)
             values %s on conflict (service_uuid, tag) do nothing;
             """
-            execute_values(db.cur, query, [
+            psycopg2.extras.execute_values(db.cur, query, [
                 (s['service_uuid'], s['tag']) for s in data
             ])
             db.conn.commit()
