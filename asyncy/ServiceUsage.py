@@ -31,7 +31,7 @@ class ServiceUsage:
         alias = service['alias']
         return [
             base64.b16encode(label.encode()).decode()
-            for label in [slug, alias]
+            for label in [slug, alias] if label is not None
         ]
 
     @classmethod
