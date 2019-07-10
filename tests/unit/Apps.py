@@ -143,9 +143,9 @@ async def test_init_all(patch, magic, async_mock, config, logger, db):
         mock.call(target=Apps.listen_to_releases,
                   args=[config, logger, loop],
                   daemon=True),
-        mock.call(target=ServiceUsage.start_recording,
-                  args=[config, logger, loop],
-                  daemon=True),
+        # mock.call(target=ServiceUsage.start_recording,
+        #           args=[config, logger, loop],
+        #           daemon=True),
     ]
     Thread.start.assert_called()
 

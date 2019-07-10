@@ -173,10 +173,11 @@ class Apps:
                                             daemon=True)
         release_listener.start()
 
-        usage_recorder = threading.Thread(target=ServiceUsage.start_recording,
-                                          args=[config, glogger, loop],
-                                          daemon=True)
-        usage_recorder.start()
+        # usage_recorder = threading.Thread(
+        #     target=ServiceUsage.start_recording,
+        #     args=[config, glogger, loop],
+        #     daemon=True)
+        # usage_recorder.start()
 
         await cls.reload_apps(config, glogger)
 
