@@ -187,7 +187,7 @@ class Database:
             """
             db.cur.execute(query, (service['uuid'], tag))
             res = db.cur.fetchone()
-            if res is None or -1 in res['cpu_units']:
+            if res is None or -1 in res['memory_bytes']:
                 limits = {
                     'cpu': 0,
                     'memory': 209715000  # 200Mi

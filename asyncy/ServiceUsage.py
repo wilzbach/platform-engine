@@ -139,26 +139,30 @@ class ServiceUsage:
     async def record_service_usage(cls, config: Config, logger: Logger):
         from .Service import Service
         while not Service.shutting_down:
-            # Split services into batches,
-            # Record metrics for all services in a given batch in parallel
-            bulk_update_data = []
-            all_services = Database.get_all_services(config)
-            for i in range(0, len(all_services), cls.BATCH_SIZE):
-                current_batch = all_services[i: i + cls.BATCH_SIZE]
-                current_data = await asyncio.gather(*[
-                    cls.get_pod_metrics(service, config, logger)
-                    for service in current_batch
-                ])
-                bulk_update_data += [
-                    tag_data
-                    for service_data in current_data
-                    for tag_data in service_data
-                ]
-            # Create default records for all new (service_uuid, tag) pairs
-            Database.create_service_usage(config, bulk_update_data)
-            Database.update_service_usage(config, bulk_update_data)
-            # Sleep before updating metrics again
-            await asyncio.sleep(cls.WAIT_PERIOD)
+            try:
+                # Split services into batches,
+                # Record metrics for all services in a given batch in parallel
+                bulk_update_data = []
+                all_services = Database.get_all_services(config)
+                for i in range(0, len(all_services), cls.BATCH_SIZE):
+                    current_batch = all_services[i: i + cls.BATCH_SIZE]
+                    current_data = await asyncio.gather(*[
+                        cls.get_pod_metrics(service, config, logger)
+                        for service in current_batch
+                    ])
+                    bulk_update_data += [
+                        tag_data
+                        for service_data in current_data
+                        for tag_data in service_data
+                    ]
+                # Create default records for all new (service_uuid, tag) pairs
+                Database.create_service_usage(config, bulk_update_data)
+                Database.update_service_usage(config, bulk_update_data)
+                # Sleep before updating metrics again
+                await asyncio.sleep(cls.WAIT_PERIOD)
+            except Exception as e:
+                logger.error('Recording resource usage metrics failed', e)
+                await asyncio.sleep(5)
 
     @classmethod
     def start_recording(cls, config: Config, logger: Logger, loop):

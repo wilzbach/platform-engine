@@ -604,7 +604,7 @@ class Kubernetes:
                                 'resources': {
                                     'limits': {
                                         'memory': limits['memory'],
-                                        'cpu': limits['cpu']
+                                        'cpu': 0
                                     }
                                 },
                                 'command': start_command,
