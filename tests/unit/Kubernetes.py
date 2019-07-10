@@ -13,6 +13,7 @@ from asyncy.Exceptions import K8sError
 from asyncy.Kubernetes import Kubernetes
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
+from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Volume import Volume
 from asyncy.utils.HttpUtils import HttpUtils
@@ -680,8 +681,8 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
                             'image': image,
                             'resources': {
                                 'limits': {
-                                    'memory': '200Mi'
-                                    # 'cpu': '500m'
+                                    'memory': 209715000,
+                                    'cpu': 0
                                 }
                             },
                             'command': start_command,
@@ -737,6 +738,10 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
 
     patch.object(asyncio, 'sleep', new=async_mock())
     patch.object(Kubernetes, 'check_for_image_errors', new=async_mock())
+    patch.object(Database, 'get_service_limits', return_value={
+        'cpu': 0,
+        'memory': 209715000
+    })
 
     expected_create_path = f'/apis/apps/v1/namespaces/' \
                            f'{story.app.app_id}/deployments'

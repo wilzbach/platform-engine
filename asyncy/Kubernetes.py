@@ -14,6 +14,7 @@ from . import AppConfig
 from .AppConfig import Expose
 from .Exceptions import K8sError
 from .constants.ServiceConstants import ServiceConstants
+from .db.Database import Database
 from .entities.ContainerConfig import ContainerConfig, ContainerConfigs
 from .entities.Volume import Volumes
 from .utils.Dict import Dict
@@ -245,6 +246,9 @@ class Kubernetes:
                 resource == 'pods' or \
                 resource == 'secrets':
             return '/api/v1/namespaces'
+        elif resource == 'metrics':
+            return '/apis/metrics.k8s.io/v1beta1'
+
         else:
             raise Exception(f'Unsupported resource type {resource}')
 
@@ -564,6 +568,9 @@ class Kubernetes:
 
         liveness_probe = cls.get_liveness_probe(app, service_name)
 
+        tag = image.split(':')[-1]
+        limits = Database.get_service_limits(app.config, service_name, tag)
+
         payload = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
@@ -596,8 +603,8 @@ class Kubernetes:
                                 'image': image,
                                 'resources': {
                                     'limits': {
-                                        'memory': '200Mi',  # During beta.
-                                        # 'cpu': '500m',  # During beta.
+                                        'memory': limits['memory'],
+                                        'cpu': 0
                                     }
                                 },
                                 'command': start_command,
