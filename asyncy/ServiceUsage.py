@@ -3,14 +3,16 @@ import base64
 import json
 import urllib.parse
 from collections import defaultdict
+from operator import truediv
 from typing import Dict, List, Tuple, Union
+
+import numpy as np
 
 from .Config import Config
 from .Exceptions import K8sError
 from .Kubernetes import Kubernetes
 from .Logger import Logger
 from .db.Database import Database
-from .utils import Stats
 
 
 class ServiceUsage:
@@ -127,8 +129,8 @@ class ServiceUsage:
             {
                 'service_uuid': service['uuid'],
                 'tag': tag,
-                'cpu_units': Stats.percentile(cpu_units[tag], 0.95),
-                'memory_bytes': Stats.percentile(memory_bytes[tag], 0.95)
+                'cpu_units': np.percentile(cpu_units[tag], 95),
+                'memory_bytes': np.percentile(memory_bytes[tag], 95)
             }
             for tag in cpu_units.keys()
         ]
