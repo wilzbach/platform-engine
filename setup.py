@@ -35,7 +35,7 @@ setup(
         'click==7.0',
         'frustum==0.0.6',
         'raven==6.9.0',
-        'storyscript==0.21.0',
+        'storyscript==0.21.1',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'psycopg2==2.7.5',
