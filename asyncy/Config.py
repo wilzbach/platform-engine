@@ -2,6 +2,8 @@
 import os
 import socket
 
+from asyncy.enums.AppEnvironment import AppEnvironment
+
 
 class Config:
 
@@ -21,6 +23,9 @@ class Config:
         'CLUSTER_AUTH_TOKEN': '',
         'CLUSTER_HOST': 'kubernetes.default.svc'
     }
+
+    APP_ENVIRONMENT = AppEnvironment[
+        os.getenv('APP_ENVIRONMENT', 'PRODUCTION')]
 
     ENGINE_PORT = None
 

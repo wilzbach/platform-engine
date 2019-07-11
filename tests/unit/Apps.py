@@ -20,6 +20,7 @@ from asyncy.ServiceUsage import ServiceUsage
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.db.Database import Database
 from asyncy.entities.Release import Release
+from asyncy.enums.AppEnvironment import AppEnvironment
 from asyncy.enums.ReleaseState import ReleaseState
 
 import psycopg2
@@ -189,7 +190,8 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
         state='QUEUED',
         deleted=True,
         owner_uuid='owner_uuid',
-        owner_email='owner_email'
+        owner_email='owner_email',
+        app_environment=AppEnvironment.PRODUCTION
     )
     patch.object(Database, 'get_release_for_deployment', return_value=release)
 
@@ -200,9 +202,13 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 
 @mark.parametrize('raise_exc', [None, exc, asyncio_timeout_exc])
 @mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
+@mark.parametrize('app_environment_db', ['STAGING', 'PRODUCTION', 'DEV'])
+@mark.parametrize('app_environment_config', ['STAGING', 'PRODUCTION', 'DEV'])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
-                          magic, raise_exc, previous_state):
+                          magic, raise_exc, previous_state,
+                          app_environment_db, app_environment_config):
+    config.APP_ENVIRONMENT = AppEnvironment[app_environment_config]
     old_app = magic()
     app_id = 'app_id'
     app_name = 'app_name'
@@ -232,7 +238,8 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         state=previous_state,
         deleted=True,
         owner_uuid='owner_uuid',
-        owner_email='example@example.com'
+        owner_email='example@example.com',
+        app_environment=AppEnvironment[app_environment_db]
     )
     patch.object(Database, 'get_release_for_deployment', return_value=release)
 
@@ -240,10 +247,21 @@ async def test_reload_app(patch, config, logger, db, async_mock,
 
     Apps.destroy_app.mock.assert_called_with(old_app, silent=True,
                                              update_db_state=True)
+
+    if AppEnvironment[app_environment_db] != \
+            AppEnvironment[app_environment_config]:
+        Apps.deploy_release.mock.assert_not_called()
+        logger.info.assert_called()
+        logger.error.assert_not_called()
+        logger.warn.assert_not_called()
+        Database.update_release_state.assert_not_called()
+        return
+
     if previous_state == 'FAILED':
         Apps.deploy_release.mock.assert_not_called()
         logger.warn.assert_called()
         logger.error.assert_not_called()
+        Database.update_release_state.assert_not_called()
         return
 
     Apps.deploy_release.mock.assert_called_with(
@@ -287,7 +305,8 @@ async def test_deploy_release_many_services(patch):
             state='QUEUED',
             deleted=False,
             owner_uuid='owner_uuid',
-            owner_email='example@example.com'
+            owner_email='example@example.com',
+            app_environment=AppEnvironment.PRODUCTION
         )
     )
 
@@ -323,7 +342,8 @@ async def test_deploy_release_many_apps(patch, magic):
             state='QUEUED',
             deleted=False,
             owner_uuid='owner_uuid',
-            owner_email='example@example.com'
+            owner_email='example@example.com',
+            app_environment=AppEnvironment.PRODUCTION
         ))
 
         TooManyActiveApps.__init__.assert_called_with(20, 5)
@@ -375,7 +395,8 @@ async def test_deploy_release_many_volumes(patch, async_mock):
             state='QUEUED',
             deleted=False,
             owner_uuid='owner_uuid',
-            owner_email='owner_email'
+            owner_email='owner_email',
+            app_environment=AppEnvironment.PRODUCTION
         )
     )
 
@@ -422,7 +443,8 @@ async def test_deploy_release(config, magic, patch, deleted,
         state='QUEUED',
         deleted=deleted,
         owner_uuid='owner_uuid',
-        owner_email='owner_email'
+        owner_email='owner_email',
+        app_environment=AppEnvironment.PRODUCTION
     )
 
     await Apps.deploy_release(
