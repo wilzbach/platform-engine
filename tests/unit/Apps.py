@@ -4,8 +4,6 @@ import asyncpg
 import os
 from unittest import mock
 
-import asyncpg
-
 from asyncy.App import App, AppData
 from asyncy.AppConfig import AppConfig
 from asyncy.Apps import Apps
@@ -48,28 +46,28 @@ def asyncy_exc():
 
 
 @fixture
-def db(patch, magic, async_mock):
-    def get():
-        db = magic()
-        patch.object(asyncpg, 'connect', new=async_mock(return_value=db))
-        return db
+def db(patch, magic, async_cm_mock, async_mock):
+    con = magic()
+    con.transaction.return_value = async_cm_mock()
 
-    return get
+    patch.object(con, 'add_listener', new=async_mock())
+
+    pool = magic()
+
+    pool.acquire = async_mock(return_value=con)
+    pool.con = con
+
+    return pool
 
 
 @mark.asyncio
 async def test_listen_to_releases(patch, db, magic,
                                   config, logger, async_mock):
-    conn = db()
-
-    def exc(*args, **kwargs):
-        raise psycopg2.InterfaceError()
-
-    patch.object(Database, 'pg_conn', new=async_mock(return_value=conn))
+    patch.object(Database, 'pg_pool', new=async_mock(return_value=db))
     patch.object(asyncio, 'run_coroutine_threadsafe')
 
     patch.object(Apps, 'reload_app')
-    patch.object(conn, 'add_listener',
+    patch.object(db.con, 'add_listener',
                  new=async_mock(side_effect=lambda _a, cb:
                                 cb('_conn', '_pid',
                                     '_channel', 'payload')))
@@ -78,9 +76,38 @@ async def test_listen_to_releases(patch, db, magic,
     loop = magic()
 
     await Apps.listen_to_releases(config, logger, loop)
-    # Apps.reload_app.assert_called_once()
+    Apps.reload_app.assert_called_once()
     asyncio.run_coroutine_threadsafe.assert_called_with(
         Apps.reload_app(config, logger, 'payload'), loop)
+
+    db.acquire.mock.assert_called_once()
+    db.con.add_listener.mock.assert_called_once()
+
+
+@mark.asyncio
+async def test_supervise_listener(patch, db, magic,
+                                  config, logger, async_mock):
+    loop = magic()
+    patch.object(Apps, 'listen_to_releases', new=async_mock())
+    try:
+        await asyncio.wait_for(Apps.supervise_release_listener(config,
+                                                               logger, loop),
+                               timeout=3.2)
+    except asyncio.TimeoutError:
+        assert Apps.listen_to_releases.mock.call_count == 3
+
+    patch.object(Apps, '_release_con')
+    patch.object(Apps._release_con, '_con', True)
+    patch.object(Apps._release_con, '_listeners', {'release'})
+
+    Apps.listen_to_releases.mock.call_count = 0
+    try:
+        await asyncio.wait_for(Apps.supervise_release_listener(config,
+                                                               logger, loop),
+                               timeout=1.2)
+    except asyncio.TimeoutError:
+        assert Apps.listen_to_releases.mock.call_count == 0
+
     os.kill.assert_called_with(os.getpid.return_value, signal.SIGINT)
 
 @mark.asyncio
@@ -125,7 +152,8 @@ async def test_init_all(patch, magic, async_mock,
     patch.object(Database, 'get_all_app_uuids_for_deployment',
                  new=async_mock(return_value=apps))
     patch.object(Apps, 'reload_app', new=async_mock())
-    patch.object(Apps, 'listen_to_releases')
+    patch.object(Apps, 'listen_to_releases', new=async_mock())
+    patch.object(Apps, 'supervise_release_listener')
     patch.object(asyncio, 'ensure_future')
 
     await Apps.init_all('sentry_dsn', 'release_ver', config, logger)
@@ -135,7 +163,11 @@ async def test_init_all(patch, magic, async_mock,
     Sentry.init.assert_called_with('sentry_dsn', 'release_ver')
 
     loop = asyncio.get_event_loop()
+
+    Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
+    asyncio.ensure_future.assert_called_once()
     asyncio.ensure_future.assert_called_with(
+        Apps.supervise_release_listener(config, logger, loop))
         Apps.listen_to_releases(config, logger, loop))
     asyncio.ensure_future.assert_called_with(Apps.listen_to_releases(config, logger, loop))
     assert Thread.__init__.mock_calls == [

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
+import signal
+
+import asyncpg
 
 from .App import App, AppData
 from .AppConfig import AppConfig, KEY_EXPOSE
@@ -28,6 +32,7 @@ class Apps:
     """
     Globals used: glogger - the global logger (used for the engine)
     """
+    _release_con = None
     internal_services = ['http', 'log', 'crontab', 'file', 'event']
 
     deployment_lock = DeploymentLock()
@@ -164,6 +169,9 @@ class Apps:
         # If we start listening after all the apps are deployed,
         # then we might miss some notifications about releases.
         loop = asyncio.get_event_loop()
+        await cls.listen_to_releases(config, glogger, loop)
+        asyncio.ensure_future(cls.supervise_release_listener(config, glogger,
+                                                             loop))
         asyncio.ensure_future(cls.listen_to_releases(config, glogger, loop))
 
         # usage_recorder = threading.Thread(
@@ -303,12 +311,29 @@ class Apps:
 
     @classmethod
     async def listen_to_releases(cls, config: Config, glogger: Logger, loop):
-        glogger.info('Listening for new releases...')
-        conn = await Database.pg_conn(config)
+        pool = await Database.pg_pool(config)
+        if cls._release_con:
+            await pool.release(cls._release_con)
+        try:
+            con = await pool.acquire()
+            await con.add_listener('release',
+                                   lambda _conn, _pid, _channel, payload:
+                                   asyncio.run_coroutine_threadsafe(
+                                       cls.reload_app(config,
+                                                      glogger, payload),
+                                       loop))
+            glogger.info('Listening for new releases...')
+        except (OSError, asyncpg.exceptions.InterfaceError,
+                asyncpg.exceptions.InternalClientError):
+            # kill the server if the database listener is not listening
+            os.kill(os.getpid(), signal.SIGINT)
 
-        await conn.add_listener('release',
-                                lambda _conn, _pid, _channel, payload:
-                                    asyncio.run_coroutine_threadsafe(
-                                        cls.reload_app(config,
-                                                       glogger, payload),
-                                        loop))
+        cls._release_con = con
+
+    @classmethod
+    async def supervise_release_listener(cls, config, glogger, loop):
+        while True:
+            await asyncio.sleep(1)
+            con = cls._release_con
+            if not con or not con._con or 'release' not in con._listeners:
+                await cls.listen_to_releases(config, glogger, loop)

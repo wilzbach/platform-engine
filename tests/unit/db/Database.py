@@ -13,77 +13,74 @@ from pytest import fixture, mark
 
 
 @fixture
-def database(magic, patch, async_cm_mock, async_mock):
-    conn = magic()
-    conn.transaction.return_value = async_cm_mock()
-    conn.execute = async_mock()
-    # conn.execute = async_mock(return_value=lambda **args: args)
-    patch.object(Database, 'pg_conn', new=async_mock(return_value=conn))
-    return conn
+def pool(magic, patch, async_cm_mock, async_mock):
+
+    con = magic()
+    con.transaction.return_value = async_cm_mock()
+
+    patch.object(con, 'fetchrow', new=async_mock())
+    patch.object(con, 'fetch', new=async_mock())
+    patch.object(con, 'execute', new=async_mock())
+
+    pool = magic()
+    patch.object(pool, 'acquire', new=async_cm_mock())
+    pool.acquire.return_value.aenter = con
+    pool.con = con
+
+    patch.object(Database, 'pg_pool', new=async_mock(return_value=pool))
+    return pool
 
 
 @mark.asyncio
-async def test_database_pg_conn(patch, magic, async_mock, config):
-    _pg_pool = magic()
-    conn = magic()
-    patch.object(asyncpg, 'create_pool', new=async_mock(return_value=_pg_pool))
-    patch.object(_pg_pool, 'acquire', new=async_mock(return_value=conn))
-    patch.object(conn, 'set_type_codec', new=async_mock())
-
-    await Database.pg_conn(config)
-
+async def test_database_connect_pool(patch, magic, config, async_mock):
+    patch.object(asyncpg, 'create_pool', new=async_mock())
+    await Database.pg_pool(config)
     asyncpg.create_pool.mock.assert_called_once()
-    _pg_pool.acquire.mock.assert_called_once()
-    conn.set_type_codec.mock.assert_called()
 
 
 @mark.asyncio
-async def test_update_release_state(logger, config, database):
+async def test_update_release_state(logger, config, pool):
     expected_query = """\
-                update releases
-                set state = $1
-                where app_uuid = $2 and id = $3;
-            """
+                    update releases
+                    set state = $1
+                    where app_uuid = $2 and id = $3;
+                """
 
     await Database.update_release_state(logger, config, 'app_id', 'version',
                                         ReleaseState.DEPLOYED)
 
-    Database.pg_conn.mock.assert_called_with(config)
-    database.execute.mock.assert_called_with(
+    assert pool.acquire.call_count == 1
+    assert pool.con.transaction.call_count == 1
+    pool.con.execute.mock.assert_called_with(
         expected_query, ReleaseState.DEPLOYED.value, 'app_id', 'version')
 
 
 @mark.asyncio
-async def test_get_all_app_uuids_for_deployment(magic, config,
-                                                database, async_mock):
-    stmt = magic()
-    stmt.fetch = async_mock()
-    database.prepare = async_mock(return_value=stmt)
-
+async def test_get_all_app_uuids_for_deployment(magic, config, pool):
+    query = 'select app_uuid uuid from releases group by app_uuid;'
     await Database.get_all_app_uuids_for_deployment(config)
-    database.prepare.mock.assert_called_with(query)
-    stmt.fetch.mock.assert_called_once()
+    assert pool.acquire.call_count == 1
+    pool.con.fetch.mock.assert_called_with(query)
 
 
 @mark.asyncio
 async def test_get_container_configs(patch, magic, config,
-                                     database, async_mock):
-    stmt = magic()
-    patch.object(stmt, 'fetch', new=async_mock(return_value=[
+                                     pool, async_mock):
+
+    patch.object(pool.con, 'fetch', new=async_mock(return_value=[
         {'name': 'n1', 'containerconfig': 'config'}
     ]))
-    database.prepare = async_mock(return_value=stmt)
 
     expected_query = """
-        with containerconfigs as (select name, owner_uuid, containerconfig,
-                                         json_object_keys(
-                                             (containerconfig->>'auths')::json
-                                         ) registry
-                                  from app_public.owner_containerconfigs)
-        select name, containerconfig
-        from containerconfigs
-        where owner_uuid = $1 and registry = $2
-        """
+                with containerconfigs as
+                (select name, owner_uuid,
+                    containerconfig, json_object_keys
+                    ((containerconfig->>'auths')::json) registry
+                from app_public.owner_containerconfigs)
+                select name, containerconfig
+                from containerconfigs
+                where owner_uuid = $1 and registry = $2
+            """
 
     app = magic()
     app.config = config
@@ -91,16 +88,19 @@ async def test_get_container_configs(patch, magic, config,
     registry_url = 'my_registry_url_here'
     ret = await Database.get_container_configs(app, registry_url)
 
+    assert pool.acquire.call_count == 1
+
     assert ret == [
         ContainerConfig(name='n1', data='config')
     ]
 
-    stmt.fetch.mock.assert_called_with(expected_query,
-                                       app.owner_uuid, registry_url)
+    pool.con.fetch.mock\
+        .assert_called_with(expected_query, app.owner_uuid,
+                            registry_url)
 
 
 @mark.asyncio
-async def test_get_release_for_deployment(patch, config, database, async_mock):
+async def test_get_release_for_deployment(patch, config, pool, async_mock):
     app_id = 'my_app_id'
     expected_query = """
         with latest as (select app_uuid, max(id) as id
@@ -121,7 +121,7 @@ async def test_get_release_for_deployment(patch, config, database, async_mock):
         where app_uuid = $1;
         """
 
-    patch.object(database, 'fetchrow', new=async_mock(
+    patch.object(pool.con, 'fetchrow', new=async_mock(
         return_value={
             'app_uuid': 'my_app_uuid',
             'app_name': 'my_app_name',
@@ -139,6 +139,7 @@ async def test_get_release_for_deployment(patch, config, database, async_mock):
     )
     ret = await Database.get_release_for_deployment(config, app_id)
 
+    assert pool.acquire.call_count == 1
     assert ret == Release(
         app_uuid='my_app_uuid',
         app_name='my_app_name',
@@ -154,7 +155,7 @@ async def test_get_release_for_deployment(patch, config, database, async_mock):
         owner_email='my_owner_email'
     )
 
-    database.fetchrow.mock.assert_called_with(expected_query, app_id)
+    pool.con.fetchrow.mock.assert_called_with(expected_query, app_id)
 
 
 def test_get_all_services(config, database):
