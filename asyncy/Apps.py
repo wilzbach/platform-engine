@@ -16,6 +16,7 @@ from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
 from .ServiceUsage import ServiceUsage
+from .constants.ReleaseConstants import ReleaseConstants
 from .constants.ServiceConstants import ServiceConstants
 from .db.Database import Database
 from .entities.Release import Release
@@ -32,7 +33,7 @@ class Apps:
     """
     Globals used: glogger - the global logger (used for the engine)
     """
-    _release_con = None
+    release_listener_db_con = None
     internal_services = ['http', 'log', 'crontab', 'file', 'event']
 
     deployment_lock = DeploymentLock()
@@ -310,29 +311,29 @@ class Apps:
 
     @classmethod
     async def listen_to_releases(cls, config: Config, glogger: Logger, loop):
-        pool = await Database.pg_pool(config)
-        if cls._release_con:
-            await pool.release(cls._release_con)
+        if cls.release_listener_db_con:
+            asyncio.ensure_future(cls.release_listener_db_con.close())
+
         try:
-            con = await pool.acquire()
-            await con.add_listener('release',
+            con = await Database.new_con(config)
+            await con.add_listener(ReleaseConstants.table,
                                    lambda _conn, _pid, _channel, payload:
                                    asyncio.run_coroutine_threadsafe(
                                        cls.reload_app(config,
                                                       glogger, payload),
                                        loop))
+            cls.release_listener_db_con = con
             glogger.info('Listening for new releases...')
         except (OSError, asyncpg.exceptions.InterfaceError,
                 asyncpg.exceptions.InternalClientError):
             # kill the server if the database listener is not listening
             os.kill(os.getpid(), signal.SIGINT)
 
-        cls._release_con = con
-
     @classmethod
     async def supervise_release_listener(cls, config, glogger, loop):
         while True:
             await asyncio.sleep(1)
-            con = cls._release_con
-            if not con or not con._con or 'release' not in con._listeners:
+            con = cls.release_listener_db_con
+            if not con or not con._con or \
+                    ReleaseConstants.table not in con._listeners:
                 await cls.listen_to_releases(config, glogger, loop)

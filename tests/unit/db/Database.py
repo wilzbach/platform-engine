@@ -40,25 +40,28 @@ def pool(magic, patch, async_cm_mock, async_mock):
 
 
 @mark.asyncio
-async def test_database_connect_pool(patch, magic, config, async_mock):
+async def test_database_connect(patch, magic, config, async_mock):
     patch.object(asyncpg, 'create_pool', new=async_mock())
     await Database.pg_pool(config)
     asyncpg.create_pool.mock.assert_called_once()
+
+    patch.object(asyncpg, 'connect', new=async_mock())
+    await Database.new_con(config)
+    asyncpg.connect.mock.assert_called_once()
 
 
 @mark.asyncio
 async def test_update_release_state(logger, config, pool):
     expected_query = """\
-                    update releases
-                    set state = $1
-                    where app_uuid = $2 and id = $3;
-                """
+                update releases
+                set state = $1
+                where app_uuid = $2 and id = $3;
+            """
 
     await Database.update_release_state(logger, config, 'app_id', 'version',
                                         ReleaseState.DEPLOYED)
 
     assert pool.acquire.call_count == 1
-    assert pool.con.transaction.call_count == 1
     pool.con.execute.mock.assert_called_with(
         expected_query, ReleaseState.DEPLOYED.value, 'app_id', 'version')
 

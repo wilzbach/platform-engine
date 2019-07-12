@@ -49,44 +49,34 @@ def asyncy_exc():
 @fixture
 def db(patch, magic, async_cm_mock, async_mock):
     con = magic()
-    con.transaction.return_value = async_cm_mock()
-
     patch.object(con, 'add_listener', new=async_mock())
-
-    pool = magic()
-
-    pool.acquire = async_mock(return_value=con)
-    pool.con = con
-
-    return pool
+    patch.object(con, 'close', new=async_mock())
+    con.con = con
+    return con
 
 
 @mark.asyncio
 async def test_listen_to_releases(patch, db, magic,
                                   config, logger, async_mock):
-    patch.object(Database, 'pg_pool', new=async_mock(return_value=db))
-    patch.object(asyncio, 'run_coroutine_threadsafe')
-
+    patch.object(Database, 'new_con', new=async_mock(return_value=db))
+    patch.many(asyncio, ['run_coroutine_threadsafe', 'ensure_future'])
     patch.object(Apps, 'reload_app')
-    patch.object(db.con, 'add_listener',
-                 new=async_mock(side_effect=lambda _a, cb:
-                                cb('_conn', '_pid',
-                                    '_channel', 'payload')))
+
     loop = magic()
 
     await Apps.listen_to_releases(config, logger, loop)
-    Apps.reload_app.assert_called_once()
-    asyncio.run_coroutine_threadsafe.assert_called_with(
-        Apps.reload_app(config, logger, 'payload'), loop)
-    db.acquire.mock.assert_called_once()
+
+    Database.new_con.mock.assert_called_once()
     db.con.add_listener.mock.assert_called_once()
 
     patch.many(os, ['kill', 'getpid'])
-    patch.object(Apps, '_release_con', None)
+    patch.object(Apps, 'release_listener_db_con', side_effect=db)
     patch.object(db.con, 'add_listener',
                  new=async_mock(side_effect=OSError))
 
     await Apps.listen_to_releases(config, logger, loop)
+    asyncio.ensure_future\
+        .assert_called_with(Apps.release_listener_db_con.close())
     os.kill.assert_called_once()
     os.getpid.assert_called_once()
 
@@ -96,24 +86,22 @@ async def test_supervise_listener(patch, db, magic,
                                   config, logger, async_mock):
     loop = magic()
     patch.object(Apps, 'listen_to_releases', new=async_mock())
-    try:
+    with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(Apps.supervise_release_listener(config,
                                                                logger, loop),
                                timeout=3.2)
-    except asyncio.TimeoutError:
-        assert Apps.listen_to_releases.mock.call_count == 3
+    assert Apps.listen_to_releases.mock.call_count == 3
 
-    patch.object(Apps, '_release_con')
-    patch.object(Apps._release_con, '_con', True)
-    patch.object(Apps._release_con, '_listeners', {'release'})
+    patch.object(Apps, 'release_listener_db_con')
+    patch.object(Apps.release_listener_db_con, '_con', True)
+    patch.object(Apps.release_listener_db_con, '_listeners', {'release'})
 
     Apps.listen_to_releases.mock.call_count = 0
-    try:
+    with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(Apps.supervise_release_listener(config,
                                                                logger, loop),
                                timeout=1.2)
-    except asyncio.TimeoutError:
-        assert Apps.listen_to_releases.mock.call_count == 0
+    assert Apps.listen_to_releases.mock.call_count == 0
 
 
 @mark.asyncio

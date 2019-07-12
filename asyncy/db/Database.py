@@ -28,9 +28,13 @@ class Database:
         return _pg_pool
 
     @classmethod
+    async def new_con(cls, config: Config):
+        return await asyncpg.connect(dsn=config.POSTGRES)
+
+    @classmethod
     async def get_all_app_uuids_for_deployment(cls, config: Config):
         pool = await cls.pg_pool(config)
-        # Connection as a context manager is released to the pool on exit
+        # Connection within a context manager is released to the pool on exit
         async with pool.acquire() as con:
             return await con.fetch(
                 'select app_uuid uuid from releases group by app_uuid;'
@@ -42,19 +46,16 @@ class Database:
         pool = await cls.pg_pool(config)
 
         async with pool.acquire() as con:
-            # queries in transaction callback are rolled back on failure
-            async with con.transaction():
+            result = await con.execute("""\
+                update releases
+                set state = $1
+                where app_uuid = $2 and id = $3;
+            """, state.value, app_id, version)
 
-                result = await con.execute("""\
-                    update releases
-                    set state = $1
-                    where app_uuid = $2 and id = $3;
-                """, state.value, app_id, version)
+            glogger.info(f'Updated state for {app_id}@{version}'
+                         f' to {state.name}')
 
-                glogger.info(f'Updated state for {app_id}@{version}'
-                             f' to {state.name}')
-
-                return result
+            return result
 
     @classmethod
     async def get_container_configs(cls, app, registry_url):
@@ -135,6 +136,7 @@ class Database:
     async def create_service_usage(cls, config: Config, data):
         pool = await cls.pg_pool(config)
         async with pool.acquire() as con:
+            # queries in transaction callback are rolled back on failure
             async with con.transaction():
                 query = """
                 insert into service_usage (service_uuid, tag)
