@@ -142,20 +142,20 @@ async def test_record_service_usage(patch, async_mock, app, value):
     pod_metrics = value['pod_metrics']
 
     patch.object(Database, 'get_all_services',
-                 return_value=['first_service'])
+                 new=async_mock(return_value=['first_service']))
     patch.object(ServiceUsage, 'get_pod_metrics',
                  new=async_mock(return_value=pod_metrics))
-    patch.object(Database, 'create_service_usage')
-    patch.object(Database, 'update_service_usage')
+    patch.object(Database, 'create_service_usage', new=async_mock())
+    patch.object(Database, 'update_service_usage', new=async_mock())
 
     patch.object(asyncio, 'sleep', new=async_mock(side_effect=side_effect))
 
     await ServiceUsage.record_service_usage(app.config, app.logger)
 
-    Database.create_service_usage.assert_called_with(app.config,
-                                                     pod_metrics)
-    Database.update_service_usage.assert_called_with(app.config,
-                                                     pod_metrics)
+    Database.create_service_usage.mock.assert_called_with(app.config,
+                                                          pod_metrics)
+    Database.update_service_usage.mock.assert_called_with(app.config,
+                                                          pod_metrics)
 
 
 @mark.parametrize('value', [{
