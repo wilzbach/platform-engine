@@ -77,7 +77,7 @@ class Containers:
         container_configs = list(map(lambda config: ContainerConfig(
             name=cls.get_containerconfig_name(app, config.name),
             data=config.data
-        ), Database.get_container_configs(app, registry_url)))
+        ), await Database.get_container_configs(app, registry_url)))
 
         env = {}
         for key, omg_config in omg.get('environment', {}).items():

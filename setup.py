@@ -29,6 +29,7 @@ setup(
         'pytest-asyncio==0.10.0'
     ],
     setup_requires=['pytest-runner'],
+    python_requires='>=3.7',
     install_requires=[
         'prometheus-client==0.2.0',
         'tornado==5.0.2',
@@ -38,7 +39,7 @@ setup(
         'storyscript==0.21.1',
         'ujson==1.35',
         'certifi>=2018.8.24',
-        'psycopg2==2.7.5',
+        'asyncpg==0.18.3',
         'numpy==1.16.4',
         'requests==2.21.0'  # Used for structures like CaseInsensitiveDict.
     ],

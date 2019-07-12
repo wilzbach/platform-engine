@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
-import select
-import signal
-from threading import Thread
 from unittest import mock
+
+import asyncpg
 
 from asyncy.App import App, AppData
 from asyncy.AppConfig import AppConfig
@@ -20,9 +19,8 @@ from asyncy.ServiceUsage import ServiceUsage
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.db.Database import Database
 from asyncy.entities.Release import Release
+from asyncy.enums.AppEnvironment import AppEnvironment
 from asyncy.enums.ReleaseState import ReleaseState
-
-import psycopg2
 
 import pytest
 from pytest import fixture, mark
@@ -50,41 +48,61 @@ def asyncy_exc():
 
 
 @fixture
-def db(patch, magic):
-    def get():
-        db = magic()
-        patch.object(psycopg2, 'connect', return_value=db)
-        return db
+def db(patch, magic, async_cm_mock, async_mock):
+    con = magic()
+    patch.object(con, 'add_listener', new=async_mock())
+    patch.object(con, 'close', new=async_mock())
+    con.con = con
+    return con
 
-    return get
 
-
-def test_listen_to_releases(patch, db, magic, config, logger):
-    conn = db()
-
-    def exc(*args, **kwargs):
-        raise psycopg2.InterfaceError()
-
-    patch.object(asyncio, 'run_coroutine_threadsafe', side_effect=exc)
-    patch.object(select, 'select', side_effect=[([], [], []), ([], [], []),
-                                                False])
+@mark.asyncio
+async def test_listen_to_releases(patch, db, magic,
+                                  config, logger, async_mock):
+    patch.object(Database, 'new_con', new=async_mock(return_value=db))
+    patch.many(asyncio, ['run_coroutine_threadsafe', 'create_task'])
     patch.object(Apps, 'reload_app')
-    patch.many(os, ['kill', 'getpid'])
-    notif = magic()
-    notif.payload = 'app_id'
-    conn.notifies = [notif]
+
     loop = magic()
 
-    Apps.listen_to_releases(config, logger, loop)
+    await Apps.listen_to_releases(config, logger, loop)
 
-    conn.cursor().execute.assert_called_with('listen release;')
-    Apps.reload_app.assert_called_with(config, logger, 'app_id')
-    conn.set_isolation_level.assert_called_with(
-        psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-    asyncio.run_coroutine_threadsafe.assert_called_with(
-        Apps.reload_app(), loop)
+    Database.new_con.mock.assert_called_once()
+    db.con.add_listener.mock.assert_called_once()
 
-    os.kill.assert_called_with(os.getpid.return_value, signal.SIGINT)
+    patch.many(os, ['kill', 'getpid'])
+    patch.object(Apps, 'release_listener_db_con', side_effect=db)
+    patch.object(db.con, 'add_listener',
+                 new=async_mock(side_effect=OSError))
+
+    await Apps.listen_to_releases(config, logger, loop)
+    asyncio.create_task\
+        .assert_called_with(Apps.release_listener_db_con.close())
+    os.kill.assert_called_once()
+    os.getpid.assert_called_once()
+
+
+@mark.asyncio
+async def test_supervise_listener(patch, db, magic,
+                                  config, logger, async_mock):
+    loop = magic()
+    patch.object(Apps, 'listen_to_releases', new=async_mock())
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(Apps.supervise_release_listener(config,
+                                                               logger, loop),
+                               timeout=3.2)
+    assert Apps.listen_to_releases.mock.call_count == 3
+
+    patch.object(Apps, 'release_listener_db_con')
+    patch.object(Apps.release_listener_db_con, '_con', True)
+    patch.object(Apps.release_listener_db_con, '_listeners', {'release'})
+
+    Apps.listen_to_releases.mock.call_count = 0
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(Apps.supervise_release_listener(config,
+                                                               logger, loop),
+                               timeout=1.2)
+    assert Apps.listen_to_releases.mock.call_count == 0
 
 
 @mark.asyncio
@@ -119,18 +137,19 @@ async def test_destroy_all_exc(patch, async_mock, magic):
 
 
 @mark.asyncio
-async def test_init_all(patch, magic, async_mock, config, logger, db):
+async def test_init_all(patch, magic, async_mock,
+                        config, logger, db):
     db()
     patch.object(Sentry, 'init')
-    patch.init(Thread)
-    patch.object(Thread, 'start')
-
     apps = [{
         'uuid': 'my_app_uuid'
     }]
     patch.object(Database, 'get_all_app_uuids_for_deployment',
-                 return_value=apps)
+                 new=async_mock(return_value=apps))
     patch.object(Apps, 'reload_app', new=async_mock())
+    patch.object(Apps, 'listen_to_releases', new=async_mock())
+    patch.object(Apps, 'supervise_release_listener')
+    patch.object(asyncio, 'create_task')
 
     await Apps.init_all('sentry_dsn', 'release_ver', config, logger)
     Apps.reload_app.mock.assert_called_with(
@@ -139,15 +158,10 @@ async def test_init_all(patch, magic, async_mock, config, logger, db):
     Sentry.init.assert_called_with('sentry_dsn', 'release_ver')
 
     loop = asyncio.get_event_loop()
-    assert Thread.__init__.mock_calls == [
-        mock.call(target=Apps.listen_to_releases,
-                  args=[config, logger, loop],
-                  daemon=True),
-        # mock.call(target=ServiceUsage.start_recording,
-        #           args=[config, logger, loop],
-        #           daemon=True),
-    ]
-    Thread.start.assert_called()
+
+    Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
+    asyncio.create_task.assert_called_once()
+    Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
 
 
 def test_get(magic):
@@ -159,14 +173,14 @@ def test_get(magic):
 @mark.asyncio
 async def test_reload_app_ongoing_deployment(config, logger, patch):
     app_id = 'my_app'
-    patch.object(Database, 'new_pg_conn')
+    patch.object(Database, 'pg_pool')
 
     await Apps.deployment_lock.try_acquire(app_id)
 
     await Apps.reload_app(config, logger, app_id)
 
     logger.warn.assert_called()
-    Database.new_pg_conn.assert_not_called()
+    Database.pg_pool.assert_not_called()
 
 
 @mark.asyncio
@@ -189,9 +203,11 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
         state='QUEUED',
         deleted=True,
         owner_uuid='owner_uuid',
-        owner_email='owner_email'
+        owner_email='owner_email',
+        app_environment=AppEnvironment.PRODUCTION
     )
-    patch.object(Database, 'get_release_for_deployment', return_value=release)
+    patch.object(Database, 'get_release_for_deployment',
+                 new=async_mock(return_value=release))
 
     await Apps.reload_app(config, logger, app_id)
 
@@ -200,9 +216,13 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 
 @mark.parametrize('raise_exc', [None, exc, asyncio_timeout_exc])
 @mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
+@mark.parametrize('app_environment_db', ['STAGING', 'PRODUCTION', 'DEV'])
+@mark.parametrize('app_environment_config', ['STAGING', 'PRODUCTION', 'DEV'])
 @mark.asyncio
 async def test_reload_app(patch, config, logger, db, async_mock,
-                          magic, raise_exc, previous_state):
+                          magic, raise_exc, previous_state,
+                          app_environment_db, app_environment_config):
+    config.APP_ENVIRONMENT = AppEnvironment[app_environment_config]
     old_app = magic()
     app_id = 'app_id'
     app_name = 'app_name'
@@ -211,7 +231,7 @@ async def test_reload_app(patch, config, logger, db, async_mock,
     patch.object(Sentry, 'capture_exc')
     app_logger = magic()
     patch.object(Apps, 'make_logger_for_app', return_value=app_logger)
-    patch.object(Database, 'update_release_state')
+    patch.object(Database, 'update_release_state', new=async_mock())
 
     patch.object(Apps, 'destroy_app', new=async_mock())
     if raise_exc:
@@ -232,18 +252,32 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         state=previous_state,
         deleted=True,
         owner_uuid='owner_uuid',
-        owner_email='example@example.com'
+        owner_email='example@example.com',
+        app_environment=AppEnvironment[app_environment_db]
     )
-    patch.object(Database, 'get_release_for_deployment', return_value=release)
+
+    patch.object(Database, 'get_release_for_deployment',
+                 new=async_mock(return_value=release))
 
     await Apps.reload_app(config, logger, app_id)
 
     Apps.destroy_app.mock.assert_called_with(old_app, silent=True,
                                              update_db_state=True)
+
+    if AppEnvironment[app_environment_db] != \
+            AppEnvironment[app_environment_config]:
+        Apps.deploy_release.mock.assert_not_called()
+        logger.info.assert_called()
+        logger.error.assert_not_called()
+        logger.warn.assert_not_called()
+        Database.update_release_state.mock.assert_not_called()
+        return
+
     if previous_state == 'FAILED':
         Apps.deploy_release.mock.assert_not_called()
         logger.warn.assert_called()
         logger.error.assert_not_called()
+        Database.update_release_state.mock.assert_not_called()
         return
 
     Apps.deploy_release.mock.assert_called_with(
@@ -257,14 +291,14 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         logger.error.assert_not_called()
 
     if raise_exc == asyncio_timeout_exc:
-        Database.update_release_state.assert_called_with(
+        Database.update_release_state.mock.assert_called_with(
             app_logger, config, 'app_id', 1, ReleaseState.TIMED_OUT)
 
 
 @mark.asyncio
-async def test_deploy_release_many_services(patch):
+async def test_deploy_release_many_services(patch, async_mock):
     patch.object(Apps, 'make_logger_for_app')
-    patch.object(Database, 'update_release_state')
+    patch.object(Database, 'update_release_state', new=async_mock())
     patch.init(TooManyServices)
     patch.object(TooManyServices, '__str__', return_value='too_many_services')
 
@@ -287,18 +321,19 @@ async def test_deploy_release_many_services(patch):
             state='QUEUED',
             deleted=False,
             owner_uuid='owner_uuid',
-            owner_email='example@example.com'
+            owner_email='example@example.com',
+            app_environment=AppEnvironment.PRODUCTION
         )
     )
 
     TooManyServices.__init__.assert_called_with(20, 15)
-    Database.update_release_state.assert_called()
+    Database.update_release_state.mock.assert_called()
 
 
 @mark.asyncio
-async def test_deploy_release_many_apps(patch, magic):
+async def test_deploy_release_many_apps(patch, magic, async_mock):
     patch.object(Apps, 'make_logger_for_app')
-    patch.object(Database, 'update_release_state')
+    patch.object(Database, 'update_release_state', new=async_mock())
     patch.init(TooManyActiveApps)
     patch.object(TooManyActiveApps, '__str__', return_value='too_many')
 
@@ -323,11 +358,12 @@ async def test_deploy_release_many_apps(patch, magic):
             state='QUEUED',
             deleted=False,
             owner_uuid='owner_uuid',
-            owner_email='example@example.com'
+            owner_email='example@example.com',
+            app_environment=AppEnvironment.PRODUCTION
         ))
 
         TooManyActiveApps.__init__.assert_called_with(20, 5)
-        Database.update_release_state.assert_called()
+        Database.update_release_state.mock.assert_called()
     finally:
         Apps.apps = {}  # Cleanup.
 
@@ -343,7 +379,7 @@ def test_get_app_config(patch):
 @mark.asyncio
 async def test_deploy_release_many_volumes(patch, async_mock):
     patch.object(Apps, 'make_logger_for_app')
-    patch.object(Database, 'update_release_state')
+    patch.object(Database, 'update_release_state', new=async_mock())
     patch.init(TooManyVolumes)
     patch.object(TooManyVolumes, '__str__', return_value='too_many_vols')
 
@@ -375,12 +411,13 @@ async def test_deploy_release_many_volumes(patch, async_mock):
             state='QUEUED',
             deleted=False,
             owner_uuid='owner_uuid',
-            owner_email='owner_email'
+            owner_email='owner_email',
+            app_environment=AppEnvironment.PRODUCTION
         )
     )
 
     TooManyVolumes.__init__.assert_called_with(20, 15)
-    Database.update_release_state.assert_called()
+    Database.update_release_state.mock.assert_called()
 
 
 @mark.parametrize('raise_exc', [None, exc, asyncy_exc])
@@ -394,7 +431,7 @@ async def test_deploy_release(config, magic, patch, deleted,
     patch.object(Sentry, 'capture_exc')
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(Containers, 'init', new=async_mock())
-    patch.object(Database, 'update_release_state')
+    patch.object(Database, 'update_release_state', new=async_mock())
     app_logger = magic()
     patch.object(Apps, 'make_logger_for_app', return_value=app_logger)
     Apps.apps = {}
@@ -422,7 +459,8 @@ async def test_deploy_release(config, magic, patch, deleted,
         state='QUEUED',
         deleted=deleted,
         owner_uuid='owner_uuid',
-        owner_email='owner_email'
+        owner_email='owner_email',
+        app_environment=AppEnvironment.PRODUCTION
     )
 
     await Apps.deploy_release(
@@ -430,14 +468,14 @@ async def test_deploy_release(config, magic, patch, deleted,
     )
 
     if maintenance:
-        assert Database.update_release_state.call_count == 0
+        assert Database.update_release_state.mock.call_count == 0
         app_logger.warn.assert_called()
     elif deleted:
         app_logger.warn.assert_called()
-        Database.update_release_state.assert_called_with(
+        Database.update_release_state.mock.assert_called_with(
             app_logger, config, 'app_id', 'version', ReleaseState.NO_DEPLOY)
     else:
-        assert Database.update_release_state.mock_calls[0] == mock.call(
+        assert Database.update_release_state.mock.mock_calls[0] == mock.call(
             app_logger, config, 'app_id', 'version', ReleaseState.DEPLOYING)
 
         App.__init__.assert_called_with(app_data=AppData(
@@ -454,11 +492,16 @@ async def test_deploy_release(config, magic, patch, deleted,
             assert Apps.apps.get('app_id') is None
             if raise_exc == exc:
                 Sentry.capture_exc.assert_called()
-            assert Database.update_release_state.mock_calls[1] == mock.call(
-                app_logger, config, 'app_id', 'version', ReleaseState.FAILED)
+            assert \
+                Database.update_release_state.mock.mock_calls[1] \
+                == mock.call(app_logger, config, 'app_id',
+                             'version', ReleaseState.FAILED)
         else:
-            assert Database.update_release_state.mock_calls[1] == mock.call(
-                app_logger, config, 'app_id', 'version', ReleaseState.DEPLOYED)
+            assert \
+                Database.update_release_state.mock.mock_calls[1] \
+                == mock.call(app_logger, config,
+                             'app_id', 'version', ReleaseState.DEPLOYED)
+
             assert Apps.apps.get('app_id') is not None
 
 
@@ -530,7 +573,7 @@ async def test_destroy_app_exc(patch, async_mock, magic,
                                silent, update_db):
     app = magic()
     app.destroy = async_mock(side_effect=exc())
-    patch.object(Database, 'update_release_state')
+    patch.object(Database, 'update_release_state', new=async_mock())
 
     if silent:
         await Apps.destroy_app(app, silent, update_db_state=update_db)
@@ -539,7 +582,7 @@ async def test_destroy_app_exc(patch, async_mock, magic,
             await Apps.destroy_app(app, silent, update_db_state=update_db)
 
     if update_db:
-        assert Database.update_release_state.mock_calls == [
+        assert Database.update_release_state.mock.mock_calls == [
             mock.call(app.logger, app.config, app.app_id, app.version,
                       ReleaseState.TERMINATING),
             mock.call(app.logger, app.config, app.app_id, app.version,

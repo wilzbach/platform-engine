@@ -143,7 +143,7 @@ class ServiceUsage:
                 # Split services into batches,
                 # Record metrics for all services in a given batch in parallel
                 bulk_update_data = []
-                all_services = Database.get_all_services(config)
+                all_services = await Database.get_all_services(config)
                 for i in range(0, len(all_services), cls.BATCH_SIZE):
                     current_batch = all_services[i: i + cls.BATCH_SIZE]
                     current_data = await asyncio.gather(*[
@@ -156,12 +156,14 @@ class ServiceUsage:
                         for tag_data in service_data
                     ]
                 # Create default records for all new (service_uuid, tag) pairs
-                Database.create_service_usage(config, bulk_update_data)
-                Database.update_service_usage(config, bulk_update_data)
+                await Database.create_service_usage(config, bulk_update_data)
+                await Database.update_service_usage(config, bulk_update_data)
                 # Sleep before updating metrics again
                 await asyncio.sleep(cls.WAIT_PERIOD)
             except Exception as e:
                 logger.error('Recording resource usage metrics failed', e)
+                import traceback
+                traceback.print_exc()
                 await asyncio.sleep(5)
 
     @classmethod

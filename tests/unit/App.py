@@ -11,6 +11,7 @@ from asyncy.Kubernetes import Kubernetes
 from asyncy.Types import StreamingService
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.entities.Release import Release
+from asyncy.enums.AppEnvironment import AppEnvironment
 from asyncy.processing import Story
 from asyncy.processing.Services import Command, Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
@@ -44,7 +45,8 @@ def app(config, logger, magic):
             always_pull_images=False,
             maintenance=False,
             deleted=False,
-            state='QUEUED'
+            state='QUEUED',
+            app_environment=AppEnvironment.PRODUCTION
         ),
         config=config,
         logger=logger,
@@ -164,7 +166,8 @@ def test_app_init(magic, config, logger, env, always_pull_images):
             owner_email='example@example.com',
             maintenance=False,
             deleted=False,
-            state='QUEUED'
+            state='QUEUED',
+            app_environment=AppEnvironment.PRODUCTION
         ),
         app_config=app_config,
         services=services,
