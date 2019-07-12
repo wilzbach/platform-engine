@@ -85,7 +85,7 @@ async def test_get_all_app_uuids_for_deployment(config, pool):
             select app_uuid uuid
             from releases
                      inner join apps on releases.app_uuid = apps.uuid
-            where environment = %s
+            where environment = %1
             group by app_uuid;
             """
     await Database.get_all_app_uuids_for_deployment(config)
@@ -141,7 +141,8 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock, app_e
                payload stories, apps.name as app_name,
                maintenance, always_pull_images,
                hostname app_dns, state, deleted,
-               apps.owner_uuid, owner_emails.email as owner_email
+               apps.owner_uuid, owner_emails.email as owner_email,
+               environment app_environment
         from latest
                inner join releases using (app_uuid, id)
                inner join apps on (latest.app_uuid = apps.uuid)

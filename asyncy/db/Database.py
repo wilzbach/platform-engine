@@ -48,10 +48,10 @@ class Database:
             select app_uuid uuid
             from releases
                      inner join apps on releases.app_uuid = apps.uuid
-            where environment = %s
+            where environment = $1
             group by app_uuid;
             """
-            return await con.fetch(query)
+            return await con.fetch(query, config.APP_ENVIRONMENT.value)
 
     @classmethod
     async def update_release_state(cls, glogger, config, app_id, version,

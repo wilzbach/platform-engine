@@ -270,14 +270,14 @@ async def test_reload_app(patch, config, logger, db, async_mock,
         logger.info.assert_called()
         logger.error.assert_not_called()
         logger.warn.assert_not_called()
-        Database.update_release_state.assert_not_called()
+        Database.update_release_state.mock.assert_not_called()
         return
 
     if previous_state == 'FAILED':
         Apps.deploy_release.mock.assert_not_called()
         logger.warn.assert_called()
         logger.error.assert_not_called()
-        Database.update_release_state.assert_not_called()
+        Database.update_release_state.mock.assert_not_called()
         return
 
     Apps.deploy_release.mock.assert_called_with(
