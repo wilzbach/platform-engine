@@ -281,7 +281,7 @@ async def test_start(patch, story, async_mock,
                  return_value='asyncy-alpine')
 
     patch.object(Database, 'get_container_configs',
-                 return_value=[])
+                 new=async_mock(return_value=[]))
 
     expected_volumes = []
     if with_volumes:
