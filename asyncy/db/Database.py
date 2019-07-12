@@ -149,13 +149,13 @@ class Database:
     @classmethod
     async def update_service_usage(cls, config: Config, data):
         async with cls.get_pooled_conn(config) as con:
-            query1 = """
+            update_service_resources_stmt = """
             update service_usage
             set cpu_units[next_index] = $1,
             memory_bytes[next_index] = $2
             where service_uuid = $3 and tag = $4;
             """
-            query2 = """
+            update_next_index_stmt = """
             update service_usage
             set next_index = next_index %% 25 + 1
             where service_uuid = $1 and tag = $2;
@@ -168,8 +168,8 @@ class Database:
             q2_vals = [(record['service_uuid'], record['tag'])
                        for record in data]
 
-            await con.execute_many(query1, q1_vals)
-            await con.execute_many(query2, q2_vals)
+            await con.execute_many(update_service_resources_stmt, q1_vals)
+            await con.execute_many(update_next_index_stmt, q2_vals)
 
     @classmethod
     async def get_service_by_alias(cls, config: Config, service_alias: str):

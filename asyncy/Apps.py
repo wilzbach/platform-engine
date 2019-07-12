@@ -334,6 +334,9 @@ class Apps:
         while True:
             await asyncio.sleep(1)
             con = cls.release_listener_db_con
+            # con: connection object
+            # not con._con: underlying connection broken
+            # not in con._listeners: notify listener lost in space
             if not con or not con._con or \
                     ReleaseConstants.table not in con._listeners:
                 await cls.listen_to_releases(config, glogger, loop)
