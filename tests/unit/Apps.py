@@ -59,7 +59,7 @@ def db(patch, magic, async_cm_mock, async_mock):
 async def test_listen_to_releases(patch, db, magic,
                                   config, logger, async_mock):
     patch.object(Database, 'new_con', new=async_mock(return_value=db))
-    patch.many(asyncio, ['run_coroutine_threadsafe', 'ensure_future'])
+    patch.many(asyncio, ['run_coroutine_threadsafe', 'create_task'])
     patch.object(Apps, 'reload_app')
 
     loop = magic()
@@ -75,7 +75,7 @@ async def test_listen_to_releases(patch, db, magic,
                  new=async_mock(side_effect=OSError))
 
     await Apps.listen_to_releases(config, logger, loop)
-    asyncio.ensure_future\
+    asyncio.create_task\
         .assert_called_with(Apps.release_listener_db_con.close())
     os.kill.assert_called_once()
     os.getpid.assert_called_once()
@@ -148,7 +148,7 @@ async def test_init_all(patch, magic, async_mock,
     patch.object(Apps, 'reload_app', new=async_mock())
     patch.object(Apps, 'listen_to_releases', new=async_mock())
     patch.object(Apps, 'supervise_release_listener')
-    patch.object(asyncio, 'ensure_future')
+    patch.object(asyncio, 'create_task')
 
     await Apps.init_all('sentry_dsn', 'release_ver', config, logger)
     Apps.reload_app.mock.assert_called_with(
@@ -159,7 +159,7 @@ async def test_init_all(patch, magic, async_mock,
     loop = asyncio.get_event_loop()
 
     Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
-    asyncio.ensure_future.assert_called_once()
+    asyncio.create_task.assert_called_once()
     Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
 
 

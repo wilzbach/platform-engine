@@ -171,8 +171,8 @@ class Apps:
         # then we might miss some notifications about releases.
         loop = asyncio.get_event_loop()
         await cls.listen_to_releases(config, glogger, loop)
-        asyncio.ensure_future(cls.supervise_release_listener(config, glogger,
-                                                             loop))
+        asyncio.create_task(cls.supervise_release_listener(config, glogger,
+                                                           loop))
 
         # usage_recorder = threading.Thread(
         #     target=ServiceUsage.start_recording,
@@ -312,7 +312,7 @@ class Apps:
     @classmethod
     async def listen_to_releases(cls, config: Config, glogger: Logger, loop):
         if cls.release_listener_db_con:
-            asyncio.ensure_future(cls.release_listener_db_con.close())
+            asyncio.create_task(cls.release_listener_db_con.close())
 
         try:
             con = await Database.new_con(config)

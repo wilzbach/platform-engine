@@ -30,7 +30,7 @@ def pool(magic, patch, async_cm_mock, async_mock):
 
     pool = magic()
     pool.acquire.return_value = async_cm_mock()
-    pool.acquire.return_value.aenter = con
+    patch.object(Database, 'get_pooled_conn', return_value=async_cm_mock())
 
     pool.con = con
 
@@ -40,14 +40,26 @@ def pool(magic, patch, async_cm_mock, async_mock):
 
 
 @mark.asyncio
-async def test_database_connect(patch, magic, config, async_mock):
+async def test_database_connect(patch, magic, config,
+                                async_mock, async_cm_mock):
     patch.object(asyncpg, 'create_pool', new=async_mock())
-    await Database.pg_pool(config)
+    pool = await Database.pg_pool(config)
     asyncpg.create_pool.mock.assert_called_once()
 
     patch.object(asyncpg, 'connect', new=async_mock())
     await Database.new_con(config)
     asyncpg.connect.mock.assert_called_once()
+
+    patch.object(asyncpg, 'connect', new=async_mock())
+    await Database.new_con(config)
+    asyncpg.connect.mock.assert_called_once()
+
+    pool.acquire.return_value = async_cm_mock()
+    pool.acquire.return_value.aenter = 'test-con'
+    patch.object(asyncpg, 'connect', new=async_mock())
+    async with Database.get_pooled_conn(config) as res:
+        assert res == 'test-con'
+        assert pool.acquire.call_count == 1
 
 
 @mark.asyncio
@@ -61,7 +73,7 @@ async def test_update_release_state(logger, config, pool):
     await Database.update_release_state(logger, config, 'app_id', 'version',
                                         ReleaseState.DEPLOYED)
 
-    assert pool.acquire.call_count == 1
+    assert Database.get_pooled_conn.call_count == 1
     pool.con.execute.mock.assert_called_with(
         expected_query, ReleaseState.DEPLOYED.value, 'app_id', 'version')
 
@@ -70,7 +82,7 @@ async def test_update_release_state(logger, config, pool):
 async def test_get_all_app_uuids_for_deployment(magic, config, pool):
     query = 'select app_uuid uuid from releases group by app_uuid;'
     await Database.get_all_app_uuids_for_deployment(config)
-    assert pool.acquire.call_count == 1
+    assert Database.get_pooled_conn.call_count == 1
     pool.con.fetch.mock.assert_called_with(query)
 
 
@@ -98,7 +110,7 @@ async def test_get_container_configs(patch, magic, config,
     registry_url = 'my_registry_url_here'
     ret = await Database.get_container_configs(app, registry_url)
 
-    assert pool.acquire.call_count == 1
+    assert Database.get_pooled_conn.call_count == 1
 
     assert ret == [
         ContainerConfig(name='n1', data='config')
@@ -149,7 +161,7 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock):
                  )
     ret = await Database.get_release_for_deployment(config, app_id)
 
-    assert pool.acquire.call_count == 1
+    assert Database.get_pooled_conn.call_count == 1
     assert ret == Release(
         app_uuid='my_app_uuid',
         app_name='my_app_name',
@@ -177,7 +189,7 @@ async def test_get_all_services(config, pool):
             join owners on owner_uuid = owners.uuid;
             """
     ret = await Database.get_all_services(config)
-    assert pool.acquire.call_count == 1
+    assert Database.get_pooled_conn.call_count == 1
     pool.con.fetch.mock.assert_called_with(query)
     assert ret == await pool.con.fetch(query)
 
@@ -199,7 +211,7 @@ async def test_create_service_usage(patch, config, pool, async_mock):
                 """
 
     await Database.create_service_usage(config, data)
-    assert pool.acquire.call_count == 1
+    assert Database.get_pooled_conn.call_count == 1
     assert pool.con.transaction.call_count == 1
     pool.con.execute_many.mock.assert_called_once()
     pool.con.execute_many.mock.assert_called_with(query, [
@@ -253,6 +265,7 @@ async def test_get_service_by_alias(config, pool):
             """
     ret = await Database.get_service_by_alias(config, alias)
     pool.con.fetchrow.mock.assert_called_with(query, alias, )
+    assert Database.get_pooled_conn.call_count == 1
     assert ret == await pool.con.fetchrow(query, alias)
 
 
@@ -270,6 +283,7 @@ async def test_get_service_by_slug(config, pool):
     pool.con.fetchrow.mock \
         .assert_called_with(query, owner_username, service_name)
     assert ret == await pool.con.fetchrow(query, owner_username, service_name)
+    assert Database.get_pooled_conn.call_count == 1
 
 
 @mark.parametrize('service', [
@@ -304,6 +318,7 @@ async def test_get_service_limits(patch, config, pool,
     patch.object(pool.con, 'fetchrow',
                  new=async_mock(return_value=limits))
     ret = await Database.get_service_limits(config, service, tag)
+    assert Database.get_pooled_conn.call_count == 1
     if '/' in service:
         Database.get_service_by_slug.mock \
             .assert_called_with(config, *service.split('/'))
