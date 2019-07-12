@@ -39,7 +39,7 @@ setup(
         'storyscript==0.21.1',
         'ujson==1.35',
         'certifi>=2018.8.24',
-        'psycopg2==2.7.5',
+        'asyncpg==0.18.3',
         'numpy==1.16.4',
         'requests==2.21.0'  # Used for structures like CaseInsensitiveDict.
     ],

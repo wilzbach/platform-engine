@@ -16,7 +16,19 @@ def magic(mocker):
 
 
 @fixture
+def async_cm_mock(magic):
+    class AsyncContextManagerMock(MagicMock):
+        async def __aenter__(self):
+            return self.aenter
+
+        async def __aexit__(self, *args):
+            pass
+    return AsyncContextManagerMock(magic)
+
+
+@fixture
 def async_mock():
+
     def return_value(*args, **kwargs):
         """
         Inspired from

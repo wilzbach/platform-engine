@@ -13,9 +13,8 @@ class Config:
         'LOGGER_LEVEL': 'debug',
         'INGRESS_GLOBAL_STATIC_IP_NAME': 'storyscript-and-storyscriptapp',
         'APP_DOMAIN': 'storyscriptapp.com',
-        'POSTGRES': 'options='
-                    '--search_path=app_public,app_hidden,app_private,public '
-                    'dbname=postgres user=postgres',
+        'POSTGRES_URI': 'postgres://postgres/asyncy?'
+                        'search_path=app_public,app_hidden,app_private,public',
         'ENGINE_HOST': socket.gethostname(),
         'CLUSTER_CERT': '',
         'CLUSTER_AUTH_TOKEN': '',
