@@ -21,7 +21,7 @@ class Database:
         global _pg_pool
         if not _pg_pool:
             _pg_pool = await \
-                asyncpg.create_pool(dsn=config.POSTGRES,
+                asyncpg.create_pool(dsn=config.POSTGRES_URI,
                                     min_size=5, max_size=15, max_queries=50000,
                                     max_inactive_connection_lifetime=900.0,
                                     init=cls.apply_codecs)
@@ -29,7 +29,7 @@ class Database:
 
     @classmethod
     async def new_con(cls, config: Config):
-        return await asyncpg.connect(dsn=config.POSTGRES)
+        return await asyncpg.connect(dsn=config.POSTGRES_URI)
 
     @classmethod
     async def get_all_app_uuids_for_deployment(cls, config: Config):

@@ -24,6 +24,9 @@ def test_config():
     assert Config.defaults['ASYNCY_SYNAPSE_HOST'] == 'synapse'
     assert Config.defaults['ASYNCY_SYNAPSE_PORT'] == 80
     assert Config.defaults['ASYNCY_HTTP_GW_HOST'] == 'gateway'
+    assert Config.defaults['POSTGRES_URI'] == \
+        'postgres://postgres/asyncy?' \
+        'search_path=app_public,app_hidden,app_private,public'
 
 
 def test_config_init(patch):
