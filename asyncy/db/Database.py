@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+from contextlib import asynccontextmanager
 
 import asyncpg
 
@@ -28,14 +29,20 @@ class Database:
         return _pg_pool
 
     @classmethod
+    @asynccontextmanager
+    async def get_pooled_conn(cls, config: Config):
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as conn:
+            yield conn
+
+    @classmethod
     async def new_con(cls, config: Config):
         return await asyncpg.connect(dsn=config.POSTGRES_URI)
 
     @classmethod
     async def get_all_app_uuids_for_deployment(cls, config: Config):
-        pool = await cls.pg_pool(config)
         # Connection within a context manager is released to the pool on exit
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             return await con.fetch(
                 'select app_uuid uuid from releases group by app_uuid;'
             )
@@ -43,9 +50,7 @@ class Database:
     @classmethod
     async def update_release_state(cls, glogger, config, app_id, version,
                                    state: ReleaseState):
-        pool = await cls.pg_pool(config)
-
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             result = await con.execute("""\
                 update releases
                 set state = $1
@@ -59,8 +64,6 @@ class Database:
 
     @classmethod
     async def get_container_configs(cls, app, registry_url):
-        pool = await cls.pg_pool(app.config)
-
         query = """
                 with containerconfigs as
                 (select name, owner_uuid,
@@ -72,7 +75,7 @@ class Database:
                 where owner_uuid = $1 and registry = $2
             """
 
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(app.config) as con:
             data = await con.fetch(query, app.owner_uuid, registry_url)
 
             result = []
@@ -83,8 +86,6 @@ class Database:
 
     @classmethod
     async def get_release_for_deployment(cls, config, app_id):
-        pool = await cls.pg_pool(config)
-
         query = """
         with latest as (select app_uuid, max(id) as id
                         from releases
@@ -104,7 +105,7 @@ class Database:
         where app_uuid = $1;
         """
 
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             data = await con.fetchrow(query, app_id)
 
             return Release(app_uuid=data['app_uuid'],
@@ -122,8 +123,7 @@ class Database:
 
     @classmethod
     async def get_all_services(cls, config: Config):
-        pool = await cls.pg_pool(config)
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             query = """
             select owners.username, services.uuid, services.name,
                    services.alias
@@ -134,8 +134,7 @@ class Database:
 
     @classmethod
     async def create_service_usage(cls, config: Config, data):
-        pool = await cls.pg_pool(config)
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             # queries in transaction callback are rolled back on failure
             async with con.transaction():
                 query = """
@@ -149,8 +148,7 @@ class Database:
 
     @classmethod
     async def update_service_usage(cls, config: Config, data):
-        pool = await cls.pg_pool(config)
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             query1 = """
             update service_usage
             set cpu_units[next_index] = $1,
@@ -175,8 +173,7 @@ class Database:
 
     @classmethod
     async def get_service_by_alias(cls, config: Config, service_alias: str):
-        pool = await cls.pg_pool(config)
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             query = """
             select uuid from services where alias = $1;
             """
@@ -185,8 +182,7 @@ class Database:
     @classmethod
     async def get_service_by_slug(cls, config: Config,
                                   owner_username: str, service_name: str):
-        pool = await cls.pg_pool(config)
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             query = """
             select services.uuid from services
             join owners on owner_uuid = owners.uuid
@@ -203,8 +199,7 @@ class Database:
         else:
             service = await cls.get_service_by_alias(config, service)
 
-        pool = await cls.pg_pool(config)
-        async with pool.acquire() as con:
+        async with cls.get_pooled_conn(config) as con:
             query = """
             select cpu_units, memory_bytes
             from service_usage
