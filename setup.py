@@ -29,6 +29,7 @@ setup(
         'pytest-asyncio==0.10.0'
     ],
     setup_requires=['pytest-runner'],
+    python_requires='>=3.7',
     install_requires=[
         'prometheus-client==0.2.0',
         'tornado==5.0.2',
