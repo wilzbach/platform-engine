@@ -738,10 +738,10 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
 
     patch.object(asyncio, 'sleep', new=async_mock())
     patch.object(Kubernetes, 'check_for_image_errors', new=async_mock())
-    patch.object(Database, 'get_service_limits', return_value={
+    patch.object(Database, 'get_service_limits', new=async_mock(return_value={
         'cpu': 0,
         'memory': 209715000
-    })
+    }))
 
     expected_create_path = f'/apis/apps/v1/namespaces/' \
                            f'{story.app.app_id}/deployments'
