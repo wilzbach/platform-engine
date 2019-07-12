@@ -85,7 +85,7 @@ async def test_get_all_app_uuids_for_deployment(config, pool):
             select app_uuid uuid
             from releases
                      inner join apps on releases.app_uuid = apps.uuid
-            where environment = %1
+            where environment = $1
             group by app_uuid;
             """
     await Database.get_all_app_uuids_for_deployment(config)
