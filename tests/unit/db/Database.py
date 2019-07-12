@@ -130,7 +130,8 @@ async def test_get_container_configs(patch, magic, config,
 
 @mark.asyncio
 @mark.parametrize('app_environment', ['PRODUCTION', 'STAGING', 'DEV'])
-async def test_get_release_for_deployment(patch, config, pool, async_mock, app_environment):
+async def test_get_release_for_deployment(patch, config, pool, async_mock,
+                                          app_environment):
     app_id = 'my_app_id'
     expected_query = """
         with latest as (select app_uuid, max(id) as id
