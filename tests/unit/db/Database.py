@@ -4,6 +4,7 @@ import asyncpg
 from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
+from asyncy.enums.AppEnvironment import AppEnvironment
 from asyncy.enums.ReleaseState import ReleaseState
 
 import numpy as np
@@ -79,11 +80,17 @@ async def test_update_release_state(logger, config, pool):
 
 
 @mark.asyncio
-async def test_get_all_app_uuids_for_deployment(magic, config, pool):
-    query = 'select app_uuid uuid from releases group by app_uuid;'
+async def test_get_all_app_uuids_for_deployment(config, pool):
+    query = """
+            select app_uuid uuid
+            from releases
+                     inner join apps on releases.app_uuid = apps.uuid
+            where environment = $1
+            group by app_uuid;
+            """
     await Database.get_all_app_uuids_for_deployment(config)
     assert Database.get_pooled_conn.call_count == 1
-    pool.con.fetch.mock.assert_called_with(query)
+    pool.con.fetch.mock.assert_called_with(query, config.APP_ENVIRONMENT.value)
 
 
 @mark.asyncio
@@ -122,7 +129,9 @@ async def test_get_container_configs(patch, magic, config,
 
 
 @mark.asyncio
-async def test_get_release_for_deployment(patch, config, pool, async_mock):
+@mark.parametrize('app_environment', ['PRODUCTION', 'STAGING', 'DEV'])
+async def test_get_release_for_deployment(patch, config, pool, async_mock,
+                                          app_environment):
     app_id = 'my_app_id'
     expected_query = """
         with latest as (select app_uuid, max(id) as id
@@ -133,7 +142,8 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock):
                payload stories, apps.name as app_name,
                maintenance, always_pull_images,
                hostname app_dns, state, deleted,
-               apps.owner_uuid, owner_emails.email as owner_email
+               apps.owner_uuid, owner_emails.email as owner_email,
+               environment app_environment
         from latest
                inner join releases using (app_uuid, id)
                inner join apps on (latest.app_uuid = apps.uuid)
@@ -149,6 +159,7 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock):
                      'app_name': 'my_app_name',
                      'version': 'my_version',
                      'environment': 'my_environment',
+                     'app_environment': app_environment,
                      'stories': 'my_stories',
                      'maintenance': 'my_maintenance',
                      'always_pull_images': 'my_always_pull_images',
@@ -174,7 +185,8 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock):
         state='my_state',
         deleted='my_deleted',
         owner_uuid='my_owner_uuid',
-        owner_email='my_owner_email'
+        owner_email='my_owner_email',
+        app_environment=AppEnvironment[app_environment]
     )
 
     pool.con.fetchrow.mock.assert_called_with(expected_query, app_id)

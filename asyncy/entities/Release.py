@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import typing
 
+from asyncy.enums.AppEnvironment import AppEnvironment
 
 Release = typing.NamedTuple('Release', [
     ('app_uuid', str),
+    ('app_environment', AppEnvironment),
     ('app_name', str),
     ('version', int),
     ('environment', dict),

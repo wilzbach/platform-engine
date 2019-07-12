@@ -7,6 +7,7 @@ import asyncpg
 from asyncy.Config import Config
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
+from asyncy.enums.AppEnvironment import AppEnvironment
 from asyncy.enums.ReleaseState import ReleaseState
 
 import numpy as np
@@ -43,9 +44,14 @@ class Database:
     async def get_all_app_uuids_for_deployment(cls, config: Config):
         # Connection within a context manager is released to the pool on exit
         async with cls.get_pooled_conn(config) as con:
-            return await con.fetch(
-                'select app_uuid uuid from releases group by app_uuid;'
-            )
+            query = """
+            select app_uuid uuid
+            from releases
+                     inner join apps on releases.app_uuid = apps.uuid
+            where environment = $1
+            group by app_uuid;
+            """
+            return await con.fetch(query, config.APP_ENVIRONMENT.value)
 
     @classmethod
     async def update_release_state(cls, glogger, config, app_id, version,
@@ -95,7 +101,8 @@ class Database:
                payload stories, apps.name as app_name,
                maintenance, always_pull_images,
                hostname app_dns, state, deleted,
-               apps.owner_uuid, owner_emails.email as owner_email
+               apps.owner_uuid, owner_emails.email as owner_email,
+               environment app_environment
         from latest
                inner join releases using (app_uuid, id)
                inner join apps on (latest.app_uuid = apps.uuid)
@@ -104,22 +111,24 @@ class Database:
                 (apps.owner_uuid = owner_emails.owner_uuid)
         where app_uuid = $1;
         """
-
         async with cls.get_pooled_conn(config) as con:
             data = await con.fetchrow(query, app_id)
 
-            return Release(app_uuid=data['app_uuid'],
-                           app_name=data['app_name'],
-                           version=data['version'],
-                           environment=data['environment'],
-                           stories=data['stories'],
-                           maintenance=data['maintenance'],
-                           always_pull_images=data['always_pull_images'],
-                           app_dns=data['app_dns'],
-                           state=data['state'],
-                           deleted=data['deleted'],
-                           owner_uuid=data['owner_uuid'],
-                           owner_email=data['owner_email'])
+            return Release(
+                app_uuid=data['app_uuid'],
+                app_environment=AppEnvironment[data['app_environment']],
+                app_name=data['app_name'],
+                version=data['version'],
+                environment=data['environment'],
+                stories=data['stories'],
+                maintenance=data['maintenance'],
+                always_pull_images=data['always_pull_images'],
+                app_dns=data['app_dns'],
+                state=data['state'],
+                deleted=data['deleted'],
+                owner_uuid=data['owner_uuid'],
+                owner_email=data['owner_email']
+            )
 
     @classmethod
     async def get_all_services(cls, config: Config):

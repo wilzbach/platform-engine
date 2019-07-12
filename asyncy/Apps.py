@@ -267,6 +267,18 @@ class Apps:
                              f'progress. Will not reload.')
                 return
             release = await Database.get_release_for_deployment(config, app_id)
+
+            # At boot up, there won't be environment mismatches. However,
+            # since there's just one release notification from the DB, they'll
+            # might make it through.
+            if release.app_environment != config.APP_ENVIRONMENT:
+                glogger.info(
+                    f'Not deploying app {app_id} '
+                    f'(environment mismatch - '
+                    f'expected {config.APP_ENVIRONMENT}, '
+                    f'but got {release.app_environment})')
+                return
+
             if release.state == ReleaseState.FAILED.value:
                 glogger.warn(f'Cowardly refusing to deploy app '
                              f'{app_id}@{release.version} as it\'s '
