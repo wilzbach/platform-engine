@@ -8,6 +8,8 @@ from asyncy.Service import Service
 
 from click.testing import CliRunner
 
+import prometheus_client
+
 import pytest
 from pytest import fixture, mark
 
@@ -22,7 +24,8 @@ def runner():
 @mark.asyncio
 async def test_server(patch, runner):
     patch.object(Service, 'init_wrapper')
-    patch.many(tornado, ['web', 'ioloop'])
+    patch.object(prometheus_client, 'start_http_server')
+    patch.many(tornado, ['web', 'ioloop', 'httpserver'])
     patch.object(asyncio, 'get_event_loop')
 
     result = runner.invoke(Service.start)

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
-import select
 import signal
-import threading
 
-import psycopg2
+import asyncpg
 
 from .App import App, AppData
 from .AppConfig import AppConfig, KEY_EXPOSE
@@ -18,6 +16,7 @@ from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
 from .Sentry import Sentry
 from .ServiceUsage import ServiceUsage
+from .constants.ReleaseConstants import ReleaseConstants
 from .constants.ServiceConstants import ServiceConstants
 from .db.Database import Database
 from .entities.Release import Release
@@ -34,6 +33,7 @@ class Apps:
     """
     Globals used: glogger - the global logger (used for the engine)
     """
+    release_listener_db_con = None
     internal_services = ['http', 'log', 'crontab', 'file', 'event']
 
     deployment_lock = DeploymentLock()
@@ -62,9 +62,9 @@ class Apps:
             return
 
         if release.deleted:
-            Database.update_release_state(logger, config, app_id,
-                                          release.version,
-                                          ReleaseState.NO_DEPLOY)
+            await Database.update_release_state(logger, config, app_id,
+                                                release.version,
+                                                ReleaseState.NO_DEPLOY)
             logger.warn(f'Deployment halted {app_id}@{release.version}; '
                         f'deleted={release.deleted}; '
                         f'maintenance={release.maintenance}')
@@ -72,9 +72,9 @@ class Apps:
                         f'{release.version}')
             return
 
-        Database.update_release_state(logger, config, app_id,
-                                      release.version,
-                                      ReleaseState.DEPLOYING)
+        await Database.update_release_state(logger, config, app_id,
+                                            release.version,
+                                            ReleaseState.DEPLOYING)
 
         try:
             # Check for the currently active apps by the same owner.
@@ -120,17 +120,19 @@ class Apps:
             await app.bootstrap()
 
             cls.apps[app_id] = app
-            Database.update_release_state(logger, config, app_id,
-                                          release.version,
-                                          ReleaseState.DEPLOYED)
+
+            await Database.update_release_state(logger, config, app_id,
+                                                release.version,
+                                                ReleaseState.DEPLOYED)
 
             logger.info(f'Successfully deployed app {app_id}@'
                         f'{release.version}')
         except BaseException as e:
-            Database.update_release_state(logger, config, app_id,
-                                          release.version,
-                                          ReleaseState.FAILED)
+            await Database.update_release_state(logger, config, app_id,
+                                                release.version,
+                                                ReleaseState.FAILED)
             if isinstance(e, StoryscriptError):
+
                 logger.error(str(e))
             else:
                 logger.error(f'Failed to bootstrap app ({e})', exc=e)
@@ -150,7 +152,7 @@ class Apps:
         are deployed together in parallel
         and subsequent batches are deployed sequentially
         """
-        apps = Database.get_all_app_uuids_for_deployment(config)
+        apps = await Database.get_all_app_uuids_for_deployment(config)
         for i in range(0, len(apps), DEPLOYMENT_BATCH_SIZE):
             current_batch = apps[i: i + DEPLOYMENT_BATCH_SIZE]
             await asyncio.gather(*[
@@ -168,10 +170,9 @@ class Apps:
         # If we start listening after all the apps are deployed,
         # then we might miss some notifications about releases.
         loop = asyncio.get_event_loop()
-        release_listener = threading.Thread(target=cls.listen_to_releases,
-                                            args=[config, glogger, loop],
-                                            daemon=True)
-        release_listener.start()
+        await cls.listen_to_releases(config, glogger, loop)
+        asyncio.create_task(cls.supervise_release_listener(config, glogger,
+                                                           loop))
 
         # usage_recorder = threading.Thread(
         #     target=ServiceUsage.start_recording,
@@ -227,9 +228,9 @@ class Apps:
         app.logger.info(f'Destroying app {app.app_id}')
         try:
             if update_db_state:
-                Database.update_release_state(app.logger, app.config,
-                                              app.app_id, app.version,
-                                              ReleaseState.TERMINATING)
+                await Database.update_release_state(app.logger, app.config,
+                                                    app.app_id, app.version,
+                                                    ReleaseState.TERMINATING)
 
             await app.destroy()
 
@@ -243,9 +244,9 @@ class Apps:
                 exc=e)
         finally:
             if update_db_state:
-                Database.update_release_state(app.logger, app.config,
-                                              app.app_id, app.version,
-                                              ReleaseState.TERMINATED)
+                await Database.update_release_state(app.logger, app.config,
+                                                    app.app_id, app.version,
+                                                    ReleaseState.TERMINATED)
 
         app.logger.info(f'Completed destroying app {app.app_id}')
         cls.apps[app.app_id] = None
@@ -265,7 +266,7 @@ class Apps:
                 glogger.warn(f'Another deployment for app {app_id} is in '
                              f'progress. Will not reload.')
                 return
-            release = Database.get_release_for_deployment(config, app_id)
+            release = await Database.get_release_for_deployment(config, app_id)
 
             # At boot up, there won't be environment mismatches. However,
             # since there's just one release notification from the DB, they'll
@@ -303,9 +304,9 @@ class Apps:
             if isinstance(e, asyncio.TimeoutError):
                 logger = cls.make_logger_for_app(config, app_id,
                                                  release.version)
-                Database.update_release_state(logger, config, app_id,
-                                              release.version,
-                                              ReleaseState.TIMED_OUT)
+                await Database.update_release_state(logger, config, app_id,
+                                                    release.version,
+                                                    ReleaseState.TIMED_OUT)
         finally:
             if can_deploy:
                 # If we did acquire the lock, then we must release it.
@@ -321,28 +322,33 @@ class Apps:
                 Sentry.capture_exc(e)
 
     @classmethod
-    def listen_to_releases(cls, config: Config, glogger: Logger, loop):
-        glogger.info('Listening for new releases...')
-        conn = Database.new_pg_conn(config)
-        conn.set_isolation_level(
-            psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    async def listen_to_releases(cls, config: Config, glogger: Logger, loop):
+        if cls.release_listener_db_con:
+            asyncio.create_task(cls.release_listener_db_con.close())
 
-        cur = conn.cursor()
-        cur.execute('listen release;')
+        try:
+            con = await Database.new_con(config)
+            await con.add_listener(ReleaseConstants.table,
+                                   lambda _conn, _pid, _channel, payload:
+                                   asyncio.run_coroutine_threadsafe(
+                                       cls.reload_app(config,
+                                                      glogger, payload),
+                                       loop))
+            cls.release_listener_db_con = con
+            glogger.info('Listening for new releases...')
+        except (OSError, asyncpg.exceptions.InterfaceError,
+                asyncpg.exceptions.InternalClientError):
+            # kill the server if the database listener is not listening
+            os.kill(os.getpid(), signal.SIGINT)
 
+    @classmethod
+    async def supervise_release_listener(cls, config, glogger, loop):
         while True:
-            try:
-                if select.select([conn], [], [], 5) == ([], [], []):
-                    continue
-                else:
-                    conn.poll()
-                    while conn.notifies:
-                        notify = conn.notifies.pop(0)
-                        asyncio.run_coroutine_threadsafe(
-                            cls.reload_app(config, glogger, notify.payload),
-                            loop)
-            except (psycopg2.InterfaceError, psycopg2.OperationalError):
-                glogger.error('Connection to the DB has failed. Exiting.')
-                # Because _thread.interrupt_main() doesn't work.
-                os.kill(os.getpid(), signal.SIGINT)
-                break
+            await asyncio.sleep(1)
+            con = cls.release_listener_db_con
+            # con: connection object
+            # not con._con: underlying connection broken
+            # not in con._listeners: notify listener lost in space
+            if not con or not con._con or \
+                    ReleaseConstants.table not in con._listeners:
+                await cls.listen_to_releases(config, glogger, loop)
