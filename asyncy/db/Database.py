@@ -8,13 +8,10 @@ from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Release import Release
 from asyncy.enums.ReleaseState import ReleaseState
 
-
 import numpy as np
 
-import psycopg2
-import psycopg2.extras
-
 _pg_pool = None
+
 
 class Database:
 
@@ -122,6 +119,111 @@ class Database:
                            owner_uuid=data['owner_uuid'],
                            owner_email=data['owner_email'])
 
+    @classmethod
+    async def get_all_services(cls, config: Config):
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as con:
+            query = """
+            select owners.username, services.uuid, services.name,
+                   services.alias
+            from services
+            join owners on owner_uuid = owners.uuid;
+            """
+            return await con.fetch(query)
+
+    @classmethod
+    async def create_service_usage(cls, config: Config, data):
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as con:
+            async with con.transaction():
+                query = """
+                insert into service_usage (service_uuid, tag)
+                values ($1, $2) on conflict (service_uuid, tag) do nothing;
+                """
+
+                vals = [(d['service_uuid'], d['tag']) for d in data]
+
+                return await con.execute_many(query, vals)
+
+    @classmethod
+    async def update_service_usage(cls, config: Config, data):
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as con:
+            query1 = """
+            update service_usage
+            set cpu_units[next_index] = $1,
+            memory_bytes[next_index] = $2
+            where service_uuid = $3 and tag = $4;
+            """
+            query2 = """
+            update service_usage
+            set next_index = next_index %% 25 + 1
+            where service_uuid = $1 and tag = $2;
+            """
+
+            q1_vals = [(record['cpu_units'], record['memory_bytes'],
+                        record['service_uuid'], record['tag'])
+                       for record in data]
+
+            q2_vals = [(record['service_uuid'], record['tag'])
+                       for record in data]
+
+            await con.execute_many(query1, q1_vals)
+            await con.execute_many(query2, q2_vals)
+
+    @classmethod
+    async def get_service_by_alias(cls, config: Config, service_alias: str):
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as con:
+            query = """
+            select uuid from services where alias = $1;
+            """
+            return await con.fetchrow(query, service_alias)
+
+    @classmethod
+    async def get_service_by_slug(cls, config: Config,
+                                  owner_username: str, service_name: str):
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as con:
+            query = """
+            select services.uuid from services
+            join owners on owner_uuid = owners.uuid
+            where owners.username = $1 and services.name = $2;
+            """
+            return await con.fetchrow(query, owner_username, service_name)
+
+    @classmethod
+    async def get_service_limits(cls, config: Config, service: str, tag: str):
+        if '/' in service:
+            owner_username, service_name = service.split('/')
+            service = await \
+                cls.get_service_by_slug(config, owner_username, service_name)
+        else:
+            service = await cls.get_service_by_alias(config, service)
+
+        pool = await cls.pg_pool(config)
+        async with pool.acquire() as con:
+            query = """
+            select cpu_units, memory_bytes
+            from service_usage
+            where service_uuid = $1 and tag = $2;
+            """
+            res = await con.fetchrow(query, service['uuid'], tag)
+            if res is None or -1 in res['memory_bytes']:
+                limits = {
+                    'cpu': 0,
+                    'memory': 209715000  # 200Mi
+                }
+            else:
+                limits = {
+                    'cpu': 1.25 * np.percentile(res['cpu_units'], 95),
+                    'memory': min(
+                        209715000,  # 200Mi
+                        1.25 * np.percentile(res['memory_bytes'], 95)
+                    )
+                }
+            return limits
+
     @staticmethod
     async def apply_codecs(con):
         await con.set_type_codec(
@@ -142,100 +244,3 @@ class Database:
             decoder=str,
             schema='pg_catalog',
         )
-
-    @classmethod
-    def get_all_services(cls, config: Config):
-        with cls.new_pg_cur(config) as db:
-            query = """
-            select owners.username, services.uuid, services.name,
-                   services.alias
-            from services
-            join owners on owner_uuid = owners.uuid;
-            """
-            db.cur.execute(query)
-            return db.cur.fetchall()
-
-    @classmethod
-    def create_service_usage(cls, config: Config, data):
-        with cls.new_pg_cur(config) as db:
-            query = """
-            insert into service_usage (service_uuid, tag)
-            values %s on conflict (service_uuid, tag) do nothing;
-            """
-            psycopg2.extras.execute_values(db.cur, query, [
-                (s['service_uuid'], s['tag']) for s in data
-            ])
-            db.conn.commit()
-
-    @classmethod
-    def update_service_usage(cls, config: Config, data):
-
-        with cls.new_pg_cur(config) as db:
-            query1 = """
-            update service_usage
-            set cpu_units[next_index] = %(cpu_units)s,
-            memory_bytes[next_index] = %(memory_bytes)s
-            where service_uuid = %(service_uuid)s and tag = %(tag)s;
-            """
-            query2 = """
-            update service_usage
-            set next_index = next_index %% 25 + 1
-            where service_uuid = %(service_uuid)s and tag = %(tag)s;
-            """
-            for record in data:
-                db.cur.execute(query1, record)
-                db.cur.execute(query2, record)
-            db.conn.commit()
-
-    @classmethod
-    def get_service_by_alias(cls, config: Config, service_alias: str):
-        with cls.new_pg_cur(config) as db:
-            query = """
-            select uuid from services where alias = %s;
-            """
-            db.cur.execute(query, (service_alias,))
-            return db.cur.fetchone()
-
-    @classmethod
-    def get_service_by_slug(cls, config: Config,
-                            owner_username: str, service_name: str):
-        with cls.new_pg_cur(config) as db:
-            query = """
-            select services.uuid from services
-            join owners on owner_uuid = owners.uuid
-            where owners.username = %s and services.name = %s;
-            """
-            db.cur.execute(query, (owner_username, service_name))
-            return db.cur.fetchone()
-
-    @classmethod
-    def get_service_limits(cls, config: Config, service: str, tag: str):
-        if '/' in service:
-            owner_username, service_name = service.split('/')
-            service = cls.get_service_by_slug(config,
-                                              owner_username, service_name)
-        else:
-            service = cls.get_service_by_alias(config, service)
-
-        with cls.new_pg_cur(config) as db:
-            query = """
-            select cpu_units, memory_bytes
-            from service_usage
-            where service_uuid = %s and tag = %s;
-            """
-            db.cur.execute(query, (service['uuid'], tag))
-            res = db.cur.fetchone()
-            if res is None or -1 in res['memory_bytes']:
-                limits = {
-                    'cpu': 0,
-                    'memory': 209715000  # 200Mi
-                }
-            else:
-                limits = {
-                    'cpu': 1.25 * np.percentile(res['cpu_units'], 95),
-                    'memory': min(
-                        209715000,  # 200Mi
-                        1.25 * np.percentile(res['memory_bytes'], 95)
-                    )
-                }
-            return limits

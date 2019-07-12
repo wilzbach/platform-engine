@@ -172,7 +172,6 @@ class Apps:
         await cls.listen_to_releases(config, glogger, loop)
         asyncio.ensure_future(cls.supervise_release_listener(config, glogger,
                                                              loop))
-        asyncio.ensure_future(cls.listen_to_releases(config, glogger, loop))
 
         # usage_recorder = threading.Thread(
         #     target=ServiceUsage.start_recording,

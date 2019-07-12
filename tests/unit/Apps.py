@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import asyncpg
 import os
 from unittest import mock
+
+import asyncpg
 
 from asyncy.App import App, AppData
 from asyncy.AppConfig import AppConfig
@@ -71,17 +72,23 @@ async def test_listen_to_releases(patch, db, magic,
                  new=async_mock(side_effect=lambda _a, cb:
                                 cb('_conn', '_pid',
                                     '_channel', 'payload')))
-    patch.many(os, ['kill', 'getpid'])
-    patch.object(conn, 'add_listener', new=async_mock(side_effect=lambda _a, cb: cb('_conn', '_pid', '_channel', 'payload')))
     loop = magic()
 
     await Apps.listen_to_releases(config, logger, loop)
     Apps.reload_app.assert_called_once()
     asyncio.run_coroutine_threadsafe.assert_called_with(
         Apps.reload_app(config, logger, 'payload'), loop)
-
     db.acquire.mock.assert_called_once()
     db.con.add_listener.mock.assert_called_once()
+
+    patch.many(os, ['kill', 'getpid'])
+    patch.object(Apps, '_release_con', None)
+    patch.object(db.con, 'add_listener',
+                 new=async_mock(side_effect=OSError))
+
+    await Apps.listen_to_releases(config, logger, loop)
+    os.kill.assert_called_once()
+    os.getpid.assert_called_once()
 
 
 @mark.asyncio
@@ -108,7 +115,6 @@ async def test_supervise_listener(patch, db, magic,
     except asyncio.TimeoutError:
         assert Apps.listen_to_releases.mock.call_count == 0
 
-    os.kill.assert_called_with(os.getpid.return_value, signal.SIGINT)
 
 @mark.asyncio
 async def test_destroy_all(patch, async_mock, magic):
@@ -166,19 +172,7 @@ async def test_init_all(patch, magic, async_mock,
 
     Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
     asyncio.ensure_future.assert_called_once()
-    asyncio.ensure_future.assert_called_with(
-        Apps.supervise_release_listener(config, logger, loop))
-        Apps.listen_to_releases(config, logger, loop))
-    asyncio.ensure_future.assert_called_with(Apps.listen_to_releases(config, logger, loop))
-    assert Thread.__init__.mock_calls == [
-        mock.call(target=Apps.listen_to_releases,
-                  args=[config, logger, loop],
-                  daemon=True),
-        # mock.call(target=ServiceUsage.start_recording,
-        #           args=[config, logger, loop],
-        #           daemon=True),
-    ]
-    Thread.start.assert_called()
+    Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
 
 
 def test_get(magic):

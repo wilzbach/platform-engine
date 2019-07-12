@@ -11,23 +11,31 @@ import numpy as np
 from pytest import fixture, mark
 
 
-
 @fixture
 def pool(magic, patch, async_cm_mock, async_mock):
-
     con = magic()
-    con.transaction.return_value = async_cm_mock()
 
-    patch.object(con, 'fetchrow', new=async_mock())
-    patch.object(con, 'fetch', new=async_mock())
-    patch.object(con, 'execute', new=async_mock())
+    patch.object(con, 'execute_many',
+                 new=async_mock(side_effect=lambda query, *args:
+                                (query, *args)))
+
+    con.fetchrow = async_mock(side_effect=lambda query, *args: (query, *args))
+    con.fetch = async_mock(side_effect=lambda query, *args: (query, *args))
+    con.execute = async_mock(side_effect=lambda query, *args: (query, *args))
+    con.execute_many = async_mock(side_effect=lambda query, *args:
+                                  (query, *args))
+
+    con.transaction.return_value = async_cm_mock()
+    con.transaction.return_value.aenter = con
 
     pool = magic()
-    patch.object(pool, 'acquire', new=async_cm_mock())
+    pool.acquire.return_value = async_cm_mock()
     pool.acquire.return_value.aenter = con
+
     pool.con = con
 
     patch.object(Database, 'pg_pool', new=async_mock(return_value=pool))
+
     return pool
 
 
@@ -66,7 +74,6 @@ async def test_get_all_app_uuids_for_deployment(magic, config, pool):
 @mark.asyncio
 async def test_get_container_configs(patch, magic, config,
                                      pool, async_mock):
-
     patch.object(pool.con, 'fetch', new=async_mock(return_value=[
         {'name': 'n1', 'containerconfig': 'config'}
     ]))
@@ -94,7 +101,7 @@ async def test_get_container_configs(patch, magic, config,
         ContainerConfig(name='n1', data='config')
     ]
 
-    pool.con.fetch.mock\
+    pool.con.fetch.mock \
         .assert_called_with(expected_query, app.owner_uuid,
                             registry_url)
 
@@ -121,22 +128,22 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock):
         where app_uuid = $1;
         """
 
-    patch.object(pool.con, 'fetchrow', new=async_mock(
-        return_value={
-            'app_uuid': 'my_app_uuid',
-            'app_name': 'my_app_name',
-            'version': 'my_version',
-            'environment': 'my_environment',
-            'stories': 'my_stories',
-            'maintenance': 'my_maintenance',
-            'always_pull_images': 'my_always_pull_images',
-            'app_dns': 'my_app_dns',
-            'state': 'my_state',
-            'deleted': 'my_deleted',
-            'owner_uuid': 'my_owner_uuid',
-            'owner_email': 'my_owner_email'
-        })
-    )
+    patch.object(pool.con, 'fetchrow',
+                 new=async_mock(return_value={
+                     'app_uuid': 'my_app_uuid',
+                     'app_name': 'my_app_name',
+                     'version': 'my_version',
+                     'environment': 'my_environment',
+                     'stories': 'my_stories',
+                     'maintenance': 'my_maintenance',
+                     'always_pull_images': 'my_always_pull_images',
+                     'app_dns': 'my_app_dns',
+                     'state': 'my_state',
+                     'deleted': 'my_deleted',
+                     'owner_uuid': 'my_owner_uuid',
+                     'owner_email': 'my_owner_email'
+                 })
+                 )
     ret = await Database.get_release_for_deployment(config, app_id)
 
     assert pool.acquire.call_count == 1
@@ -158,20 +165,23 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock):
     pool.con.fetchrow.mock.assert_called_with(expected_query, app_id)
 
 
-def test_get_all_services(config, database):
-
+@mark.asyncio
+async def test_get_all_services(config, pool):
     query = """
             select owners.username, services.uuid, services.name,
                    services.alias
             from services
             join owners on owner_uuid = owners.uuid;
             """
-    ret = Database.get_all_services(config)
-    database.cur.execute.assert_called_with(query)
-    assert ret == database.cur.fetchall()
+    ret = await Database.get_all_services(config)
+    assert pool.acquire.call_count == 1
+    pool.con.fetch.mock.assert_called_with(query)
+    assert ret == await pool.con.fetch(query)
 
 
-def test_create_service_usage(patch, config, database):
+@mark.asyncio
+async def test_create_service_usage(patch, config, pool, async_mock):
+    patch.object(Database, 'pg_pool', new=async_mock(return_value=pool))
     data = [{
         'service_uuid': '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
         'tag': 'v1'
@@ -179,67 +189,84 @@ def test_create_service_usage(patch, config, database):
         'service_uuid': 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
         'tag': 'latest'
     }]
+
     query = """
-            insert into service_usage (service_uuid, tag)
-            values %s on conflict (service_uuid, tag) do nothing;
-            """
-    patch.object(psycopg2.extras, 'execute_values')
-    Database.create_service_usage(config, data)
-    psycopg2.extras.execute_values.assert_called_with(database.cur, query, [
+                insert into service_usage (service_uuid, tag)
+                values ($1, $2) on conflict (service_uuid, tag) do nothing;
+                """
+
+    await Database.create_service_usage(config, data)
+    assert pool.acquire.call_count == 1
+    assert pool.con.transaction.call_count == 1
+    pool.con.execute_many.mock.assert_called_once()
+    pool.con.execute_many.mock.assert_called_with(query, [
         (s['service_uuid'], s['tag']) for s in data
     ])
-    database.conn.commit.assert_called()
 
 
-def test_update_service_usage(config, database):
+@mark.asyncio
+async def test_update_service_usage(config, pool):
     data = [{
+        'cpu_units': 2,
+        'memory_bytes': 100,
         'service_uuid': '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
         'tag': 'v1'
     }, {
+        'cpu_units': 1,
+        'memory_bytes': 50,
         'service_uuid': 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
         'tag': 'latest'
     }]
     query1 = """
             update service_usage
-            set cpu_units[next_index] = %(cpu_units)s,
-            memory_bytes[next_index] = %(memory_bytes)s
-            where service_uuid = %(service_uuid)s and tag = %(tag)s;
+            set cpu_units[next_index] = $1,
+            memory_bytes[next_index] = $2
+            where service_uuid = $3 and tag = $4;
             """
     query2 = """
             update service_usage
             set next_index = next_index %% 25 + 1
-            where service_uuid = %(service_uuid)s and tag = %(tag)s;
+            where service_uuid = $1 and tag = $2;
             """
-    Database.update_service_usage(config, data)
-    assert database.cur.execute.mock_calls == [
-        mock.call(query, record)
-        for record in data for query in [query1, query2]
-    ]
-    database.conn.commit.assert_called()
+    await Database.update_service_usage(config, data)
+
+    pool.con.execute_many.mock \
+        .assert_any_call(query1,
+                         [(2, 100, '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
+                           'v1'),
+                          (1, 50, 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
+                           'latest')])
+    pool.con.execute_many.mock \
+        .assert_any_call(query2,
+                         [('2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84', 'v1'),
+                          ('e1660927-bbad-4936-a005-ee2b1ab9eb0b', 'latest')])
 
 
-def test_get_service_by_alias(config, database):
+@mark.asyncio
+async def test_get_service_by_alias(config, pool):
     alias = 'slack'
     query = """
-            select uuid from services where alias = %s;
+            select uuid from services where alias = $1;
             """
-    ret = Database.get_service_by_alias(config, alias)
-    database.cur.execute.assert_called_with(query, (alias,))
-    assert ret == database.cur.fetchone()
+    ret = await Database.get_service_by_alias(config, alias)
+    pool.con.fetchrow.mock.assert_called_with(query, alias, )
+    assert ret == await pool.con.fetchrow(query, alias)
 
 
-def test_get_service_by_slug(config, database):
+@mark.asyncio
+async def test_get_service_by_slug(config, pool):
     owner_username = 'microservices'
     service_name = 'slack'
     query = """
             select services.uuid from services
             join owners on owner_uuid = owners.uuid
-            where owners.username = %s and services.name = %s;
+            where owners.username = $1 and services.name = $2;
             """
-    ret = Database.get_service_by_slug(config, owner_username, service_name)
-    database.cur.execute.assert_called_with(query,
-                                            (owner_username, service_name))
-    assert ret == database.cur.fetchone()
+    ret = await Database. \
+        get_service_by_slug(config, owner_username, service_name)
+    pool.con.fetchrow.mock \
+        .assert_called_with(query, owner_username, service_name)
+    assert ret == await pool.con.fetchrow(query, owner_username, service_name)
 
 
 @mark.parametrize('service', [
@@ -257,26 +284,29 @@ def test_get_service_by_slug(config, database):
     'cpu_units': [0] * 10
 }, None
 ])
-def test_get_service_limits(patch, config, database, service, limits):
+@mark.asyncio
+async def test_get_service_limits(patch, config, pool,
+                                  service, limits, async_mock):
     query = """
             select cpu_units, memory_bytes
             from service_usage
-            where service_uuid = %s and tag = %s;
+            where service_uuid = $1 and tag = $2;
             """
     service_uuid = 'e1660927-bbad-4936-a005-ee2b1ab9eb0b'
     tag = 'latest'
     patch.object(Database, 'get_service_by_slug',
-                 return_value={'uuid': service_uuid})
+                 new=async_mock(return_value={'uuid': service_uuid}))
     patch.object(Database, 'get_service_by_alias',
-                 return_value={'uuid': service_uuid})
-    patch.object(database.cur, 'fetchone', return_value=limits)
-    ret = Database.get_service_limits(config, service, tag)
+                 new=async_mock(return_value={'uuid': service_uuid}))
+    patch.object(pool.con, 'fetchrow',
+                 new=async_mock(return_value=limits))
+    ret = await Database.get_service_limits(config, service, tag)
     if '/' in service:
-        Database.get_service_by_slug.assert_called_with(config,
-                                                        *service.split('/'))
+        Database.get_service_by_slug.mock \
+            .assert_called_with(config, *service.split('/'))
     else:
-        Database.get_service_by_alias.assert_called_with(config, service)
-    database.cur.execute.assert_called_with(query, (service_uuid, tag))
+        Database.get_service_by_alias.mock.assert_called_with(config, service)
+    pool.con.fetchrow.mock.assert_called_with(query, service_uuid, tag)
     if limits is None or -1 in limits['memory_bytes']:
         assert ret == {
             'cpu': 0,
