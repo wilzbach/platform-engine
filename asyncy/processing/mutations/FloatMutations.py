@@ -69,5 +69,20 @@ class FloatMutations:
         return math.isinf(value)
 
     @classmethod
+    def approxEqual(cls, mutation, value, story, line, operator):
+        cmp = story.argument_by_name(mutation, 'value')
+        maxRelDiff = story.argument_by_name(mutation, 'maxRelDiff')
+        maxAbsDiff = story.argument_by_name(mutation, 'maxAbsDiff')
+        if maxRelDiff is None and maxAbsDiff is None:
+            return math.isclose(value, cmp)
+        elif maxRelDiff is None:
+            return math.isclose(value, cmp, abs_tol=maxAbsDiff)
+        elif maxAbsDiff is None:
+            return math.isclose(value, cmp, rel_tol=maxRelDiff)
+        else:
+            return math.isclose(value, cmp,
+                                rel_tol=maxRelDiff, abs_tol=maxAbsDiff)
+
+    @classmethod
     def sqrt(cls, mutation, value, story, line, operator):
         return math.sqrt(value)

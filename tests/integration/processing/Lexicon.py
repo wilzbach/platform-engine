@@ -1271,27 +1271,80 @@ async def test_range_mutations(suite: TestSuite, logger):
                 assertion=ContextAssertion(key='b', expected=1)
             ),
             TestCase(
-                append=f'a = 4.0\nb = a.log2()',
+                append='a = 4.0\nb = a.log2()',
                 assertion=ContextAssertion(key='b', expected=2)
             ),
             TestCase(
-                append=f'a = 1000.0\nb = a.log10()',
+                append='a = 1000.0\nb = a.log10()',
                 assertion=ContextAssertion(key='b', expected=3)
             ),
             TestCase(
-                append=f'a = 1.0\nb = a.exp()',
+                append='a = 1.0\nb = a.exp()',
                 assertion=ContextAssertion(key='b', expected=math.e)
             ),
             TestCase(
-                append=f'a = -1.0\nb = a.abs()',
+                append='a = -1.0\nb = a.abs()',
                 assertion=ContextAssertion(key='b', expected=1)
             ),
             TestCase(
-                append=f'a = "nan" as float\nb = a.isNaN()',
+                append='a = "nan" as float\nb = a.isNaN()',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             TestCase(
-                append=f'a = "inf" as float\nb = a.isInfinity()',
+                append='a = "inf" as float\nb = a.isInfinity()',
+                assertion=ContextAssertion(key='b', expected=True)
+            ),
+            TestCase(
+                append=f'a = {math.pi / 4}\n'
+                       'b = a.tan()\n'
+                       'c = b.approxEqual(value: 1)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 1.00\nb = a.approxEqual(value: 2)',
+                assertion=ContextAssertion(key='b', expected=False)
+            ),
+            TestCase(
+                append='a = 1.000001\nb = a.approxEqual(value: 1.000002)',
+                assertion=ContextAssertion(key='b', expected=False)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxRelDiff: 0.5)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxRelDiff: 0.49)',
+                assertion=ContextAssertion(key='c', expected=False)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxAbsDiff: 100)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxAbsDiff: 99)',
+                assertion=ContextAssertion(key='c', expected=False)
+            ),
+            TestCase(
+                append=f'a = {math.pi / 4}\n'
+                       'b = a.tan()\n'
+                       'c = b.approxEqual(value: 1)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 1.000001\n'
+                       'b = a.approxEqual('
+                       '        value: 1.000002'
+                       '        maxRelDiff: 0.000001'
+                       '        maxAbsDiff: 0'
+                       '    )',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             TestCase(
