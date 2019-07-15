@@ -436,16 +436,16 @@ class TestSuite:
         preparation_lines='e = 10\n'
                           'o = -3',
         cases=[
-            TestCase(append='a = e.is_odd()',
+            TestCase(append='a = e isOdd()',
                      assertion=ContextAssertion(key='a', expected=False)),
 
-            TestCase(append='a = o.is_odd()',
+            TestCase(append='a = o isOdd()',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = e.is_even()',
+            TestCase(append='a = e isEven()',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = o.is_even()',
+            TestCase(append='a = o isEven()',
                      assertion=ContextAssertion(key='a', expected=False)),
 
             TestCase(append='a = o.absolute()',
@@ -1287,11 +1287,11 @@ async def test_range_mutations(suite: TestSuite, logger):
                 assertion=ContextAssertion(key='b', expected=1)
             ),
             TestCase(
-                append=f'a = "nan" as float\nb = a.is_nan()',
+                append=f'a = "nan" as float\nb = a.isNaN()',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             TestCase(
-                append=f'a = "inf" as float\nb = a.is_infinity()',
+                append=f'a = "inf" as float\nb = a.isInfinity()',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             TestCase(

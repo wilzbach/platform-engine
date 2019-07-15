@@ -61,11 +61,11 @@ class FloatMutations:
         return abs(value)
 
     @classmethod
-    def is_nan(cls, mutation, value, story, line, operator):
+    def isNaN(cls, mutation, value, story, line, operator):
         return math.isnan(value)
 
     @classmethod
-    def is_infinity(cls, mutation, value, story, line, operator):
+    def isInfinity(cls, mutation, value, story, line, operator):
         return math.isinf(value)
 
     @classmethod
