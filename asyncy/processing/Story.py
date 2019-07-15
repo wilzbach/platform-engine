@@ -76,6 +76,8 @@ class Story:
                     return await Lexicon.ret(logger, story, line)
                 elif method == 'break':
                     return await Lexicon.break_(logger, story, line)
+                elif method == 'continue':
+                    return await Lexicon.continue_(logger, story, line)
                 else:
                     raise NotImplementedError(
                         f'Unknown method to execute: {method}'
