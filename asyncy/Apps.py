@@ -128,14 +128,18 @@ class Apps:
             logger.info(f'Successfully deployed app {app_id}@'
                         f'{release.version}')
         except BaseException as e:
-            await Database.update_release_state(logger, config, app_id,
-                                                release.version,
-                                                ReleaseState.FAILED)
             if isinstance(e, StoryscriptError):
-
+                await Database.update_release_state(
+                    logger, config, app_id, release.version,
+                    ReleaseState.FAILED
+                )
                 logger.error(str(e))
             else:
                 logger.error(f'Failed to bootstrap app ({e})', exc=e)
+                await Database.update_release_state(
+                    logger, config, app_id, release.version,
+                    ReleaseState.TEMP_DEPLOYMENT_FAILURE
+                )
                 Sentry.capture_exc(e)
 
     @classmethod
