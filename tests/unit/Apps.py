@@ -215,7 +215,9 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 
 
 @mark.parametrize('raise_exc', [None, exc, asyncio_timeout_exc])
-@mark.parametrize('previous_state', ['QUEUED', 'FAILED'])
+@mark.parametrize('previous_state', [
+    'QUEUED', 'FAILED', 'TEMP_DEPLOYMENT_FAILURE'
+])
 @mark.parametrize('app_environment_db', ['STAGING', 'PRODUCTION', 'DEV'])
 @mark.parametrize('app_environment_config', ['STAGING', 'PRODUCTION', 'DEV'])
 @mark.asyncio
@@ -488,10 +490,14 @@ async def test_deploy_release(config, magic, patch, deleted,
 
         App.bootstrap.mock.assert_called()
         Containers.init.mock.assert_called()
-        if raise_exc is not None:
-            assert Apps.apps.get('app_id') is None
-            if raise_exc == exc:
-                Sentry.capture_exc.assert_called()
+        assert Apps.apps.get('app_id') is not (raise_exc is None)
+        if raise_exc == exc:
+            Sentry.capture_exc.assert_called()
+            assert \
+                Database.update_release_state.mock.mock_calls[1] \
+                == mock.call(app_logger, config, 'app_id', 'version',
+                             ReleaseState.TEMP_DEPLOYMENT_FAILURE)
+        elif raise_exc == asyncy_exc:
             assert \
                 Database.update_release_state.mock.mock_calls[1] \
                 == mock.call(app_logger, config, 'app_id',
@@ -501,8 +507,6 @@ async def test_deploy_release(config, magic, patch, deleted,
                 Database.update_release_state.mock.mock_calls[1] \
                 == mock.call(app_logger, config,
                              'app_id', 'version', ReleaseState.DEPLOYED)
-
-            assert Apps.apps.get('app_id') is not None
 
 
 def test_make_logger_for_app(patch, config):
