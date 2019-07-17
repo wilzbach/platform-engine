@@ -353,6 +353,10 @@ class TestSuite:
                      assertion=ContextAssertion(
                          key='a', expected='llo world!')),
 
+            TestCase(append='a = str.substring(start: 2).substring(end: -3)',
+                     assertion=ContextAssertion(
+                         key='a', expected='llo wor')),
+
             TestCase(append='a = str.substring(end: 5)',
                      assertion=ContextAssertion(
                          key='a', expected='hello')),
@@ -466,7 +470,19 @@ class TestSuite:
                      assertion=ContextAssertion(key='e', expected=10)),
 
             TestCase(append='e.increment()',
-                     assertion=ContextAssertion(key='e', expected=10))
+                     assertion=ContextAssertion(key='e', expected=10)),
+
+            TestCase(append='a = e.increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=12)),
+
+            TestCase(append='a = 5.increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=7)),
+
+            TestCase(append='a = -5.increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=-3)),
+
+            TestCase(append='a = (-5).increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=-3)),
         ]
     ),
     TestSuite(
