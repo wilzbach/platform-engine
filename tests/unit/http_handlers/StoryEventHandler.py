@@ -6,7 +6,7 @@ from asyncy.constants import ContextConstants
 from asyncy.entities.Multipart import FileFormField
 from asyncy.http_handlers.StoryEventHandler import CLOUD_EVENTS_FILE_KEY, \
     StoryEventHandler
-from asyncy.processing import Story
+from asyncy.processing import Stories
 
 import pytest
 from pytest import fixture, mark
@@ -91,7 +91,7 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
         patch.object(handler, 'run_story', new=async_mock(side_effect=exc))
         patch.object(handler, 'handle_story_exc')
 
-    patch.object(Story, 'run', new=async_mock())
+    patch.object(Stories, 'run', new=async_mock())
     patch.object(Apps, 'get')
     patch.object(tornado, 'ioloop')
     patch.many(handler, ['finish'])
@@ -111,7 +111,7 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
         handler.handle_story_exc.assert_called_with('app_id',
                                                     'hello.story', e)
     else:
-        Story.run.mock.assert_called_with(
+        Stories.run.mock.assert_called_with(
             Apps.get('app_id'), Apps.get('app_id').logger,
             story_name='hello.story',
             context=expected_context, block='1')

@@ -23,8 +23,8 @@ class LineSentinels:
     How sentinels are used:
     During the flow of execution, they will almost always break
     the normal flow of execution in some manner. For example,
-    Lexicon.for_loop calls Story.execute_block in order to execute the same
-    block multiple times. When Story.execute_block returns the BREAK
+    Lexicon.for_loop calls Stories.execute_block in order to execute the same
+    block multiple times. When Stories.execute_block returns the BREAK
     sentinel, Lexicon.for_loop knows that it's time to stop looping.
 
     Sentinels are used to control the flow of execution. The other approach

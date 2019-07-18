@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 from asyncy.Exceptions import StoryscriptError, StoryscriptRuntimeError, \
     TypeAssertionRuntimeError, TypeValueRuntimeError
-from asyncy.Stories import Stories
-from asyncy.processing import Story
+from asyncy.Story import Story
+from asyncy.processing import Stories
 from asyncy.processing.internal import File, Http, Json, Log
 
 from pytest import mark
@@ -652,10 +652,10 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     context = {}
 
-    story = Stories(app, story_name, logger)
+    story = Story(app, story_name, logger)
     story.prepare(context)
     try:
-        await Story.execute(logger, story)
+        await Stories.execute(logger, story)
     except StoryscriptError as e:
         try:
             assert isinstance(case.assertion, RuntimeExceptionAssertion)

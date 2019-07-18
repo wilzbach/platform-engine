@@ -4,17 +4,17 @@ import time
 from .. import Metrics
 from ..Exceptions import StoryscriptError
 from ..Exceptions import StoryscriptRuntimeError
-from ..Stories import Stories
+from ..Story import Story
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineSentinels import LineSentinels
 from ..processing import Lexicon
 
 
-class Story:
+class Stories:
 
     @staticmethod
     def story(app, logger, story_name):
-        return Stories(app, story_name, logger)
+        return Story(app, story_name, logger)
 
     @staticmethod
     def save(logger, story, start):
@@ -30,7 +30,7 @@ class Story:
         """
         line_number = story.first_line()
         while line_number:
-            result = await Story.execute_line(logger, story, line_number)
+            result = await Stories.execute_line(logger, story, line_number)
 
             # Sentinels are not allowed to escape from here.
             if LineSentinels.is_sentinel(result):
@@ -46,7 +46,7 @@ class Story:
         """
         Executes a single line by calling the Lexicon for various operations.
 
-        To execute a function completely, see Story#call.
+        To execute a function completely, see Stories#call.
 
         :return: Returns the next line number to be executed
         (return value from Lexicon), or None if there is none.
@@ -117,7 +117,7 @@ class Story:
 
         while next_line is not None \
                 and story.line_has_parent(parent_line['ln'], next_line):
-            result = await Story.execute_line(logger, story, next_line['ln'])
+            result = await Stories.execute_line(logger, story, next_line['ln'])
 
             if result == LineSentinels.RETURN:
                 return None  # Block has completed execution.

@@ -12,7 +12,7 @@ from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.db.Database import Database
 from asyncy.entities.ContainerConfig import ContainerConfig
 from asyncy.entities.Volume import Volume
-from asyncy.processing import Story
+from asyncy.processing import Stories
 
 import pytest
 from pytest import fixture, mark
@@ -132,7 +132,7 @@ async def test_prepare_for_deployment(patch, async_mock):
 
 
 def test_format_command(logger, app, echo_service, echo_line):
-    story = Story.story(app, logger, 'echo.story')
+    story = Stories.story(app, logger, 'echo.story')
     app.services = echo_service
 
     cmd = Containers.format_command(story, echo_line, 'alpine', 'echo')
@@ -318,7 +318,7 @@ async def test_init(story, patch, async_mock):
 
 
 def test_format_command_no_format(logger, app, echo_service, echo_line):
-    story = Story.story(app, logger, 'echo.story')
+    story = Stories.story(app, logger, 'echo.story')
     app.services = echo_service
 
     config = app.services['alpine'][ServiceConstants.config]
@@ -329,14 +329,14 @@ def test_format_command_no_format(logger, app, echo_service, echo_line):
 
 
 def test_format_command_no_spec(logger, app, echo_line):
-    story = Story.story(app, logger, 'echo.story')
+    story = Stories.story(app, logger, 'echo.story')
     app.services = {}
     with pytest.raises(ContainerSpecNotRegisteredError):
         Containers.format_command(story, echo_line, 'alpine', 'echo')
 
 
 def test_format_command_no_args(logger, app, echo_service, echo_line):
-    story = Story.story(app, logger, 'echo.story')
+    story = Stories.story(app, logger, 'echo.story')
     app.services = echo_service
 
     echo_service['alpine'][ServiceConstants.config]['actions']['echo'][
@@ -348,7 +348,7 @@ def test_format_command_no_args(logger, app, echo_service, echo_line):
 
 def test_format_command_with_format(patch, logger, app,
                                     echo_service, echo_line):
-    story = Story.story(app, logger, 'echo.story')
+    story = Stories.story(app, logger, 'echo.story')
     patch.object(story, 'argument_by_name', return_value='asyncy')
     app.services = echo_service
 

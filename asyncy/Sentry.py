@@ -2,7 +2,7 @@
 from raven import Client
 
 from .Exceptions import StoryscriptError
-from .Stories import Stories
+from .Story import Story
 
 
 class Sentry:
@@ -27,7 +27,7 @@ class Sentry:
 
     @classmethod
     def capture_exc(cls, exc_info: BaseException,
-                    story: Stories = None, line: dict = None,
+                    story: Story = None, line: dict = None,
                     extra: dict = None):
         if cls._sentry_client is None:
             return
