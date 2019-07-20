@@ -436,16 +436,16 @@ class TestSuite:
         preparation_lines='e = 10\n'
                           'o = -3',
         cases=[
-            TestCase(append='a = e isOdd()',
+            TestCase(append='a = e.isOdd()',
                      assertion=ContextAssertion(key='a', expected=False)),
 
-            TestCase(append='a = o isOdd()',
+            TestCase(append='a = o.isOdd()',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = e isEven()',
+            TestCase(append='a = e.isEven()',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = o isEven()',
+            TestCase(append='a = o.isEven()',
                      assertion=ContextAssertion(key='a', expected=False)),
 
             TestCase(append='a = o.absolute()',
