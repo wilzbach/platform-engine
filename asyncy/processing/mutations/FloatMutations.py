@@ -71,17 +71,17 @@ class FloatMutations:
     @classmethod
     def approxEqual(cls, mutation, value, story, line, operator):
         cmp = story.argument_by_name(mutation, 'value')
-        maxRelDiff = story.argument_by_name(mutation, 'maxRelDiff')
-        maxAbsDiff = story.argument_by_name(mutation, 'maxAbsDiff')
-        if maxRelDiff is None and maxAbsDiff is None:
+        max_rel_diff = story.argument_by_name(mutation, 'maxRelDiff')
+        max_abs_diff = story.argument_by_name(mutation, 'maxAbsDiff')
+        if max_rel_diff is None and max_abs_diff is None:
             return math.isclose(value, cmp)
-        elif maxRelDiff is None:
-            return math.isclose(value, cmp, abs_tol=maxAbsDiff)
-        elif maxAbsDiff is None:
-            return math.isclose(value, cmp, rel_tol=maxRelDiff)
+        elif max_rel_diff is None:
+            return math.isclose(value, cmp, abs_tol=max_abs_diff)
+        elif max_abs_diff is None:
+            return math.isclose(value, cmp, rel_tol=max_rel_diff)
         else:
             return math.isclose(value, cmp,
-                                rel_tol=maxRelDiff, abs_tol=maxAbsDiff)
+                                rel_tol=max_rel_diff, abs_tol=max_abs_diff)
 
     @classmethod
     def sqrt(cls, mutation, value, story, line, operator):
