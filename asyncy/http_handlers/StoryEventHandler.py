@@ -13,7 +13,7 @@ from .. import Metrics
 from ..Apps import Apps
 from ..constants import ContextConstants
 from ..entities.Multipart import FileFormField
-from ..processing import Story
+from ..processing import Stories
 from ..utils.Dict import Dict
 
 CLOUD_EVENTS_FILE_KEY = '_ce_payload'
@@ -42,10 +42,10 @@ class StoryEventHandler(BaseHandler):
             event_body.setdefault('data', {})[key] = f
 
         try:
-            await Story.run(app, app.logger,
-                            story_name=story_name,
-                            context=context,
-                            block=block)
+            await Stories.run(app, app.logger,
+                              story_name=story_name,
+                              context=context,
+                              block=block)
             return True
         except BaseException as e:
             app.logger.error('Failed to execute story', e)

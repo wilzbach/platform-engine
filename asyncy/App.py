@@ -12,11 +12,11 @@ from .Config import Config
 from .Containers import Containers
 from .Exceptions import StoryscriptError
 from .Logger import Logger
-from .Stories import Stories
+from .Story import Story
 from .Types import StreamingService
 from .constants.ServiceConstants import ServiceConstants
 from .entities.Release import Release
-from .processing import Story
+from .processing import Stories
 from .processing.Services import Command, Service, Services
 from .utils import Dict
 from .utils.HttpUtils import HttpUtils
@@ -44,9 +44,12 @@ class App:
     The runtime config for this app.
     """
 
+    release: Release
+
     def __init__(self, app_data: AppData):
         self._subscriptions = {}
-        release = app_data.release
+        self.release = app_data.release
+        release = self.release
         self.app_id = release.app_uuid
         self.app_name = release.app_name
         self.app_dns = release.app_dns
@@ -124,7 +127,7 @@ class App:
         tasks = []
         reusable_services = set()
         for story_name in self.stories.keys():
-            story = Stories(self, story_name, self.logger)
+            story = Story(self, story_name, self.logger)
             line = story.first_line()
             while line is not None:
                 line = story.line(line)
@@ -170,7 +173,7 @@ class App:
         register with the gateway, and queue cron jobs.
         """
         for story_name in self.entrypoint:
-            await Story.run(self, self.logger, story_name)
+            await Stories.run(self, self.logger, story_name)
 
     def add_subscription(self, sub_id: str,
                          streaming_service: StreamingService,

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from asyncy.Config import Config
 from asyncy.Logger import Logger
-from asyncy.Stories import Stories
+from asyncy.Story import Story
 
 from pytest import fixture
 
@@ -33,7 +33,7 @@ def story(app, logger):
     with open(asset_dir + '/stories.json', 'r') as file:
         app.stories = ujson.loads(file.read())['stories']
 
-    return Stories(app, 'hello.story', logger)
+    return Story(app, 'hello.story', logger)
 
 
 @fixture

@@ -12,7 +12,7 @@ from asyncy.Types import StreamingService
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.entities.Release import Release
 from asyncy.enums.AppEnvironment import AppEnvironment
-from asyncy.processing import Story
+from asyncy.processing import Stories
 from asyncy.processing.Services import Command, Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
 
@@ -354,9 +354,9 @@ async def test_app_run_stories(patch, app, async_mock):
     }
     app.entrypoint = ['foo', 'bar']
     app.stories = stories
-    patch.object(Story, 'run', new=async_mock())
+    patch.object(Stories, 'run', new=async_mock())
     await app.run_stories()
-    assert Story.run.mock.call_count == 2
+    assert Stories.run.mock.call_count == 2
 
 
 @mark.asyncio
@@ -376,7 +376,7 @@ async def test_app_run_stories_exc(patch, app, async_mock, exc):
     app.entrypoint = ['foo', 'bar']
     patch.object(app, 'logger')
 
-    patch.object(Story, 'run', new=async_mock(side_effect=exc))
+    patch.object(Stories, 'run', new=async_mock(side_effect=exc))
 
     with pytest.raises(Exception):
         await app.run_stories()

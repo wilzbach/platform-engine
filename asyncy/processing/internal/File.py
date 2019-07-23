@@ -12,7 +12,7 @@ def safe_path(story, path):
     and returns an absolute path which can be used safely by prepending
     the story's tmp dir. This ensures that the story cannot abuse the system
     and write elsewhere, for example, stories.json.
-    :param story: The story (Stories object)
+    :param story: The story (Story object)
     :param path: A path to be resolved
     :return: The absolute path, which can be used to read/write directly
     """
