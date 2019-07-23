@@ -15,10 +15,11 @@ from . import Version
 from .Apps import Apps
 from .Config import Config
 from .Logger import Logger
-from .Sentry import Sentry
+from .entities.ReportingEvent import ReportingEvent
 from .http_handlers.StoryEventHandler import StoryEventHandler
 from .processing.Services import Services
 from .processing.internal import File, Http, Json, Log
+from .reporting.Reporter import Reporter
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -57,7 +58,12 @@ class Service:
     def start(port, debug, sentry_dsn, release, prometheus_port):
         global server
 
+        # Allow the dsn to be set via the cli as a legacy option.
+        if sentry_dsn is not None:
+            config.REPORTING_SENTRY_DSN = sentry_dsn
+
         Services.set_logger(logger)
+        Reporter.init(config=config, glogger=logger, release=release)
 
         # Init internal services.
         File.init()
@@ -84,18 +90,18 @@ class Service:
         logger.log('http-init', port)
 
         loop = asyncio.get_event_loop()
-        loop.create_task(Service.init_wrapper(sentry_dsn, release))
+        loop.create_task(Service.init_wrapper())
 
         tornado.ioloop.IOLoop.current().start()
 
         logger.info('Shutdown complete!')
 
     @staticmethod
-    async def init_wrapper(sentry_dsn: str, release: str):
+    async def init_wrapper():
         try:
-            await Apps.init_all(sentry_dsn, release, config, logger)
+            await Apps.init_all(config, logger)
         except BaseException as e:
-            Sentry.capture_exc(e)
+            Reporter.capture_evt(ReportingEvent.from_exc(e))
             logger.error(f'Failed to init apps!', exc=e)
             sys.exit(1)
 

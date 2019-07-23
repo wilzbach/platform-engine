@@ -27,6 +27,9 @@ def test_config():
     assert Config.defaults['POSTGRES_URI'] == \
         'postgres://postgres/asyncy?' \
         'search_path=app_public,app_hidden,app_private,public'
+    assert Config.defaults['REPORTING_SENTRY_DSN'] is None
+    assert Config.defaults['REPORTING_CLEVERTAP_ACCOUNT'] is None
+    assert Config.defaults['REPORTING_CLEVERTAP_PASS'] is None
 
 
 def test_config_init(patch):

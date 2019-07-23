@@ -44,9 +44,12 @@ class App:
     The runtime config for this app.
     """
 
+    release: Release
+
     def __init__(self, app_data: AppData):
         self._subscriptions = {}
-        release = app_data.release
+        self.release = app_data.release
+        release = self.release
         self.app_id = release.app_uuid
         self.app_name = release.app_name
         self.app_dns = release.app_dns

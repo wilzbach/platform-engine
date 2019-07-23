@@ -14,14 +14,18 @@ from .Exceptions import StoryscriptError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
-from .Sentry import Sentry
-from .ServiceUsage import ServiceUsage
+from .constants.Events import APP_DEPLOYED, APP_DEPLOY_FAILED, \
+    APP_DEPLOY_INITIATED, APP_INSTANCE_DESTROYED, \
+    APP_INSTANCE_DESTROY_ERROR, APP_RELOAD_FAILED
 from .constants.ReleaseConstants import ReleaseConstants
 from .constants.ServiceConstants import ServiceConstants
 from .db.Database import Database
 from .entities.Release import Release
 from .enums.ReleaseState import ReleaseState
+from .reporting.Reporter import Reporter
+from .reporting.ReportingAgent import ReportingEvent
 from .utils.Dict import Dict
+
 
 MAX_VOLUMES_BETA = 15
 MAX_SERVICES_BETA = 15
@@ -55,6 +59,9 @@ class Apps:
 
         logger = cls.make_logger_for_app(config, app_id, release.version)
         logger.info(f'Deploying app {app_id}@{release.version}')
+
+        re = ReportingEvent.from_release(release, APP_DEPLOY_INITIATED)
+        Reporter.capture_evt(re)
 
         if release.maintenance:
             logger.warn(f'Not updating deployment, app put in maintenance'
@@ -127,6 +134,8 @@ class Apps:
 
             logger.info(f'Successfully deployed app {app_id}@'
                         f'{release.version}')
+            re = ReportingEvent.from_release(release, APP_DEPLOYED)
+            Reporter.capture_evt(re)
         except BaseException as e:
             if isinstance(e, StoryscriptError):
                 await Database.update_release_state(
@@ -140,7 +149,10 @@ class Apps:
                     logger, config, app_id, release.version,
                     ReleaseState.TEMP_DEPLOYMENT_FAILURE
                 )
-                Sentry.capture_exc(e)
+
+            re = ReportingEvent.from_release(
+                release, APP_DEPLOY_FAILED, exc_info=e)
+            Reporter.capture_evt(re)
 
     @classmethod
     def make_logger_for_app(cls, config, app_id, version):
@@ -165,10 +177,7 @@ class Apps:
             ])
 
     @classmethod
-    async def init_all(cls, sentry_dsn: str, release: str,
-                       config: Config, glogger: Logger):
-        Sentry.init(sentry_dsn, release)
-
+    async def init_all(cls, config: Config, glogger: Logger):
         # We must start listening for releases straight away,
         # before an app is even deployed.
         # If we start listening after all the apps are deployed,
@@ -246,6 +255,9 @@ class Apps:
                 f'Failed to destroy app {app.app_id}@{app.version}; '
                 f'will eat exception (silent=True)',
                 exc=e)
+            re = ReportingEvent.from_release(
+                app.release, APP_INSTANCE_DESTROY_ERROR, exc_info=e)
+            Reporter.capture_evt(re)
         finally:
             if update_db_state:
                 await Database.update_release_state(app.logger, app.config,
@@ -253,6 +265,8 @@ class Apps:
                                                     ReleaseState.TERMINATED)
 
         app.logger.info(f'Completed destroying app {app.app_id}')
+        Reporter.capture_evt(ReportingEvent.from_release(
+            app.release, APP_INSTANCE_DESTROYED))
         cls.apps[app.app_id] = None
 
     @classmethod
@@ -263,7 +277,7 @@ class Apps:
                                   update_db_state=True)
 
         can_deploy = False
-
+        release = None
         try:
             can_deploy = await cls.deployment_lock.try_acquire(app_id)
             if not can_deploy:
@@ -304,7 +318,15 @@ class Apps:
         except BaseException as e:
             glogger.error(
                 f'Failed to reload app {app_id}', exc=e)
-            Sentry.capture_exc(exc_info=e)
+
+            if release is not None:
+                re = ReportingEvent.from_release(release, APP_RELOAD_FAILED,
+                                                 exc_info=e)
+            else:
+                re = ReportingEvent.from_exc(e)
+
+            Reporter.capture_evt(re)
+
             if isinstance(e, asyncio.TimeoutError):
                 logger = cls.make_logger_for_app(config, app_id,
                                                  release.version)
@@ -323,7 +345,9 @@ class Apps:
             try:
                 await cls.destroy_app(app)
             except BaseException as e:
-                Sentry.capture_exc(e)
+                re = ReportingEvent.from_release(
+                    app.release, 'App Destroy Failed', exc_info=e)
+                Reporter.capture_evt(re)
 
     @classmethod
     async def listen_to_releases(cls, config: Config, glogger: Logger, loop):
@@ -342,6 +366,7 @@ class Apps:
             glogger.info('Listening for new releases...')
         except (OSError, asyncpg.exceptions.InterfaceError,
                 asyncpg.exceptions.InternalClientError):
+            glogger.error('Failed to connect to database.')
             # kill the server if the database listener is not listening
             os.kill(os.getpid(), signal.SIGINT)
 
