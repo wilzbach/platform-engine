@@ -14,6 +14,7 @@ from asyncy.Exceptions import StoryscriptError, TooManyActiveApps, \
 from asyncy.GraphQLAPI import GraphQLAPI
 from asyncy.Kubernetes import Kubernetes
 from asyncy.Logger import Logger
+from asyncy.ServiceUsage import ServiceUsage
 from asyncy.constants import Events
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.db.Database import Database
@@ -89,10 +90,10 @@ async def test_supervise_listener(patch, db, magic,
     loop = magic()
     patch.object(Apps, 'listen_to_releases', new=async_mock())
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(Apps.supervise_release_listener(config,
-                                                               logger, loop),
+        await asyncio.wait_for(Apps.start_release_listener(config,
+                                                           logger, loop),
                                timeout=3.2)
-    assert Apps.listen_to_releases.mock.call_count == 3
+    assert Apps.listen_to_releases.mock.call_count == 4
 
     patch.object(Apps, 'release_listener_db_con')
     patch.object(Apps.release_listener_db_con, '_con', True)
@@ -100,8 +101,8 @@ async def test_supervise_listener(patch, db, magic,
 
     Apps.listen_to_releases.mock.call_count = 0
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(Apps.supervise_release_listener(config,
-                                                               logger, loop),
+        await asyncio.wait_for(Apps.start_release_listener(config,
+                                                           logger, loop),
                                timeout=1.2)
     assert Apps.listen_to_releases.mock.call_count == 0
 
@@ -145,8 +146,10 @@ async def test_destroy_all_exc(patch, async_mock, magic):
 
 
 @mark.asyncio
-async def test_init_all(patch, magic, async_mock,
-                        config, logger, db):
+@mark.parametrize('app_environment', ['STAGING', 'PRODUCTION', 'DEV'])
+async def test_init_all(app_environment, patch, magic,
+                        async_mock, config, logger, db):
+    config.APP_ENVIRONMENT = AppEnvironment[app_environment]
     db()
     apps = [{
         'uuid': 'my_app_uuid'
@@ -154,8 +157,8 @@ async def test_init_all(patch, magic, async_mock,
     patch.object(Database, 'get_all_app_uuids_for_deployment',
                  new=async_mock(return_value=apps))
     patch.object(Apps, 'reload_app', new=async_mock())
-    patch.object(Apps, 'listen_to_releases', new=async_mock())
-    patch.object(Apps, 'supervise_release_listener')
+    patch.object(Apps, 'start_release_listener')
+    patch.object(ServiceUsage, 'start_metrics_recorder')
     patch.object(asyncio, 'create_task')
 
     await Apps.init_all(config, logger)
@@ -164,9 +167,11 @@ async def test_init_all(patch, magic, async_mock,
 
     loop = asyncio.get_event_loop()
 
-    Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
-    asyncio.create_task.assert_called_once()
-    Apps.listen_to_releases.mock.assert_called_with(config, logger, loop)
+    assert asyncio.create_task.mock_calls == [
+        mock.call(Apps.start_release_listener(config, logger, loop)),
+    ] + ([
+        mock.call(ServiceUsage.start_metrics_recorder(config, logger))
+    ] if config.APP_ENVIRONMENT == AppEnvironment.PRODUCTION else [])
 
 
 def test_get(magic):
@@ -536,9 +541,11 @@ def test_make_logger_for_app(patch, config):
 @mark.asyncio
 async def test_get_services(patch, logger, async_mock):
     patch.object(GraphQLAPI, 'get_by_slug',
-                 new=async_mock(return_value=('slug_pull', {'slug': True})))
+                 new=async_mock(return_value=('slug_uuid', 'slug_pull',
+                                              {'slug': True})))
     patch.object(GraphQLAPI, 'get_by_alias',
-                 new=async_mock(return_value=('alias_pull', {'alias': True})))
+                 new=async_mock(return_value=('alias_uuid', 'alias_pull',
+                                              {'alias': True})))
 
     asyncy_yaml = {
         'services': {
@@ -560,29 +567,33 @@ async def test_get_services(patch, logger, async_mock):
             'tag': 'v1',
             'configuration': {
                 'slug': True,
-                'image': 'microservice/slack:v1'
+                'image': 'microservice/slack:v1',
+                'uuid': 'slug_uuid',
             }
         },
         'lastfm': {
             'tag': 'latest',
             'configuration': {
                 'alias': True,
-                'image': 'alias_pull:latest'
+                'image': 'alias_pull:latest',
+                'uuid': 'alias_uuid',
             }
         },
         'http': {
             'configuration': {
                 'alias': True,
-                'image': 'alias_pull:latest'
+                'image': 'alias_pull:latest',
+                'uuid': 'alias_uuid'
             },
-            'tag': 'latest'
+            'tag': 'latest',
         },
         'naked_service': {
             'configuration': {
                 'alias': True,
-                'image': 'alias_pull:latest'
+                'image': 'alias_pull:latest',
+                'uuid': 'alias_uuid'
             },
-            'tag': 'latest'
+            'tag': 'latest',
         }
     }
 
