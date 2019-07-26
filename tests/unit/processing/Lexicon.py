@@ -4,12 +4,12 @@ from unittest.mock import MagicMock, Mock
 
 from asyncy import Metrics
 from asyncy.Exceptions import InvalidKeywordUsage, StoryscriptError
-from asyncy.Stories import Stories
+from asyncy.Story import Story
 from asyncy.Types import StreamingService
 from asyncy.constants.LineConstants import LineConstants
 from asyncy.constants.LineSentinels import LineSentinels
 from asyncy.constants.ServiceConstants import ServiceConstants
-from asyncy.processing import Lexicon, Story
+from asyncy.processing import Lexicon, Stories
 from asyncy.processing.Mutations import Mutations
 from asyncy.processing.Services import Services
 from asyncy.utils.HttpUtils import HttpUtils
@@ -170,7 +170,7 @@ async def test_if_condition_1(patch, logger, magic):
 
     patch.object(Lexicon, '_is_if_condition_true', return_value=False)
     patch.object(Lexicon, 'line_number_or_none')
-    story = Stories(magic(), 'foo', logger)
+    story = Story(magic(), 'foo', logger)
 
     story.tree = tree
     ret = await Lexicon.if_condition(logger, story, tree['1'])
@@ -199,7 +199,7 @@ async def test_if_condition_2(patch, logger, magic):
     }
 
     patch.object(Lexicon, '_is_if_condition_true', return_value=False)
-    story = Stories(magic(), 'foo', logger)
+    story = Story(magic(), 'foo', logger)
 
     story.tree = tree
     ret = await Lexicon.if_condition(logger, story, tree['1'])
@@ -285,7 +285,7 @@ async def test_if_condition(patch, logger, magic, case):
     }
 
     patch.object(Lexicon, '_is_if_condition_true', side_effect=case[0])
-    story = Stories(magic(), 'foo', logger)
+    story = Story(magic(), 'foo', logger)
 
     story.tree = tree
     ret = await Lexicon.if_condition(logger, story, tree['1'])
@@ -352,7 +352,7 @@ async def test_lexicon_for_loop(patch, logger, story, line,
 
     patch.object(Lexicon, 'execute', new=async_mock())
     patch.object(Lexicon, 'line_number_or_none')
-    patch.object(Story, 'execute_block', side_effect=execute_block)
+    patch.object(Stories, 'execute_block', side_effect=execute_block)
     patch.object(story, 'next_block')
 
     line['args'] = [
@@ -409,7 +409,7 @@ async def test_story_execute_function(patch, logger, story, async_mock):
     line = {'function': 'my_super_awesome_function'}
     patch.many(story, ['function_line_by_name',
                        'context_for_function_call', 'set_context'])
-    patch.object(Story, 'execute_block', new=async_mock())
+    patch.object(Stories, 'execute_block', new=async_mock())
     first_context = {'first': 'context'}
 
     story.context = first_context
@@ -424,7 +424,7 @@ async def test_story_execute_function(patch, logger, story, async_mock):
         mock.call(first_context)
     ]
 
-    Story.execute_block.mock \
+    Stories.execute_block.mock \
         .assert_called_with(logger, story, story.function_line_by_name())
 
 

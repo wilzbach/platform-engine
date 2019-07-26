@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
-def test_stories_get(patch, magic, story):
+def test_story_get(patch, magic, story):
     assert story.tree is not None
     assert story.context is None
     assert story.version is None
 
 
-def test_stories_argument_by_name_replacement(patch, magic, story):
+def test_story_argument_by_name_replacement(patch, magic, story):
     """
     Ensures that a replacement resolve can be performed.
     """

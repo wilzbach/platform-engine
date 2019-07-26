@@ -1,7 +1,7 @@
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fasyncy%2Fplatform-engine.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fasyncy%2Fplatform-engine?ref=badge_shield)
 
-# Asyncy platform engine
-The engine powering Asyncy and executing stories.
+# Storyscript Cloud Runtime
+The Storyscript runtime powering the Storyscript Cloud and executing stories.
 
 
 ## Installing

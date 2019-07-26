@@ -61,12 +61,27 @@ class FloatMutations:
         return abs(value)
 
     @classmethod
-    def is_nan(cls, mutation, value, story, line, operator):
+    def isNaN(cls, mutation, value, story, line, operator):
         return math.isnan(value)
 
     @classmethod
-    def is_infinity(cls, mutation, value, story, line, operator):
+    def isInfinity(cls, mutation, value, story, line, operator):
         return math.isinf(value)
+
+    @classmethod
+    def approxEqual(cls, mutation, value, story, line, operator):
+        cmp = story.argument_by_name(mutation, 'value')
+        max_rel_diff = story.argument_by_name(mutation, 'maxRelDiff')
+        max_abs_diff = story.argument_by_name(mutation, 'maxAbsDiff')
+        if max_rel_diff is None and max_abs_diff is None:
+            return math.isclose(value, cmp)
+        elif max_rel_diff is None:
+            return math.isclose(value, cmp, abs_tol=max_abs_diff)
+        elif max_abs_diff is None:
+            return math.isclose(value, cmp, rel_tol=max_rel_diff)
+        else:
+            return math.isclose(value, cmp,
+                                rel_tol=max_rel_diff, abs_tol=max_abs_diff)
 
     @classmethod
     def sqrt(cls, mutation, value, story, line, operator):

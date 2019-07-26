@@ -22,11 +22,12 @@ def service_patch(patch):
 @fixture
 def file_io(patch, service_patch):
     patch.object(File, 'open')
+    patch.object(os, 'makedirs')
 
 
 @fixture
 def exc():
-    def throw(*args):
+    def throw(*args, **kwargs):
         raise IOError()
 
     return throw
@@ -37,6 +38,28 @@ def test_service_file_safe_path(patch, story):
     assert File.safe_path(story, '../') == '/'
     assert File.safe_path(story, '/a') == '/a'
     assert File.safe_path(story, '../../../../') == '/'
+
+
+@mark.asyncio
+async def test_service_file_mkdir(story, line, file_io):
+    story.execution_id = 'super_super_tmp'
+    resolved_args = {
+        'path': 'my_path'
+    }
+    await File.file_mkdir(story, line, resolved_args)
+    os.makedirs.assert_called_with(f'{story.get_tmp_dir()}/my_path',
+                                   exist_ok=True)
+
+
+@mark.asyncio
+async def test_service_file_mkdir_exc(patch, story, line, file_io, exc):
+    patch.object(os, 'makedirs', side_effect=exc)
+    story.execution_id = 'super_super_tmp'
+    resolved_args = {
+        'path': 'my_path'
+    }
+    with pytest.raises(StoryscriptError):
+        await File.file_mkdir(story, line, resolved_args)
 
 
 @mark.asyncio

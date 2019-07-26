@@ -1,4 +1,4 @@
 from .Lexicon import Lexicon
-from .Story import Story
+from .Stories import Stories
 
-__all__ = ['Lexicon', 'Story']
+__all__ = ['Lexicon', 'Stories']

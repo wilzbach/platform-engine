@@ -3,7 +3,9 @@ from tornado.web import RequestHandler
 
 from ..Apps import Apps
 from ..Exceptions import StoryscriptError
-from ..Sentry import Sentry
+from ..constants.Events import APP_REQUEST_ERROR
+from ..reporting.Reporter import Reporter
+from ..reporting.ReportingAgent import ReportingEvent
 
 
 class BaseHandler(RequestHandler):
@@ -23,15 +25,15 @@ class BaseHandler(RequestHandler):
         logger.error(f'Story execution failed; cause={str(e)}', exc=e)
         self.set_status(500, 'Story execution failed')
         self.finish()
+
         if isinstance(e, StoryscriptError):
-            Sentry.capture_exc(e, e.story, e.line)
+            re = ReportingEvent.from_release(
+                e.story.app.release, APP_REQUEST_ERROR)
         else:
-            if story_name is None:
-                Sentry.capture_exc(e)
-            else:
-                Sentry.capture_exc(e, extra={
-                    'story_name': story_name
-                })
+            re = ReportingEvent.from_exc(e)
+
+        re.story_name = story_name
+        Reporter.capture_evt(re)
 
     def is_finished(self):
         return self._finished

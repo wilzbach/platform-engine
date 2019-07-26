@@ -6,7 +6,7 @@ from .Services import Services
 from .. import Metrics
 from ..Exceptions import InvalidKeywordUsage, StoryscriptError, \
     StoryscriptRuntimeError
-from ..Stories import Stories
+from ..Story import Story
 from ..Types import StreamingService
 from ..constants.LineConstants import LineConstants
 from ..constants.LineSentinels import LineSentinels, ReturnSentinel
@@ -85,8 +85,8 @@ class Lexicon:
         return_from_function_call = None
         try:
             story.set_context(context)
-            from . import Story
-            result = await Story.execute_block(logger, story, function_line)
+            from . import Stories
+            result = await Stories.execute_block(logger, story, function_line)
             if LineSentinels.is_sentinel(result):
                 if not isinstance(result, ReturnSentinel):
                     raise StoryscriptRuntimeError(
@@ -244,13 +244,13 @@ class Lexicon:
         _list = story.resolve(line['args'][0], encode=False)
         output = line['output'][0]
 
-        from . import Story
+        from . import Stories
 
         try:
             for item in _list:
                 story.context[output] = item
 
-                result = await Story.execute_block(logger, story, line)
+                result = await Stories.execute_block(logger, story, line)
 
                 if LineSentinels.BREAK == result:
                     break
@@ -284,7 +284,7 @@ class Lexicon:
                 story=story, line=line)
 
     @classmethod
-    async def ret(cls, logger, story: Stories, line):
+    async def ret(cls, logger, story: Story, line):
         """
         Implementation for return.
         The semantics for return are as follows:

@@ -2,7 +2,7 @@
 from asyncy.App import App
 from asyncy.Config import Config
 from asyncy.Containers import Containers
-from asyncy.processing import Story
+from asyncy.processing import Stories
 
 from pytest import mark
 
@@ -12,6 +12,6 @@ from pytest import mark
 #     app.config = Config()
 #     story.app = app
 #     story.app.app_id = 'app_id'
-#     patch.object(Story, 'story', return_value=story)
+#     patch.object(Stories, 'story', return_value=story)
 #     patch.object(Containers, 'format_command', return_value=['pwd'])
-#     await Story.run(app, logger, story_name='hello.story')
+#     await Stories.run(app, logger, story_name='hello.story')

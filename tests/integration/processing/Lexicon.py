@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 from asyncy.Exceptions import StoryscriptError, StoryscriptRuntimeError, \
     TypeAssertionRuntimeError, TypeValueRuntimeError
-from asyncy.Stories import Stories
-from asyncy.processing import Story
+from asyncy.Story import Story
+from asyncy.processing import Stories
 from asyncy.processing.internal import File, Http, Json, Log
 
 from pytest import mark
@@ -153,7 +153,7 @@ class TestSuite:
         preparation_lines='status = "opened"\n'
                           'tag = "priority"\n'
                           'if status == "opened" and '
-                          '(["important", "priority"] contains item: tag)\n'
+                          '["important", "priority"].contains(item: tag)\n'
                           '   a = 1',
         cases=[
             TestCase(assertion=ContextAssertion(key='a', expected=1))
@@ -329,82 +329,86 @@ class TestSuite:
     TestSuite(
         preparation_lines='str = "hello world!"',
         cases=[
-            TestCase(append='len = str length',
+            TestCase(append='len = str.length()',
                      assertion=ContextAssertion(key='len', expected=12)),
 
-            TestCase(append='r = str contains item: "hello"',
+            TestCase(append='r = str.contains(item: "hello")',
                      assertion=ContextAssertion(key='r', expected=True)),
 
-            TestCase(append='r = str contains item: "hello1"',
+            TestCase(append='r = str.contains(item: "hello1")',
                      assertion=ContextAssertion(key='r', expected=False)),
 
-            TestCase(append='r = str contains pattern: /llo/',
+            TestCase(append='r = str.contains(pattern: /llo/)',
                      assertion=ContextAssertion(key='r', expected=True)),
 
-            TestCase(append='r = str contains pattern: /f/',
+            TestCase(append='r = str.contains(pattern: /f/)',
                      assertion=ContextAssertion(key='r', expected=False)),
 
-            TestCase(append='parts = str split by: " "',
+            TestCase(append='parts = str.split(by: " ")',
                      assertion=ContextAssertion(
                          key='parts', expected=['hello', 'world!'])),
 
-            TestCase(append='a = str uppercase',
+            TestCase(append='a = str.uppercase()',
                      assertion=ContextAssertion(
                          key='a', expected='HELLO WORLD!')),
 
-            TestCase(append='a = str lowercase',
+            TestCase(append='a = str.lowercase()',
                      assertion=ContextAssertion(
                          key='a', expected='hello world!')),
 
-            TestCase(append='a = str capitalize',
+            TestCase(append='a = str.capitalize()',
                      assertion=ContextAssertion(
                          key='a', expected='Hello World!')),
 
-            TestCase(append='a = str substring start: 2',
+            TestCase(append='a = str.substring(start: 2)',
                      assertion=ContextAssertion(
                          key='a', expected='llo world!')),
 
-            TestCase(append='a = str substring end: 5',
+            TestCase(append='a = str.substring(start: 2).substring(end: -3)',
+                     assertion=ContextAssertion(
+                         key='a', expected='llo wor')),
+
+            TestCase(append='a = str.substring(end: 5)',
                      assertion=ContextAssertion(
                          key='a', expected='hello')),
 
-            TestCase(append='a = str substring start: 6 end: 11',
+            TestCase(append='a = str.substring(start: 6 end: 11)',
                      assertion=ContextAssertion(
                          key='a', expected='world')),
 
-            TestCase(append='a = str substring start: 6 end: -2',
+            TestCase(append='a = str.substring(start: 6 end: -2)',
                      assertion=ContextAssertion(
                          key='a', expected='worl')),
 
-            TestCase(append='a = str substring start: 6 end: -6',
+            TestCase(append='a = str.substring(start: 6 end: -6)',
                      assertion=ContextAssertion(
                          key='a', expected='')),
 
-            TestCase(append='a = str substring start: 20',
+            TestCase(append='a = str.substring(start: 20)',
                      assertion=ContextAssertion(
                          key='a', expected='')),
 
-            TestCase(append='a = str substring start: 10 end:20',
+            TestCase(append='a = str.substring(start: 10 end:20)',
                      assertion=ContextAssertion(
                          key='a', expected='d!')),
 
-            TestCase(append='a = str substring start: -3',
+            TestCase(append='a = str.substring(start: -3)',
                      assertion=ContextAssertion(
                          key='a', expected='ld!')),
 
-            TestCase(append='a = str startswith prefix: "hello"',
+            TestCase(append='a = str.startswith(prefix: "hello")',
                      assertion=ContextAssertion(
                          key='a', expected=True)),
 
-            TestCase(append='a = str startswith prefix: "ello"',
+            TestCase(append='a = str.startswith(prefix: "ello")',
                      assertion=ContextAssertion(
                          key='a', expected=False)),
 
-            TestCase(append='a = str endswith suffix: "!"',
+            TestCase(append='a = str.endswith(suffix: "!")',
                      assertion=ContextAssertion(
                          key='a', expected=True)),
 
-            TestCase(append='a = str endswith suffix: "."',
+            TestCase(append='a = str.endswith(suffix: ".")',
                      assertion=ContextAssertion(
                          key='a', expected=False)),
         ]
@@ -412,29 +416,29 @@ class TestSuite:
     TestSuite(
         preparation_lines='str = "hello."',
         cases=[
-            TestCase(append='r = str replace item: "hello" by:"foo"',
+            TestCase(append='r = str.replace(item: "hello" by:"foo")',
                      assertion=ContextAssertion(key='r', expected='foo.')),
 
-            TestCase(append='r = str replace item: "l" by:"o"',
+            TestCase(append='r = str.replace(item: "l" by:"o")',
                      assertion=ContextAssertion(key='r', expected='heooo.')),
 
-            TestCase(append='r = str replace item: "k" by:"$"',
+            TestCase(append='r = str.replace(item: "k" by:"$")',
                      assertion=ContextAssertion(key='r', expected='hello.')),
 
-            TestCase(append='r = str replace pattern: /hello/ by:"foo"',
+            TestCase(append='r = str.replace(pattern: /hello/ by:"foo")',
                      assertion=ContextAssertion(key='r', expected='foo.')),
 
-            TestCase(append='r = str replace pattern: /l/ by:"o"',
+            TestCase(append='r = str.replace(pattern: /l/ by:"o")',
                      assertion=ContextAssertion(key='r', expected='heooo.')),
 
-            TestCase(append='r = str replace pattern: /k/ by:"$"',
+            TestCase(append='r = str.replace(pattern: /k/ by:"$")',
                      assertion=ContextAssertion(key='r', expected='hello.')),
         ]
     ),
     TestSuite(
         preparation_lines='str = " text "',
         cases=[
-            TestCase(append='a = str trim',
+            TestCase(append='a = str.trim()',
                      assertion=ContextAssertion(
                          key='a', expected='text')),
         ],
@@ -443,84 +447,96 @@ class TestSuite:
         preparation_lines='e = 10\n'
                           'o = -3',
         cases=[
-            TestCase(append='a = e is_odd',
+            TestCase(append='a = e.isOdd()',
                      assertion=ContextAssertion(key='a', expected=False)),
 
-            TestCase(append='a = o is_odd',
+            TestCase(append='a = o.isOdd()',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = e is_even',
+            TestCase(append='a = e.isEven()',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = o is_even',
+            TestCase(append='a = o.isEven()',
                      assertion=ContextAssertion(key='a', expected=False)),
 
-            TestCase(append='a = o absolute',
+            TestCase(append='a = o.absolute()',
                      assertion=[
                          ContextAssertion(key='a', expected=3),
                          ContextAssertion(key='o', expected=-3)
                      ]),
 
-            TestCase(append='a = e increment',
+            TestCase(append='a = e.increment()',
                      assertion=[
                          ContextAssertion(key='a', expected=11),
                          ContextAssertion(key='e', expected=10)
                      ]),
 
-            TestCase(append='a = e decrement',
+            TestCase(append='a = e.decrement()',
                      assertion=[
                          ContextAssertion(key='a', expected=9),
                          ContextAssertion(key='e', expected=10)
                      ]),
 
-            TestCase(append='e decrement',
+            TestCase(append='e.decrement()',
                      assertion=ContextAssertion(key='e', expected=10)),
 
-            TestCase(append='e increment',
-                     assertion=ContextAssertion(key='e', expected=10))
+            TestCase(append='e.increment()',
+                     assertion=ContextAssertion(key='e', expected=10)),
+
+            TestCase(append='a = e.increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=12)),
+
+            TestCase(append='a = 5.increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=7)),
+
+            TestCase(append='a = -5.increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=-3)),
+
+            TestCase(append='a = (-5).increment().increment()',
+                     assertion=ContextAssertion(key='a', expected=-3)),
         ]
     ),
     TestSuite(
         preparation_lines='m = {"a": 1, "b": 2}',
         cases=[
-            TestCase(append='s = m length',
+            TestCase(append='s = m.length()',
                      assertion=ContextAssertion(key='s', expected=2)),
 
-            TestCase(append='s = m keys',
+            TestCase(append='s = m.keys()',
                      assertion=ContextAssertion(key='s', expected=['a', 'b'])),
 
-            TestCase(append='s = m values',
+            TestCase(append='s = m.values()',
                      assertion=ContextAssertion(key='s', expected=[1, 2])),
 
-            TestCase(append='s = m flatten',
+            TestCase(append='s = m.flatten()',
                      assertion=ContextAssertion(
                          key='s', expected=[['a', 1], ['b', 2]])),
 
-            TestCase(append='s = m pop key: "a"',
+            TestCase(append='s = m.pop(key: "a")',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'b': 2})
                      ]),
 
-            TestCase(append='s = m get key: "a" default: 3',
+            TestCase(append='s = m.get(key: "a" default: 3)',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'a': 1, 'b': 2})
                      ]),
 
-            TestCase(append='s = m get key: "c" default: 42',
+            TestCase(append='s = m.get(key: "c" default: 42)',
                      assertion=ContextAssertion(key='s', expected=42)),
 
-            TestCase(append='s = m contains key: "d"',
+            TestCase(append='s = m.contains(key: "d")',
                      assertion=ContextAssertion(key='s', expected=False)),
 
-            TestCase(append='s = m contains key: "a"',
+            TestCase(append='s = m.contains(key: "a")',
                      assertion=ContextAssertion(key='s', expected=True)),
 
-            TestCase(append='s = m contains value: 3',
+            TestCase(append='s = m.contains(value: 3)',
                      assertion=ContextAssertion(key='s', expected=False)),
 
-            TestCase(append='s = m contains value: 1',
+            TestCase(append='s = m.contains(value: 1)',
                      assertion=ContextAssertion(key='s', expected=True)),
 
             TestCase(append='key = "a"\ns = m[key]',
@@ -539,62 +555,62 @@ class TestSuite:
     TestSuite(
         preparation_lines='arr = [1, 2, 2, 3, 4, 4, 5, 5]',
         cases=[
-            TestCase(append='actual = arr index of: 5',
+            TestCase(append='actual = arr.index(of: 5)',
                      assertion=ContextAssertion(key='actual', expected=6)),
 
-            TestCase(append='actual = arr index of: 500',
+            TestCase(append='actual = arr.index(of: 500)',
                      assertion=ContextAssertion(key='actual', expected=-1)),
 
-            TestCase(append='actual = arr length',
+            TestCase(append='actual = arr.length()',
                      assertion=ContextAssertion(key='actual', expected=8)),
 
-            TestCase(append='arr append item: 6',
+            TestCase(append='arr.append(item: 6)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5, 6])),
 
-            TestCase(append='arr prepend item: 1',
+            TestCase(append='arr.prepend(item: 1)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 1, 2, 2, 3, 4, 4, 5, 5])),
 
-            TestCase(append='r = arr random',
+            TestCase(append='r = arr.random()',
                      assertion=IsANumberAssertion(key='r')),
 
-            TestCase(append='arr reverse',
+            TestCase(append='arr.reverse()',
                      assertion=ContextAssertion(
                          key='arr', expected=[5, 5, 4, 4, 3, 2, 2, 1])),
 
-            TestCase(append='arr sort',
+            TestCase(append='arr.sort()',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
-            TestCase(append='min = arr min',
+            TestCase(append='min = arr.min()',
                      assertion=ContextAssertion(key='min', expected=1)),
 
-            TestCase(append='max = arr max',
+            TestCase(append='max = arr.max()',
                      assertion=ContextAssertion(key='max', expected=5)),
 
-            TestCase(append='sum = arr sum',
+            TestCase(append='sum = arr.sum()',
                      assertion=ContextAssertion(key='sum', expected=26)),
 
-            TestCase(append='arr unique',
+            TestCase(append='arr.unique()',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 3, 4, 5])),
 
-            TestCase(append='a = arr contains item: 1',
+            TestCase(append='a = arr.contains(item: 1)',
                      assertion=ContextAssertion(key='a', expected=True)),
 
-            TestCase(append='a = arr contains item: 11000',
+            TestCase(append='a = arr.contains(item: 11000)',
                      assertion=ContextAssertion(key='a', expected=False)),
 
-            TestCase(append='arr remove item: 3',
+            TestCase(append='arr.remove(item: 3)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 4, 4, 5, 5])),
 
-            TestCase(append='arr remove item: 30',
+            TestCase(append='arr.remove(item: 30)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
-            TestCase(append='arr replace item: 3 by: 42',
+            TestCase(append='arr.replace(item: 3 by: 42)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 42, 4, 4, 5, 5])),
 
@@ -602,7 +618,7 @@ class TestSuite:
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
-            TestCase(append='arr replace item: 2 by: 42',
+            TestCase(append='arr.replace(item: 2 by: 42)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 42, 42, 3, 4, 4, 5, 5])),
         ])
@@ -663,10 +679,10 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     context = {}
 
-    story = Stories(app, story_name, logger)
+    story = Story(app, story_name, logger)
     story.prepare(context)
     try:
-        await Story.execute(logger, story)
+        await Stories.execute(logger, story)
     except StoryscriptError as e:
         try:
             assert isinstance(case.assertion, RuntimeExceptionAssertion)
@@ -1266,27 +1282,80 @@ async def test_range_mutations(suite: TestSuite, logger):
                 assertion=ContextAssertion(key='b', expected=1)
             ),
             TestCase(
-                append=f'a = 4.0\nb = a.log2()',
+                append='a = 4.0\nb = a.log2()',
                 assertion=ContextAssertion(key='b', expected=2)
             ),
             TestCase(
-                append=f'a = 1000.0\nb = a.log10()',
+                append='a = 1000.0\nb = a.log10()',
                 assertion=ContextAssertion(key='b', expected=3)
             ),
             TestCase(
-                append=f'a = 1.0\nb = a.exp()',
+                append='a = 1.0\nb = a.exp()',
                 assertion=ContextAssertion(key='b', expected=math.e)
             ),
             TestCase(
-                append=f'a = -1.0\nb = a.abs()',
+                append='a = -1.0\nb = a.abs()',
                 assertion=ContextAssertion(key='b', expected=1)
             ),
             TestCase(
-                append=f'a = "nan" as float\nb = a.is_nan()',
+                append='a = "nan" as float\nb = a.isNaN()',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             TestCase(
-                append=f'a = "inf" as float\nb = a.is_infinity()',
+                append='a = "inf" as float\nb = a.isInfinity()',
+                assertion=ContextAssertion(key='b', expected=True)
+            ),
+            TestCase(
+                append=f'a = {math.pi / 4}\n'
+                       'b = a.tan()\n'
+                       'c = b.approxEqual(value: 1)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 1.00\nb = a.approxEqual(value: 2)',
+                assertion=ContextAssertion(key='b', expected=False)
+            ),
+            TestCase(
+                append='a = 1.000001\nb = a.approxEqual(value: 1.000002)',
+                assertion=ContextAssertion(key='b', expected=False)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxRelDiff: 0.5)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxRelDiff: 0.49)',
+                assertion=ContextAssertion(key='c', expected=False)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxAbsDiff: 100)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 100.0\n'
+                       'b = 200.0\n'
+                       'c = b.approxEqual(value: a maxAbsDiff: 99)',
+                assertion=ContextAssertion(key='c', expected=False)
+            ),
+            TestCase(
+                append=f'a = {math.pi / 4}\n'
+                       'b = a.tan()\n'
+                       'c = b.approxEqual(value: 1)',
+                assertion=ContextAssertion(key='c', expected=True)
+            ),
+            TestCase(
+                append='a = 1.000001\n'
+                       'b = a.approxEqual('
+                       '        value: 1.000002'
+                       '        maxRelDiff: 0.000001'
+                       '        maxAbsDiff: 0'
+                       '    )',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             TestCase(

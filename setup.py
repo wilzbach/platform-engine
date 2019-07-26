@@ -35,12 +35,13 @@ setup(
         'tornado==5.0.2',
         'click==7.0',
         'frustum==0.0.6',
-        'raven==6.9.0',
-        'storyscript==0.21.1',
+        'sentry-sdk==0.10.2',
+        'storyscript==0.22.1',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'asyncpg==0.18.3',
         'numpy==1.16.4',
+        'expiringdict==1.1.4',
         'requests==2.21.0'  # Used for structures like CaseInsensitiveDict.
     ],
     classifiers=[

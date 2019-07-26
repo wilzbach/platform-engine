@@ -4,11 +4,11 @@
 class IntegerMutations:
 
     @classmethod
-    def is_odd(cls, mutation, value, story, line, operator):
+    def isOdd(cls, mutation, value, story, line, operator):
         return value % 2 == 1
 
     @classmethod
-    def is_even(cls, mutation, value, story, line, operator):
+    def isEven(cls, mutation, value, story, line, operator):
         return value % 2 == 0
 
     @classmethod

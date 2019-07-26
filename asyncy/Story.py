@@ -12,7 +12,7 @@ from .utils.StringUtils import StringUtils
 MAX_BYTES_LOGGING = 160
 
 
-class Stories:
+class Story:
 
     def __init__(self, app, story_name, logger):
         self.app = app
@@ -250,9 +250,9 @@ class Stories:
 
         Functions are executed in the following manner:
         1. Prepare a new context for the function
-        2. Temporarily switch Stories#context to this new context
+        2. Temporarily switch Story#context to this new context
         3. Execute the function block
-        4. Restore the original Stories#context and continue execution
+        4. Restore the original Story#context and continue execution
 
         :return: A new context, which contains the arguments required (if any)
         """
