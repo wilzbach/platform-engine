@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+import base64
 import json
 import uuid
-from collections import deque
+from collections import deque, namedtuple
 from io import StringIO
 from unittest.mock import MagicMock, Mock
 
@@ -13,17 +14,17 @@ from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
 from asyncy.constants.ServiceConstants import ServiceConstants
 from asyncy.entities.Multipart import FileFormField, FormField
 from asyncy.omg.ServiceOutputValidator import ServiceOutputValidator
-from asyncy.processing.Services import Command, Event, \
+from asyncy.processing.Services import Command, Event, HttpDataEncoder, \
     Service, Services
 from asyncy.utils.HttpUtils import HttpUtils
 
 import pytest
-from pytest import mark
+from pytest import fixture, mark
+
+from requests.structures import CaseInsensitiveDict
 
 from tornado.gen import coroutine
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
-
-import ujson
 
 
 @mark.asyncio
@@ -686,7 +687,9 @@ async def test_execute_inline(patch, story, command, simulate_finished,
     if bin_content:
         req.write.assert_called_with(b'bin world!')
     else:
-        req.write.assert_called_with(ujson.dumps(expected_body) + '\n')
+        req.write.assert_called_with(json.dumps(
+            expected_body,
+            cls=HttpDataEncoder) + '\n')
 
     if command == 'finish' or bin_content:
         io_loop.add_callback.assert_called_with(req.finish)
@@ -841,3 +844,85 @@ def test_service_get_command_conf_events(story):
         }
     }
     assert Services.get_command_conf(story, chain) == {'a': 'b'}
+
+
+def test_http_data_encoder(patch):
+    patch.object(base64, 'b64encode', return_value=b'dg==')
+    namedtuple_obj = namedtuple(
+        'NamedTupleObj',
+        ['key']
+    )
+    patch.object(namedtuple_obj, '_asdict', return_value={
+        'key': 'value'
+    })
+    file_json = {
+        'name': 'name',
+        'body': 'body',
+        'filename': 'filename',
+        'content_type': 'content_type'
+    }
+    patch.object(FileFormField, '_asdict', return_value=file_json)
+    form_field_json = {
+        'name': 'name',
+        'body': 'body'
+    }
+    patch.object(FormField, '_asdict', return_value=form_field_json)
+    patch.object(CaseInsensitiveDict, 'items', return_value=[
+        ('key', 'value')
+    ])
+    obj = {
+        'file': FileFormField(
+            name='name',
+            body='body',
+            filename='filename',
+            content_type='content_type'
+        ),
+        'field': FormField(
+            name='name',
+            body='body'
+        ),
+        'key': b'v',
+        'casedict': CaseInsensitiveDict(data={
+            'key': 'value'
+        }),
+        'namedtuple': namedtuple_obj(key='value')
+    }
+
+    json_str = json.dumps(obj, cls=HttpDataEncoder)
+
+    assert json_str == json.dumps({
+        'file': file_json,
+        'field': form_field_json,
+        'key': 'dg==',
+        'casedict': {
+            'key': 'value'
+        },
+        'namedtuple': {
+            'key': 'value'
+        }
+    })
+
+    namedtuple_obj._asdict.assert_called()
+    FormField._asdict.assert_called()
+    FileFormField._asdict.assert_called()
+    base64.b64encode.assert_called_with(b'v')
+    CaseInsensitiveDict.items.assert_called()
+
+
+@fixture
+def type_exc():
+    def throw(*args):
+        raise TypeError()
+
+    return throw
+
+
+def test_http_data_encoder_exc(patch, type_exc):
+    patch.object(json.JSONEncoder, 'default', side_effect=type_exc)
+    obj = {
+        'invalid_obj': LineConstants()
+    }
+    with pytest.raises(TypeError):
+        json.dumps(obj, cls=HttpDataEncoder)
+
+    json.JSONEncoder.default.assert_called()

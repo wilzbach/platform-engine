@@ -510,10 +510,11 @@ class Kubernetes:
         }
 
     @classmethod
-    async def create_deployment(cls, app, service_name: str, image: str,
-                                container_name: str, start_command: [] or str,
-                                shutdown_command: [] or str, env: dict,
-                                volumes: Volumes,
+    async def create_deployment(cls, app, service_name: str, service_uuid: str,
+                                image: str, container_name: str,
+                                start_command: [] or str,
+                                shutdown_command: [] or str,
+                                env: dict, volumes: Volumes,
                                 container_configs: ContainerConfigs):
         # Note: We don't check if this deployment exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
@@ -562,15 +563,19 @@ class Kubernetes:
                 'name': config.name
             })
 
-        b16_service_name = base64.b16encode(service_name.encode()).decode()
-
         app.logger.debug(f'imagePullPolicy set to {app.image_pull_policy()}')
 
         liveness_probe = cls.get_liveness_probe(app, service_name)
 
         tag = image.split(':')[-1]
-        limits = await Database.get_service_limits(app.config,
-                                                   service_name, tag)
+        # Reusing method called by metrics recorder for bulk querying
+        service_tag_uuids = await Database.get_service_tag_uuids(
+            app.config, [{'service_uuid': service_uuid, 'tag': tag}]
+        )
+        assert len(service_tag_uuids) == 1
+        limits = await Database.get_service_limits(
+            app.config, service_tag_uuids[0]
+        )
 
         payload = {
             'apiVersion': 'apps/v1',
@@ -593,7 +598,7 @@ class Kubernetes:
                     'metadata': {
                         'labels': {
                             'app': container_name,
-                            'b16-service-name': b16_service_name,
+                            'service-tag-uuid': service_tag_uuids[0],
                             'logstash-enabled': 'true'
                         }
                     },
@@ -672,10 +677,11 @@ class Kubernetes:
         app.logger.debug('Deployment is ready')
 
     @classmethod
-    async def create_pod(cls, app, service: str, image: str,
-                         container_name: str, start_command: [] or str,
-                         shutdown_command: [] or str, env: dict,
-                         volumes: Volumes,
+    async def create_pod(cls, app, service_name: str, service_uuid: str,
+                         image: str, container_name: str,
+                         start_command: [] or str,
+                         shutdown_command: [] or str,
+                         env: dict, volumes: Volumes,
                          container_configs: ContainerConfigs):
         res = await cls.make_k8s_call(
             app.config, app.logger,
@@ -687,8 +693,9 @@ class Kubernetes:
                              f'already exists, reusing')
             return
 
-        await cls.create_deployment(app, service, image, container_name,
+        await cls.create_deployment(app, service_name, service_uuid,
+                                    image, container_name,
                                     start_command, shutdown_command, env,
                                     volumes, container_configs)
 
-        await cls.create_service(app, service, container_name)
+        await cls.create_service(app, service_name, container_name)

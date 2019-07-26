@@ -17,6 +17,7 @@ class GraphQLAPI:
         query = """
         query GetAlias($alias: Alias! $tag: String!){
           serviceByAlias(alias: $alias){
+            uuid
             pullUrl
             serviceTags(condition: {tag: $tag} first:1){
               nodes{
@@ -50,6 +51,7 @@ class GraphQLAPI:
             raise ServiceNotFound(service=alias, tag=tag)
 
         return (
+            res['uuid'],
             res['pullUrl'],
             res['serviceTags']['nodes'][0]['configuration']
         )
@@ -63,6 +65,7 @@ class GraphQLAPI:
             nodes {
               services(condition: {name: $service}, first: 1) {
                 nodes {
+                  uuid
                   pullUrl
                   serviceTags(condition: {tag: $tag}, first: 1) {
                     nodes {
@@ -105,6 +108,7 @@ class GraphQLAPI:
                 'services']['nodes'][0]
         assert res, f'Slug "{image}" was not found in the Asyncy Hub'
         return (
+            res['uuid'],
             res['pullUrl'],
             res['serviceTags']['nodes'][0]['configuration']
         )

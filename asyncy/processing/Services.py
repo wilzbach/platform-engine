@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+import base64
 import json
 import urllib
 import uuid
-from collections import deque, namedtuple
+from collections import deque
 from functools import partial
 from urllib import parse
+
+from requests.structures import CaseInsensitiveDict
 
 from tornado.gen import coroutine
 from tornado.httpclient import AsyncHTTPClient
@@ -24,6 +27,63 @@ from ..omg.ServiceOutputValidator import ServiceOutputValidator
 from ..utils import Dict
 from ..utils.HttpUtils import HttpUtils
 from ..utils.StringUtils import StringUtils
+from ..utils.TypeUtils import TypeUtils
+
+
+class HttpDataEncoder(json.JSONEncoder):
+    """
+    This is utilized to sanitize the data sent back
+    from the http service.
+    """
+    def default(self, obj):
+        """
+        This converts anything that the default encoder
+        cannot handle. More importantly namedtuples, and
+        other objects utilized by services like FormField.
+
+        :param obj: the object we wish to convert
+        :return: returns the converted object
+        """
+        if isinstance(obj, bytes):
+            # we always want to convert bytes
+            # to base64 within json
+            return base64.b64encode(obj).decode('utf-8')
+        elif isinstance(obj, CaseInsensitiveDict):
+            # convert this to a regular dict
+            return dict(obj.items())
+
+        return json.JSONEncoder.default(self, obj)
+
+    def encode(self, o):
+        """
+        This makes it possible to override the default type conversion
+        for namedtuples.
+
+        :param o: the object we wish to encode
+        :return: returns an encoded json str
+        """
+        return json.JSONEncoder.encode(self, self._convert_types(o))
+
+    def _convert_types(self, o):
+        """
+        This is utilized by encode() to effectively ensure that any
+        namedtuples or other objects are converted to a dictionary.
+        Otherwise the will not get encoded as desired.
+
+        :param o: the dictionary object we wish to convert
+        :return: returns a dictionary with all types converted
+        """
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if isinstance(v, FileFormField):
+                    o[k] = v._asdict()
+                elif isinstance(v, FormField):
+                    o[k] = v._asdict()
+                elif TypeUtils.isnamedtuple(v):
+                    o[k] = v._asdict()
+                else:
+                    o[k] = self._convert_types(v)
+        return o
 
 
 class Services:
@@ -237,7 +297,7 @@ class Services:
         # Set the header for the first time to something we know.
         req.set_header('Content-Type', 'application/stream+json')
 
-        req.write(ujson.dumps(body) + '\n')
+        req.write(json.dumps(body, cls=HttpDataEncoder) + '\n')
 
         # HTTP hack
         if chain[0].name == 'http' and command.name == 'finish':

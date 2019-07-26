@@ -211,7 +211,7 @@ def test_service_name(patch, story):
 
 @mark.asyncio
 async def test_create_and_start_no_action(story):
-    story.app.services = {'alpine': {'configuration': {}}}
+    story.app.services = {'alpine': {'configuration': {'uuid': 'uuid'}}}
     with pytest.raises(ActionNotFound):
         await Containers.create_and_start(story.app, {'command': 'foo'},
                                           'alpine', 'alpine')
@@ -235,6 +235,7 @@ async def test_start(patch, story, async_mock,
     story.app.services = {
         'alpine': {
             ServiceConstants.config: {
+                'uuid': '0c6299fe-7d38-4fde-a1cf-7b6ce610cb2d',
                 'actions': {
                     'echo': {
                     }
@@ -301,7 +302,8 @@ async def test_start(patch, story, async_mock,
         await Containers.start(story, line)
 
     Kubernetes.create_pod.mock.assert_called_with(
-        app=story.app, service='alpine',
+        app=story.app, service_name='alpine',
+        service_uuid='0c6299fe-7d38-4fde-a1cf-7b6ce610cb2d',
         image='alpine', container_name='asyncy-alpine',
         start_command=run_command or ['tail', '-f', '/dev/null'],
         shutdown_command=None,
