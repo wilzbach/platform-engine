@@ -48,15 +48,6 @@ async def test_capture(patch, magic, async_mock, ex):
 
     expected_story_line = '28'
     expected_story_name = 'story_name'
-    if isinstance(ex, StoryscriptError):
-        ex.story = magic()
-        ex.story.name = 'override_story_name'
-        ex.line = {
-            'ln': 'override_line'
-        }
-
-        expected_story_name = 'override_story_name'
-        expected_story_line = 'override_line'
 
     await sentry_agent.capture(
         re=ReportingEvent(
@@ -69,6 +60,10 @@ async def test_capture(patch, magic, async_mock, ex):
             owner_email='foo@foo.com'
         )
     )
+
+    if isinstance(ex, StoryscriptError):
+        sentry_sdk.capture_exception.assert_not_called()
+        return
 
     Scope.__setattr__.assert_called_with(
         'user', {
