@@ -43,20 +43,31 @@ async def file_mkdir(story, line, resolved_args):
 async def file_write(story, line, resolved_args):
     path = safe_path(story, resolved_args['path'])
     try:
-        with open(path, 'w') as f:
-            f.write(resolved_args['content'])
-    except IOError as e:
+        content = resolved_args['content']
+        if isinstance(content, bytes):
+            mode = 'wb'
+        else:
+            mode = 'w'
+        with open(path, mode) as f:
+            f.write(content)
+    except (KeyError, IOError) as e:
         raise StoryscriptError(message=f'Failed to write to file: {e}',
                                story=story, line=line)
 
 
 @Decorators.create_service(name='file', command='read', arguments={
-    'path': {'type': 'string'}
+    'path': {'type': 'string'},
+    'raw': {'type': 'boolean'}
 }, output_type='string')
 async def file_read(story, line, resolved_args):
     path = safe_path(story, resolved_args['path'])
+    raw = resolved_args.get('raw', False)
     try:
-        with open(path, 'r') as f:
+        if raw:
+            mode = 'rb'
+        else:
+            mode = 'r'
+        with open(path, mode) as f:
             return f.read()
     except IOError as e:
         raise StoryscriptError(message=f'Failed to read file: {e}',
