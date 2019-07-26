@@ -28,19 +28,20 @@ class Containers:
         await Kubernetes.clean_namespace(story.app)
 
     @classmethod
-    async def create_and_start(cls, app, line, service, container_name):
+    async def create_and_start(cls, app, line, service_name, container_name):
         """
         Creates and starts a container using the cloud provider (Kubernetes).
         :param app: The app instance
         :param line: Can be null, handled down the chain
-        :param service: The name of the service
+        :param service_name: The name of the service
         :param container_name: The name of the container
         :return: null
         """
-        # Note: 'image' is inserted by asyncy.Apps, and is not a part of the
-        # OMG spec.
-        omg = app.services[service][ServiceConstants.config]
-        image = omg.get('image', service)
+        # Note: 'uuid' and 'image' are inserted by asyncy.Apps,
+        # and are not a part of the OMG spec.
+        omg = app.services[service_name][ServiceConstants.config]
+        image = omg.get('image', service_name)
+        service_uuid = omg['uuid']
 
         action = None
         if line is not None:
@@ -51,7 +52,7 @@ class Containers:
             command_conf = Dict.find(omg, f'actions.{action}')
 
             if command_conf is None:
-                raise ActionNotFound(service=service, action=action)
+                raise ActionNotFound(service=service_name, action=action)
 
         shutdown_command = Dict.find(omg, f'lifecycle.shutdown.command')
 
@@ -66,7 +67,7 @@ class Containers:
         volumes = []
         if omg.get('volumes'):
             for name, data in omg['volumes'].items():
-                vol_name = cls.hash_volume_name(app, line, service, name)
+                vol_name = cls.hash_volume_name(app, line, service_name, name)
                 persist = data.get('persist', False)
                 target = data.get('target', False)
 
@@ -81,17 +82,18 @@ class Containers:
 
         env = {}
         for key, omg_config in omg.get('environment', {}).items():
-            actual_val = app.environment.get(service, {}).get(key)
+            actual_val = app.environment.get(service_name, {}).get(key)
             if actual_val is None:
                 actual_val = omg_config.get('default')
             if omg_config.get('required', False) and actual_val is None:
-                raise EnvironmentVariableNotFound(service=service,
+                raise EnvironmentVariableNotFound(service=service_name,
                                                   variable=key)
 
             if actual_val is not None:
                 env[key] = actual_val
 
-        await Kubernetes.create_pod(app=app, service=service, image=image,
+        await Kubernetes.create_pod(app=app, service_name=service_name,
+                                    service_uuid=service_uuid, image=image,
                                     container_name=container_name,
                                     start_command=start_command,
                                     shutdown_command=shutdown_command, env=env,

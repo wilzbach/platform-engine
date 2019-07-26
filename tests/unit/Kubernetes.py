@@ -349,6 +349,7 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
     patch.object(Kubernetes, 'make_k8s_call', new=async_mock(return_value=res))
 
     image = 'alpine/alpine:latest'
+    service_uuid = '08605d2c-9305-474a-949b-d57a6f01c62c'
     start_command = ['/bin/sleep', '1d']
     container_name = 'asyncy--alpine-1'
     env = {'token': 'foo'}
@@ -356,7 +357,7 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
     story.app.app_id = 'my_app'
 
     await Kubernetes.create_pod(
-        story.app, line[LineConstants.service], image,
+        story.app, line[LineConstants.service], service_uuid, image,
         container_name, start_command, None, env, [], [])
 
     Kubernetes.make_k8s_call.mock.assert_called_with(
@@ -368,7 +369,7 @@ async def test_create_pod(patch, async_mock, story, line, res_code):
         assert Kubernetes.create_service.mock.called is False
     else:
         Kubernetes.create_deployment.mock.assert_called_with(
-            story.app, line[LineConstants.service],
+            story.app, line[LineConstants.service], service_uuid,
             image, container_name, start_command, None, env, [], [])
         Kubernetes.create_service.mock.assert_called_with(
             story.app, line[LineConstants.service], container_name)
@@ -605,6 +606,9 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
     patch.object(story.app, 'image_pull_policy',
                  return_value=image_pull_policy)
     image = 'alpine:latest'
+    tag = image.split(':')[-1]
+    service_uuid = '85b6735f-e648-439e-bb18-9b4ad130f69f'
+    service_tag_uuid = 'e5103d54-8a49-4619-9519-04a892dd6817'
 
     env = {'token': 'asyncy-19920', 'username': 'asyncy'}
     start_command = ['/bin/bash', 'sleep', '10000']
@@ -642,12 +646,27 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
         'failureThreshold': 5
     }
 
+    limits = {
+        'cpu': 0,
+        'memory': 209715000
+    }
+
+    # mocking
     patch.object(Kubernetes, 'remove_volume', new=async_mock())
     patch.object(Kubernetes, 'create_volume', new=async_mock())
     patch.object(Kubernetes, 'create_imagepullsecret', new=async_mock())
     patch.object(Kubernetes, 'get_liveness_probe', return_value=liveness_probe)
 
-    b16_service_name = base64.b16encode('alpine'.encode()).decode()
+    patch.object(
+        Database,
+        'get_service_tag_uuids',
+        new=async_mock(return_value=[service_tag_uuid])
+    )
+    patch.object(
+        Database,
+        'get_service_limits',
+        new=async_mock(return_value=limits)
+    )
 
     expected_payload = {
         'apiVersion': 'apps/v1',
@@ -670,8 +689,8 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
                 'metadata': {
                     'labels': {
                         'app': container_name,
+                        'service-tag-uuid': service_tag_uuid,
                         'logstash-enabled': 'true',
-                        'b16-service-name': b16_service_name
                     }
                 },
                 'spec': {
@@ -680,10 +699,7 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
                             'name': container_name,
                             'image': image,
                             'resources': {
-                                'limits': {
-                                    'memory': 209715000,
-                                    'cpu': 0
-                                }
+                                'limits': limits
                             },
                             'command': start_command,
                             'imagePullPolicy': image_pull_policy,
@@ -738,10 +754,6 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
 
     patch.object(asyncio, 'sleep', new=async_mock())
     patch.object(Kubernetes, 'check_for_image_errors', new=async_mock())
-    patch.object(Database, 'get_service_limits', new=async_mock(return_value={
-        'cpu': 0,
-        'memory': 209715000
-    }))
 
     expected_create_path = f'/apis/apps/v1/namespaces/' \
                            f'{story.app.app_id}/deployments'
@@ -756,11 +768,13 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
         _create_response(200, {'status': {'readyReplicas': 1}})
     ]))
 
-    await Kubernetes.create_deployment(story.app, 'alpine', image,
-                                       container_name,
+    # execution
+    await Kubernetes.create_deployment(story.app, 'alpine', service_uuid,
+                                       image, container_name,
                                        start_command, shutdown_command, env,
                                        volumes, container_configs)
 
+    # assertion
     Kubernetes.remove_volume.mock.assert_called_once()
     Kubernetes.remove_volume.mock.assert_called_with(
         story.app, volumes[0].name)
@@ -773,6 +787,17 @@ async def test_create_deployment(patch, async_mock, story, image_pull_policy):
     assert Kubernetes.create_imagepullsecret.mock.mock_calls == [
         mock.call(story.app, container_configs[0]),
         mock.call(story.app, container_configs[1]),
+    ]
+
+    assert Database.get_service_tag_uuids.mock.mock_calls == [
+        mock.call(
+            story.app.config,
+            [{'service_uuid': service_uuid, 'tag': tag}]
+        )
+    ]
+
+    assert Database.get_service_limits.mock.mock_calls == [
+        mock.call(story.app.config, service_tag_uuid)
     ]
 
     assert Kubernetes.make_k8s_call.mock.mock_calls == [
