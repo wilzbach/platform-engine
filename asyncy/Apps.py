@@ -14,6 +14,7 @@ from .Exceptions import StoryscriptError, TooManyActiveApps, TooManyServices, \
     TooManyVolumes
 from .GraphQLAPI import GraphQLAPI
 from .Logger import Logger
+from .ServiceUsage import ServiceUsage
 from .constants.Events import APP_DEPLOYED, APP_DEPLOY_FAILED, \
     APP_DEPLOY_INITIATED, APP_INSTANCE_DESTROYED, \
     APP_INSTANCE_DESTROY_ERROR, APP_RELOAD_FAILED
@@ -21,6 +22,7 @@ from .constants.ReleaseConstants import ReleaseConstants
 from .constants.ServiceConstants import ServiceConstants
 from .db.Database import Database
 from .entities.Release import Release
+from .enums.AppEnvironment import AppEnvironment
 from .enums.ReleaseState import ReleaseState
 from .reporting.Reporter import Reporter
 from .reporting.ReportingAgent import ReportingEvent
@@ -183,16 +185,14 @@ class Apps:
         # If we start listening after all the apps are deployed,
         # then we might miss some notifications about releases.
         loop = asyncio.get_event_loop()
-        await cls.listen_to_releases(config, glogger, loop)
-        asyncio.create_task(cls.supervise_release_listener(config, glogger,
-                                                           loop))
-
-        # usage_recorder = threading.Thread(
-        #     target=ServiceUsage.start_recording,
-        #     args=[config, glogger, loop],
-        #     daemon=True)
-        # usage_recorder.start()
-
+        asyncio.create_task(
+            cls.start_release_listener(config, glogger, loop)
+        )
+        if config.APP_ENVIRONMENT == AppEnvironment.PRODUCTION:
+            # Only record service resource usage metrics in production
+            asyncio.create_task(
+                ServiceUsage.start_metrics_recorder(config, glogger)
+            )
         await cls.reload_apps(config, glogger)
 
     @classmethod
@@ -215,10 +215,10 @@ class Apps:
             tag = conf.get('tag', 'latest')
 
             if '/' in service:
-                pull_url, omg = await GraphQLAPI.get_by_slug(
+                uuid, pull_url, omg = await GraphQLAPI.get_by_slug(
                     glogger, service, tag)
             else:
-                pull_url, omg = await GraphQLAPI.get_by_alias(
+                uuid, pull_url, omg = await GraphQLAPI.get_by_alias(
                     glogger, service, tag)
 
             if conf.get('image') is not None:
@@ -226,7 +226,10 @@ class Apps:
             else:
                 image = f'{pull_url}:{tag}'
 
-            omg['image'] = image
+            omg.update({
+                'uuid': uuid,
+                'image': image
+            })
 
             services[service] = {
                 'tag': tag,
@@ -353,15 +356,16 @@ class Apps:
     async def listen_to_releases(cls, config: Config, glogger: Logger, loop):
         if cls.release_listener_db_con:
             asyncio.create_task(cls.release_listener_db_con.close())
-
         try:
             con = await Database.new_con(config)
-            await con.add_listener(ReleaseConstants.table,
-                                   lambda _conn, _pid, _channel, payload:
-                                   asyncio.run_coroutine_threadsafe(
-                                       cls.reload_app(config,
-                                                      glogger, payload),
-                                       loop))
+            await con.add_listener(
+                ReleaseConstants.table,
+                lambda _conn, _pid, _channel, payload:
+                asyncio.run_coroutine_threadsafe(
+                    cls.reload_app(config, glogger, payload),
+                    loop
+                )
+            )
             cls.release_listener_db_con = con
             glogger.info('Listening for new releases...')
         except (OSError, asyncpg.exceptions.InterfaceError,
@@ -371,9 +375,8 @@ class Apps:
             os.kill(os.getpid(), signal.SIGINT)
 
     @classmethod
-    async def supervise_release_listener(cls, config, glogger, loop):
+    async def start_release_listener(cls, config, glogger, loop):
         while True:
-            await asyncio.sleep(1)
             con = cls.release_listener_db_con
             # con: connection object
             # not con._con: underlying connection broken
@@ -381,3 +384,4 @@ class Apps:
             if not con or not con._con or \
                     ReleaseConstants.table not in con._listeners:
                 await cls.listen_to_releases(config, glogger, loop)
+            await asyncio.sleep(1)

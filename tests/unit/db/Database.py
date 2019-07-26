@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from unittest import mock
+
 import asyncpg
 
 from asyncy.db.Database import Database
@@ -16,15 +18,17 @@ from pytest import fixture, mark
 def pool(magic, patch, async_cm_mock, async_mock):
     con = magic()
 
-    patch.object(con, 'execute_many',
-                 new=async_mock(side_effect=lambda query, *args:
-                                (query, *args)))
+    patch.object(con, 'executemany',
+                 new=async_mock(
+                     side_effect=lambda query, *args: (query, *args)
+                 ))
 
     con.fetchrow = async_mock(side_effect=lambda query, *args: (query, *args))
     con.fetch = async_mock(side_effect=lambda query, *args: (query, *args))
     con.execute = async_mock(side_effect=lambda query, *args: (query, *args))
-    con.execute_many = async_mock(side_effect=lambda query, *args:
-                                  (query, *args))
+    con.executemany = async_mock(
+        side_effect=lambda query, *args: (query, *args)
+    )
 
     con.transaction.return_value = async_cm_mock()
     con.transaction.return_value.aenter = con
@@ -193,115 +197,93 @@ async def test_get_release_for_deployment(patch, config, pool, async_mock,
 
 
 @mark.asyncio
-async def test_get_all_services(config, pool):
-    query = """
-            select owners.username, services.uuid, services.name,
-                   services.alias
-            from services
-            join owners on owner_uuid = owners.uuid;
+@mark.parametrize('data', [
+    [
+        {'service_uuid': 'uuid11', 'tag': 'tag11'}
+    ],
+    [
+        {'service_uuid': 'uuid21', 'tag': 'tag21'},
+        {'service_uuid': 'uuid22', 'tag': 'tag22'}
+    ],
+])
+async def test_get_service_tag_uuids(patch, config, pool,
+                                     magic, async_mock, data):
+    expected_query = """
+            select distinct uuid
+            from service_tags
+            where service_uuid = $1 and tag = $2;
             """
-    ret = await Database.get_all_services(config)
-    assert Database.get_pooled_conn.call_count == 1
-    pool.con.fetch.mock.assert_called_with(query)
-    assert ret == await pool.con.fetch(query)
-
-
-@mark.asyncio
-async def test_create_service_usage(patch, config, pool, async_mock):
+    stmt = magic()
     patch.object(Database, 'pg_pool', new=async_mock(return_value=pool))
-    data = [{
-        'service_uuid': '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
-        'tag': 'v1'
-    }, {
-        'service_uuid': 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
-        'tag': 'latest'
-    }]
+    patch.object(pool.con, 'prepare', new=async_mock(return_value=stmt))
+    patch.object(stmt, 'fetchrow', new=async_mock())
+    await Database.get_service_tag_uuids(config, data)
+    assert Database.get_pooled_conn.call_count == 1
+    pool.con.prepare.mock.assert_called_with(expected_query)
+    assert stmt.fetchrow.mock.call_args_list == [
+        mock.call(d['service_uuid'], d['tag']) for d in data
+    ]
 
+
+@mark.parametrize('data', [
+    [{
+        'service_tag_uuid': '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
+    }, {
+        'service_tag_uuid': 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
+    }]
+])
+@mark.asyncio
+async def test_create_service_usage(patch, config, pool, async_mock, data):
+    patch.object(Database, 'pg_pool', new=async_mock(return_value=pool))
     query = """
-                insert into service_usage (service_uuid, tag)
-                values ($1, $2) on conflict (service_uuid, tag) do nothing;
+                insert into service_usage (service_tag_uuid)
+                values ($1) on conflict (service_tag_uuid) do nothing;
                 """
 
     await Database.create_service_usage(config, data)
     assert Database.get_pooled_conn.call_count == 1
     assert pool.con.transaction.call_count == 1
-    pool.con.execute_many.mock.assert_called_once()
-    pool.con.execute_many.mock.assert_called_with(query, [
-        (s['service_uuid'], s['tag']) for s in data
+    pool.con.executemany.mock.assert_called_once()
+    pool.con.executemany.mock.assert_called_with(query, [
+        (s['service_tag_uuid'],) for s in data
     ])
 
 
-@mark.asyncio
-async def test_update_service_usage(config, pool):
-    data = [{
+@mark.parametrize('data', [
+    [{
         'cpu_units': 2,
         'memory_bytes': 100,
-        'service_uuid': '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
-        'tag': 'v1'
+        'service_tag_uuid': '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
     }, {
         'cpu_units': 1,
         'memory_bytes': 50,
-        'service_uuid': 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
-        'tag': 'latest'
+        'service_tag_uuid': 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
     }]
+])
+@mark.asyncio
+async def test_update_service_usage(config, pool, data):
     query1 = """
             update service_usage
-            set cpu_units[next_index] = $1,
-            memory_bytes[next_index] = $2
-            where service_uuid = $3 and tag = $4;
+            set cpu_units[next_index] = $1, memory_bytes[next_index] = $2
+            where service_tag_uuid = $3;
             """
     query2 = """
             update service_usage
-            set next_index = next_index %% 25 + 1
-            where service_uuid = $1 and tag = $2;
+            set next_index = next_index % 25 + 1
+            where service_tag_uuid = $1;
             """
     await Database.update_service_usage(config, data)
 
-    pool.con.execute_many.mock \
-        .assert_any_call(query1,
-                         [(2, 100, '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',
-                           'v1'),
-                          (1, 50, 'e1660927-bbad-4936-a005-ee2b1ab9eb0b',
-                           'latest')])
-    pool.con.execute_many.mock \
-        .assert_any_call(query2,
-                         [('2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84', 'v1'),
-                          ('e1660927-bbad-4936-a005-ee2b1ab9eb0b', 'latest')])
+    pool.con.executemany.mock.assert_any_call(query1, [
+        (2, 100, '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84'),
+        (1, 50, 'e1660927-bbad-4936-a005-ee2b1ab9eb0b')
+    ])
+    pool.con.executemany.mock.assert_any_call(query2, [
+        ('2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84',),
+        ('e1660927-bbad-4936-a005-ee2b1ab9eb0b',)
+    ])
 
 
-@mark.asyncio
-async def test_get_service_by_alias(config, pool):
-    alias = 'slack'
-    query = """
-            select uuid from services where alias = $1;
-            """
-    ret = await Database.get_service_by_alias(config, alias)
-    pool.con.fetchrow.mock.assert_called_with(query, alias, )
-    assert Database.get_pooled_conn.call_count == 1
-    assert ret == await pool.con.fetchrow(query, alias)
-
-
-@mark.asyncio
-async def test_get_service_by_slug(config, pool):
-    owner_username = 'microservices'
-    service_name = 'slack'
-    query = """
-            select services.uuid from services
-            join owners on owner_uuid = owners.uuid
-            where owners.username = $1 and services.name = $2;
-            """
-    ret = await Database. \
-        get_service_by_slug(config, owner_username, service_name)
-    pool.con.fetchrow.mock \
-        .assert_called_with(query, owner_username, service_name)
-    assert ret == await pool.con.fetchrow(query, owner_username, service_name)
-    assert Database.get_pooled_conn.call_count == 1
-
-
-@mark.parametrize('service', [
-    'slack',
-    'microservices/slack'
-])
 @mark.parametrize('limits', [{
     'memory_bytes': [-1],
     'cpu_units': [-1]
@@ -314,29 +296,18 @@ async def test_get_service_by_slug(config, pool):
 }, None
 ])
 @mark.asyncio
-async def test_get_service_limits(patch, config, pool,
-                                  service, limits, async_mock):
+async def test_get_service_limits(patch, config, pool, async_mock, limits):
+    service_tag_uuid = '2614fee0-6b2a-4cd8-b4e6-6bbeab4eff84'
     query = """
             select cpu_units, memory_bytes
             from service_usage
-            where service_uuid = $1 and tag = $2;
+            where service_tag_uuid = $1;
             """
-    service_uuid = 'e1660927-bbad-4936-a005-ee2b1ab9eb0b'
-    tag = 'latest'
-    patch.object(Database, 'get_service_by_slug',
-                 new=async_mock(return_value={'uuid': service_uuid}))
-    patch.object(Database, 'get_service_by_alias',
-                 new=async_mock(return_value={'uuid': service_uuid}))
     patch.object(pool.con, 'fetchrow',
                  new=async_mock(return_value=limits))
-    ret = await Database.get_service_limits(config, service, tag)
+    ret = await Database.get_service_limits(config, service_tag_uuid)
     assert Database.get_pooled_conn.call_count == 1
-    if '/' in service:
-        Database.get_service_by_slug.mock \
-            .assert_called_with(config, *service.split('/'))
-    else:
-        Database.get_service_by_alias.mock.assert_called_with(config, service)
-    pool.con.fetchrow.mock.assert_called_with(query, service_uuid, tag)
+    pool.con.fetchrow.mock.assert_called_with(query, service_tag_uuid)
     if limits is None or -1 in limits['memory_bytes']:
         assert ret == {
             'cpu': 0,
