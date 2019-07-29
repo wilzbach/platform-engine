@@ -307,6 +307,21 @@ async def test_break(logger, story, line, patch, valid_usage):
             await Lexicon.break_(logger, story, line)
 
 
+@mark.parametrize('valid_usage', [True, False])
+@mark.asyncio
+async def test_continue(logger, story, line, patch, valid_usage):
+    patch.object(Lexicon, '_does_line_have_parent_method',
+                 return_value=valid_usage)
+    if valid_usage:
+        ret = await Lexicon.continue_(logger, story, line)
+        assert ret == LineSentinels.CONTINUE
+        Lexicon._does_line_have_parent_method.assert_called_with(
+            story, line, 'for')
+    else:
+        with pytest.raises(InvalidKeywordUsage):
+            await Lexicon.continue_(logger, story, line)
+
+
 def test_lexicon_unless(logger, story, line):
     story.context = {}
     result = Lexicon.unless_condition(logger, story, line)
