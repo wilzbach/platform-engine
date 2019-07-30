@@ -887,7 +887,7 @@ def test_http_data_encoder(patch):
             'key': 'value'
         }),
         'namedtuple': namedtuple_obj(key='value'),
-        'regex': re.compile('/foo/i')
+        'regex': re.compile('/foo/i'),
     }
 
     json_str = json.dumps(obj, cls=HttpDataEncoder)
