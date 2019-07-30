@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import json
+import re
 import uuid
 from collections import deque, namedtuple
 from io import StringIO
@@ -885,7 +886,8 @@ def test_http_data_encoder(patch):
         'casedict': CaseInsensitiveDict(data={
             'key': 'value'
         }),
-        'namedtuple': namedtuple_obj(key='value')
+        'namedtuple': namedtuple_obj(key='value'),
+        'regex': re.compile('/foo/i'),
     }
 
     json_str = json.dumps(obj, cls=HttpDataEncoder)
@@ -899,7 +901,8 @@ def test_http_data_encoder(patch):
         },
         'namedtuple': {
             'key': 'value'
-        }
+        },
+        'regex': '/foo/i'
     })
 
     namedtuple_obj._asdict.assert_called()
