@@ -52,7 +52,12 @@ class Resolver:
         except IndexError:
             raise StoryscriptRuntimeError(
                 message=f'List index out of bounds: {resolved}')
-        except (KeyError, TypeError):
+        except KeyError:
+            raise StoryscriptRuntimeError(
+                message=f'Map does not contain the key "{resolved}". '
+                f'Use map.get(key: <key> default: <default value>) to '
+                f'prevent an exception from being thrown.')
+        except TypeError:
             return None
 
     @classmethod

@@ -33,15 +33,19 @@ class TestSuite:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
-        preparation_lines='a = {}\n'
-                          'b = 0\n',
+        preparation_lines='a = {"key_1": "val_1"}',
         cases=[
-            TestCase(append='if a["foo"] != null\n'
-                            '    b = 1',
-                     assertion=ContextAssertion(key='b', expected=0)),
-            TestCase(append='if a["foo"] == null\n'
-                            '    b = 1',
-                     assertion=ContextAssertion(key='b', expected=1))
+            TestCase(append='b = a["foo"]',
+                     assertion=RuntimeExceptionAssertion(
+                         exception_type=StoryscriptRuntimeError)),
+            TestCase(append='b = a.get(key: "foo" default: "def_val")',
+                     assertion=ContextAssertion(key='b', expected='def_val')),
+            TestCase(append='b = a.get(key: "foo" default: null)',
+                     assertion=ContextAssertion(key='b', expected=None)),
+            TestCase(append='b = a.get(key: "key_1" default: null)',
+                     assertion=ContextAssertion(key='b', expected='val_1')),
+            TestCase(append='b = a["key_1"]',
+                     assertion=ContextAssertion(key='b', expected='val_1'))
         ]
     ),
     TestSuite(
@@ -683,13 +687,14 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     story.prepare(context)
     try:
         await Stories.execute(logger, story)
-    except StoryscriptError as e:
+    except StoryscriptError as story_error:
         try:
             assert isinstance(case.assertion, RuntimeExceptionAssertion)
-            case.assertion.verify(e)
+            case.assertion.verify(story_error)
         except BaseException as e:
             print(f'Failed to assert exception for the following story:'
                   f'\n\n{all_lines}', file=sys.stderr)
+            print(story_error)
             raise e
         return
     except BaseException as e:
@@ -1159,7 +1164,6 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='a = {}',
         cases=[
             TestCase(append='c = "foo" as float',
                      assertion=RuntimeExceptionAssertion(
@@ -1171,8 +1175,12 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
                          TypeValueRuntimeError,
                          message='Type conversion failed from str to int '
                                  'with `foo`')),
-            TestCase(append='c = a[0]["id"] as string',
-                     assertion=ContextAssertion(key='c', expected=None)),
+            TestCase(append='c = "foo" as string',
+                     assertion=ContextAssertion(key='c', expected='foo')),
+            TestCase(append='c = "10" as int',
+                     assertion=ContextAssertion(key='c', expected=10)),
+            TestCase(append='c = "10.1" as float',
+                     assertion=ContextAssertion(key='c', expected=10.1)),
         ]
     )
 ])
