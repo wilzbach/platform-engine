@@ -75,6 +75,18 @@ async def test_service_file_write(story, line, file_io):
 
 
 @mark.asyncio
+async def test_service_file_write_bytes(story, line, file_io):
+    story.execution_id = 'super_super_tmp'
+    resolved_args = {
+        'path': 'my_path',
+        'content': b'my_content'
+    }
+    await File.file_write(story, line, resolved_args)
+    File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'wb')
+    File.open().__enter__().write.assert_called_with(b'my_content')
+
+
+@mark.asyncio
 async def test_service_file_write_exc(patch, story, line, service_patch, exc):
     patch.object(File, 'open', side_effect=exc)
     resolved_args = {
@@ -92,6 +104,19 @@ async def test_service_file_read(story, line, file_io):
     }
     result = await File.file_read(story, line, resolved_args)
     File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'r')
+
+    assert result == File.open().__enter__().read()
+
+
+@mark.asyncio
+async def test_service_file_read_bytes(story, line, file_io):
+    story.execution_id = 'super_super_tmp'
+    resolved_args = {
+        'path': 'my_path',
+        'raw': True
+    }
+    result = await File.file_read(story, line, resolved_args)
+    File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'rb')
 
     assert result == File.open().__enter__().read()
 

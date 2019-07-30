@@ -131,6 +131,16 @@ class Lexicon:
             raise InvalidKeywordUsage(story, line, 'break')
 
     @staticmethod
+    async def continue_(logger, story, line):
+        # Ensure that we're in a foreach loop. If we are, return CONTINUE,
+        # otherwise raise an exception.
+        if Lexicon._does_line_have_parent_method(story, line, 'for'):
+            return LineSentinels.CONTINUE
+        else:
+            # There is no parent, this is an illegal usage of continue.
+            raise InvalidKeywordUsage(story, line, 'continue')
+
+    @staticmethod
     def line_number_or_none(line):
         if line:
             return line['ln']
@@ -244,6 +254,8 @@ class Lexicon:
 
                 if LineSentinels.BREAK == result:
                     break
+                if LineSentinels.CONTINUE == result:
+                    continue
                 elif LineSentinels.is_sentinel(result):
                     # We do not know what to do with this sentinel,
                     # so bubble it up.

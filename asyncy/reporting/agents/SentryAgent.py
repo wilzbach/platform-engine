@@ -29,11 +29,7 @@ class SentryAgent(ReportingAgent):
         exc_info = re.exc_info
 
         if isinstance(exc_info, StoryscriptError):
-            if exc_info.story is not None:
-                re.story_name = exc_info.story.name
-
-            if exc_info.line is not None:
-                re.story_line = exc_info.line['ln']
+            return
 
         with sentry_sdk.configure_scope() as scope:
             user_context = {
