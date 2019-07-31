@@ -1,11 +1,11 @@
-from asyncy.Exceptions import StoryscriptError
-from asyncy.entities.ReportingEvent import ReportingEvent
-from asyncy.reporting.agents.SentryAgent import SentryAgent
-
 from pytest import mark
 
 import sentry_sdk
 from sentry_sdk import Scope
+
+from storyruntime.Exceptions import StoryscriptError
+from storyruntime.entities.ReportingEvent import ReportingEvent
+from storyruntime.reporting.agents.SentryAgent import SentryAgent
 
 
 def test_create_agent(patch, magic):

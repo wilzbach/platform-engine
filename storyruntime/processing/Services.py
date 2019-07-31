@@ -5,6 +5,7 @@ import urllib
 import uuid
 from collections import deque
 from functools import partial
+from re import Pattern
 from urllib import parse
 
 from requests.structures import CaseInsensitiveDict
@@ -51,6 +52,8 @@ class HttpDataEncoder(json.JSONEncoder):
         elif isinstance(obj, CaseInsensitiveDict):
             # convert this to a regular dict
             return dict(obj.items())
+        elif isinstance(obj, Pattern):
+            return obj.pattern
 
         return json.JSONEncoder.default(self, obj)
 
@@ -633,7 +636,7 @@ class Services:
         # so we must set this to a really high value.
         kwargs = {
             'method': subscribe_method.upper(),
-            'body': json.dumps(body),
+            'body': json.dumps(body, cls=HttpDataEncoder),
             'headers': {
                 'Content-Type': 'application/json; charset=utf-8'
             },

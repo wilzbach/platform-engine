@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from asyncy.Containers import Containers
-from asyncy.constants.ServiceConstants import ServiceConstants
+from storyruntime.Containers import Containers
+from storyruntime.constants.ServiceConstants import ServiceConstants
 
 import storyscript
 

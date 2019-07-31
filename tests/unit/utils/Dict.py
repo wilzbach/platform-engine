@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.utils import Dict
-
 import pytest
+
+from storyruntime.utils import Dict
 
 
 def test_dict_set_single():

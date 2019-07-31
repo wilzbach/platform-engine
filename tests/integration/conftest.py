@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from asyncy.Config import Config
-from asyncy.Logger import Logger
-from asyncy.Story import Story
-
 from pytest import fixture
+
+from storyruntime.Config import Config
+from storyruntime.Logger import Logger
+from storyruntime.Story import Story
 
 import ujson
 

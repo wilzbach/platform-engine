@@ -8,18 +8,18 @@ import urllib.parse
 from unittest import mock
 from unittest.mock import MagicMock
 
-from asyncy.AppConfig import AppConfig, Expose, KEY_EXPOSE
-from asyncy.Exceptions import K8sError
-from asyncy.Kubernetes import Kubernetes
-from asyncy.constants.LineConstants import LineConstants
-from asyncy.constants.ServiceConstants import ServiceConstants
-from asyncy.db.Database import Database
-from asyncy.entities.ContainerConfig import ContainerConfig
-from asyncy.entities.Volume import Volume
-from asyncy.utils.HttpUtils import HttpUtils
-
 import pytest
 from pytest import fixture, mark
+
+from storyruntime.AppConfig import AppConfig, Expose, KEY_EXPOSE
+from storyruntime.Exceptions import K8sError
+from storyruntime.Kubernetes import Kubernetes
+from storyruntime.constants.LineConstants import LineConstants
+from storyruntime.constants.ServiceConstants import ServiceConstants
+from storyruntime.db.Database import Database
+from storyruntime.entities.ContainerConfig import ContainerConfig
+from storyruntime.entities.Volume import Volume
+from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.httpclient import AsyncHTTPClient
 

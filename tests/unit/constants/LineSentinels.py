@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from asyncy.constants.LineSentinels import LineSentinels, _Sentinel
+from storyruntime.constants.LineSentinels import LineSentinels, _Sentinel
 
 
 def test_sentinel_class():

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import json
 
-from asyncy.Apps import Apps
-from asyncy.constants import ContextConstants
-from asyncy.entities.Multipart import FileFormField
-from asyncy.http_handlers.StoryEventHandler import CLOUD_EVENTS_FILE_KEY, \
-    StoryEventHandler
-from asyncy.processing import Stories
-
 import pytest
 from pytest import fixture, mark
+
+from storyruntime.Apps import Apps
+from storyruntime.constants import ContextConstants
+from storyruntime.entities.Multipart import FileFormField
+from storyruntime.http_handlers.StoryEventHandler import \
+    CLOUD_EVENTS_FILE_KEY, StoryEventHandler
+from storyruntime.processing import Stories
 
 import tornado
 from tornado import ioloop

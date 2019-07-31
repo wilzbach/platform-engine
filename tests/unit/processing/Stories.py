@@ -3,17 +3,17 @@ import collections
 import time
 from unittest import mock
 
-from asyncy import Metrics
-from asyncy.Containers import Containers
-from asyncy.Exceptions import StoryscriptError, StoryscriptRuntimeError
-from asyncy.Story import Story
-from asyncy.constants import ContextConstants
-from asyncy.constants.LineSentinels import LineSentinels
-from asyncy.processing import Lexicon, Stories
-from asyncy.utils import Dict
-
 import pytest
 from pytest import mark
+
+from storyruntime import Metrics
+from storyruntime.Containers import Containers
+from storyruntime.Exceptions import StoryscriptError, StoryscriptRuntimeError
+from storyruntime.Story import Story
+from storyruntime.constants import ContextConstants
+from storyruntime.constants.LineSentinels import LineSentinels
+from storyruntime.processing import Lexicon, Stories
+from storyruntime.utils import Dict
 
 
 def test_stories_story(patch, app, logger):

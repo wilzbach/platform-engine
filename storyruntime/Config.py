@@ -2,7 +2,7 @@
 import os
 import socket
 
-from asyncy.enums.AppEnvironment import AppEnvironment
+from storyruntime.enums.AppEnvironment import AppEnvironment
 
 
 class Config:

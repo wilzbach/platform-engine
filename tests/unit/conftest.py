@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.Story import Story
-
 from pytest import fixture
+
+from storyruntime.Story import Story
 
 
 @fixture

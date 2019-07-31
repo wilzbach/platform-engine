@@ -2,10 +2,10 @@
 import asyncio
 from unittest.mock import MagicMock
 
-from asyncy.utils.HttpUtils import HttpUtils
-
 import pytest
 from pytest import mark
+
+from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.httpclient import HTTPError
 

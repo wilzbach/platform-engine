@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from asyncy.Version import version
+from storyruntime.Version import version
 
 
 def test_version():
