@@ -3,21 +3,21 @@ import asyncio
 import json
 from collections import deque
 
-from asyncy.App import App, AppData
-from asyncy.AppConfig import Expose
-from asyncy.Containers import Containers
-from asyncy.Exceptions import StoryscriptError
-from asyncy.Kubernetes import Kubernetes
-from asyncy.Types import StreamingService
-from asyncy.constants.ServiceConstants import ServiceConstants
-from asyncy.entities.Release import Release
-from asyncy.enums.AppEnvironment import AppEnvironment
-from asyncy.processing import Stories
-from asyncy.processing.Services import Command, Service, Services
-from asyncy.utils.HttpUtils import HttpUtils
-
 import pytest
 from pytest import fixture, mark
+
+from storyruntime.App import App, AppData
+from storyruntime.AppConfig import Expose
+from storyruntime.Containers import Containers
+from storyruntime.Exceptions import StoryscriptError
+from storyruntime.Kubernetes import Kubernetes
+from storyruntime.Types import StreamingService
+from storyruntime.constants.ServiceConstants import ServiceConstants
+from storyruntime.entities.Release import Release
+from storyruntime.enums.AppEnvironment import AppEnvironment
+from storyruntime.processing import Stories
+from storyruntime.processing.Services import Command, Service, Services
+from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 

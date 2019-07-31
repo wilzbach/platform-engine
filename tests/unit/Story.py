@@ -2,10 +2,10 @@
 import pathlib
 import time
 
-from asyncy.Story import MAX_BYTES_LOGGING, Story
-from asyncy.utils import Dict, Resolver
-
 from pytest import mark
+
+from storyruntime.Story import MAX_BYTES_LOGGING, Story
+from storyruntime.utils import Dict, Resolver
 
 
 def test_story_init(app, logger, story):

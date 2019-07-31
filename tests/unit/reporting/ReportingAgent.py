@@ -1,6 +1,6 @@
-from asyncy.reporting.ReportingAgent import ReportingAgent
-
 from pytest import mark
+
+from storyruntime.reporting.ReportingAgent import ReportingAgent
 
 
 @mark.asyncio

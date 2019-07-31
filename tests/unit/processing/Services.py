@@ -7,22 +7,23 @@ from collections import deque, namedtuple
 from io import StringIO
 from unittest.mock import MagicMock, Mock
 
-from asyncy.Containers import Containers
-from asyncy.Exceptions import ArgumentTypeMismatchError, StoryscriptError
-from asyncy.Types import StreamingService
-from asyncy.constants import ContextConstants
-from asyncy.constants.LineConstants import LineConstants as Line, LineConstants
-from asyncy.constants.ServiceConstants import ServiceConstants
-from asyncy.entities.Multipart import FileFormField, FormField
-from asyncy.omg.ServiceOutputValidator import ServiceOutputValidator
-from asyncy.processing.Services import Command, Event, HttpDataEncoder, \
-    Service, Services
-from asyncy.utils.HttpUtils import HttpUtils
-
 import pytest
 from pytest import fixture, mark
 
 from requests.structures import CaseInsensitiveDict
+
+from storyruntime.Containers import Containers
+from storyruntime.Exceptions import ArgumentTypeMismatchError, StoryscriptError
+from storyruntime.Types import StreamingService
+from storyruntime.constants import ContextConstants
+from storyruntime.constants.LineConstants import \
+    LineConstants as Line, LineConstants
+from storyruntime.constants.ServiceConstants import ServiceConstants
+from storyruntime.entities.Multipart import FileFormField, FormField
+from storyruntime.omg.ServiceOutputValidator import ServiceOutputValidator
+from storyruntime.processing.Services import Command, Event, HttpDataEncoder, \
+    Service, Services
+from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.gen import coroutine
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse

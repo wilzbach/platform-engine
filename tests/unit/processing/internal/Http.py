@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock
 
-from asyncy.Exceptions import StoryscriptError
-from asyncy.processing.Services import Services
-from asyncy.processing.internal import Http
-from asyncy.utils.HttpUtils import HttpUtils
-
 import certifi
 
 import pytest
 from pytest import fixture, mark
+
+from storyruntime.Exceptions import StoryscriptError
+from storyruntime.processing.Services import Services
+from storyruntime.processing.internal import Http
+from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.httpclient import AsyncHTTPClient
 

@@ -4,12 +4,12 @@ import logging
 from io import StringIO
 from logging import LoggerAdapter
 
-from asyncy.Config import Config
-from asyncy.Logger import Adapter, JSONFormatter, Logger
-
 from frustum import Frustum
 
 from pytest import fixture, mark
+
+from storyruntime.Config import Config
+from storyruntime.Logger import Adapter, JSONFormatter, Logger
 
 
 @fixture
@@ -128,7 +128,7 @@ def test_logger_adapter(patch, magic, logger):
 def test_logger_start(patch, logger, log_json):
     patch.many(Frustum, ['register_event', 'start_logger'])
     patch.object(logger, 'set_json_formatter')
-    import asyncy.Logger as LoggerFile
+    import storyruntime.Logger as LoggerFile
     LoggerFile.log_json = log_json
     logger.events = [('event', 'level', 'message')]
     logger.start()
@@ -142,7 +142,7 @@ def test_logger_start(patch, logger, log_json):
 
 @mark.parametrize('with_exception', [True, False])
 def test_logger_json_formatter(patch, with_exception):
-    import asyncy.Logger as LoggerFile
+    import storyruntime.Logger as LoggerFile
     LoggerFile.log_json = True
     config = Config()
     logger = Logger(config)

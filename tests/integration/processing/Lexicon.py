@@ -4,13 +4,14 @@ import re
 import sys
 from unittest.mock import MagicMock
 
-from asyncy.Exceptions import StoryscriptError, StoryscriptRuntimeError, \
-    TypeAssertionRuntimeError, TypeValueRuntimeError
-from asyncy.Story import Story
-from asyncy.processing import Stories
-from asyncy.processing.internal import File, Http, Json, Log
-
 from pytest import mark
+
+from storyruntime.Exceptions import StoryscriptError, \
+    StoryscriptRuntimeError, TypeAssertionRuntimeError, \
+    TypeValueRuntimeError
+from storyruntime.Story import Story
+from storyruntime.processing import Stories
+from storyruntime.processing.internal import File, Http, Json, Log
 
 import storyscript
 

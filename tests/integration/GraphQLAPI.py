@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from asyncy.Exceptions import ServiceNotFound
-from asyncy.GraphQLAPI import GraphQLAPI
-
 import pytest
 from pytest import mark
+
+from storyruntime.Exceptions import ServiceNotFound
+from storyruntime.GraphQLAPI import GraphQLAPI
 
 
 @mark.asyncio

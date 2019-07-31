@@ -3,12 +3,12 @@ import json
 import urllib.parse
 from unittest import mock
 
-from asyncy.Kubernetes import Kubernetes
-from asyncy.Service import Service
-from asyncy.ServiceUsage import ServiceUsage
-from asyncy.db.Database import Database
+from pytest import approx, mark
 
-from pytest import approx, mark, raises
+from storyruntime.Kubernetes import Kubernetes
+from storyruntime.Service import Service
+from storyruntime.ServiceUsage import ServiceUsage
+from storyruntime.db.Database import Database
 
 
 @mark.parametrize('value', [{

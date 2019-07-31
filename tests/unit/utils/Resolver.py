@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.utils import Resolver
-
 import pytest
+
+from storyruntime.utils import Resolver
 
 # Note: Actual resolution tests for resolution are in integration/Lexicon.
 

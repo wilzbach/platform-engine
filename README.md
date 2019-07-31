@@ -5,7 +5,7 @@ The Storyscript runtime powering the Storyscript Cloud and executing stories.
 
 
 ## Installing
-See https://github.com/asyncy/stack-compose to install in production.
+See https://github.com/storyscript/stack-compose to install in production.
 
 ```
 $ python setup.py install

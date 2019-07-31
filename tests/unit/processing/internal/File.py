@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 
-from asyncy.Exceptions import StoryscriptError
-from asyncy.processing.Services import Services
-from asyncy.processing.internal import File
-
 import pytest
 from pytest import fixture, mark
+
+from storyruntime.Exceptions import StoryscriptError
+from storyruntime.processing.Services import Services
+from storyruntime.processing.internal import File
 
 
 @fixture
