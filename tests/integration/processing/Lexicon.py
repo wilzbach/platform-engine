@@ -33,7 +33,7 @@ class TestSuite:
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
     TestSuite(
-        preparation_lines='a = {}',
+        preparation_lines='a = {"key_1": "val_1"}',
         cases=[
             TestCase(append='b = a["foo"]',
                      assertion=RuntimeExceptionAssertion(
@@ -41,7 +41,11 @@ class TestSuite:
             TestCase(append='b = a.get(key: "foo" default: "def_val")',
                      assertion=ContextAssertion(key='b', expected='def_val')),
             TestCase(append='b = a.get(key: "foo" default: null)',
-                     assertion=ContextAssertion(key='b', expected=None))
+                     assertion=ContextAssertion(key='b', expected=None)),
+            TestCase(append='b = a.get(key: "key_1" default: null)',
+                     assertion=ContextAssertion(key='b', expected='val_1')),
+            TestCase(append='b = a["key_1"]',
+                     assertion=ContextAssertion(key='b', expected='val_1'))
         ]
     ),
     TestSuite(
