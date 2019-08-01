@@ -56,7 +56,9 @@ class Resolver:
             raise StoryscriptRuntimeError(
                 message=f'Map does not contain the key "{resolved}". '
                 f'Use map.get(key: <key> default: <default value>) to '
-                f'prevent an exception from being thrown.')
+                f'prevent an exception from being thrown. Additionally, you '
+                f'may also use map.contains(key: <key>) to check if a key '
+                f'exists in a map.')
         except TypeError:
             return None
 
