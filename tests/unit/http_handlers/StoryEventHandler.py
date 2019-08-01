@@ -63,6 +63,40 @@ def test_get_ce_event_payload_multipart(handler: StoryEventHandler, magic):
 
 
 @mark.asyncio
+@mark.parametrize('throw_exc', [True, False])
+async def test_run_story(async_mock, throw_exc, handler, patch):
+    app_id = 'app_id'
+    story_name = 'story_name'
+    block = '1'
+    event_body = {'body': True}
+    io_loop = tornado.ioloop.IOLoop.current()
+
+    expected_context = {
+        ContextConstants.service_event: event_body,
+        ContextConstants.server_io_loop: io_loop,
+        ContextConstants.server_request: handler
+    }
+
+    patch.object(Apps, 'get')
+
+    if throw_exc:
+        patch.object(Stories, 'run', new=async_mock(side_effect=Exception()))
+    else:
+        patch.object(Stories, 'run', new=async_mock())
+
+    if throw_exc:
+        with pytest.raises(Exception):
+            await handler.run_story(app_id, story_name, block, event_body)
+    else:
+        await handler.run_story(app_id, story_name, block, event_body)
+
+    Apps.get.assert_called_with(app_id)
+    Stories.run.mock.assert_called_with(
+        Apps.get.return_value, Apps.get.return_value.logger,
+        story_name=story_name, context=expected_context, block=block)
+
+
+@mark.asyncio
 @mark.parametrize('throw_exc', [False, True])
 async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
     handler.request.body = '{}'
