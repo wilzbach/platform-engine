@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock
 
-from asyncy.Exceptions import StoryscriptError
-from asyncy.constants import Events
-from asyncy.entities.ReportingEvent import ReportingEvent
-from asyncy.http_handlers.BaseHandler import BaseHandler
-from asyncy.reporting.Reporter import Reporter
-
 from pytest import mark
+
+from storyruntime.Exceptions import StoryscriptError
+from storyruntime.constants import Events
+from storyruntime.entities.ReportingEvent import ReportingEvent
+from storyruntime.http_handlers.BaseHandler import BaseHandler
+from storyruntime.reporting.Reporter import Reporter
 
 
 def test_handle_init(magic, logger):

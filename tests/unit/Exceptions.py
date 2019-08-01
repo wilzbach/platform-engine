@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from asyncy.Exceptions import StoryscriptError, TooManyActiveApps, \
-    TooManyServices, TooManyVolumes
-
 from pytest import mark, raises
+
+from storyruntime.Exceptions import StoryscriptError, TooManyActiveApps, \
+    TooManyServices, TooManyVolumes
 
 
 def test_asyncy_error():

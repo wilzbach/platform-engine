@@ -3,15 +3,15 @@ from unittest import mock
 
 import asyncpg
 
-from asyncy.db.Database import Database
-from asyncy.entities.ContainerConfig import ContainerConfig
-from asyncy.entities.Release import Release
-from asyncy.enums.AppEnvironment import AppEnvironment
-from asyncy.enums.ReleaseState import ReleaseState
-
 import numpy as np
 
 from pytest import fixture, mark
+
+from storyruntime.db.Database import Database
+from storyruntime.entities.ContainerConfig import ContainerConfig
+from storyruntime.entities.Release import Release
+from storyruntime.enums.AppEnvironment import AppEnvironment
+from storyruntime.enums.ReleaseState import ReleaseState
 
 
 @fixture

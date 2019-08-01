@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from asyncy.enums.AppEnvironment import AppEnvironment
+from storyruntime.enums.AppEnvironment import AppEnvironment
 
 
 def test_db_values():

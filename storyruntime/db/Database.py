@@ -4,13 +4,13 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 
-from asyncy.Config import Config
-from asyncy.entities.ContainerConfig import ContainerConfig
-from asyncy.entities.Release import Release
-from asyncy.enums.AppEnvironment import AppEnvironment
-from asyncy.enums.ReleaseState import ReleaseState
-
 import numpy as np
+
+from ..Config import Config
+from ..entities.ContainerConfig import ContainerConfig
+from ..entities.Release import Release
+from ..enums.AppEnvironment import AppEnvironment
+from ..enums.ReleaseState import ReleaseState
 
 _pg_pool = None
 

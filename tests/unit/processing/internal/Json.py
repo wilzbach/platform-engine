@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.processing.internal import Json
-
 from pytest import mark
+
+from storyruntime.processing.internal import Json
 
 
 @mark.asyncio

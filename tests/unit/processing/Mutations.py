@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from asyncy.Exceptions import StoryscriptError
-from asyncy.processing.Mutations import Mutations
-from asyncy.processing.mutations.StringMutations import StringMutations
-
 import pytest
+
+from storyruntime.Exceptions import StoryscriptError
+from storyruntime.processing.Mutations import Mutations
+from storyruntime.processing.mutations.StringMutations import StringMutations
 
 
 # Note: All mutations are tested via integration

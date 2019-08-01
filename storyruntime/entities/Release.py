@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import typing
 
-from asyncy.enums.AppEnvironment import AppEnvironment
+from storyruntime.enums.AppEnvironment import AppEnvironment
 
 Release = typing.NamedTuple('Release', [
     ('app_uuid', str),

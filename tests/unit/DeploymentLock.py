@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from asyncy.DeploymentLock import DeploymentLock
-
 from pytest import mark
+
+from storyruntime.DeploymentLock import DeploymentLock
 
 
 @mark.asyncio

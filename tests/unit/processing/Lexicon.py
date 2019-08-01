@@ -2,22 +2,18 @@
 from unittest import mock
 from unittest.mock import MagicMock, Mock
 
-from asyncy import Metrics
-from asyncy.Exceptions import InvalidKeywordUsage, StoryscriptError
-from asyncy.Story import Story
-from asyncy.Types import StreamingService
-from asyncy.constants.LineConstants import LineConstants
-from asyncy.constants.LineSentinels import LineSentinels
-from asyncy.constants.ServiceConstants import ServiceConstants
-from asyncy.processing import Lexicon, Stories
-from asyncy.processing.Mutations import Mutations
-from asyncy.processing.Services import Services
-from asyncy.utils.HttpUtils import HttpUtils
-
 import pytest
 from pytest import fixture, mark
 
-from tornado.httpclient import AsyncHTTPClient
+from storyruntime import Metrics
+from storyruntime.Exceptions import InvalidKeywordUsage, StoryscriptError
+from storyruntime.Story import Story
+from storyruntime.Types import StreamingService
+from storyruntime.constants.LineConstants import LineConstants
+from storyruntime.constants.LineSentinels import LineSentinels
+from storyruntime.processing import Lexicon, Stories
+from storyruntime.processing.Mutations import Mutations
+from storyruntime.processing.Services import Services
 
 
 @fixture

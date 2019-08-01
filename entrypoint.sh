@@ -6,4 +6,4 @@ if [ -a /var/run/docker.sock ]; then
     socat TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock & disown
 fi
 
-exec asyncy-server start
+exec storyscript-server start

@@ -15,11 +15,11 @@ if sys.argv[-1] == 'publish':
 readme = io.open('README.md', 'r', encoding='utf-8').read()
 
 setup(
-    name='asyncy-platform-engine',
-    description='The engine of the Asyncy platform',
+    name='storyscript-platform-engine',
+    description='The engine of the Storyscript platform',
     long_description=readme,
-    author='Asyncy',
-    author_email='noreply@asyncy.com',
+    author='Storyscript',
+    author_email='noreply@storyscript.io',
     version='0.2.0',
     packages=find_packages(),
     tests_require=[
@@ -36,7 +36,7 @@ setup(
         'click==7.0',
         'frustum==0.0.6',
         'sentry-sdk==0.10.2',
-        'storyscript==0.23.0',
+        'storyscript==0.23.1',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'asyncpg==0.18.3',
@@ -52,6 +52,6 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        asyncy-server=asyncy.Service:Service.main
+        storyscript-server=storyruntime.Service:Service.main
     """
 )
