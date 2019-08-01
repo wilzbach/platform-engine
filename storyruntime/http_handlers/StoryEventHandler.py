@@ -57,6 +57,7 @@ class StoryEventHandler(BaseHandler):
             self.logger.info(f'Running story for {app_id}: '
                              f'{story_name} @ {block} for '
                              f'event {event_body}')
+
             await self.run_story(app_id, story_name, block,
                                  event_body)
 
