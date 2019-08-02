@@ -2,6 +2,7 @@
 import re
 
 from .TypeResolver import TypeResolver
+from .TypeUtils import TypeUtils
 from ..Exceptions import StoryscriptRuntimeError
 
 
@@ -47,12 +48,18 @@ class Resolver:
                     item = cls.range(path['range'], item, data)
                 else:
                     resolved = Resolver.object(path, data)
-                    item = item[resolved]
+                    # Allow a namedtuple to use keys or index
+                    # to retrieve data.
+                    if TypeUtils.isnamedtuple(item) and \
+                            isinstance(resolved, str):
+                        item = getattr(item, resolved)
+                    else:
+                        item = item[resolved]
             return item
         except IndexError:
             raise StoryscriptRuntimeError(
                 message=f'List index out of bounds: {resolved}')
-        except KeyError:
+        except (KeyError, AttributeError):
             raise StoryscriptRuntimeError(
                 message=f'Map does not contain the key "{resolved}". '
                 f'Use map.get(key: <key> default: <default value>) to '
