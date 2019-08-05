@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 from unittest import mock
 from unittest.mock import MagicMock, Mock
 
@@ -6,9 +7,11 @@ import pytest
 from pytest import fixture, mark
 
 from storyruntime import Metrics
-from storyruntime.Exceptions import InvalidKeywordUsage, StoryscriptError
+from storyruntime.Exceptions import InvalidKeywordUsage, \
+    StoryscriptError, StoryscriptRuntimeError
 from storyruntime.Story import Story
 from storyruntime.Types import StreamingService
+from storyruntime.constants import ContextConstants
 from storyruntime.constants.LineConstants import LineConstants
 from storyruntime.constants.LineSentinels import LineSentinels
 from storyruntime.processing import Lexicon, Stories
@@ -27,7 +30,7 @@ def line():
 @fixture
 def story(patch, story):
     patch.many(story, ['end_line', 'resolve',
-                       'context', 'next_block', 'line'])
+                       'context', 'next_block'])
     return story
 
 
@@ -42,6 +45,7 @@ async def test_lexicon_execute(patch, logger, story, line, async_mock, name):
     output = MagicMock()
     patch.object(Services, 'execute', new=async_mock(return_value=output))
     patch.object(Lexicon, 'line_number_or_none')
+    patch.object(story, 'line')
     result = await Lexicon.execute(logger, story, line)
     Services.execute.mock.assert_called_with(story, line)
 
@@ -60,6 +64,7 @@ async def test_lexicon_execute(patch, logger, story, line, async_mock, name):
 @mark.asyncio
 async def test_lexicon_execute_none(patch, logger, story, line, async_mock):
     line['enter'] = None
+    patch.object(story, 'line')
     story.line.return_value = None
     patch.object(Services, 'execute', new=async_mock())
     result = await Lexicon.execute(logger, story, line)
@@ -69,6 +74,7 @@ async def test_lexicon_execute_none(patch, logger, story, line, async_mock):
 @mark.asyncio
 async def test_lexicon_set(patch, logger, story):
     story.context = {}
+    patch.object(story, 'line')
     patch.object(Lexicon, 'line_number_or_none')
     line = {'ln': '1', 'name': ['out'], 'args': ['values'], 'next': '2'}
     story.resolve.return_value = 'resolved'
@@ -84,6 +90,7 @@ async def test_lexicon_set(patch, logger, story):
 @mark.asyncio
 async def test_lexicon_set_mutation(patch, logger, story):
     story.context = {}
+    patch.object(story, 'line')
     patch.object(Lexicon, 'line_number_or_none')
     patch.object(Mutations, 'mutate')
     line = {
@@ -348,7 +355,7 @@ async def test_lexicon_for_loop(patch, logger, story, line,
 
     patch.object(Lexicon, 'execute', new=async_mock())
     patch.object(Lexicon, 'line_number_or_none')
-    patch.object(Stories, 'execute_block', side_effect=execute_block)
+    patch.object(Lexicon, 'execute_block', side_effect=execute_block)
     patch.object(story, 'next_block')
 
     line['args'] = [
@@ -405,7 +412,7 @@ async def test_story_execute_function(patch, logger, story, async_mock):
     line = {'function': 'my_super_awesome_function'}
     patch.many(story, ['function_line_by_name',
                        'context_for_function_call', 'set_context'])
-    patch.object(Stories, 'execute_block', new=async_mock())
+    patch.object(Lexicon, 'execute_block', new=async_mock())
     first_context = {'first': 'context'}
 
     story.context = first_context
@@ -420,8 +427,141 @@ async def test_story_execute_function(patch, logger, story, async_mock):
         mock.call(first_context)
     ]
 
-    Stories.execute_block.mock \
+    Lexicon.execute_block.mock \
         .assert_called_with(logger, story, story.function_line_by_name())
+
+
+@mark.asyncio
+async def test_lexicon_execute_escaping_sentinel(patch, app, logger,
+                                                 story, async_mock):
+    """
+    This one ensures that any uncaught sentinels result in an exception.
+    """
+    patch.object(Lexicon, 'execute_line', new=async_mock(
+        return_value=LineSentinels.RETURN))
+    patch.object(Story, 'first_line')
+    story.prepare()
+    with pytest.raises(StoryscriptRuntimeError):
+        await Stories.execute(logger, story)
+
+
+@mark.asyncio
+async def test_lexicon_execute_line_unknown_method(logger, story):
+    story.tree['1']['method'] = 'foo_method'
+    with pytest.raises(StoryscriptError):
+        await Lexicon.execute_line(logger, story, '1')
+
+
+Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
+
+
+@mark.parametrize('method', [
+    Method(name='if', lexicon_name='if_condition', async_mock=True),
+    Method(name='elif', lexicon_name='if_condition', async_mock=True),
+    Method(name='else', lexicon_name='if_condition', async_mock=True),
+    Method(name='for', lexicon_name='for_loop', async_mock=True),
+    Method(name='execute', lexicon_name='execute', async_mock=True),
+    Method(name='set', lexicon_name='set', async_mock=True),
+    Method(name='function', lexicon_name='function', async_mock=True),
+    Method(name='call', lexicon_name='call', async_mock=True),
+    Method(name='when', lexicon_name='when', async_mock=True),
+    Method(name='return', lexicon_name='ret', async_mock=True),
+    Method(name='break', lexicon_name='break_', async_mock=True)
+])
+@mark.asyncio
+async def test_lexicon_execute_line_generic(patch, logger, story,
+                                            async_mock, method):
+    patch.object(Lexicon, method.lexicon_name, new=async_mock())
+
+    patch.object(story, 'line', return_value={'method': method.name})
+    patch.many(story, ['start_line', 'new_frame'])
+    result = await Lexicon.execute_line(logger, story, '1')
+
+    story.new_frame.assert_called_with('1')
+
+    mock = getattr(Lexicon, method.lexicon_name)
+    if method.async_mock:
+        mock = mock.mock
+
+    mock.assert_called_with(logger, story, story.line.return_value)
+    assert result == mock.return_value
+
+    story.line.assert_called_with('1')
+    story.start_line.assert_called_with('1')
+
+
+@mark.asyncio
+@mark.parametrize('line_4_result', ['5', LineSentinels.RETURN,
+                                    LineSentinels.BREAK])
+async def test_lexicon_execute_block(patch, logger, story,
+                                     async_mock, line_4_result):
+    story.tree = {
+        '1': {'ln': '1', 'next': '2'},
+        '2': {'ln': '2', 'next': '3', 'enter': '3',
+              'output': ['foo_client'], 'method': 'when'},
+        '3': {'ln': '3', 'next': '4', 'parent': '2'},
+        '4': {'ln': '4', 'next': '5', 'parent': '2'},
+        '5': {'ln': '5', 'next': '6', 'parent': '2'},
+        '6': {'ln': '6', 'parent': '1'}
+    }
+
+    patch.object(Lexicon, 'execute_line', new=async_mock(
+        side_effect=['4', line_4_result, '6']))
+
+    line = story.line
+    story.context = {
+        ContextConstants.service_event: {'data': {'foo': 'bar'}}
+    }
+
+    def proxy_line(*args):
+        return line(*args)
+
+    patch.object(story, 'line', side_effect=proxy_line)
+
+    execute_block_return = await Lexicon.execute_block(
+        logger, story, story.tree['2'])
+
+    assert story.context[ContextConstants.service_output] == 'foo_client'
+    assert story.context['foo_client'] \
+        == story.context[ContextConstants.service_event]['data']
+
+    if LineSentinels.is_sentinel(line_4_result):
+        assert [
+            mock.call(logger, story, '3'),
+            mock.call(logger, story, '4')
+        ] == Lexicon.execute_line.mock.mock_calls
+        assert [
+            mock.call('3'),
+            mock.call('4')
+        ] == story.line.mock_calls
+        if line_4_result == LineSentinels.RETURN:
+            assert execute_block_return is None
+        else:
+            assert execute_block_return == line_4_result
+    else:
+        assert [
+            mock.call(logger, story, '3'),
+            mock.call(logger, story, '4'),
+            mock.call(logger, story, '5')
+        ] == Lexicon.execute_line.mock.mock_calls
+        assert [
+            mock.call('3'),
+            mock.call('4'),
+            mock.call('5'),
+            mock.call('6'),
+            mock.call('1')
+        ] == story.line.mock_calls
+
+
+@mark.asyncio
+async def test_lexicon_execute_does_not_wrap(patch, story, async_mock):
+    def exc(*args):
+        raise StoryscriptError()
+
+    patch.object(Lexicon, 'execute', new=async_mock(side_effect=exc))
+    patch.object(story, 'line', return_value={'method': 'execute'})
+    with pytest.raises(StoryscriptError):
+        await Lexicon.execute_line(story.logger, story, '10')
 
 
 @mark.parametrize('service_name', ['http', 'unknown_service'])

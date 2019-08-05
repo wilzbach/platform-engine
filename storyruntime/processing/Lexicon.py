@@ -8,6 +8,7 @@ from ..Exceptions import InvalidKeywordUsage, StoryscriptError, \
     StoryscriptRuntimeError
 from ..Story import Story
 from ..Types import StreamingService
+from ..constants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.LineSentinels import LineSentinels, ReturnSentinel
 
@@ -64,6 +65,95 @@ class Lexicon:
             return Lexicon.line_number_or_none(story.line(line.get('next')))
 
     @staticmethod
+    async def execute_line(logger, story, line_number):
+        """
+        Executes a single line by calling the Lexicon for various operations.
+
+        To execute a function completely, see Lexicon#call.
+
+        :return: Returns the next line number to be executed
+        (return value from Lexicon), or None if there is none.
+        """
+        line: dict = story.line(line_number)
+        story.start_line(line_number)
+
+        with story.new_frame(line_number):
+            try:
+                method = line['method']
+                if method == 'if' or method == 'else' or method == 'elif':
+                    return await Lexicon.if_condition(logger, story, line)
+                elif method == 'for':
+                    return await Lexicon.for_loop(logger, story, line)
+                elif method == 'execute':
+                    return await Lexicon.execute(logger, story, line)
+                elif method == 'set' or method == 'expression' \
+                        or method == 'mutation':
+                    return await Lexicon.set(logger, story, line)
+                elif method == 'call':
+                    return await Lexicon.call(logger, story, line)
+                elif method == 'function':
+                    return await Lexicon.function(logger, story, line)
+                elif method == 'when':
+                    return await Lexicon.when(logger, story, line)
+                elif method == 'return':
+                    return await Lexicon.ret(logger, story, line)
+                elif method == 'break':
+                    return await Lexicon.break_(logger, story, line)
+                elif method == 'continue':
+                    return await Lexicon.continue_(logger, story, line)
+                else:
+                    raise NotImplementedError(
+                        f'Unknown method to execute: {method}'
+                    )
+            except BaseException as e:
+                # Don't wrap StoryscriptError.
+                if isinstance(e, StoryscriptError):
+                    e.story = story  # Always set.
+                    e.line = line  # Always set.
+                    raise e
+
+                raise StoryscriptRuntimeError(
+                    message='Failed to execute line',
+                    story=story, line=line, root=e)
+
+    @staticmethod
+    async def execute_block(logger, story, parent_line: dict):
+        """
+        Executes all the lines whose parent is parent_line, and returns
+        either one of the following:
+        1. A sentinel (from LineSentinels) - if this was returned by execute()
+        2. None in all other cases
+
+        The result can have special significance, such as the BREAK
+        line sentinel.
+        """
+        next_line = story.line(parent_line['enter'])
+
+        # If this block represents a streaming service, copy over it's
+        # output to the context, so that Lexicon can read it later.
+        if parent_line.get('output') is not None \
+                and parent_line.get('method') == 'when':
+            story.context[ContextConstants.service_output] = \
+                parent_line['output'][0]
+
+            if story.context.get(ContextConstants.service_event) is not None:
+                story.context[parent_line['output'][0]] = \
+                    story.context[ContextConstants.service_event].get('data')
+
+        while next_line is not None \
+                and story.line_has_parent(parent_line['ln'], next_line):
+            result = await Lexicon.execute_line(logger, story, next_line['ln'])
+
+            if result == LineSentinels.RETURN:
+                return None  # Block has completed execution.
+            elif LineSentinels.is_sentinel(result):
+                return result
+
+            next_line = story.line(result)
+
+        return None
+
+    @staticmethod
     async def function(logger, story, line):
         """
         Functions are not executed when they're encountered.
@@ -85,8 +175,7 @@ class Lexicon:
         return_from_function_call = None
         try:
             story.set_context(context)
-            from . import Stories
-            result = await Stories.execute_block(logger, story, function_line)
+            result = await Lexicon.execute_block(logger, story, function_line)
             if LineSentinels.is_sentinel(result):
                 if not isinstance(result, ReturnSentinel):
                     raise StoryscriptRuntimeError(
@@ -244,13 +333,11 @@ class Lexicon:
         _list = story.resolve(line['args'][0], encode=False)
         output = line['output'][0]
 
-        from . import Stories
-
         try:
             for item in _list:
                 story.context[output] = item
 
-                result = await Stories.execute_block(logger, story, line)
+                result = await Lexicon.execute_block(logger, story, line)
 
                 if LineSentinels.BREAK == result:
                     break
