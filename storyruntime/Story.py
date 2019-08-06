@@ -5,6 +5,7 @@ import uuid
 from contextlib import contextmanager
 from json import dumps
 
+from .Exceptions import StackOverflowException
 from .utils import Dict
 from .utils.Resolver import Resolver
 from .utils.StringUtils import StringUtils
@@ -13,6 +14,10 @@ MAX_BYTES_LOGGING = 160
 
 
 class Story:
+    MAX_FRAMES_IN_STACK = 128
+    """There really is no math to get this number, just a random number.
+    Increase if it turns out to be too low.
+    The original default (128) is pretty high for Storyscript."""
 
     def __init__(self, app, story_name, logger):
         self.app = app
@@ -34,6 +39,9 @@ class Story:
     def new_frame(self, line_number: str):
         # No need for a try/finally block, since we don't want to unwind
         # the stack when an exception occurs.
+        if len(self._stack) >= Story.MAX_FRAMES_IN_STACK:
+            raise StackOverflowException(Story.MAX_FRAMES_IN_STACK)
+
         self._stack.append(line_number)
         yield
         self._stack.pop()

@@ -2,8 +2,10 @@
 import pathlib
 import time
 
+import pytest
 from pytest import mark
 
+from storyruntime.Exceptions import StackOverflowException
 from storyruntime.Story import MAX_BYTES_LOGGING, Story
 from storyruntime.utils import Dict, Resolver
 
@@ -25,6 +27,29 @@ def test_new_frame(story):
 
     current_stack = story.get_stack()
     assert len(current_stack) == 0
+
+
+def test_new_frame_for_overflow(story):
+    story._stack = []
+    for i in range(Story.MAX_FRAMES_IN_STACK):
+        story._stack.append(i)
+
+    with pytest.raises(StackOverflowException):
+        with story.new_frame('10'):
+            pass
+
+    current_stack = story.get_stack()
+    assert len(current_stack) == Story.MAX_FRAMES_IN_STACK
+
+
+def test_new_frame_for_no_overflow(story):
+    story._stack = []
+    for i in range(Story.MAX_FRAMES_IN_STACK - 1):
+        story._stack.append(i)
+
+    with story.new_frame('10'):
+        current_stack = story.get_stack()
+        assert len(current_stack) == Story.MAX_FRAMES_IN_STACK
 
 
 def test_new_frame_stack_does_not_unwind_on_exception(story):
