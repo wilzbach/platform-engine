@@ -889,10 +889,6 @@ def test_http_data_encoder(patch):
         }),
         'namedtuple': namedtuple_obj(key='value'),
         'regex': re.compile('/foo/i'),
-        'streaming_service': StreamingService(
-            name='hello', command='world',
-            container_name='container_name', hostname='hostname'
-        )
     }
 
     json_str = json.dumps(obj, cls=HttpDataEncoder)
@@ -907,11 +903,7 @@ def test_http_data_encoder(patch):
         'namedtuple': {
             'key': 'value'
         },
-        'regex': '/foo/i',
-        'streaming_service': {
-            'name': 'hello',
-            'command': 'world'
-        }
+        'regex': '/foo/i'
     })
 
     namedtuple_obj._asdict.assert_called()

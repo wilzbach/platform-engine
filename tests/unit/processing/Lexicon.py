@@ -466,8 +466,7 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='call', lexicon_name='call', async_mock=True),
     Method(name='when', lexicon_name='when', async_mock=True),
     Method(name='return', lexicon_name='ret', async_mock=True),
-    Method(name='break', lexicon_name='break_', async_mock=True),
-    Method(name='try', lexicon_name='try_catch', async_mock=True)
+    Method(name='break', lexicon_name='break_', async_mock=True)
 ])
 @mark.asyncio
 async def test_lexicon_execute_line_generic(patch, logger, story,
@@ -552,134 +551,6 @@ async def test_lexicon_execute_block(patch, logger, story,
             mock.call('6'),
             mock.call('1')
         ] == story.line.mock_calls
-
-
-@mark.asyncio
-@mark.parametrize('tree', [
-    {
-        '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
-        },
-        '2': {
-            'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
-        },
-        '3': {
-            'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
-        },
-        '4': {
-            'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '3', 'next': '5'
-        },
-        '5': {
-            'method': 'finally', 'ln': '5', 'enter': '6', 'next': '6'
-        },
-        '6': {
-            'method': 'execute', 'ln': '6', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '5'
-        }
-    },
-    {
-        '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
-        },
-        '2': {
-            'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
-        },
-        '3': {
-            'method': 'finally', 'ln': '3', 'enter': '4', 'next': '4'
-        },
-        '4': {
-            'method': 'execute', 'ln': '4', 'output': [],
-            'service': 'log', 'command': 'info', 'parent': '3'
-        }
-    },
-    {
-        '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
-        },
-        '2': {
-            'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
-        },
-        '3': {
-            'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
-        },
-        '4': {
-            'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'fail', 'parent': '3', 'next': '5'
-        },
-        '5': {
-            'method': 'finally', 'ln': '5', 'enter': '6', 'next': '6'
-        },
-        '6': {
-            'method': 'execute', 'ln': '6', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '5'
-        }
-    },
-    {
-        '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
-        },
-        '2': {
-            'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
-        },
-        '3': {
-            'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
-        },
-        '4': {
-            'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '3', 'next': '5'
-        },
-        '5': {
-            'method': 'execute', 'ln': '5', 'output': [], 'service': 'log',
-            'command': 'info'
-        }
-    }])
-async def test_lexicon_try_catch(patch, magic, logger, tree):
-    story = Story(magic(), 'foo', logger)
-    story.context = {}
-
-    story.tree = tree
-
-    execute_block = Lexicon.execute_block
-
-    should_throw_exc = story.tree['4']['command'] == 'fail'
-
-    async def execute_block_proxy(*args):
-        line = args[2]
-        method = line['method']
-        # throw an exception inside the try block
-        if method == 'try' or method == 'catch' and should_throw_exc:
-            raise StoryscriptError()
-        else:
-            assert method == 'finally' or method == 'catch'
-
-            return await execute_block(*args)
-
-    patch.object(Lexicon, 'execute_block', side_effect=execute_block_proxy)
-
-    if should_throw_exc:
-        with pytest.raises(StoryscriptError):
-            final_line = await Lexicon.try_catch(
-                story.logger, story, story.tree['1']
-            )
-            assert final_line == '6'
-    else:
-        final_line = await Lexicon.try_catch(
-            story.logger, story, story.tree['1']
-        )
-        if story.tree['3']['method'] == 'catch':
-            assert final_line is None or final_line == '5'
-        else:
-            assert final_line is None
-
-    assert 'err' not in story.context
 
 
 @mark.asyncio

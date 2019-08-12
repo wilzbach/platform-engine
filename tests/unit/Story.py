@@ -2,10 +2,8 @@
 import pathlib
 import time
 
-import pytest
 from pytest import mark
 
-from storyruntime.Exceptions import StackOverflowException
 from storyruntime.Story import MAX_BYTES_LOGGING, Story
 from storyruntime.utils import Dict, Resolver
 
@@ -27,29 +25,6 @@ def test_new_frame(story):
 
     current_stack = story.get_stack()
     assert len(current_stack) == 0
-
-
-def test_new_frame_for_overflow(story):
-    story._stack = []
-    for i in range(Story.MAX_FRAMES_IN_STACK):
-        story._stack.append(i)
-
-    with pytest.raises(StackOverflowException):
-        with story.new_frame('10'):
-            pass
-
-    current_stack = story.get_stack()
-    assert len(current_stack) == Story.MAX_FRAMES_IN_STACK
-
-
-def test_new_frame_for_no_overflow(story):
-    story._stack = []
-    for i in range(Story.MAX_FRAMES_IN_STACK - 1):
-        story._stack.append(i)
-
-    with story.new_frame('10'):
-        current_stack = story.get_stack()
-        assert len(current_stack) == Story.MAX_FRAMES_IN_STACK
 
 
 def test_new_frame_stack_does_not_unwind_on_exception(story):
@@ -131,14 +106,11 @@ def test_story_function_line_by_name(patch, story):
     assert ret == story.line()
 
 
-@mark.parametrize('encode', [True, False])
-def test_story_resolve(patch, story, encode):
+def test_story_resolve(patch, logger, story):
     patch.object(Resolver, 'resolve')
-    patch.object(Story, 'encode')
-    obj = {'$OBJECT': 'string', 'string': 'string'}
-    story.resolve(obj, encode)
-    Resolver.resolve.assert_called_with(obj, story.context)
-    assert Story.encode.call_count == encode
+    story.context = 'context'
+    result = story.resolve('args')
+    assert result == 'args'
 
 
 def test_command_arguments_list(patch, story):

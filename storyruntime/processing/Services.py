@@ -82,11 +82,6 @@ class HttpDataEncoder(json.JSONEncoder):
                     o[k] = v._asdict()
                 elif isinstance(v, FormField):
                     o[k] = v._asdict()
-                elif isinstance(v, StreamingService):
-                    o[k] = {
-                        'name': v.name,
-                        'command': v.command
-                    }
                 elif TypeUtils.isnamedtuple(v):
                     o[k] = v._asdict()
                 else:

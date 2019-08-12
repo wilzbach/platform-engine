@@ -101,8 +101,6 @@ class Lexicon:
                     return await Lexicon.break_(logger, story, line)
                 elif method == 'continue':
                     return await Lexicon.continue_(logger, story, line)
-                elif method == 'try':
-                    return await Lexicon.try_catch(logger, story, line)
                 else:
                     raise NotImplementedError(
                         f'Unknown method to execute: {method}'
@@ -326,65 +324,6 @@ class Lexicon:
         if result:
             return line['exit']
         return line['enter']
-
-    @staticmethod
-    async def try_catch(logger, story, line):
-        """
-        Executes the try/catch/finally construct. If any StoryscriptError
-        exception is thrown by the try block, the catch block will be
-        invoked. However, if the error is not of type StoryscriptError,
-        then it will be thrown up directly - in this case, the finally
-        block will not be executed either (since the error that
-        occurred is not a StoryscriptError, but rather a programming
-        error in the runtime).
-
-        :return: Returns the line to be executed immediately after
-        the catch block or finally block.
-        """
-        next_line = story.next_block(line)
-
-        if next_line is None:
-            return None
-
-        async def next_block_or_finally():
-            """
-            This will execute if the next block is a finally block.
-            It happens because the lexicon should always execute
-            a finally block when there's a StoryscriptError
-
-            :return: Returns the next line to be executed.
-            """
-            if next_line['method'] != 'finally':
-                last_block = story.next_block(next_line)
-            else:
-                last_block = next_line
-
-            if last_block is not None and \
-                    last_block['method'] == 'finally':
-                await Lexicon.execute_block(logger, story,
-                                            last_block)
-                last_block = story.next_block(last_block)
-
-            return Lexicon.line_number_or_none(last_block)
-
-        try:
-            await Lexicon.execute_block(logger, story, line)
-        except StoryscriptError as e:
-            if next_line['method'] == 'finally':
-                # skip right to the finally block
-                return await next_block_or_finally()
-
-            try:
-                await Lexicon.execute_block(logger, story, next_line)
-            except StoryscriptError as re:
-                # if the catch block contains a StoryscriptError,
-                # we must catch it, and run the finally
-                # block anyway, followed up by raising the
-                # exception
-                await next_block_or_finally()
-                raise re
-
-        return await next_block_or_finally()
 
     @staticmethod
     async def for_loop(logger, story, line):

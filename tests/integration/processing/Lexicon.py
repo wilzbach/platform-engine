@@ -6,8 +6,9 @@ from unittest.mock import MagicMock
 
 from pytest import mark
 
-from storyruntime.Exceptions import StackOverflowException, StoryscriptError,\
-    StoryscriptRuntimeError, TypeAssertionRuntimeError, TypeValueRuntimeError
+from storyruntime.Exceptions import StoryscriptError, \
+    StoryscriptRuntimeError, TypeAssertionRuntimeError, \
+    TypeValueRuntimeError
 from storyruntime.Story import Story
 from storyruntime.processing import Stories
 from storyruntime.processing.internal import File, Http, Json, Log
@@ -54,15 +55,6 @@ class TestSuite:
             TestCase(append='b = "{1} {a}"',
                      assertion=ContextAssertion(key='b',
                                                 expected='1 {\'a\': \'b\'}'))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='function a\n'
-                          '    a()\n'
-                          'a()',
-        cases=[
-            TestCase(assertion=RuntimeExceptionAssertion(
-                exception_type=StackOverflowException))
         ]
     ),
     TestSuite(
@@ -634,203 +626,7 @@ class TestSuite:
             TestCase(append='arr.replace(item: 2 by: 42)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 42, 42, 3, 4, 4, 5, 5])),
-        ]),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  throw "error"\n'
-                          'catch\n'
-                          '  failed = true\n',
-        cases=[
-            TestCase(prepend='failed = false',
-                     assertion=ContextAssertion(key='failed', expected=True))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  throw "error"\n'
-                          'catch\n'
-                          '  failed = true\n'
-                          'finally\n'
-                          '  _finally = true',
-        cases=[
-            TestCase(prepend='failed = false',
-                     assertion=ContextAssertion(key='failed', expected=True)),
-
-            TestCase(prepend='_finally = false',
-                     assertion=ContextAssertion(key='_finally', expected=True))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  throw "error"\n'
-                          'catch\n'
-                          '  failed = true\n'
-                          'finally\n'
-                          '  failed = false',
-        cases=[
-            TestCase(prepend='failed = false',
-                     assertion=ContextAssertion(key='failed', expected=False))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  throw "error"\n'
-                          'catch\n'
-                          '  throw "catch error"\n'
-                          'finally\n'
-                          '  _finally = true',
-        cases=[
-            TestCase(prepend='_finally = false',
-                     assertion=RuntimeExceptionAssertion(
-                         exception_type=StoryscriptError,
-                         context_assertion=ContextAssertion(
-                             key='_finally', expected=True
-                         )
-                     )),
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  throw "error"\n'
-                          'catch\n'
-                          '  error = "two"\n'
-                          '  try\n'
-                          '    throw "error"\n'
-                          '  catch\n'
-                          '    error = "three"',
-        cases=[
-            TestCase(prepend='error = "one"',
-                     assertion=ContextAssertion(key='error', expected='three'))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  try\n'
-                          '    throw "error"\n'
-                          '  catch\n'
-                          '    result = true\n'
-                          'catch\n'
-                          '  result = false\n',
-        cases=[
-            TestCase(prepend='result = false',
-                     assertion=ContextAssertion(key='result', expected=True))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  try\n'
-                          '    throw "error"\n'
-                          '  catch\n'
-                          '    try\n'
-                          '      throw "error"\n'
-                          '    catch\n'
-                          '      result = true\n'
-                          'catch\n'
-                          '  result = false\n',
-        cases=[
-            TestCase(prepend='result = false',
-                     assertion=ContextAssertion(key='result', expected=True))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  try\n'
-                          '    throw "error1"\n'
-                          '  catch\n'
-                          '    try\n'
-                          '      throw "error2"\n'
-                          '    catch\n'
-                          '      throw "error3"\n'
-                          'catch\n'
-                          '  try\n'
-                          '    throw "error4"\n'
-                          '  catch\n'
-                          '    try\n'
-                          '       throw "error5"\n'
-                          '    catch\n'
-                          '       result = true\n',
-        cases=[
-            TestCase(prepend='result = false',
-                     assertion=ContextAssertion(key='result', expected=True))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='try\n'
-                          '  try\n'
-                          '    throw "error"\n'
-                          '  catch\n'
-                          '    err1 = "1"\n'
-                          '    try\n'
-                          '      throw "error"\n'
-                          '    catch\n'
-                          '      err2 = "2"\n'
-                          '      throw "error"\n'
-                          '    finally\n'
-                          '      result1 = "1"\n'
-                          '  finally\n'
-                          '    result2 = "2"\n'
-                          'catch\n'
-                          '  err3 = "3"\n'
-                          '  try\n'
-                          '    throw "error"\n'
-                          '  catch\n'
-                          '    err4 = "4"\n'
-                          '    try\n'
-                          '       throw "error"\n'
-                          '    catch\n'
-                          '       err5 = "5"\n'
-                          '    finally\n'
-                          '       result3 = "3"\n'
-                          '  finally\n'
-                          '    result4 = "4"\n'
-                          'finally\n'
-                          '  result0 = "0"',
-        cases=[
-            TestCase(prepend='result0 = ""\n'
-                             'result1 = ""\n'
-                             'result2 = ""\n'
-                             'result3 = ""\n'
-                             'result4 = ""\n'
-                             'err0 = ""\n'
-                             'err1 = ""\n'
-                             'err2 = ""\n'
-                             'err3 = ""\n'
-                             'err4 = ""\n'
-                             'err5 = ""',
-                     assertion=[
-                         ContextAssertion(
-                             key='result0', expected='0'
-                         ),
-                         ContextAssertion(
-                             key='result1', expected='1'
-                         ),
-                         ContextAssertion(
-                             key='result2', expected='2'
-                         ),
-                         ContextAssertion(
-                             key='result3', expected='3'
-                         ),
-                         ContextAssertion(
-                             key='result4', expected='4'
-                         ),
-                         ContextAssertion(
-                             key='err1', expected='1'
-                         ),
-                         ContextAssertion(
-                             key='err2', expected='2'
-                         ),
-                         ContextAssertion(
-                             key='err3', expected='3'
-                         ),
-                         ContextAssertion(
-                             key='err4', expected='4'
-                         ),
-                         ContextAssertion(
-                             key='err5', expected='5'
-                         )
-                     ])
-        ]
-    ),
+        ])
 ])
 @mark.asyncio
 async def test_mutation(suite: TestSuite, logger):
@@ -895,7 +691,7 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     except StoryscriptError as story_error:
         try:
             assert isinstance(case.assertion, RuntimeExceptionAssertion)
-            case.assertion.verify(story_error, context)
+            case.assertion.verify(story_error)
         except BaseException as e:
             print(f'Failed to assert exception for the following story:'
                   f'\n\n{all_lines}', file=sys.stderr)
@@ -1062,31 +858,6 @@ async def test_arrays(suite, logger):
                      assertion=MapValueAssertion(key='a',
                                                  map_key='key',
                                                  expected=4))
-        ]
-    ),
-    TestSuite(
-        preparation_lines='a = [1, 2, 3]\n'
-                          'b = [4, 5, 6]\n'
-                          'c = 1',
-        cases=[
-            TestCase(
-                append='b[a[c]] = -1',
-                assertion=ContextAssertion(key='b', expected=[4, 5, -1])
-            )
-        ]
-    ),
-    TestSuite(
-        preparation_lines='a = {"a": 1, "b": {}, "c": 3}\n'
-                          'b = ["a", "b", "c"]\n'
-                          'c = 1',
-        cases=[
-            TestCase(
-                append='a[b[c]][c] = -1',
-                assertion=ContextAssertion(key='a',
-                                           expected={
-                                               'a': 1, 'b': {1: -1}, 'c': 3
-                                           })
-            )
         ]
     )
 ])
