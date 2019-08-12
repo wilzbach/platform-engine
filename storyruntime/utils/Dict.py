@@ -10,8 +10,8 @@ class Dict:
             _dict[keys[0]] = output
         else:
             _cur = _dict
-            last = keys.pop()
-            for key in keys:
+            last = keys[-1]
+            for key in keys[:-1]:
                 if isinstance(_cur, list):
                     _cur = _cur[Resolver.resolve(key, _dict)]
                 else:
