@@ -1088,6 +1088,19 @@ async def test_arrays(suite, logger):
                                            })
             )
         ]
+    ),
+    TestSuite(
+        preparation_lines='l = [1, 2, 3]\n'
+                          'foreach l as el\n'
+                          '  c = [4, 5, 6]\n'
+                          '  a = [1, 2, 3]\n'
+                          '  c[a[0]] = 1\n',
+        cases=[
+            TestCase(
+                assertion=ContextAssertion(key='c',
+                                           expected=[4, 1, 6])
+            )
+        ]
     )
 ])
 @mark.asyncio
