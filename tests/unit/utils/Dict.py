@@ -79,7 +79,7 @@ def test_dict_set_simple_array():
         'a': [1, 2, 3]
     }
 
-    Dict.set(a, ['a', '1'], 11)
+    Dict.set(a, ['a', 1], 11)
     assert a['a'] == [1, 11, 3]
 
 
@@ -88,7 +88,7 @@ def test_dict_set_nested_array():
         'a': {'b': {'c': [1, 2, 3]}}
     }
 
-    Dict.set(a, ['a', 'b', 'c', '0'], 11)
+    Dict.set(a, ['a', 'b', 'c', 0], 11)
     assert a['a']['b']['c'] == [11, 2, 3]
 
 
@@ -105,7 +105,7 @@ def test_dict_set_nested_array2():
         }
     }
 
-    Dict.set(a, ['a', 'b', 'c', '0', 'a1', 'b2', 0], 11)
+    Dict.set(a, ['a', 'b', 'c', 0, 'a1', 'b2', 0], 11)
     assert a['a']['b']['c'][0]['a1']['b2'] == [11, 2, 3]
 
 
@@ -120,9 +120,9 @@ def test_dict_set_arrays_in_arrays():
         ]
     }
 
-    Dict.set(a, ['a', '0', '0', '0'], 5)
-    Dict.set(a, ['a', '0', '1', '0'], 40)
-    Dict.set(a, ['a', '0', '1', '1', 'a'], 'c')
+    Dict.set(a, ['a', 0, 0, 0], 5)
+    Dict.set(a, ['a', 0, 1, 0], 40)
+    Dict.set(a, ['a', 0, 1, 1, 'a'], 'c')
     assert a == {
         'a': [
             [
@@ -140,4 +140,4 @@ def test_dict_set_array_out_of_bounds():
     }
 
     with pytest.raises(IndexError):
-        Dict.set(a, ['a', '0'], 'foo')
+        Dict.set(a, ['a', 0], 'foo')

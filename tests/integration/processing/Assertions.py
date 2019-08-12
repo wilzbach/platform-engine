@@ -56,12 +56,19 @@ class IsANumberAssertion(Assertion):
 
 class RuntimeExceptionAssertion():
 
-    def __init__(self, exception_type, **fields_to_check):
+    def __init__(self, exception_type, context_assertion=None,
+                 **fields_to_check):
         self.exception_type = exception_type
+        self.context_assertion = context_assertion
         self.fields_to_check = fields_to_check
 
-    def verify(self, exception):
+    def verify(self, exception, context):
         assert isinstance(exception, self.exception_type), str(exception)
         for k, v in self.fields_to_check.items():
             attr = getattr(exception, k)
             assert attr == v
+
+        if self.context_assertion is not None and \
+                context is not None:
+            assert isinstance(self.context_assertion, ContextAssertion)
+            self.context_assertion.verify(context)
