@@ -38,6 +38,12 @@ class StoryscriptRuntimeError(StoryscriptError):
     pass
 
 
+class StackOverflowException(StoryscriptRuntimeError):
+    def __init__(self, current_size):
+        super().__init__(message=f'The maximum call stack '
+                                 f'has been reached: {current_size}')
+
+
 class TypeAssertionRuntimeError(StoryscriptRuntimeError):
     def __init__(self, type_expected, type_received, value):
         super().__init__(

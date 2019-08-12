@@ -13,48 +13,11 @@ class Dict:
             last = keys.pop()
             for key in keys:
                 if isinstance(_cur, list):
-                    _cur = _cur[Dict.parse_int(key)]
+                    _cur = _cur[Resolver.resolve(key, _dict)]
                 else:
-                    _cur = _cur.setdefault(key, {})
+                    _cur = _cur.setdefault(Resolver.resolve(key, _dict), {})
 
-            if isinstance(_cur, list):
-                _cur[Dict.parse_int(last)] = output
-            else:
-                _cur[Dict.parse_map_key(last, _dict)] = output
-
-    @staticmethod
-    def parse_int(s):
-        if isinstance(s, str):
-            # backwards-compatibility
-            return int(s)
-        elif isinstance(s, int):
-            # general purpose dict
-            # ss output will never hit this branch
-            return s
-        elif isinstance(s, dict) and s.get('$OBJECT') == 'int':
-            return s['int']
-        else:
-            raise Exception(f'Unable to parse {type(s)} as int.')
-
-    @staticmethod
-    def parse_map_key(item, context):
-        if isinstance(item, dict):
-            object_type = item.get('$OBJECT')
-            if object_type == 'string':
-                return item['string']
-            elif object_type == 'int':
-                return item['int']
-            elif object_type == 'float':
-                return item['float']
-            elif object_type == 'path':
-                return Resolver.path(item['paths'], context)
-        elif isinstance(item, str) and item.lstrip('+-').isdigit():
-            # backwards-compatibility
-            return int(item)
-        else:
-            # general purpose dict
-            # ss output will never hit this branch
-            return item
+            _cur[Resolver.resolve(last, _dict)] = output
 
     @staticmethod
     def find(root, path, default_value=None):
