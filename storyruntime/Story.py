@@ -147,12 +147,6 @@ class Story:
         """
         Resolves line argument to their real value
         """
-        if isinstance(arg, (str, int, float, bool)):
-            self.logger.info(f'Resolved "{arg}" to '
-                             f'"{arg}" '
-                             f'with type {type(arg)}')
-            return arg
-
         result = Resolver.resolve(arg, self.context)
 
         self.logger.info(f'Resolved "{arg}" to '

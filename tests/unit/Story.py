@@ -131,11 +131,14 @@ def test_story_function_line_by_name(patch, story):
     assert ret == story.line()
 
 
-def test_story_resolve(patch, logger, story):
+@mark.parametrize('encode', [True, False])
+def test_story_resolve(patch, story, encode):
     patch.object(Resolver, 'resolve')
-    story.context = 'context'
-    result = story.resolve('args')
-    assert result == 'args'
+    patch.object(Story, 'encode')
+    obj = {'$OBJECT': 'string', 'string': 'string'}
+    story.resolve(obj, encode)
+    Resolver.resolve.assert_called_with(obj, story.context)
+    assert Story.encode.call_count == encode
 
 
 def test_command_arguments_list(patch, story):

@@ -1063,6 +1063,31 @@ async def test_arrays(suite, logger):
                                                  map_key='key',
                                                  expected=4))
         ]
+    ),
+    TestSuite(
+        preparation_lines='a = [1, 2, 3]\n'
+                          'b = [4, 5, 6]\n'
+                          'c = 1',
+        cases=[
+            TestCase(
+                append='b[a[c]] = -1',
+                assertion=ContextAssertion(key='b', expected=[4, 5, -1])
+            )
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = {"a": 1, "b": {}, "c": 3}\n'
+                          'b = ["a", "b", "c"]\n'
+                          'c = 1',
+        cases=[
+            TestCase(
+                append='a[b[c]][c] = -1',
+                assertion=ContextAssertion(key='a',
+                                           expected={
+                                               'a': 1, 'b': {1: -1}, 'c': 3
+                                           })
+            )
+        ]
     )
 ])
 @mark.asyncio
