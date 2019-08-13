@@ -113,6 +113,30 @@ def test_raise_if_invalid_for_missing_key(simple_chain):
             command_conf, output, simple_chain)
 
 
+def test_raise_if_invalid_for_maps(simple_chain):
+    command_conf = {
+        'type': 'map',
+        'contentType': 'application/json'
+    }
+
+    output = {'any': 'thing', 'is': 'allowed'}
+
+    ServiceOutputValidator.raise_if_invalid(
+        command_conf, output, simple_chain)
+
+
+def test_raise_if_invalid_for_objects_with_no_props(simple_chain):
+    command_conf = {
+        'type': 'object',
+        'contentType': 'application/json'
+    }
+
+    output = {'any': 'thing', 'is': 'allowed'}
+
+    ServiceOutputValidator.raise_if_invalid(
+        command_conf, output, simple_chain)
+
+
 def test_raise_if_invalid_for_null_object(simple_chain):
     command_conf = {
         'type': 'object',
