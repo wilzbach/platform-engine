@@ -4,8 +4,8 @@ import time
 from .Mutations import Mutations
 from .Services import Services
 from .. import Metrics
-from ..Exceptions import InvalidKeywordUsage, StoryscriptError, \
-    StoryscriptRuntimeError
+from ..Exceptions import ArgumentNotFoundError, InvalidKeywordUsage, \
+    StoryscriptError, StoryscriptRuntimeError
 from ..Story import Story
 from ..Types import StreamingService
 from ..constants import ContextConstants
@@ -103,6 +103,8 @@ class Lexicon:
                     return await Lexicon.continue_(logger, story, line)
                 elif method == 'try':
                     return await Lexicon.try_catch(logger, story, line)
+                elif method == 'throw':
+                    return await Lexicon.throw(logger, story, line)
                 else:
                     raise NotImplementedError(
                         f'Unknown method to execute: {method}'
@@ -385,6 +387,16 @@ class Lexicon:
                 raise re
 
         return await next_block_or_finally()
+
+    @staticmethod
+    def throw(logger, story, line):
+        if line['args'] is not None and \
+                len(line['args']) > 0:
+            err_str = story.resolve(line['args'][0])
+        else:
+            err_str = None
+
+        raise StoryscriptError(message=err_str, story=story, line=line)
 
     @staticmethod
     async def for_loop(logger, story, line):

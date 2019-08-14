@@ -467,7 +467,8 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='when', lexicon_name='when', async_mock=True),
     Method(name='return', lexicon_name='ret', async_mock=True),
     Method(name='break', lexicon_name='break_', async_mock=True),
-    Method(name='try', lexicon_name='try_catch', async_mock=True)
+    Method(name='try', lexicon_name='try_catch', async_mock=True),
+    Method(name='throw', lexicon_name='throw', async_mock=True)
 ])
 @mark.asyncio
 async def test_lexicon_execute_line_generic(patch, logger, story,
@@ -680,6 +681,27 @@ async def test_lexicon_try_catch(patch, magic, logger, tree):
             assert final_line is None
 
     assert 'err' not in story.context
+
+
+@mark.parametrize('args', [
+    [{
+        '$OBJECT': 'string',
+        'string': 'error'
+    }],
+    []
+])
+async def test_lexicon_throw(logger, story, args):
+    story.tree = {
+        '1': {
+            'method': 'throw',
+            'ln': '1',
+            'col_start': '1',
+            'col_end': '2',
+            'args': args
+        }
+    }
+    with pytest.raises(StoryscriptError):
+        Lexicon.throw(logger, story, story.tree['1'])
 
 
 @mark.asyncio
