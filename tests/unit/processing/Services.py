@@ -259,7 +259,7 @@ def test_raise_for_type_mismatch(story, typ, val):
 
 
 @mark.parametrize('location', ['requestBody', 'query', 'path',
-                               'invalid_loc', 'formBody', None])
+                               'invalid_loc', 'formBody', 'header', None])
 @mark.parametrize('method', ['POST', 'GET'])
 @mark.parametrize('service_output', [{
     'properties': {
@@ -332,13 +332,16 @@ async def test_services_execute_http(patch, story, async_mock, absolute_url,
             expected_url = 'http://container_host:2771/invoke'
 
     expected_kwargs = {
-        'method': method
+        'method': method,
+        'headers': {}
     }
 
+    if location == 'header':
+        expected_kwargs['headers']['foo'] = 'bar'
+
     if method == 'POST':
-        expected_kwargs['headers'] = {
-            'Content-Type': 'application/json; charset=utf-8'
-        }
+        expected_kwargs['headers']['Content-Type'] = 'application/json; ' \
+                                                     'charset=utf-8'
 
         if location == 'requestBody':
             expected_kwargs['body'] = '{"foo": "bar"}'
