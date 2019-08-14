@@ -314,18 +314,15 @@ class Services:
 
     @classmethod
     def _fill_http_req_body(cls, http_res_kwargs, content_type, body):
+        headers = http_res_kwargs.setdefault('headers', {})
         if content_type.startswith('application/json'):
             http_res_kwargs['body'] = json.dumps(body)
-            http_res_kwargs['headers'] = {
-                'Content-Type': 'application/json; charset=utf-8'
-            }
+            headers['Content-Type'] = 'application/json; charset=utf-8'
         elif content_type.startswith('multipart/form-data'):
             boundary = uuid.uuid4().hex
-            headers = {
-                'Content-Type': f'multipart/form-data; boundary={boundary}'
-            }
+            headers['Content-Type'] = f'multipart/form-data; ' \
+                                      f'boundary={boundary}'
             producer = partial(cls._multipart_producer, body, boundary)
-            http_res_kwargs['headers'] = headers
             http_res_kwargs['body_producer'] = producer
 
     @classmethod
@@ -431,6 +428,7 @@ class Services:
         body = {}
         query_params = {}
         path_params = {}
+        header_params = {}
 
         form_fields_count = 0
         request_body_fields_count = 0
@@ -456,6 +454,9 @@ class Services:
                 else:
                     body[arg] = FormField(arg, value)
                 form_fields_count += 1
+            elif location == 'header':
+                cls.smart_insert(story, line, command_conf, arg, value,
+                                 header_params)
             else:
                 raise StoryscriptError(
                     f'Invalid location for'
@@ -473,7 +474,8 @@ class Services:
 
         method = command_conf['http'].get('method', 'post')
         kwargs = {
-            'method': method.upper()
+            'method': method.upper(),
+            'headers': header_params
         }
 
         content_type = command_conf['http'] \
