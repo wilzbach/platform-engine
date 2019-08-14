@@ -427,7 +427,6 @@ class Services:
     async def execute_http(cls, story, line, chain, command_conf):
         assert isinstance(chain, deque)
         assert isinstance(chain[0], Service)
-        hostname = await Containers.get_hostname(story, line, chain[0].name)
         args = command_conf.get('arguments', {})
         body = {}
         query_params = {}
@@ -487,10 +486,9 @@ class Services:
                 message=f'Parameters found in the request body, '
                 f'but the method is {method}', story=story, line=line)
 
-        port = command_conf['http'].get('port', 5000)
-        path = HttpUtils.add_params_to_url(
-            command_conf['http']['path'].format(**path_params), query_params)
-        url = f'http://{hostname}:{port}{path}'
+        url = await cls._get_url_for_http_call(story, line, chain,
+                                               command_conf,
+                                               path_params, query_params)
 
         story.logger.debug(f'Invoking service on {url} with payload {kwargs}')
 
@@ -527,6 +525,26 @@ class Services:
                 f'response body: {response_body}',
                 story=story, line=line
             )
+
+    @classmethod
+    async def _get_url_for_http_call(cls, story, line, chain, command_conf,
+                                     path_params, query_params):
+        external_url = command_conf['http'].get('url')
+        if external_url is not None:
+            return HttpUtils.add_params_to_url(
+                external_url.format(**path_params), query_params)
+        else:
+            hostname = await Containers.get_hostname(story, line,
+                                                     chain[0].name)
+            port = command_conf['http'].get('port', 5000)
+
+            path = HttpUtils.add_params_to_url(
+                command_conf['http']['path'].format(**path_params),
+                query_params)
+
+            url = f'http://{hostname}:{port}{path}'
+
+            return url
 
     @classmethod
     def parse_output(cls, command_conf: dict, raw_output, story,
