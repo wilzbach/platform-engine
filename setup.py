@@ -36,7 +36,7 @@ setup(
         'click==7.0',
         'frustum==0.0.6',
         'sentry-sdk==0.10.2',
-        'storyscript==0.23.7',
+        'storyscript==0.23.8',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'asyncpg==0.18.3',
