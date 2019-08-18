@@ -893,7 +893,7 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     app = MagicMock()
 
     app.stories = {
-        story_name: story.result()
+        story_name: story.result().output()
     }
     app.environment = {}
 
