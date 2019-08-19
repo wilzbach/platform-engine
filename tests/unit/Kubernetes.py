@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest import fixture, mark
 
-from storyruntime.AppConfig import AppConfig, Expose, KEY_EXPOSE
+from storyruntime.AppConfig import Forward, KEY_EXPOSE, KEY_FORWARDS
 from storyruntime.Exceptions import K8sError
 from storyruntime.Kubernetes import Kubernetes
 from storyruntime.constants.LineConstants import LineConstants
@@ -492,9 +492,11 @@ async def test_update_volume_label(story, patch, async_mock):
 
 @mark.parametrize('resource_exists', [True, False])
 @mark.parametrize('k8s_api_returned_2xx', [True, False])
+@mark.parametrize('use_deprecated_forwards_key', [True, False])
 @mark.asyncio
 async def test_create_ingress(patch, app, async_mock, resource_exists,
-                              k8s_api_returned_2xx):
+                              k8s_api_returned_2xx,
+                              use_deprecated_forwards_key):
     if resource_exists and not k8s_api_returned_2xx:
         # Invalid combination, since if the ing resource exists already,
         # no additional call to the k8s API is made.
@@ -505,20 +507,24 @@ async def test_create_ingress(patch, app, async_mock, resource_exists,
     ingress_name = 'my_ingress_name'
     hostname = 'my_ingress_hostname'
     container_name = 'my_container_name'
-    expose = Expose(service='service',
-                    service_expose_name='expose_name',
-                    http_path='expose_path')
+    expose = Forward(service='service',
+                     service_forward_name='expose_name',
+                     http_path='expose_path')
 
     http_conf = {
         'path': '/my_app',
         'port': 6000
     }
 
+    forward_key_name = KEY_FORWARDS
+    if use_deprecated_forwards_key:
+        forward_key_name = KEY_EXPOSE
+
     app.services = {
         expose.service: {
             ServiceConstants.config: {
-                KEY_EXPOSE: {
-                    expose.service_expose_name: {
+                forward_key_name: {
+                    expose.service_forward_name: {
                         'http': http_conf
                     }
                 }

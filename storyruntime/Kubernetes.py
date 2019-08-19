@@ -11,7 +11,7 @@ from asyncio import TimeoutError
 from tornado.httpclient import AsyncHTTPClient, HTTPResponse
 
 from . import AppConfig
-from .AppConfig import Expose
+from .AppConfig import Forward
 from .Exceptions import K8sError
 from .constants.ServiceConstants import ServiceConstants
 from .db.Database import Database
@@ -38,15 +38,18 @@ class Kubernetes:
                                f'error={res.error}')
 
     @classmethod
-    async def create_ingress(cls, ingress_name, app, expose: Expose,
+    async def create_ingress(cls, ingress_name, app, forward: Forward,
                              container_name: str, hostname: str):
         if await cls._does_resource_exist(app, 'ingresses', ingress_name):
-            app.logger.debug(f'Kubernetes ingress for {expose} exists')
+            app.logger.debug(f'Kubernetes ingress for {forward} exists')
             return
 
-        expose_conf = app.services[expose.service][
-            ServiceConstants.config][AppConfig.KEY_EXPOSE][
-            expose.service_expose_name]
+        service_config = app.services[forward.service][ServiceConstants.config]
+        all_forwards = service_config.get(
+            AppConfig.KEY_FORWARDS, service_config.get(AppConfig.KEY_EXPOSE))
+
+        expose_conf = all_forwards[forward.service_forward_name]
+
         http_conf = expose_conf['http']
 
         payload = {
@@ -58,7 +61,7 @@ class Kubernetes:
                     'kubernetes.io/ingress.class': 'nginx',
                     'kubernetes.io/ingress.global-static-ip-name':
                         app.config.INGRESS_GLOBAL_STATIC_IP_NAME,
-                    'ingress.kubernetes.io/rewrite-target': expose.http_path,
+                    'ingress.kubernetes.io/rewrite-target': forward.http_path,
                     'nginx.ingress.kubernetes.io/proxy-body-size': '1m',
                     'nginx.ingress.kubernetes.io/proxy-read-timeout': '120'
                 }
@@ -96,7 +99,7 @@ class Kubernetes:
 
         if not cls.is_2xx(res):
             raise K8sError(
-                message=f'Failed to create ingress for expose {expose}!')
+                message=f'Failed to create ingress for expose {forward}!')
 
         app.logger.debug(f'Kubernetes ingress created')
 

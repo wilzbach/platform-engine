@@ -4,7 +4,7 @@ import re
 
 import ujson
 
-from .AppConfig import Expose
+from .AppConfig import Forward
 from .Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
     EnvironmentVariableNotFound, K8sError
 from .Kubernetes import Kubernetes
@@ -141,7 +141,7 @@ class Containers:
             return image[:i]
 
     @classmethod
-    async def expose_service(cls, app, expose: Expose):
+    async def expose_service(cls, app, expose: Forward):
         container_name = cls.get_container_name(app, None, None,
                                                 expose.service)
         await cls.create_and_start(app, None, expose.service, container_name)
@@ -266,9 +266,9 @@ class Containers:
                             .encode('utf-8')).hexdigest()
 
     @classmethod
-    def hash_ingress_name(cls, expose: Expose):
-        simple_name = cls.get_simple_name(expose.service_expose_name)[:20]
-        h = hashlib.sha1(f'{expose.service}-{expose.service_expose_name}'
+    def hash_ingress_name(cls, expose: Forward):
+        simple_name = cls.get_simple_name(expose.service_forward_name)[:20]
+        h = hashlib.sha1(f'{expose.service}-{expose.service_forward_name}'
                          .encode('utf-8')).hexdigest()
         return f'{simple_name}-{h}'
 

@@ -26,6 +26,10 @@ class MapMutations:
         return value.pop(key, None)
 
     @classmethod
+    def remove(cls, mutation, value, story, line, operator):
+        return cls.pop(mutation, value, story, line, operator)
+
+    @classmethod
     def flatten(cls, mutation, value, story, line, operator):
         out = []
         for k, v in value.items():
