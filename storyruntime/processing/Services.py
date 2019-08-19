@@ -122,6 +122,14 @@ class Services:
         return False
 
     @classmethod
+    def is_hosted_externally(cls, app, service):
+        if app.services[service][ServiceConstants.config]\
+                .get(ServiceConstants.hosted_externally):
+            return True
+
+        return False
+
+    @classmethod
     def last(cls, chain):
         return chain[len(chain) - 1]
 
@@ -588,6 +596,16 @@ class Services:
     async def start_container(cls, story, line):
         chain = cls.resolve_chain(story, line)
         assert isinstance(chain[0], Service)
+
+        if cls.is_hosted_externally(story.app, chain[0].name):
+            # Externally hosted service, such as an OpenAPI backed
+            # service.
+            return StreamingService(
+                name=f'externally_hosted_{chain[0].name}',
+                command=line[LineConstants.command],
+                container_name=None,
+                hostname=None)
+
         if chain[0].name == 'http':
             return StreamingService(
                 name='http',

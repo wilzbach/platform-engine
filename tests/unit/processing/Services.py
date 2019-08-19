@@ -487,9 +487,40 @@ async def test_services_start_container(patch, story, async_mock):
         Line.command: 'echo'
     }
     patch.object(Containers, 'start', new=async_mock())
+    patch.object(Services, 'is_hosted_externally', return_value=False)
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_called_with(story, line)
     assert ret == Containers.start.mock.return_value
+
+
+@mark.parametrize('external', [True, False])
+def test_service_is_hosted_externally(app, external):
+    service_name = 'my_service'
+    app.services = {
+        service_name: {
+            ServiceConstants.config: {
+                ServiceConstants.hosted_externally: external
+            }
+        }
+    }
+
+    assert Services.is_hosted_externally(app, service_name) is external
+
+
+@mark.asyncio
+async def test_services_start_container_external(patch, story, async_mock):
+    line = {
+        'ln': '10',
+        Line.service: 'alpine',
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
+    patch.object(Containers, 'start', new=async_mock())
+    patch.object(Services, 'is_hosted_externally', return_value=True)
+    ret = await Services.start_container(story, line)
+    Containers.start.mock.assert_not_called()
+    assert ret.hostname is None
+    assert ret.container_name is None
 
 
 @mark.asyncio
@@ -638,12 +669,13 @@ def test_service_get_command_conf_simple(story):
 
 
 @mark.asyncio
-async def test_start_container_http(story):
+async def test_start_container_http(patch, story):
     line = {
         Line.command: 'server',
         Line.service: 'http',
         Line.method: 'execute'
     }
+    patch.object(Services, 'is_hosted_externally', return_value=False)
     ret = await Services.start_container(story, line)
     assert ret.name == 'http'
     assert ret.command == 'server'
