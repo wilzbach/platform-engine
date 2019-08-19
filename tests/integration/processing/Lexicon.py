@@ -1325,7 +1325,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
     TestSuite(
         preparation_lines='i = true\n'
                           'success = true\n'
-                          'if !i\n'
+                          'if not i\n'
                           '    success = false',
         cases=[
             TestCase(assertion=ContextAssertion(key='success', expected=True))
@@ -1334,7 +1334,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
     TestSuite(
         preparation_lines='i = false\n'
                           'success = false\n'
-                          'if !i\n'
+                          'if not i\n'
                           '    success = true',
         cases=[
             TestCase(assertion=ContextAssertion(key='success', expected=True))
@@ -1348,7 +1348,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
                             '    status = 1',
                      assertion=ContextAssertion(key='status',
                                                 expected=1)),
-            TestCase(append='if !(i == null)\n'
+            TestCase(append='if not(i == null)\n'
                             '    status = 2',
                      assertion=ContextAssertion(key='status',
                                                 expected=0)),
