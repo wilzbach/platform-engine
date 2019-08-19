@@ -23,7 +23,7 @@ async def http_post(story, line, resolved_args):
 
     headers = resolved_args.get('headers') or {}
     if headers.get('User-Agent') is None:
-        headers['User-Agent'] = 'Asyncy/1.0-beta'
+        headers['User-Agent'] = 'Storyscript/1.0-beta'
 
     kwargs['headers'] = headers
 
