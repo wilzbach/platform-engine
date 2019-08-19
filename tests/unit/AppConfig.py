@@ -27,4 +27,4 @@ def test_app_config():
     for i in range(0, 2):
         assert exposes[i].service == f'service_{i}'
         assert exposes[i].http_path == f'/my_expose_path_{i}'
-        assert exposes[i].service_expose_name == f'expose_name_{i}'
+        assert exposes[i].service_forward_name == f'expose_name_{i}'

@@ -71,7 +71,17 @@ class ServiceOutputValidator:
                 name:
                   type: string
         """
+        omg_type = expected_output.get('type')
+        if omg_type != 'object':
+            cls.raise_for_type_mismatch(
+                '#root', omg_type,
+                body, action_resolution_chain)
+            return
+
         props = expected_output.get('properties')
+
+        if props is None:
+            return
 
         for prop_name, prop_config in props.items():
             if prop_name not in body:

@@ -259,7 +259,7 @@ def test_raise_for_type_mismatch(story, typ, val):
 
 
 @mark.parametrize('location', ['requestBody', 'query', 'path',
-                               'invalid_loc', 'formBody', None])
+                               'invalid_loc', 'formBody', 'header', None])
 @mark.parametrize('method', ['POST', 'GET'])
 @mark.parametrize('service_output', [{
     'properties': {
@@ -268,8 +268,9 @@ def test_raise_for_type_mismatch(story, typ, val):
         }
     }
 }, None])
+@mark.parametrize('absolute_url', [True, False])
 @mark.asyncio
-async def test_services_execute_http(patch, story, async_mock,
+async def test_services_execute_http(patch, story, async_mock, absolute_url,
                                      location, method, service_output):
     if location == 'formBody' and method == 'GET':
         return  # Invalid case.
@@ -295,6 +296,11 @@ async def test_services_execute_http(patch, story, async_mock,
         }
     }
 
+    if absolute_url:
+        command_conf['http']['url'] = 'https://extcoolfunctions.com/invoke'
+        del command_conf['http']['port']
+        del command_conf['http']['path']
+
     if service_output is not None:
         command_conf['output'] = service_output
 
@@ -307,21 +313,35 @@ async def test_services_execute_http(patch, story, async_mock,
     patch.object(story, 'argument_by_name', return_value='bar')
 
     if location == 'path':
-        command_conf['http']['path'] = '/invoke/{foo}'
-        expected_url = 'http://container_host:2771/invoke/bar'
+        if absolute_url:
+            command_conf['http']['url'] = 'https://extcoolfunctions.com' \
+                                          '/invoke/{foo}'
+            expected_url = 'https://extcoolfunctions.com/invoke/bar'
+        else:
+            command_conf['http']['path'] = '/invoke/{foo}'
+            expected_url = 'http://container_host:2771/invoke/bar'
     elif location == 'query':
-        expected_url = 'http://container_host:2771/invoke?foo=bar'
+        if absolute_url:
+            expected_url = 'https://extcoolfunctions.com/invoke?foo=bar'
+        else:
+            expected_url = 'http://container_host:2771/invoke?foo=bar'
     else:  # requestBody
-        expected_url = 'http://container_host:2771/invoke'
+        if absolute_url:
+            expected_url = 'https://extcoolfunctions.com/invoke'
+        else:
+            expected_url = 'http://container_host:2771/invoke'
 
     expected_kwargs = {
-        'method': method
+        'method': method,
+        'headers': {}
     }
 
+    if location == 'header':
+        expected_kwargs['headers']['foo'] = 'bar'
+
     if method == 'POST':
-        expected_kwargs['headers'] = {
-            'Content-Type': 'application/json; charset=utf-8'
-        }
+        expected_kwargs['headers']['Content-Type'] = 'application/json; ' \
+                                                     'charset=utf-8'
 
         if location == 'requestBody':
             expected_kwargs['body'] = '{"foo": "bar"}'

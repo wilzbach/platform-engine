@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 from pytest import mark
 
-from storyruntime.Exceptions import StackOverflowException, StoryscriptError,\
+from storyruntime.Exceptions import StackOverflowException, StoryscriptError, \
     StoryscriptRuntimeError, TypeAssertionRuntimeError, TypeValueRuntimeError
 from storyruntime.Story import Story
 from storyruntime.processing import Stories
@@ -525,7 +525,7 @@ class TestSuite:
                      assertion=ContextAssertion(
                          key='s', expected=[['a', 1], ['b', 2]])),
 
-            TestCase(append='s = m.pop(key: "a")',
+            TestCase(append='s = m.remove(key: "a")',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'b': 2})
@@ -829,6 +829,17 @@ class TestSuite:
                              key='err5', expected='5'
                          )
                      ])
+        ]
+    ),
+    TestSuite(
+        preparation_lines='throw "error"',
+        cases=[
+            TestCase(
+                assertion=RuntimeExceptionAssertion(
+                    exception_type=StoryscriptError,
+                    message='error'
+                )
+            ),
         ]
     ),
 ])

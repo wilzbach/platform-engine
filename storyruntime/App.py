@@ -7,7 +7,7 @@ from requests.structures import CaseInsensitiveDict
 
 from tornado.httpclient import AsyncHTTPClient
 
-from .AppConfig import AppConfig, Expose
+from .AppConfig import AppConfig, Forward
 from .Config import Config
 from .Containers import Containers
 from .Exceptions import StoryscriptError
@@ -100,17 +100,17 @@ class App:
         for expose in self.app_config.get_expose_config():
             await self._expose_service(expose)
 
-    async def _expose_service(self, e: Expose):
+    async def _expose_service(self, e: Forward):
         self.logger.info(f'Exposing service {e.service}/'
-                         f'{e.service_expose_name} '
+                         f'{e.service_forward_name} '
                          f'on {e.http_path}')
         conf = Dict.find(self.services,
                          f'{e.service}'
                          f'.{ServiceConstants.config}'
-                         f'.expose.{e.service_expose_name}')
+                         f'.expose.{e.service_forward_name}')
         if conf is None:
             raise StoryscriptError(
-                message=f'Configuration for expose "{e.service_expose_name}" '
+                message=f'Configuration for expose "{e.service_forward_name}" '
                 f'not found in service "{e.service}"')
 
         target_path = Dict.find(conf, 'http.path')
@@ -119,7 +119,7 @@ class App:
         if target_path is None or target_port is None:
             raise StoryscriptError(
                 message=f'http.path or http.port is null '
-                f'for expose {e.service}/{e.service_expose_name}')
+                f'for expose {e.service}/{e.service_forward_name}')
 
         await Containers.expose_service(self, e)
 

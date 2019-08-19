@@ -101,7 +101,7 @@ def test_logger_events_story_unless(logger):
 
 
 def test_logger_events_service_init(logger):
-    message = 'Starting Asyncy version {}'
+    message = 'Starting Storyscript Cloud Runtime version {}'
     assert logger.events[10] == ('service-init', 'info', message)
 
 
