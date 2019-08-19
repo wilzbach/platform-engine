@@ -527,8 +527,14 @@ class TestSuite:
 
             TestCase(append='s = m.remove(key: "a")',
                      assertion=[
-                         ContextAssertion(key='s', expected=1),
-                         ContextAssertion(key='m', expected={'b': 2})
+                         ContextAssertion(key='s', expected={'b': 2}),
+                         ContextAssertion(key='m', expected={'a': 1, 'b': 2}),
+                     ]),
+
+            TestCase(append='s = m.pop(key: "c")',
+                     assertion=[
+                         ContextAssertion(key='s', expected={'a': 1, 'b': 2}),
+                         ContextAssertion(key='m', expected={'a': 1, 'b': 2}),
                      ]),
 
             TestCase(append='s = m.get(key: "a" default: 3)',
@@ -617,11 +623,19 @@ class TestSuite:
 
             TestCase(append='arr.remove(item: 3)',
                      assertion=ContextAssertion(
-                         key='arr', expected=[1, 2, 2, 4, 4, 5, 5])),
+                         key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='a = arr.remove(item: 3)',
+                     assertion=ContextAssertion(
+                         key='a', expected=[1, 2, 2, 4, 4, 5, 5])),
 
             TestCase(append='arr.remove(item: 30)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='a = arr.remove(item: 30)',
+                     assertion=ContextAssertion(
+                         key='a', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
             TestCase(append='arr.replace(item: 3 by: 42)',
                      assertion=ContextAssertion(

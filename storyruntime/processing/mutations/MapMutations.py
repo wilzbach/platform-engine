@@ -23,7 +23,9 @@ class MapMutations:
     @classmethod
     def pop(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
-        return value.pop(key, None)
+        new_map = value.copy()
+        new_map.pop(key, None)
+        return new_map
 
     @classmethod
     def remove(cls, mutation, value, story, line, operator):

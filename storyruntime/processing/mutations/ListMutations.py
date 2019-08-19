@@ -70,10 +70,13 @@ class ListMutations:
     def remove(cls, mutation, value, story, line, operator):
         item = story.argument_by_name(mutation, 'item')
         try:
-            value.remove(item)
+            new_list = value[:]
+            new_list.remove(item)
+            return new_list
         except ValueError:
             # The value to be removed is not in the list.
             pass
+        return value
 
     @classmethod
     def replace(cls, mutation, value, story, line, operator):
