@@ -3,7 +3,7 @@
 
 class MapMutations:
 
-    # DEPRECATED: removed in SS 16.0
+    # DEPRECATED: removed in SS 0.16.0
     @classmethod
     def size(cls, mutation, value, story, line, operator):
         return len(value)
@@ -20,16 +20,18 @@ class MapMutations:
     def values(cls, mutation, value, story, line, operator):
         return list(value.values())
 
+    # DEPRECATED: removed in SS 0.24.0
     @classmethod
     def pop(cls, mutation, value, story, line, operator):
+        key = story.argument_by_name(mutation, 'key')
+        return value.pop(key, None)
+
+    @classmethod
+    def remove(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
         new_map = value.copy()
         new_map.pop(key, None)
         return new_map
-
-    @classmethod
-    def remove(cls, mutation, value, story, line, operator):
-        return cls.pop(mutation, value, story, line, operator)
 
     @classmethod
     def flatten(cls, mutation, value, story, line, operator):
