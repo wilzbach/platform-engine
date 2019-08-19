@@ -493,6 +493,20 @@ async def test_services_start_container(patch, story, async_mock):
     assert ret == Containers.start.mock.return_value
 
 
+@mark.parametrize('external', [True, False])
+def test_service_is_hosted_externally(app, external):
+    service_name = 'my_service'
+    app.services = {
+        service_name: {
+            ServiceConstants.config: {
+                ServiceConstants.hosted_externally: external
+            }
+        }
+    }
+
+    assert Services.is_hosted_externally(app, service_name) is external
+
+
 @mark.asyncio
 async def test_services_start_container_external(patch, story, async_mock):
     line = {
