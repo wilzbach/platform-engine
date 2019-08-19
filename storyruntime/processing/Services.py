@@ -127,6 +127,8 @@ class Services:
                 .get(ServiceConstants.hosted_externally):
             return True
 
+        return False
+
     @classmethod
     def last(cls, chain):
         return chain[len(chain) - 1]
