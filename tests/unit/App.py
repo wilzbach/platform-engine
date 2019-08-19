@@ -7,7 +7,7 @@ import pytest
 from pytest import fixture, mark
 
 from storyruntime.App import App, AppData
-from storyruntime.AppConfig import Expose
+from storyruntime.AppConfig import Forward
 from storyruntime.Containers import Containers
 from storyruntime.Exceptions import StoryscriptError
 from storyruntime.Kubernetes import Kubernetes
@@ -291,10 +291,10 @@ async def test_start_services(patch, app, async_mock, magic,
 
 @mark.asyncio
 async def test_expose_services(patch, app, async_mock):
-    a = Expose(service='foo', service_expose_name='foo',
-               http_path='foo')
-    b = Expose(service='foo', service_expose_name='foo',
-               http_path='foo')
+    a = Forward(service='foo', service_forward_name='foo',
+                http_path='foo')
+    b = Forward(service='foo', service_forward_name='foo',
+                http_path='foo')
     patch.object(app.app_config, 'get_expose_config', return_value=[a, b])
     patch.object(App, '_expose_service', new=async_mock())
 
@@ -335,8 +335,8 @@ async def test_expose_service(patch, app, async_mock, no_config, no_http_path):
 
     patch.object(Containers, 'expose_service', new=async_mock())
 
-    e = Expose(service='foo', service_expose_name='my_expose_name',
-               http_path='/expose_external_path')
+    e = Forward(service='foo', service_forward_name='my_expose_name',
+                http_path='/expose_external_path')
 
     if no_config or no_http_path:
         with pytest.raises(StoryscriptError):

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest import fixture, mark
 
-from storyruntime.AppConfig import Expose
+from storyruntime.AppConfig import Forward
 from storyruntime.Containers import Containers
 from storyruntime.Exceptions import ActionNotFound, \
     ContainerSpecNotRegisteredError, \
@@ -156,9 +156,9 @@ def test_hash_volume_name(patch, story, line, reusable):
 
 
 def test_hash_ingress_name():
-    e = Expose(service='service',
-               service_expose_name='expose_name',
-               http_path='expose_path')
+    e = Forward(service='service',
+                service_forward_name='expose_name',
+                http_path='expose_path')
     ret = Containers.hash_ingress_name(e)
     assert ret == 'exposename-0cf994f170f9d213bb814f74baca87ea149f7536'
 
@@ -172,9 +172,9 @@ async def test_expose_service(app, patch, async_mock):
     patch.object(Containers, 'create_and_start', new=async_mock())
     patch.object(Kubernetes, 'create_ingress', new=async_mock())
 
-    e = Expose(service='service',
-               service_expose_name='expose_name',
-               http_path='expose_path')
+    e = Forward(service='service',
+                service_forward_name='expose_name',
+                http_path='expose_path')
 
     ingress_name = Containers.hash_ingress_name(e)
     hostname = f'{app.app_dns}--{Containers.get_simple_name(e.service)}'

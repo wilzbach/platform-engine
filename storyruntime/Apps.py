@@ -6,7 +6,7 @@ import signal
 import asyncpg
 
 from .App import App, AppData
-from .AppConfig import AppConfig, KEY_EXPOSE
+from .AppConfig import AppConfig, KEY_EXPOSE, KEY_FORWARDS
 from .Config import Config
 from .Containers import Containers
 from .DeploymentLock import DeploymentLock
@@ -205,7 +205,7 @@ class Apps:
         services = {}
         all_services = stories.get('services', [])
 
-        expose = asyncy_yaml.get(KEY_EXPOSE, {})
+        expose = asyncy_yaml.get(KEY_FORWARDS, asyncy_yaml.get(KEY_EXPOSE, {}))
         for expose_conf in expose:
             all_services.append(expose_conf['service'])
 
