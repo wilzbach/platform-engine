@@ -60,7 +60,7 @@ async def test_service_http_fetch(patch, story, line, json_response,
         'headers': {
             'Content-Type': 'application/json',
             'User-Agent': resolved_args['headers'].get('User-Agent',
-                                                       'Asyncy/1.0-beta')
+                                                       'Storyscript/1.0-beta')
         },
         'body': '{"foo": "bar"}'
     }
