@@ -525,7 +525,7 @@ class TestSuite:
                      assertion=ContextAssertion(
                          key='s', expected=[['a', 1], ['b', 2]])),
 
-            TestCase(append='s = m.pop(key: "a")',
+            TestCase(append='s = m.remove(key: "a")',
                      assertion=[
                          ContextAssertion(key='s', expected=1),
                          ContextAssertion(key='m', expected={'b': 2})
