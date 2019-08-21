@@ -246,8 +246,8 @@ class TestSuite:
     ),
     TestSuite(
         preparation_lines='a = [1, 2, 3, 4, 5]\n'
-                          'b = []\n'
-                          'c = []\n',
+                          'b = [] as List[int]\n'
+                          'c = [] as List[int]\n',
         cases=[
             TestCase(append='foreach a as elem\n'
                             '   b append item: elem\n'
@@ -1068,7 +1068,7 @@ async def test_arrays(suite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='a = {}\n',
+        preparation_lines='a = {} as Map[any,int]\n',
         cases=[
             TestCase(append='a["b"] = 1',
                      assertion=MapValueAssertion(key='a',
@@ -1101,7 +1101,8 @@ async def test_arrays(suite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='a = {"a": 1, "b": {}, "c": 3}\n'
+        preparation_lines='a = {"a": 1, "b": {} as Map[string,string],'
+                          ' "c": 3}\n'
                           'b = ["a", "b", "c"]\n'
                           'c = 1',
         cases=[
@@ -1412,7 +1413,8 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='arr = []\narr append item: 42\nb = arr[0]',
+        preparation_lines='arr = [] as List[any]\narr.append(item: 42)\n'
+                          'b = arr[0]',
         cases=[
             TestCase(append='c = b as List[int]',
                      assertion=RuntimeExceptionAssertion(
