@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import cgi
 import json
 
 import certifi
@@ -35,11 +36,22 @@ async def http_post(story, line, resolved_args):
     response = await HttpUtils.fetch_with_retry(3, story.logger,
                                                 resolved_args['url'],
                                                 http_client, kwargs)
+
+    charset = 'utf-8'
+
+    content_type = response.headers.get('Content-Type')
+    if content_type is not None and \
+            'charset' in content_type:
+        parsed = cgi.parse_header(content_type)
+
+        if len(parsed) > 1:
+            charset = parsed[1].get('charset')
+
     if int(response.code / 100) != 2:
         # Attempt to read the response body.
         response_body = None
         try:
-            response_body = response.body.decode('utf-8')
+            response_body = response.body.decode(charset)
         except UnicodeDecodeError:
             pass
 
@@ -51,14 +63,14 @@ async def http_post(story, line, resolved_args):
 
     if 'application/json' in response.headers.get('Content-Type'):
         try:
-            return json.loads(response.body.decode('utf-8'))
+            return json.loads(response.body.decode(charset))
         except json.decoder.JSONDecodeError:
             story.logger.warn(
                 f'Failed to parse response as JSON, '
                 f'although application/json was specified! '
-                f'response={response.body.decode("utf-8")}')
+                f'response={response.body.decode(charset)}')
 
-    return response.body.decode('utf-8')
+    return response.body.decode(charset)
 
 
 def init():

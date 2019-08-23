@@ -73,6 +73,38 @@ class TestSuite:
         ]
     ),
     TestSuite(
+        preparation_lines='a = http fetch '
+                          'url: "https://stories.storyscriptapp.com/status"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='a',
+                expected='OK'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = http fetch '
+                          'url: "https://www.google.com/"\n'
+                          'passed = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='passed',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = http fetch '
+                          'url: "https://jsonplaceholder.typicode.com/todos/1"\n'
+                          'passed = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='passed',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = 1\n'
                           'if false and true\n'
                           '    a = 2',
