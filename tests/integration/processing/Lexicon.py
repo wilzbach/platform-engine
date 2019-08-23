@@ -95,7 +95,8 @@ class TestSuite:
     ),
     TestSuite(
         preparation_lines='a = http fetch '
-                          'url: "https://jsonplaceholder.typicode.com/todos/1"\n'
+                          'url: "https://jsonplaceholder.'
+                          'typicode.com/todos/1"\n'
                           'passed = true',
         cases=[
             TestCase(assertion=ContextAssertion(
