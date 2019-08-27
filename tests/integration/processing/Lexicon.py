@@ -394,6 +394,13 @@ class TestSuite:
                      assertion=ContextAssertion(
                          key='parts', expected=['hello', 'world!'])),
 
+            TestCase(append='parts = str.split(by: "")',
+                     assertion=ContextAssertion(
+                         key='parts', expected=[
+                             'h', 'e', 'l', 'l', 'o', ' ',
+                             'w', 'o', 'r', 'l', 'd', '!'
+                         ])),
+
             TestCase(append='a = str.uppercase()',
                      assertion=ContextAssertion(
                          key='a', expected='HELLO WORLD!')),
