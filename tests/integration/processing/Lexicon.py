@@ -230,6 +230,48 @@ class TestSuite:
         ]
     ),
     TestSuite(
+        preparation_lines='list = ["hello", "world"]\n'
+                          'dict = {"hello": "world"}\n'
+                          'file write path: "/tmp.txt" content: "hello"\n'
+                          'bytes = file read path: "/tmp.txt" raw: true',
+        cases=[
+            TestCase(prepend='a = "{true}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='true')
+                     ]),
+            TestCase(prepend='a = "{false}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='false')
+                     ]),
+            TestCase(prepend='a = "{1.2}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='1.2')
+                     ]),
+            TestCase(prepend='a = "{1}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='1')
+                     ]),
+            TestCase(append='a = "{list}"',
+                     assertion=[
+                         ContextAssertion(
+                             key='a',
+                             expected='[\'hello\', \'world\']')
+                     ]),
+            TestCase(append='a = "{dict}"',
+                     assertion=[
+                         ContextAssertion(
+                             key='a',
+                             expected='{\'hello\': \'world\'}')
+                     ]),
+            TestCase(append='a = "{bytes}"',
+                     assertion=[
+                         ContextAssertion(
+                             key='a',
+                             expected='b\'hello\'')
+                     ])
+        ]
+    ),
+    TestSuite(
         preparation_lines='labels = [{"name": "a"}]\n'
                           'found = false',
         cases=[

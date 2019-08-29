@@ -78,19 +78,13 @@ class HttpDataEncoder(json.JSONEncoder):
         """
         if isinstance(o, dict):
             for k, v in o.items():
-                if isinstance(v, FileFormField):
-                    o[k] = v._asdict()
-                elif isinstance(v, FormField):
-                    o[k] = v._asdict()
-                elif isinstance(v, StreamingService):
-                    o[k] = {
-                        'name': v.name,
-                        'command': v.command
-                    }
-                elif TypeUtils.isnamedtuple(v):
-                    o[k] = v._asdict()
+                # convert the type to a safe type first,
+                # and then safely convert it to a dictionary
+                s = TypeUtils.safe_type(v)
+                if TypeUtils.isnamedtuple(s):
+                    o[k] = s._asdict()
                 else:
-                    o[k] = self._convert_types(v)
+                    o[k] = self._convert_types(s)
         return o
 
 

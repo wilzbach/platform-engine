@@ -260,6 +260,9 @@ class Resolver:
 
     @classmethod
     def resolve(cls, item, data):
+        # Sanitize this item so we can ensure that
+        # any unwanted data doesn't leak.
+        item = TypeUtils.safe_type(item)
         if type(item) is dict:
             return cls.object(item, data)
         elif type(item) is list:

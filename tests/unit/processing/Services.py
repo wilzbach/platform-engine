@@ -13,7 +13,8 @@ from pytest import fixture, mark
 from requests.structures import CaseInsensitiveDict
 
 from storyruntime.Containers import Containers
-from storyruntime.Exceptions import ArgumentTypeMismatchError, StoryscriptError
+from storyruntime.Exceptions import ArgumentTypeMismatchError, \
+    StoryscriptError, StoryscriptRuntimeError
 from storyruntime.Types import StreamingService
 from storyruntime.constants import ContextConstants
 from storyruntime.constants.LineConstants import \
@@ -902,13 +903,6 @@ def test_service_get_command_conf_events(story):
 
 def test_http_data_encoder(patch):
     patch.object(base64, 'b64encode', return_value=b'dg==')
-    namedtuple_obj = namedtuple(
-        'NamedTupleObj',
-        ['key']
-    )
-    patch.object(namedtuple_obj, '_asdict', return_value={
-        'key': 'value'
-    })
     file_json = {
         'name': 'name',
         'body': 'body',
@@ -939,7 +933,6 @@ def test_http_data_encoder(patch):
         'casedict': CaseInsensitiveDict(data={
             'key': 'value'
         }),
-        'namedtuple': namedtuple_obj(key='value'),
         'regex': re.compile('/foo/i'),
         'streaming_service': StreamingService(
             name='hello', command='world',
@@ -956,9 +949,6 @@ def test_http_data_encoder(patch):
         'casedict': {
             'key': 'value'
         },
-        'namedtuple': {
-            'key': 'value'
-        },
         'regex': '/foo/i',
         'streaming_service': {
             'name': 'hello',
@@ -966,7 +956,6 @@ def test_http_data_encoder(patch):
         }
     })
 
-    namedtuple_obj._asdict.assert_called()
     FormField._asdict.assert_called()
     FileFormField._asdict.assert_called()
     base64.b64encode.assert_called_with(b'v')
@@ -986,7 +975,5 @@ def test_http_data_encoder_exc(patch, type_exc):
     obj = {
         'invalid_obj': LineConstants()
     }
-    with pytest.raises(TypeError):
+    with pytest.raises(StoryscriptRuntimeError):
         json.dumps(obj, cls=HttpDataEncoder)
-
-    json.JSONEncoder.default.assert_called()
