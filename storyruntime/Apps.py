@@ -124,11 +124,11 @@ class Apps:
                 )
             )
 
+            cls.apps[app_id] = app
+
             await Containers.clean_app(app)
             await Containers.init(app)
             await app.bootstrap()
-
-            cls.apps[app_id] = app
 
             await Database.update_release_state(logger, config, app_id,
                                                 release.version,

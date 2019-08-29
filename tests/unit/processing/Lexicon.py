@@ -383,6 +383,111 @@ async def test_lexicon_for_loop(patch, logger, story, line,
 
 
 @mark.asyncio
+async def test_lexicon_while(patch, magic, logger, line):
+
+    story = Story(magic(), 'foo', logger)
+
+    story.tree = {
+        '1': {
+            'method': 'while',
+            'ln': '1',
+            'args': [
+                {
+                    '$OBJECT': 'expression',
+                    'expression': 'less',
+                    'values': [
+                        {
+                            '$OBJECT': 'path',
+                            'paths': [
+                                'i'
+                            ]
+                        },
+                        {
+                            '$OBJECT': 'int',
+                            'int': 10
+                        }
+                    ]
+                }
+            ],
+            'enter': '2',
+            'next': '2'
+        },
+        '2': {
+            'method': 'expression',
+            'ln': '2',
+            'name': [
+                'i'
+            ],
+            'args': [
+                {
+                    '$OBJECT': 'expression',
+                    'expression': 'sum',
+                    'values': [
+                        {
+                            '$OBJECT': 'path',
+                            'paths': [
+                                'i'
+                            ]
+                        },
+                        {
+                            '$OBJECT': 'int',
+                            'int': 1
+                        }
+                    ]
+                }
+            ],
+            'parent': '1',
+        }
+    }
+    resolve = story.resolve
+    execute_line = Lexicon.execute_line
+
+    def proxy_resolve(*args, **kwargs):
+        return resolve(*args, **kwargs)
+
+    async def proxy_execute_line(my_logger, my_story, my_line):
+        return await execute_line(my_logger, my_story, my_line)
+
+    line_number_or_none = Lexicon.line_number_or_none
+
+    def proxy_line_number_or_none(*args):
+        return line_number_or_none(*args)
+
+    line = story.line
+
+    def proxy_line(line_):
+        return line(line_)
+
+    patch.object(Lexicon, 'line_number_or_none',
+                 side_effect=proxy_line_number_or_none)
+    patch.object(Lexicon, 'execute_line',
+                 side_effect=proxy_execute_line)
+    patch.object(story, 'line', side_effect=proxy_line)
+    patch.object(story, 'resolve', side_effect=proxy_resolve)
+    patch.object(story, 'line_has_parent', return_value=True)
+
+    story.context = {'i': 0}
+
+    await Lexicon.while_(logger, story, story.tree['1'])
+
+    Lexicon.execute_line.assert_called_with(
+        logger, story, '2'
+    )
+
+    Lexicon.line_number_or_none.assert_called_with(
+        story.next_block(story.tree['1'])
+    )
+
+    assert Lexicon.execute_line.call_count == 10
+    assert story.line_has_parent.call_count >= 10
+    assert story.resolve.call_count >= 10
+
+    story.resolve.assert_called()
+    story.line.assert_called()
+    story.line_has_parent.assert_called()
+
+
+@mark.asyncio
 async def test_lexicon_execute_streaming_container(patch, story, async_mock):
     line = {
         'enter': '10',
@@ -536,10 +641,8 @@ async def test_lexicon_execute_block(patch, logger, story,
             mock.call('3'),
             mock.call('4')
         ] == story.line.mock_calls
-        if line_4_result == LineSentinels.RETURN:
-            assert execute_block_return is None
-        else:
-            assert execute_block_return == line_4_result
+        assert execute_block_return == line_4_result
+
     else:
         assert [
             mock.call(logger, story, '3'),
