@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import json
+import pathlib
+import shutil
 from collections import deque
+from unittest.mock import MagicMock
 
 import pytest
 from pytest import fixture, mark
@@ -212,6 +215,67 @@ async def test_app_bootstrap(patch, app, async_mock):
     assert app.start_services.mock.call_count == 1
 
 
+def test_app_get_tmp_dir(app):
+    assert app.get_tmp_dir() == '/tmp/story.app_uuid'
+
+
+def test_app_create_tmp_dir(patch, app):
+    patch.object(pathlib, 'Path')
+    patch.object(app, 'get_tmp_dir')
+
+    # create_tmp_dir is called twice to ensure the dir is created just once.
+    app.create_tmp_dir()
+    app.create_tmp_dir()
+
+    app.get_tmp_dir.assert_called_once()
+
+    pathlib.Path.assert_called_with(app.get_tmp_dir())
+    pathlib.Path().mkdir.assert_called_with(
+        parents=True, mode=0o700, exist_ok=True)
+
+
+def test_app_create_tmp_dir_exc(patch, magic, app):
+
+    def exc(*args, **kwargs):
+        raise BaseException()
+
+    path = magic()
+    path.mkdir.side_effect = exc
+
+    patch.object(pathlib, 'Path', return_value=path)
+    patch.object(app, 'get_tmp_dir')
+
+    with pytest.raises(BaseException):
+        app.create_tmp_dir()
+
+    app.logger.error.assert_called()
+
+
+def test_app_cleanup_tmp_dir(patch, app):
+    path = f'/tmp/story.{app.app_id}'
+    patch.object(app, 'get_tmp_dir', return_value=path)
+    patch.object(shutil, 'rmtree')
+
+    app.cleanup_tmp_dir()
+
+    app.get_tmp_dir.assert_called()
+    shutil.rmtree.assert_called_with(path, ignore_errors=True)
+
+
+def test_app_cleanup_tmp_dir_exc(patch, app):
+    path = f'/tmp/story.{app.app_id}'
+
+    def exc(*args, **kwargs):
+        raise BaseException()
+
+    patch.object(app, 'get_tmp_dir', return_value=path)
+    patch.object(shutil, 'rmtree', side_effect=exc)
+    with pytest.raises(BaseException):
+        app.cleanup_tmp_dir()
+
+    app.logger.error.assert_called()
+
+
 @mark.asyncio
 async def test_start_services_completed(patch, app, async_mock):
     app.stories = {}
@@ -364,6 +428,7 @@ async def test_app_destroy_no_stories(patch, async_mock, app):
     app.stories = None
     patch.object(Kubernetes, 'clean_namespace', new=async_mock())
     patch.object(app, 'clear_subscriptions_synapse', new=async_mock())
+    patch.object(app, 'cleanup_tmp_dir')
     assert await app.destroy() is None
 
 
@@ -425,7 +490,9 @@ async def test_app_destroy(patch, app, async_mock):
     app.entrypoint = ['foo', 'bar']
     patch.object(app, 'unsubscribe_all', new=async_mock())
     patch.object(app, 'clear_subscriptions_synapse', new=async_mock())
+    patch.object(app, 'cleanup_tmp_dir')
     await app.destroy()
 
     app.unsubscribe_all.mock.assert_called()
     app.clear_subscriptions_synapse.mock.assert_called()
+    app.cleanup_tmp_dir.assert_called()

@@ -33,7 +33,6 @@ class Story:
         self.version = None
         self._stack = []
         self.execution_id = str(uuid.uuid4())
-        self._tmp_dir_created = False
 
     @contextmanager
     def new_frame(self, line_number: str):
@@ -48,19 +47,6 @@ class Story:
 
     def get_stack(self) -> []:
         return self._stack
-
-    def create_tmp_dir(self):
-        if self._tmp_dir_created:
-            return
-
-        self._tmp_dir_created = True
-
-        path = self.get_tmp_dir()
-        pathlib.Path(path).mkdir(parents=True, mode=0o700, exist_ok=True)
-        self.logger.debug(f'Created tmp dir {path} (on-demand)')
-
-    def get_tmp_dir(self):
-        return f'/tmp/story.{self.execution_id}'
 
     def line(self, line_number):
         if line_number is None:

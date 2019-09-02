@@ -2,6 +2,7 @@
 import math
 import re
 import sys
+import tempfile
 from unittest.mock import MagicMock
 
 from pytest import mark
@@ -1034,6 +1035,11 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
         raise errors[0]
 
     app = MagicMock()
+
+    def get_tmp_dir():
+        return tempfile.gettempdir()
+
+    app.get_tmp_dir = get_tmp_dir
 
     app.stories = {
         story_name: story.result()

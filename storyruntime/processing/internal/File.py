@@ -16,12 +16,12 @@ def safe_path(story, path):
     :param path: A path to be resolved
     :return: The absolute path, which can be used to read/write directly
     """
-    story.create_tmp_dir()
+    story.app.create_tmp_dir()
     # Adding the leading "/" is important, otherwise the current working
     # directory will be used as the base path.
     path = f'/{path}'
     path = pathlib.Path(path).resolve()
-    return f'{story.get_tmp_dir()}{os.fspath(path)}'
+    return f'{story.app.get_tmp_dir()}{os.fspath(path)}'
 
 
 @Decorators.create_service(name='file', command='mkdir', arguments={

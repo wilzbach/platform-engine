@@ -34,7 +34,7 @@ def exc():
 
 
 def test_service_file_safe_path(patch, story):
-    patch.object(story, 'get_tmp_dir', return_value='')
+    patch.object(story.app, 'get_tmp_dir', return_value='')
     assert File.safe_path(story, '../') == '/'
     assert File.safe_path(story, '/a') == '/a'
     assert File.safe_path(story, '../../../../') == '/'
@@ -47,7 +47,7 @@ async def test_service_file_mkdir(story, line, file_io):
         'path': 'my_path'
     }
     await File.file_mkdir(story, line, resolved_args)
-    os.makedirs.assert_called_with(f'{story.get_tmp_dir()}/my_path',
+    os.makedirs.assert_called_with(f'{story.app.get_tmp_dir()}/my_path',
                                    exist_ok=True)
 
 
@@ -70,7 +70,7 @@ async def test_service_file_write(story, line, file_io):
         'content': 'my_content'
     }
     await File.file_write(story, line, resolved_args)
-    File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'w')
+    File.open.assert_called_with(f'{story.app.get_tmp_dir()}/my_path', 'w')
     File.open().__enter__().write.assert_called_with('my_content')
 
 
@@ -82,7 +82,7 @@ async def test_service_file_write_bytes(story, line, file_io):
         'content': b'my_content'
     }
     await File.file_write(story, line, resolved_args)
-    File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'wb')
+    File.open.assert_called_with(f'{story.app.get_tmp_dir()}/my_path', 'wb')
     File.open().__enter__().write.assert_called_with(b'my_content')
 
 
@@ -103,7 +103,7 @@ async def test_service_file_read(story, line, file_io):
         'path': 'my_path'
     }
     result = await File.file_read(story, line, resolved_args)
-    File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'r')
+    File.open.assert_called_with(f'{story.app.get_tmp_dir()}/my_path', 'r')
 
     assert result == File.open().__enter__().read()
 
@@ -116,7 +116,7 @@ async def test_service_file_read_bytes(story, line, file_io):
         'raw': True
     }
     result = await File.file_read(story, line, resolved_args)
-    File.open.assert_called_with(f'{story.get_tmp_dir()}/my_path', 'rb')
+    File.open.assert_called_with(f'{story.app.get_tmp_dir()}/my_path', 'rb')
 
     assert result == File.open().__enter__().read()
 
@@ -139,6 +139,6 @@ async def test_service_file_exists(patch, story, line):
         'path': 'my_path'
     }
     result = await File.file_exists(story, line, resolved_args)
-    os.path.exists.assert_called_with(f'{story.get_tmp_dir()}/my_path')
+    os.path.exists.assert_called_with(f'{story.app.get_tmp_dir()}/my_path')
 
     assert result == os.path.exists()

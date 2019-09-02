@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import json
+import os
+import pathlib
+import shutil
 from collections import namedtuple
 
 from requests.structures import CaseInsensitiveDict
@@ -79,6 +82,7 @@ class App:
             'hostname': f'{self.app_dns}.{self.config.APP_DOMAIN}',
             'version': self.version
         }
+        self._tmp_dir_created = False
 
     def image_pull_policy(self):
         if self.always_pull_images is True:
@@ -95,6 +99,33 @@ class App:
         await self.start_services()
         await self.expose_services()
         await self.run_stories()
+
+    def create_tmp_dir(self):
+        if self._tmp_dir_created:
+            return
+
+        self._tmp_dir_created = True
+
+        path = self.get_tmp_dir()
+        self.logger.debug(f'Creating tmp dir {path} (on-demand)')
+        try:
+            pathlib.Path(path).mkdir(parents=True, mode=0o700, exist_ok=True)
+        except BaseException as e:
+            self.logger.error(f'Failed to create tmp dir {path}', e)
+            raise e
+
+    def cleanup_tmp_dir(self):
+        tmpdir = self.get_tmp_dir()
+
+        self.logger.debug(f'Cleaning up tmp dir: {tmpdir}')
+        try:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        except BaseException as e:
+            self.logger.error(f'Failed to cleanup tmp dir {tmpdir}', e)
+            raise e
+
+    def get_tmp_dir(self):
+        return f'/tmp/story.{self.app_id}'
 
     async def expose_services(self):
         for expose in self.app_config.get_expose_config():
@@ -253,5 +284,15 @@ class App:
         Unsubscribe from all existing subscriptions,
         and delete the namespace.
         """
-        await self.clear_subscriptions_synapse()
-        await self.unsubscribe_all()
+        try:
+            await self.clear_subscriptions_synapse()
+        except BaseException as e:
+            self.logger.error(f'Error clearing synapse subscriptions: {e}')
+        try:
+            await self.unsubscribe_all()
+        except BaseException as e:
+            self.logger.error(
+                f'Failed to unsubscribe synapse subscriptions: {e}'
+            )
+
+        self.cleanup_tmp_dir()
