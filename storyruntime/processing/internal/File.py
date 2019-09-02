@@ -24,6 +24,10 @@ def safe_path(story, path):
     return f'{story.app.get_tmp_dir()}{os.fspath(path)}'
 
 
+def clean_path(story, path):
+    return f'/{str(pathlib.Path(path).relative_to(story.get_tmp_dir()))}'
+
+
 @Decorators.create_service(name='file', command='mkdir', arguments={
     'path': {'type': 'string'}
 })
@@ -69,6 +73,12 @@ async def file_read(story, line, resolved_args):
             mode = 'r'
         with open(path, mode) as f:
             return f.read()
+    except FileNotFoundError:
+        raise StoryscriptError(
+            message=f'Failed to read file: No such file: '
+            f'\'{clean_path(story, path)}\'',
+            story=story, line=line
+        )
     except IOError as e:
         raise StoryscriptError(message=f'Failed to read file: {e}',
                                story=story, line=line)
