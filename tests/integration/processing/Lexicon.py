@@ -126,6 +126,26 @@ class TestSuite:
         ]
     ),
     TestSuite(
+        preparation_lines='file mkdir path: "/file"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'exists = file exists path: "/file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
         preparation_lines='file write path: "file" '
                           'content: "hello world"\n'
                           'exists = file exists path: "file"',
