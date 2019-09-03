@@ -107,6 +107,189 @@ class TestSuite:
         ]
     ),
     TestSuite(
+        preparation_lines='exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=False
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" '
+                          'content: "hello world"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'isDir = file isDir path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isDir',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path"\n'
+                          'files = file list\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=['/path', '/file']
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path/anotherdir"\n'
+                          'files = file list\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=['/path', '/file']
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path/anotherdir"\n'
+                          'files = file list recursive: true\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=['/path', '/file', '/path/anotherdir']
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path/anotherdir"\n'
+                          'file write path: "/path/anotherdir/file" '
+                          'content: "file"\n'
+                          'files = file list recursive: true\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=[
+                    '/path', '/file',
+                    '/path/anotherdir',
+                    '/path/anotherdir/file'
+                ]
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'isDir = file isDir path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isDir',
+                expected=False
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'isFile = file isFile path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isFile',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'isFile = file isFile path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isFile',
+                expected=False
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'data = file read path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected='file'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "/file/data"\n'
+                          'data = file isDir path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" binary: true '
+                          'content: "hello world"\n'
+                          'data = file read path: "file" binary: true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected=b'hello world'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" binary: true '
+                          'content: "hello world"\n'
+                          'data = file read path: "file" binary: false',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected='hello world'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" binary: false '
+                          'content: "hello world"\n'
+                          'data = file read path: "file" binary: true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected=b'hello world'
+            ))
+        ]
+    ),
+    TestSuite(
         preparation_lines='a = 1\n'
                           'if false and true\n'
                           '    a = 2',
@@ -268,7 +451,7 @@ class TestSuite:
                      assertion=[
                          ContextAssertion(
                              key='a',
-                             expected='b\'hello\'')
+                             expected='hello')
                      ])
         ]
     ),
@@ -1036,8 +1219,10 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     app = MagicMock()
 
+    tmp_dir = tempfile.TemporaryDirectory()
+
     def get_tmp_dir():
-        return tempfile.gettempdir()
+        return tmp_dir.name
 
     app.get_tmp_dir = get_tmp_dir
 
