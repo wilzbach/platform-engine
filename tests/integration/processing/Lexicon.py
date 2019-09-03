@@ -183,7 +183,7 @@ class TestSuite:
         cases=[
             TestCase(assertion=ContextAssertion(
                 key='files',
-                expected=['/path', '/file']
+                expected=['/file', '/path']
             ))
         ]
     ),
@@ -194,7 +194,7 @@ class TestSuite:
         cases=[
             TestCase(assertion=ContextAssertion(
                 key='files',
-                expected=['/path', '/file']
+                expected=['/file', '/path']
             ))
         ]
     ),
@@ -205,7 +205,7 @@ class TestSuite:
         cases=[
             TestCase(assertion=ContextAssertion(
                 key='files',
-                expected=['/path', '/file', '/path/anotherdir']
+                expected=['/file', '/path', '/path/anotherdir']
             ))
         ]
     ),
@@ -219,7 +219,8 @@ class TestSuite:
             TestCase(assertion=ContextAssertion(
                 key='files',
                 expected=[
-                    '/path', '/file',
+                    '/file',
+                    '/path',
                     '/path/anotherdir',
                     '/path/anotherdir/file'
                 ]
@@ -437,7 +438,7 @@ class TestSuite:
         preparation_lines='list = ["hello", "world"]\n'
                           'dict = {"hello": "world"}\n'
                           'file write path: "/tmp.txt" content: "hello"\n'
-                          'bytes = file read path: "/tmp.txt" raw: true',
+                          'bytes = file read path: "/tmp.txt" binary: true',
         cases=[
             TestCase(prepend='a = "{true}"',
                      assertion=[

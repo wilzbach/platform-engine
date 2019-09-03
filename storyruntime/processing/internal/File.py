@@ -70,8 +70,8 @@ async def file_write(story, line, resolved_args):
 
 @Decorators.create_service(name='file', command='read', arguments={
     'path': {'type': 'string'},
-    'binary': {'type': 'boolean'},
-    'raw': {'type': 'boolean'}
+    'binary': {'type': 'boolean', 'required': False},
+    'raw': {'type': 'boolean', 'required': False}
 }, output_type='string')
 async def file_read(story, line, resolved_args):
     path = safe_path(story, resolved_args['path'])
@@ -132,6 +132,8 @@ async def file_list(story, line, resolved_args):
 
         for child in children:
             items.append(f'/{str(child.relative_to(p))}')
+
+        items.sort()
 
         return items
     except FileNotFoundError:

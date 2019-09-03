@@ -109,8 +109,12 @@ class TypeResolver:
         elif isinstance(type_exp, types.FloatType):
             return float(item)
         elif isinstance(type_exp, types.StringType):
+            # bools are always lowercase in SS
             if isinstance(item, bool):
                 return str(item).lower()
+            # bytes must be properly decoded
+            elif isinstance(item, bytes):
+                return item.decode()
             return str(item)
         elif isinstance(type_exp, types.AnyType):
             return item
