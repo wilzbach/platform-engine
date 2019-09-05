@@ -526,8 +526,8 @@ class TestSuite:
     ),
     TestSuite(
         preparation_lines='a = [1, 2, 3, 4, 5]\n'
-                          'b = []\n'
-                          'c = []\n',
+                          'b = [] as List[int]\n'
+                          'c = [] as List[int]\n',
         cases=[
             TestCase(append='foreach a as elem\n'
                             '   b append item: elem\n'
@@ -814,8 +814,14 @@ class TestSuite:
 
             TestCase(append='s = m.remove(key: "a")',
                      assertion=[
-                         ContextAssertion(key='s', expected=1),
-                         ContextAssertion(key='m', expected={'b': 2})
+                         ContextAssertion(key='s', expected={'b': 2}),
+                         ContextAssertion(key='m', expected={'a': 1, 'b': 2}),
+                     ]),
+
+            TestCase(append='s = m.remove(key: "c")',
+                     assertion=[
+                         ContextAssertion(key='s', expected={'a': 1, 'b': 2}),
+                         ContextAssertion(key='m', expected={'a': 1, 'b': 2}),
                      ]),
 
             TestCase(append='s = m.get(key: "a" default: 3)',
@@ -904,11 +910,19 @@ class TestSuite:
 
             TestCase(append='arr.remove(item: 3)',
                      assertion=ContextAssertion(
-                         key='arr', expected=[1, 2, 2, 4, 4, 5, 5])),
+                         key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='a = arr.remove(item: 3)',
+                     assertion=ContextAssertion(
+                         key='a', expected=[1, 2, 2, 4, 4, 5, 5])),
 
             TestCase(append='arr.remove(item: 30)',
                      assertion=ContextAssertion(
                          key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
+
+            TestCase(append='a = arr.remove(item: 30)',
+                     assertion=ContextAssertion(
+                         key='a', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
             TestCase(append='arr.replace(item: 3 by: 42)',
                      assertion=ContextAssertion(
@@ -1248,7 +1262,7 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     app.get_tmp_dir = get_tmp_dir
 
     app.stories = {
-        story_name: story.result()
+        story_name: story.result().output()
     }
     app.environment = {}
 
@@ -1409,7 +1423,7 @@ async def test_arrays(suite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='a = {}\n',
+        preparation_lines='a = {} as Map[any,int]\n',
         cases=[
             TestCase(append='a["b"] = 1',
                      assertion=MapValueAssertion(key='a',
@@ -1442,7 +1456,8 @@ async def test_arrays(suite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='a = {"a": 1, "b": {}, "c": 3}\n'
+        preparation_lines='a = {"a": 1, "b": {} as Map[string,string],'
+                          ' "c": 3}\n'
                           'b = ["a", "b", "c"]\n'
                           'c = 1',
         cases=[
@@ -1680,7 +1695,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
     TestSuite(
         preparation_lines='i = true\n'
                           'success = true\n'
-                          'if !i\n'
+                          'if not i\n'
                           '    success = false',
         cases=[
             TestCase(assertion=ContextAssertion(key='success', expected=True))
@@ -1689,7 +1704,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
     TestSuite(
         preparation_lines='i = false\n'
                           'success = false\n'
-                          'if !i\n'
+                          'if not i\n'
                           '    success = true',
         cases=[
             TestCase(assertion=ContextAssertion(key='success', expected=True))
@@ -1703,7 +1718,7 @@ async def test_resolve_expressions(suite: TestSuite, logger):
                             '    status = 1',
                      assertion=ContextAssertion(key='status',
                                                 expected=1)),
-            TestCase(append='if !(i == null)\n'
+            TestCase(append='if not(i == null)\n'
                             '    status = 2',
                      assertion=ContextAssertion(key='status',
                                                 expected=0)),
@@ -1753,7 +1768,8 @@ async def test_resolve_all_objects(suite: TestSuite, logger):
         ]
     ),
     TestSuite(
-        preparation_lines='arr = []\narr append item: 42\nb = arr[0]',
+        preparation_lines='arr = [] as List[any]\narr.append(item: 42)\n'
+                          'b = arr[0]',
         cases=[
             TestCase(append='c = b as List[int]',
                      assertion=RuntimeExceptionAssertion(

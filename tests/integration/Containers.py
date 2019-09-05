@@ -9,39 +9,39 @@ def test_containers_format_command(story):
     """
     Ensures a simple resolve can be performed
     """
-    story_text = 'alpine echo msg:"foo"\n'
+    story_text = 'yaml parse data:"foo"\n'
     story.context = {}
     story.app.services = {
-        'alpine': {
+        'yaml': {
             ServiceConstants.config: {
                 'actions': {
-                    'echo': {
-                        'arguments': {'msg': {'type': 'string'}}
+                    'parse': {
+                        'arguments': {'data': {'type': 'string'}}
                     }
                 }
             }
         }
     }
 
-    story.tree = storyscript.Api.loads(story_text).result()['tree']
+    story.tree = storyscript.Api.loads(story_text).result().output()['tree']
     assert Containers.format_command(
-        story, story.line('1'), 'alpine', 'echo'
-    ) == ['echo', '{"msg":"foo"}']
+        story, story.line('1'), 'yaml', 'parse'
+    ) == ['parse', '{"data":"foo"}']
 
 
 def test_containers_format_command_no_arguments(story):
-    story_text = 'alpine echo\n'
+    story_text = 'uuid generate\n'
     story.context = {}
     story.app.services = {
-        'alpine': {
+        'uuid': {
             ServiceConstants.config: {
                 'actions': {
-                    'echo': {}
+                    'generate': {}
                 }
             }
         }
     }
-    story.tree = storyscript.Api.loads(story_text).result()['tree']
+    story.tree = storyscript.Api.loads(story_text).result().output()['tree']
     assert Containers.format_command(
-        story, story.line('1'), 'alpine', 'echo'
-    ) == ['echo']
+        story, story.line('1'), 'uuid', 'generate'
+    ) == ['generate']
