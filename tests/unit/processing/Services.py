@@ -334,7 +334,9 @@ async def test_services_execute_http(patch, story, async_mock, absolute_url,
 
     expected_kwargs = {
         'method': method,
-        'headers': {}
+        'headers': {},
+        'request_timeout': 60000 * 2,
+        'retry_timeout': 1
     }
 
     if location == 'header':

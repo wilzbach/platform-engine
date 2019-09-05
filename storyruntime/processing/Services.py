@@ -483,9 +483,15 @@ class Services:
                                    story=story, line=line)
 
         method = command_conf['http'].get('method', 'post')
+
+        # set the default request timeout
+        # to 2 minutes, and set the retry
+        # timeout to 1s
         kwargs = {
             'method': method.upper(),
-            'headers': header_params
+            'headers': header_params,
+            'request_timeout': 60000 * 2,
+            'retry_timeout': 1
         }
 
         content_type = command_conf['http'] \

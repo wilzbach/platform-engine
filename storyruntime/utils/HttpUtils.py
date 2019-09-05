@@ -17,6 +17,16 @@ class HttpUtils:
     @staticmethod
     async def fetch_with_retry(tries, logger, url, http_client, kwargs):
         kwargs['raise_error'] = False
+
+        # this makes it possible to override the default
+        # retry_timeout
+        retry_timeout = kwargs.get(
+            'retry_timeout', 0.5
+        )
+
+        if 'retry_timeout' in kwargs:
+            del kwargs['retry_timeout']
+
         attempts = 0
         last_exception = None
         while attempts < tries:
@@ -32,7 +42,7 @@ class HttpUtils:
                 logger.error(
                     f'Failed to call {url}; attempt={attempts}; err={str(e)}'
                 )
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(retry_timeout)
 
         assert last_exception is not None  # Impossible.
         raise HTTPError(500, message=f'Failed to call {url}!') \
