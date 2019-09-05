@@ -52,9 +52,10 @@ async def file_write(story, line, resolved_args):
 
     try:
         content = resolved_args['content']
-        if resolved_args.get('binary', False):
+        if resolved_args.get('binary', False) and not \
+                isinstance(content, bytes):
             content = bytes(
-                content,
+                str(content),
                 resolved_args.get('encoding', 'utf-8')
             )
         if isinstance(content, bytes):
