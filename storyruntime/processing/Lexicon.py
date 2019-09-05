@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import time
 
 from .Mutations import Mutations
 from .Services import Services
 from .. import Metrics
-from ..Exceptions import ArgumentNotFoundError, InvalidKeywordUsage, \
+from ..Exceptions import InvalidKeywordUsage, \
     StoryscriptError, StoryscriptRuntimeError
 from ..Story import Story
 from ..Types import StreamingService
 from ..constants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.LineSentinels import LineSentinels, ReturnSentinel
+from ..utils import Resolver
 
 
 class Lexicon:
@@ -101,6 +103,8 @@ class Lexicon:
                     return await Lexicon.break_(logger, story, line)
                 elif method == 'continue':
                     return await Lexicon.continue_(logger, story, line)
+                elif method == 'while':
+                    return await Lexicon.while_(logger, story, line)
                 elif method == 'try':
                     return await Lexicon.try_catch(logger, story, line)
                 elif method == 'throw':
@@ -148,9 +152,7 @@ class Lexicon:
                 and story.line_has_parent(parent_line['ln'], next_line):
             result = await Lexicon.execute_line(logger, story, next_line['ln'])
 
-            if result == LineSentinels.RETURN:
-                return None  # Block has completed execution.
-            elif LineSentinels.is_sentinel(result):
+            if LineSentinels.is_sentinel(result):
                 return result
 
             next_line = story.line(result)
@@ -227,7 +229,8 @@ class Lexicon:
     async def continue_(logger, story, line):
         # Ensure that we're in a foreach loop. If we are, return CONTINUE,
         # otherwise raise an exception.
-        if Lexicon._does_line_have_parent_method(story, line, 'for'):
+        if Lexicon._does_line_have_parent_method(story, line, 'for') or \
+                Lexicon._does_line_have_parent_method(story, line, 'while'):
             return LineSentinels.CONTINUE
         else:
             # There is no parent, this is an illegal usage of continue.
@@ -425,6 +428,36 @@ class Lexicon:
             del story.context[output]
 
         # Use story.next_block(line), because line["exit"] is unreliable...
+        return Lexicon.line_number_or_none(story.next_block(line))
+
+    @staticmethod
+    async def while_(logger, story, line):
+        call_count = 0
+        while Resolver.resolve(line['args'][0], story.context):
+            # note this is only a temporary solution,
+            # and we will address this in the future.
+            if call_count >= 100000:
+                raise StoryscriptRuntimeError(
+                    message='Call count limit reached within while loop. '
+                            'Only 100000 iterations allowed.',
+                    story=story, line=line
+                )
+
+            result = await Lexicon.execute_block(logger, story, line)
+
+            if call_count % 10 == 0:
+                # Let's sleep so we don't take up 100% of the CPU
+                await asyncio.sleep(0.0002)
+
+            call_count += 1
+
+            if result == LineSentinels.CONTINUE:
+                continue
+            elif result == LineSentinels.BREAK:
+                break
+            elif LineSentinels.is_sentinel(result):
+                return result
+
         return Lexicon.line_number_or_none(story.next_block(line))
 
     @staticmethod

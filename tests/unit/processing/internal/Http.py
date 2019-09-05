@@ -29,11 +29,12 @@ def line():
 @mark.parametrize('json_response', [True, False])
 @mark.parametrize('user_agent', [None, 'super_cool_agent'])
 @mark.parametrize('body', [True, False])
-@mark.parametrize('json_request', [True, False])
+@mark.parametrize('json_request', [True, False, False])
+@mark.parametrize('charset', ['utf-8', 'utf-8', 'utf-16'])
 @mark.asyncio
 async def test_service_http_fetch(patch, story, line, json_response,
                                   user_agent, body, json_request,
-                                  service_patch, async_mock, method):
+                                  service_patch, async_mock, method, charset):
     fetch_mock = MagicMock()
     patch.object(HttpUtils, 'fetch_with_retry',
                  new=async_mock(return_value=fetch_mock))
@@ -70,11 +71,19 @@ async def test_service_http_fetch(patch, story, line, json_response,
         resolved_args.pop('body')
 
     fetch_mock.code = method[1]
-    if json_response:
+    if charset == 'utf-16':
+        fetch_mock.body = '汉字'.encode('utf-16')
+        fetch_mock.headers = {
+            'Content-Type': 'text/html; charset=UTF-16'
+        }
+    elif json_response:
         fetch_mock.body = '{"hello": "world"}'.encode('utf-8')
-        fetch_mock.headers = {'Content-Type': 'application/json'}
+        fetch_mock.headers = {
+            'Content-Type': 'application/json; charset=UTF-8'
+        }
     else:
-        fetch_mock.body = 'hello world!'.encode('utf-8')
+        fetch_mock.headers = {'Content-Type': f'text/html; {charset}'}
+        fetch_mock.body = 'hello world!'.encode(charset)
 
     if round(method[1] / 100) != 2:
         with pytest.raises(StoryscriptError):
@@ -85,10 +94,12 @@ async def test_service_http_fetch(patch, story, line, json_response,
             3, story.logger, resolved_args['url'],
             AsyncHTTPClient(), client_kwargs
         )
-        if json_response:
+        if charset == 'utf-16':
+            assert result == '汉字'
+        elif json_response:
             assert result == {'hello': 'world'}
         else:
-            assert result == fetch_mock.body.decode('utf-8')
+            assert result == fetch_mock.body.decode(charset)
 
 
 def test_service_http_init():

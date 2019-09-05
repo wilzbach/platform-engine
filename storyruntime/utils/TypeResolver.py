@@ -4,6 +4,7 @@ import re
 import storyscript.compiler.semantics.types.Types as types
 
 from ..Exceptions import TypeAssertionRuntimeError, TypeValueRuntimeError
+from ..utils.TypeUtils import TypeUtils
 
 
 # Python 3.6: _sre.SRE_Pattern
@@ -83,6 +84,8 @@ class TypeResolver:
 
     @classmethod
     def check_type_cast(cls, type_exp, item):
+        item = TypeUtils.safe_type(item)
+
         if item is None:
             return None
         elif isinstance(type_exp, types.ListType):
@@ -106,6 +109,12 @@ class TypeResolver:
         elif isinstance(type_exp, types.FloatType):
             return float(item)
         elif isinstance(type_exp, types.StringType):
+            # bools are always lowercase in SS
+            if isinstance(item, bool):
+                return str(item).lower()
+            # bytes must be properly decoded
+            elif isinstance(item, bytes):
+                return item.decode()
             return str(item)
         elif isinstance(type_exp, types.AnyType):
             return item

@@ -2,6 +2,7 @@
 import math
 import re
 import sys
+import tempfile
 from unittest.mock import MagicMock
 
 from pytest import mark
@@ -70,6 +71,243 @@ class TestSuite:
         cases=[
             TestCase(assertion=ContextAssertion(key='a',
                                                 expected='{"a": "b"}'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = http fetch '
+                          'url: "https://stories.storyscriptapp.com/status"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='a',
+                expected='OK'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = http fetch '
+                          'url: "https://www.google.com/"\n'
+                          'passed = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='passed',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='a = http fetch '
+                          'url: "https://jsonplaceholder.'
+                          'typicode.com/todos/1"\n'
+                          'passed = true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='passed',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=False
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "/file"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'exists = file exists path: "/file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" '
+                          'content: "hello world"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'exists = file exists path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='exists',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'isDir = file isDir path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isDir',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path"\n'
+                          'files = file list\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=['/file', '/path']
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path/anotherdir"\n'
+                          'files = file list\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=['/file', '/path']
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path/anotherdir"\n'
+                          'files = file list recursive: true\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=['/file', '/path', '/path/anotherdir']
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'file mkdir path: "path/anotherdir"\n'
+                          'file write path: "/path/anotherdir/file" '
+                          'content: "file"\n'
+                          'files = file list recursive: true\n',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='files',
+                expected=[
+                    '/file',
+                    '/path',
+                    '/path/anotherdir',
+                    '/path/anotherdir/file'
+                ]
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'isDir = file isDir path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isDir',
+                expected=False
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'isFile = file isFile path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isFile',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "file"\n'
+                          'isFile = file isFile path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='isFile',
+                expected=False
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" content: "file"\n'
+                          'data = file read path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected='file'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file mkdir path: "/file/data"\n'
+                          'data = file isDir path: "file"',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected=True
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" binary: true '
+                          'content: "hello world"\n'
+                          'data = file read path: "file" binary: true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected=b'hello world'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" binary: true '
+                          'content: "hello world"\n'
+                          'data = file read path: "file" binary: false',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected='hello world'
+            ))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='file write path: "file" binary: false '
+                          'content: "hello world"\n'
+                          'data = file read path: "file" binary: true',
+        cases=[
+            TestCase(assertion=ContextAssertion(
+                key='data',
+                expected=b'hello world'
+            ))
         ]
     ),
     TestSuite(
@@ -194,6 +432,48 @@ class TestSuite:
             TestCase(append='a = "{hello}{world}"',
                      assertion=ContextAssertion(
                          key='a', expected='helloworld'))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='list = ["hello", "world"]\n'
+                          'dict = {"hello": "world"}\n'
+                          'file write path: "/tmp.txt" content: "hello"\n'
+                          'bytes = file read path: "/tmp.txt" binary: true',
+        cases=[
+            TestCase(prepend='a = "{true}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='true')
+                     ]),
+            TestCase(prepend='a = "{false}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='false')
+                     ]),
+            TestCase(prepend='a = "{1.2}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='1.2')
+                     ]),
+            TestCase(prepend='a = "{1}"',
+                     assertion=[
+                         ContextAssertion(key='a', expected='1')
+                     ]),
+            TestCase(append='a = "{list}"',
+                     assertion=[
+                         ContextAssertion(
+                             key='a',
+                             expected='[\'hello\', \'world\']')
+                     ]),
+            TestCase(append='a = "{dict}"',
+                     assertion=[
+                         ContextAssertion(
+                             key='a',
+                             expected='{\'hello\': \'world\'}')
+                     ]),
+            TestCase(append='a = "{bytes}"',
+                     assertion=[
+                         ContextAssertion(
+                             key='a',
+                             expected='hello')
+                     ])
         ]
     ),
     TestSuite(
@@ -360,6 +640,13 @@ class TestSuite:
             TestCase(append='parts = str.split(by: " ")',
                      assertion=ContextAssertion(
                          key='parts', expected=['hello', 'world!'])),
+
+            TestCase(append='parts = str.split(by: "")',
+                     assertion=ContextAssertion(
+                         key='parts', expected=[
+                             'h', 'e', 'l', 'l', 'o', ' ',
+                             'w', 'o', 'r', 'l', 'd', '!'
+                         ])),
 
             TestCase(append='a = str.uppercase()',
                      assertion=ContextAssertion(
@@ -846,14 +1133,75 @@ class TestSuite:
         ]
     ),
     TestSuite(
-        preparation_lines='throw "error"',
+        preparation_lines='i = 0',
         cases=[
             TestCase(
+                append='while i < 10\n'
+                       '   i = i + 1\n'
+                       'outside = true',
+                assertion=[ContextAssertion(key='outside', expected=True),
+                           ContextAssertion(key='i', expected=10)])
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 0\na = 0',
+        cases=[
+            TestCase(
+                append='while i < 100\n'
+                       '    a = 0\n'
+                       '    while a < 10\n'
+                       '      i = i + 1\n'
+                       '      a = a + 1\n'
+                       'outside = true',
+                assertion=[ContextAssertion(key='outside', expected=True),
+                           ContextAssertion(key='i', expected=100),
+                           ContextAssertion(key='a', expected=10)])
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 0',
+        cases=[
+            TestCase(
+                append='while i < 2000000\n'
+                       '   i = i + 1\n',
                 assertion=RuntimeExceptionAssertion(
-                    exception_type=StoryscriptError,
-                    message='error'
+                    exception_type=StoryscriptRuntimeError,
+                    context_assertion=ContextAssertion(
+                        key='i',
+                        expected=100000
+                    )
                 )
-            ),
+            )
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 0',
+        cases=[
+            TestCase(
+                append='while true\n'
+                       '   i = i + 1\n',
+                assertion=RuntimeExceptionAssertion(
+                    exception_type=StoryscriptRuntimeError,
+                    context_assertion=ContextAssertion(
+                        key='i',
+                        expected=100000
+                    )
+                )
+            )
+        ]
+    ),
+    TestSuite(
+        preparation_lines='function foo returns boolean\n'
+                          '   while true\n'
+                          '      return true\n',
+        cases=[
+            TestCase(
+                append='value = foo()',
+                assertion=ContextAssertion(
+                    key='value',
+                    expected=True
+                )
+            )
         ]
     ),
 ])
@@ -905,6 +1253,13 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
         raise errors[0]
 
     app = MagicMock()
+
+    tmp_dir = tempfile.TemporaryDirectory()
+
+    def get_tmp_dir():
+        return tmp_dir.name
+
+    app.get_tmp_dir = get_tmp_dir
 
     app.stories = {
         story_name: story.result().output()

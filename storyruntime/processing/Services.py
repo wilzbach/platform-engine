@@ -78,19 +78,13 @@ class HttpDataEncoder(json.JSONEncoder):
         """
         if isinstance(o, dict):
             for k, v in o.items():
-                if isinstance(v, FileFormField):
-                    o[k] = v._asdict()
-                elif isinstance(v, FormField):
-                    o[k] = v._asdict()
-                elif isinstance(v, StreamingService):
-                    o[k] = {
-                        'name': v.name,
-                        'command': v.command
-                    }
-                elif TypeUtils.isnamedtuple(v):
-                    o[k] = v._asdict()
+                # convert the type to a safe type first,
+                # and then safely convert it to a dictionary
+                s = TypeUtils.safe_type(v)
+                if TypeUtils.isnamedtuple(s):
+                    o[k] = s._asdict()
                 else:
-                    o[k] = self._convert_types(v)
+                    o[k] = self._convert_types(s)
         return o
 
 
@@ -154,6 +148,14 @@ class Services:
         if command.arguments:
             for arg in command.arguments:
                 actual = story.argument_by_name(line=line, argument_name=arg)
+                # when the required flag is set to False,
+                # we will not pass the argument into resolved args.
+                # This allows us to set default for arguments when
+                # they aren't set
+                required = command.arguments[arg].get('required', True)
+
+                if not required and actual is None:
+                    continue
                 resolved_args[arg] = actual
 
         return await command.handler(

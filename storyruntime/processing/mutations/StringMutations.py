@@ -31,6 +31,11 @@ class StringMutations:
     @classmethod
     def split(cls, mutation, value, story, line, operator):
         by = story.argument_by_name(mutation, 'by')
+
+        # signifies that we wish to split this string into a list
+        if by is None or len(by) is 0:
+            return list(value)
+
         return value.split(by)
 
     @classmethod

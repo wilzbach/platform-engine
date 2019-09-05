@@ -62,26 +62,6 @@ def test_new_frame_stack_does_not_unwind_on_exception(story):
         assert current_stack[0] == '10'
 
 
-def test_story_get_tmp_dir(story):
-    story.execution_id = 'ex'
-    assert story.get_tmp_dir() == '/tmp/story.ex'
-
-
-def test_story_create_tmp_dir(patch, story):
-    patch.object(pathlib, 'Path')
-    patch.object(story, 'get_tmp_dir')
-
-    # Yes, called twice to ensure the dir is created just once.
-    story.create_tmp_dir()
-    story.create_tmp_dir()
-
-    story.get_tmp_dir.assert_called_once()
-
-    pathlib.Path.assert_called_with(story.get_tmp_dir())
-    pathlib.Path().mkdir.assert_called_with(
-        parents=True, mode=0o700, exist_ok=True)
-
-
 @mark.parametrize('long', [True, False])
 def test_get_str_for_logging(long):
     def make_string(length):
