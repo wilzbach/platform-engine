@@ -2,6 +2,7 @@
 import asyncio
 import base64
 import json
+import socket
 import ssl
 import time
 import typing
@@ -451,7 +452,7 @@ class Kubernetes:
                 fut = asyncio.open_connection(host, port)
                 await asyncio.wait_for(fut, timeout=timeout_secs)
                 return True
-            except (TimeoutError, ConnectionRefusedError):
+            except (TimeoutError, socket.gaierror, ConnectionRefusedError):
                 await asyncio.sleep(timeout_secs)
 
         return False
