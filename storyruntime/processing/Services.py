@@ -686,7 +686,7 @@ class Services:
         # Since this is the Synapse, Synapse does multiple internal retries,
         # so we must set this to a really high value.
         kwargs = {
-            'method': subscribe_method.upper(),
+            'method': 'POST',
             'body': json.dumps(body, cls=HttpDataEncoder),
             'headers': {
                 'Content-Type': 'application/json; charset=utf-8'
