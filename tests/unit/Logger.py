@@ -61,7 +61,7 @@ def test_logger_events_container_end(logger):
 
 
 def test_logger_events_story_start(logger):
-    message = 'Start processing story "{}" with id {}'
+    message = 'Start processing story "{}"'
     assert logger.events[2] == ('story-start', 'info', message)
 
 
@@ -90,29 +90,24 @@ def test_logger_events_story_execute(logger):
     assert logger.events[7] == ('story-execution', 'debug', message)
 
 
-def test_logger_events_story_resolve(logger):
-    message = 'Resolved "{}" to "{}"'
-    assert logger.events[8] == ('story-resolve', 'debug', message)
-
-
 def test_logger_events_story_unless(logger):
     message = 'Processing line {} with "unless" method against context {}'
-    assert logger.events[9] == ('lexicon-unless', 'debug', message)
+    assert logger.events[8] == ('lexicon-unless', 'debug', message)
 
 
 def test_logger_events_service_init(logger):
     message = 'Starting Storyscript Cloud Runtime version {}'
-    assert logger.events[10] == ('service-init', 'info', message)
+    assert logger.events[9] == ('service-init', 'info', message)
 
 
 def test_logger_events_http_init(logger):
     message = 'HTTP server bound to port {}'
-    assert logger.events[11] == ('http-init', 'info', message)
+    assert logger.events[10] == ('http-init', 'info', message)
 
 
 def test_logger_events_http_run_story(logger):
     message = 'Received run request for story {} via HTTP'
-    assert logger.events[12] == ('http-request-run-story', 'debug', message)
+    assert logger.events[11] == ('http-request-run-story', 'debug', message)
 
 
 def test_logger_adapter(patch, magic, logger):

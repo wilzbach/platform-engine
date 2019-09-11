@@ -163,7 +163,7 @@ class Containers:
         If a container already exists, then it will be reused.
         """
         service = line[LineConstants.service]
-        story.logger.info(f'Starting container {service}')
+        story.logger.debug(f'Starting container {service}')
         container_name = cls.get_container_name(story.app, story.name,
                                                 line, service)
         await cls.create_and_start(story.app, line, service, container_name)
@@ -173,7 +173,7 @@ class Containers:
                               container_name=container_name,
                               hostname=hostname)
 
-        story.logger.info(f'Started container {container_name}')
+        story.logger.debug(f'Started container {container_name}')
         return ss
 
     @classmethod
