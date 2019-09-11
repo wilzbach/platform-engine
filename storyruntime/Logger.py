@@ -67,7 +67,7 @@ class Logger:
          'Start processing story "{}"'),
         ('story-save', 'info', 'Saved results of story "{}"'),
         ('story-end', 'info',
-         'Finished processing story "{}" with id {}'),
+         'Finished processing story "{}"'),
         ('container-volume', 'debug', 'Created volume {}'),
         ('lexicon-if', 'debug',
          'Processing line {} with "if" method against context {}'),

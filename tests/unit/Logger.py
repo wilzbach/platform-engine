@@ -71,7 +71,7 @@ def test_logger_events_story_save(logger):
 
 
 def test_logger_events_story_end(logger):
-    message = 'Finished processing story "{}" with id {}'
+    message = 'Finished processing story "{}"'
     assert logger.events[4] == ('story-end', 'info', message)
 
 
