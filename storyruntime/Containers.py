@@ -109,22 +109,6 @@ class Containers:
         await Kubernetes.create_namespace(app)
 
     @classmethod
-    def is_service_reusable(cls, app, line):
-        """
-        A service is reusable when it doesn't need to execute a lifecycle
-        command. If there's a run section in the command's config, then
-        cannot be reused. Reusable commands do not have a run in their config,
-        and are started via the global lifecycle config.
-        """
-        service = line[LineConstants.service]
-        command = line[LineConstants.command]
-
-        run = Dict.find(app.services,
-                        f'{service}.configuration.actions.{command}.run')
-
-        return run is None
-
-    @classmethod
     async def get_hostname(cls, story, line, service_alias):
         container = cls.get_container_name(story.app, story.name, line,
                                            service_alias)
@@ -224,10 +208,7 @@ class Containers:
     @classmethod
     def get_container_name(cls, app, story_name, line, name):
         """
-        If a container can be reused (where reuse is defined as a command
-        without a run section in it's config), it'll return a generic name
-        like twitter-hash(twitter), otherwise something derived:
-        twitter-hash(twitter, story name, line number).
+        Returns a generic name like twitter-hash(twitter).
 
         Why a hash? Story names can have DNS reserved characters in them,
         and hence to normalise it, we need to create a hash here.
@@ -236,19 +217,9 @@ class Containers:
         # It's 20 chars at max because 41 chars consists
         # of the hash and a hyphen. K8s names must be < 63 chars.
         simple_name = cls.get_simple_name(name)[:20]
-        if line is None or cls.is_service_reusable(app, line):
-            h = cls.hash_service_name(app, name)
-        else:
-            h = cls.hash_service_name_and_story_line(app, story_name,
-                                                     line, name)
+        h = cls.hash_service_name(app, name)
 
         return f'{simple_name}-{h}'
-
-    @classmethod
-    def hash_service_name_and_story_line(cls, app, story_name, line, name):
-        return hashlib.sha1(f'{name}-{app.version}-'
-                            f'{story_name}-{line["ln"]}'
-                            .encode('utf-8')).hexdigest()
 
     @classmethod
     def get_simple_name(cls, string):
@@ -275,9 +246,6 @@ class Containers:
     @classmethod
     def hash_volume_name(cls, app, line, service, volume_name):
         key = f'{volume_name}-{service}'
-
-        if line is not None and not cls.is_service_reusable(app, line):
-            key = f'{key}-{line["ln"]}'
 
         simple_name = cls.get_simple_name(volume_name)[:20]
         h = hashlib.sha1(key.encode('utf-8')).hexdigest()

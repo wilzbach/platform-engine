@@ -176,7 +176,6 @@ class Services:
         service = line[LineConstants.service]
         chain = cls.resolve_chain(story, line)
         command_conf = cls.get_command_conf(story, chain)
-        await cls.start_container(story, line)
         if command_conf.get('format') is not None:
             return await Containers.exec(story.logger, story, line,
                                          service, line['command'])
