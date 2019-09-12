@@ -497,14 +497,14 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
         'next': '11'
     }
 
-    patch.object(Services, 'start_container', new=async_mock())
+    patch.object(Services, 'get_container')
     patch.object(Lexicon, 'line_number_or_none')
     patch.many(story, ['end_line', 'line'])
     Metrics.container_start_seconds_total = Mock()
     ret = await Lexicon.execute(story.logger, story, line)
-    Services.start_container.mock.assert_called_with(story, line)
+    Services.get_container.assert_called_with(story, line)
     story.end_line.assert_called_with(
-        line['ln'], output=Services.start_container.mock.return_value,
+        line['ln'], output=Services.get_container.return_value,
         assign={'paths': line.get('output')})
     Metrics.container_start_seconds_total.labels().observe.assert_called_once()
     story.line.assert_called_with(line['next'])
