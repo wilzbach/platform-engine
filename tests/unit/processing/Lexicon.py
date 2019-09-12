@@ -665,22 +665,22 @@ async def test_lexicon_execute_block(patch, logger, story,
 @mark.parametrize('tree', [
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
             'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
+            'enter': '4', 'exit': '5', 'next': '5'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '3', 'next': '5'
+            'command': 'info', 'parent': '3'
         },
         '5': {
-            'method': 'finally', 'ln': '5', 'enter': '6', 'next': '6'
+            'method': 'finally', 'ln': '5', 'enter': '6'
         },
         '6': {
             'method': 'execute', 'ln': '6', 'output': [], 'service': 'log',
@@ -689,14 +689,14 @@ async def test_lexicon_execute_block(patch, logger, story,
     },
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
-            'method': 'finally', 'ln': '3', 'enter': '4', 'next': '4'
+            'method': 'finally', 'ln': '3', 'enter': '4'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [],
@@ -705,22 +705,22 @@ async def test_lexicon_execute_block(patch, logger, story,
     },
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
             'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
+            'enter': '4', 'exit': '5', 'next': '5'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'fail', 'parent': '3', 'next': '5'
+            'command': 'fail', 'parent': '3'
         },
         '5': {
-            'method': 'finally', 'ln': '5', 'enter': '6', 'next': '6'
+            'method': 'finally', 'ln': '5', 'enter': '6'
         },
         '6': {
             'method': 'execute', 'ln': '6', 'output': [], 'service': 'log',
@@ -729,19 +729,19 @@ async def test_lexicon_execute_block(patch, logger, story,
     },
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
             'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
+            'enter': '4', 'exit': '5', 'next': '5'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '3', 'next': '5'
+            'command': 'info', 'parent': '3'
         },
         '5': {
             'method': 'execute', 'ln': '5', 'output': [], 'service': 'log',
