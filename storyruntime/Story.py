@@ -27,7 +27,7 @@ class Story:
         self.entrypoint = app.stories[story_name]['entrypoint']
         self.results = {}
         self.environment = None
-        self.context = None
+        self._context = []
         self.containers = None
         self.repository = None
         self.version = None
@@ -47,6 +47,41 @@ class Story:
 
     def get_stack(self) -> []:
         return self._stack
+
+    @contextmanager
+    def new_context(self):
+        """
+        Creates a new context in the stack
+        """
+        self._context.append({})
+        yield
+        self._context.pop()
+
+    def global_context(self):
+        """
+        Returns the global context for the story
+        """
+        return self.app.story_global_context.setdefault(self.name, {})
+
+    def resolve_context(self, variable):
+        """
+        Used by set_variable to determine the context for a given variable
+        """
+        global_context = self.global_context()
+        for ctx in self._context + [global_context]:
+            if variable in ctx.keys():
+                return ctx
+        # variable not found in context
+        return self._context[-1] if len(self._context) > 0 else global_context
+
+    def get_context(self):
+        """
+        Returns the current context, i.e. all variables in scope
+        """
+        context = self.global_context().copy()
+        for ctx in self._context:
+            context.update(ctx)
+        return context
 
     def line(self, line_number):
         if line_number is None:
@@ -133,7 +168,7 @@ class Story:
         """
         Resolves line argument to their real value
         """
-        result = Resolver.resolve(arg, self.context)
+        result = Resolver.resolve(arg, self.get_context())
 
         self.logger.info(f'Resolved "{arg}" to '
                          f'"{self.get_str_for_logging(result)}" '
@@ -207,7 +242,11 @@ class Story:
                 'but no variable found!')
             return
 
-        Dict.set(self.context, assign['paths'], output)
+        variable = assign['paths'][0]
+        # Resolving context for assign['paths'][0] works
+        # because all subsequent paths have been resolved to their values
+        context = self.resolve_context(variable)
+        Dict.set(context, assign['paths'], output)
 
     def function_line_by_name(self, function_name):
         """
@@ -256,11 +295,10 @@ class Story:
 
     def set_context(self, context):
         if context is None:
-            context = {}
-        self.context = context
-        # Optimise this later.
-        self.context['app'] = self.app.app_context.copy()
+            return
+        self._context = [context]
 
     def prepare(self, context=None):
         self.set_context(context)
         self.environment = self.app.environment or {}
+        self.global_context().update({'app': self.app.app_context})

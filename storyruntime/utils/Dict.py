@@ -10,14 +10,13 @@ class Dict:
             _dict[keys[0]] = output
         else:
             _cur = _dict
-            last = keys[-1]
-            for key in keys[:-1]:
+            intermediate, last = keys[:-1], keys[-1]
+            for key in intermediate:
                 if isinstance(_cur, list):
-                    _cur = _cur[Resolver.resolve(key, _dict)]
+                    _cur = _cur[key]
                 else:
-                    _cur = _cur.setdefault(Resolver.resolve(key, _dict), {})
-
-            _cur[Resolver.resolve(last, _dict)] = output
+                    _cur = _cur.setdefault(key, {})
+            _cur[last] = output
 
     @staticmethod
     def find(root, path, default_value=None):

@@ -280,8 +280,14 @@ class Services:
             arg_val = story.argument_by_name(line, arg)
             body['data'][arg] = arg_val
 
-        req = story.context[ContextConstants.server_request]
-        io_loop = story.context[ContextConstants.server_io_loop]
+        req = story.resolve({
+            '$OBJECT': 'path',
+            'paths': [ContextConstants.server_request]
+        })
+        io_loop = story.resolve({
+            '$OBJECT': 'path',
+            'paths': [ContextConstants.server_io_loop]
+        })
 
         if req.is_finished():
             raise StoryscriptError(

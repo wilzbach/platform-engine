@@ -1264,18 +1264,16 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
     app.stories = {
         story_name: story.result().output()
     }
+    app.story_global_context = {}
     app.environment = {}
 
-    context = {}
-
     story = Story(app, story_name, logger)
-    story.prepare(context)
     try:
         await Stories.execute(logger, story)
     except StoryscriptError as story_error:
         try:
             assert isinstance(case.assertion, RuntimeExceptionAssertion)
-            case.assertion.verify(story_error, context)
+            case.assertion.verify(story_error, story.get_context())
         except BaseException as e:
             print(f'Failed to assert exception for the following story:'
                   f'\n\n{all_lines}', file=sys.stderr)
@@ -1294,7 +1292,7 @@ async def run_test_case_in_suite(suite: TestSuite, case: TestCase, logger):
 
     for a in assertions:
         try:
-            a.verify(context)
+            a.verify(story.get_context())
         except BaseException as e:
             print(f'Assertion failure ({type(a)}) for story: \n{all_lines}')
             raise e
@@ -1467,19 +1465,6 @@ async def test_arrays(suite, logger):
                                            expected={
                                                'a': 1, 'b': {1: -1}, 'c': 3
                                            })
-            )
-        ]
-    ),
-    TestSuite(
-        preparation_lines='l = [1, 2, 3]\n'
-                          'foreach l as el\n'
-                          '  c = [4, 5, 6]\n'
-                          '  a = [1, 2, 3]\n'
-                          '  c[a[0]] = 1\n',
-        cases=[
-            TestCase(
-                assertion=ContextAssertion(key='c',
-                                           expected=[4, 1, 6])
             )
         ]
     )
@@ -2000,4 +1985,62 @@ async def test_range_mutations(suite: TestSuite, logger):
 ])
 @mark.asyncio
 async def test_float_mutations(suite: TestSuite, logger):
+    await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    TestSuite(
+        preparation_lines='list = [1, 2, 3]\n'
+                          'total = 0\n'
+                          'foreach list as l\n'
+                          '    current = l\n'
+                          '    total += current',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='l', expected=None)),
+            TestCase(assertion=ContextAssertion(key='current', expected=None)),
+            TestCase(assertion=ContextAssertion(key='total', expected=6))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='i = 0\n'
+                          'total = 0\n'
+                          'while i <= 10\n'
+                          '    current = i\n'
+                          '    i = current + 1\n'
+                          '    total += current',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='current', expected=None)),
+            TestCase(assertion=ContextAssertion(key='total', expected=55)),
+            TestCase(assertion=ContextAssertion(key='i', expected=11))
+        ]
+    ),
+    TestSuite(
+        preparation_lines='name = "nobody"\n'
+                          'greeting = ""\n'
+
+                          'function sayHello name: string\n'
+                          '    prefix = "Hello"\n'
+                          '    greeting = "{prefix} {name}"\n'
+                          '    log info msg: greeting\n'
+
+                          'l = [1, 2, 3]\n'
+                          'total = 0\n'
+
+                          'foreach l as x\n'
+                          '    sayHello(name: "user")\n'
+                          '    total += x',
+        cases=[
+            TestCase(assertion=ContextAssertion(key='total',
+                                                expected=6)),
+            TestCase(assertion=ContextAssertion(key='prefix',
+                                                expected=None)),
+            TestCase(assertion=ContextAssertion(key='name',
+                                                expected='nobody')),
+            TestCase(assertion=ContextAssertion(key='greeting',
+                                                expected='Hello user'))
+        ]
+    )
+])
+@mark.asyncio
+async def test_stacked_contexts(suite: TestSuite, logger):
     await run_suite(suite, logger)

@@ -10,7 +10,6 @@ def test_containers_format_command(story):
     Ensures a simple resolve can be performed
     """
     story_text = 'yaml parse data:"foo"\n'
-    story.context = {}
     story.app.services = {
         'yaml': {
             ServiceConstants.config: {
@@ -31,7 +30,6 @@ def test_containers_format_command(story):
 
 def test_containers_format_command_no_arguments(story):
     story_text = 'uuid generate\n'
-    story.context = {}
     story.app.services = {
         'uuid': {
             ServiceConstants.config: {
