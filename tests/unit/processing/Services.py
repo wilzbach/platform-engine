@@ -481,6 +481,46 @@ def test_convert_bytes_to_string():
     assert Services._convert_bytes_to_string('hello') == 'hello'
 
 
+# http is a special case service
+@mark.parametrize('case', [
+    [True, 'service_name', 'externally_hosted_service_name'],
+    [False, 'http', 'http']
+])
+def test_services_get_container_for_special_containers(patch, story, case):
+    line = {
+        'ln': '10',
+        Line.service: case[1],
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
+
+    patch.object(Services, 'is_hosted_externally', return_value=case[0])
+    patch.object(Containers, 'get')
+    ret = Services.get_container(story, line)
+
+    assert isinstance(ret, StreamingService)
+
+    expected_name = case[2]
+
+    assert ret.name == expected_name
+
+    Containers.get.assert_not_called()
+
+
+def test_services_get_container_normal(patch, story):
+    line = {
+        'ln': '10',
+        Line.service: 'alpine',
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
+    patch.object(Containers, 'get')
+    patch.object(Services, 'is_hosted_externally', return_value=False)
+    ret = Services.get_container(story, line)
+    Containers.get.assert_called_with(story, line)
+    assert ret == Containers.get.return_value
+
+
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
     line = {
