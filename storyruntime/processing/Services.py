@@ -551,8 +551,7 @@ class Services:
             return HttpUtils.add_params_to_url(
                 external_url.format(**path_params), query_params)
         else:
-            hostname = await Containers.get_hostname(story, line,
-                                                     chain[0].name)
+            hostname = Containers.get_hostname(story, line, chain[0].name)
             port = command_conf['http'].get('port', 5000)
 
             path = HttpUtils.add_params_to_url(
@@ -600,7 +599,7 @@ class Services:
         return raw
 
     @classmethod
-    async def start_container(cls, story, line):
+    def _get_special_container(cls, story, line):
         chain = cls.resolve_chain(story, line)
         assert isinstance(chain[0], Service)
 
@@ -619,6 +618,22 @@ class Services:
                 command=line[LineConstants.command],
                 container_name='gateway',
                 hostname=story.app.config.ASYNCY_HTTP_GW_HOST)
+
+        return None
+
+    @classmethod
+    def get_container(cls, story, line) -> StreamingService:
+        sc = cls._get_special_container(story, line)
+        if sc is not None:
+            return sc
+
+        return Containers.get(story, line)
+
+    @classmethod
+    async def start_container(cls, story, line):
+        sc = cls._get_special_container(story, line)
+        if sc is not None:
+            return sc
 
         return await Containers.start(story, line)
 

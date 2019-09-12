@@ -109,7 +109,7 @@ class Containers:
         await Kubernetes.create_namespace(app)
 
     @classmethod
-    async def get_hostname(cls, story, line, service_alias):
+    def get_hostname(cls, story, line, service_alias):
         container = cls.get_container_name(story.app, story.name, line,
                                            service_alias)
         return Kubernetes.get_hostname(story.app, container)
@@ -140,6 +140,17 @@ class Containers:
                         f'{expose.http_path}')
 
     @classmethod
+    def get(cls, story, line) -> StreamingService:
+        service = line[LineConstants.service]
+        hostname = cls.get_hostname(story, line, service)
+        container_name = cls.get_container_name(story.app, story.name,
+                                                line, service)
+
+        return StreamingService(name=service, command=line['command'],
+                                container_name=container_name,
+                                hostname=hostname)
+
+    @classmethod
     async def start(cls, story, line):
         """
         Creates and starts a container as declared by line['service'].
@@ -151,11 +162,8 @@ class Containers:
         container_name = cls.get_container_name(story.app, story.name,
                                                 line, service)
         await cls.create_and_start(story.app, line, service, container_name)
-        hostname = await cls.get_hostname(story, line, service)
 
-        ss = StreamingService(name=service, command=line['command'],
-                              container_name=container_name,
-                              hostname=hostname)
+        ss = cls.get(story, line)
 
         story.logger.debug(f'Started container {container_name}')
         return ss

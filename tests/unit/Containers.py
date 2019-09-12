@@ -24,44 +24,12 @@ def line():
     return MagicMock()
 
 
-def test_is_service_reusable(story):
-    story.app.services = {
-        'alpine': {
-            'configuration': {
-                'actions': {
-                    'echo': {
-                        'run': 'foo'
-                    }
-                }
-            }
-        }
-    }
-
-    line = {
-        LineConstants.service: 'alpine',
-        LineConstants.command: 'echo'
-    }
-
-    assert Containers.is_service_reusable(story.app, line) is False
-    story.app.services['alpine']['configuration']['actions']['echo'][
-        'run'] = None
-
-    assert Containers.is_service_reusable(story.app, line) is True
-
-
-@mark.parametrize('reusable', [False, True])
 @mark.parametrize('name', ['alpine', 'a!lpine', 'ALPINE', '__aLpInE'])
-def test_get_container_name(patch, story, line, reusable, name):
-    patch.object(Containers, 'is_service_reusable', return_value=reusable)
+def test_get_container_name(patch, story, line, name):
     story.app.app_id = 'my_app'
     story.app.version = 'v2'
     ret = Containers.get_container_name(story.app, story.name, line, name)
-    if reusable:
-        assert ret == f'alpine-{Containers.hash_service_name(story.app, name)}'
-    else:
-        h = Containers.hash_service_name_and_story_line(story.app, story.name,
-                                                        line, name)
-        assert ret == f'alpine-{h}'
+    assert ret == f'alpine-{Containers.hash_service_name(story.app, name)}'
 
 
 def test_get_containerconfig_name(app):
@@ -87,7 +55,7 @@ async def test_exec():
 async def test_container_get_hostname(patch, story, line):
     story.app.app_id = 'my_app'
     patch.object(Containers, 'get_container_name', return_value='foo')
-    ret = await Containers.get_hostname(story, line, 'foo')
+    ret = Containers.get_hostname(story, line, 'foo')
     assert ret == 'foo.my_app.svc.cluster.local'
 
 
@@ -140,15 +108,11 @@ def test_format_command(logger, app, echo_service, echo_line):
     assert ['echo', '{"msg":"foo"}'] == cmd
 
 
-@mark.parametrize('reusable', [True, False])
-def test_hash_volume_name(patch, story, line, reusable):
+def test_hash_volume_name(patch, story, line):
     line['ln'] = '1'
-    patch.object(Containers, 'is_service_reusable', return_value=reusable)
     name = 'my_volume'
     service = 'foo'
     key = name + '-' + service
-    if not reusable:
-        key = f'{key}-{line["ln"]}'
 
     expected = f'myvolume-' + hashlib.sha1(key.encode('utf-8')).hexdigest()
     assert Containers.hash_volume_name(story.app, line, service, name) == \
@@ -187,18 +151,6 @@ async def test_expose_service(app, patch, async_mock):
     Kubernetes.create_ingress.mock.assert_called_with(ingress_name, app, e,
                                                       container_name,
                                                       hostname=hostname)
-
-
-def test_service_name_and_story_line(patch, story):
-    patch.object(hashlib, 'sha1')
-    story.name = 'story_name'
-    story.app.version = 'v29'
-    ret = Containers.hash_service_name_and_story_line(
-        story.app, story.name, {'ln': '1'}, 'alpine')
-
-    hashlib.sha1.assert_called_with(f'alpine-v29-{story.name}-1'
-                                    .encode('utf-8'))
-    assert ret == hashlib.sha1().hexdigest()
 
 
 def test_service_name(patch, story):
