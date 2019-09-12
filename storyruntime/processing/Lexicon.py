@@ -303,7 +303,11 @@ class Lexicon:
                 result = Lexicon._is_if_condition_true(story, line)
 
             if result:
-                return line['enter']
+                exec_res = await Lexicon.execute_block(logger, story, line)
+                if LineSentinels.is_sentinel(exec_res):
+                    return exec_res
+                return Lexicon.line_number_or_none(
+                    story.line(line.get('next')))
             else:
                 # Check for an elif block or an else block
                 # (step 2 of execution strategy).
