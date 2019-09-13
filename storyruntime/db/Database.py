@@ -200,8 +200,8 @@ class Database:
                 limits = {
                     'cpu': 1.25 * np.percentile(res['cpu_units'], 95),
                     'memory': min(
-                        209715000,  # 200Mi
-                        1.25 * np.percentile(res['memory_bytes'], 95)
+                        209715000.0,  # 200Mi
+                        max(5e6, 1.25 * np.percentile(res['memory_bytes'], 95))
                     )
                 }
             return limits

@@ -293,6 +293,9 @@ async def test_update_service_usage(config, pool, data):
 }, {
     'memory_bytes': [209715000] * 10,
     'cpu_units': [0] * 10
+}, {
+    'memory_bytes': [3e6] * 10,
+    'cpu_units': [0] * 10
 }, None
 ])
 @mark.asyncio
@@ -317,7 +320,7 @@ async def test_get_service_limits(patch, config, pool, async_mock, limits):
         assert ret == {
             'cpu': 1.25 * np.percentile(limits['cpu_units'], 95),
             'memory': min(
-                209715000,
-                1.25 * np.percentile(limits['memory_bytes'], 95)
+                209715000.0,
+                max(5e6, 1.25 * np.percentile(limits['memory_bytes'], 95))
             )
         }
