@@ -14,7 +14,7 @@ class Resolver:
         Parses a list of values objects. The list may contain other objects.
         """
         return [
-            Resolver.resolve(value, data)
+            cls.resolve(value, data)
             for value in items_list
         ]
 
@@ -25,7 +25,7 @@ class Resolver:
         is formatted against data, using the order in values.
         """
         if values:
-            values = Resolver.values(values, data)
+            values = cls.values(values, data)
             return string.format(*values)
         return string
 
@@ -47,7 +47,7 @@ class Resolver:
                 if object_type == 'range':
                     item = cls.range(path['range'], item, data)
                 else:
-                    resolved = Resolver.object(path, data)
+                    resolved = cls.object(path, data)
                     # Allow a namedtuple to use keys or index
                     # to retrieve data.
                     if TypeUtils.isnamedtuple(item) and \

@@ -443,7 +443,7 @@ class Lexicon:
     @staticmethod
     async def while_(logger, story, line):
         call_count = 0
-        while Resolver.resolve(line['args'][0], story.get_context()):
+        while story.resolve(line['args'][0]):
             # note this is only a temporary solution,
             # and we will address this in the future.
             if call_count >= 100000:
