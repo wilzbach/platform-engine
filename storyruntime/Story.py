@@ -168,7 +168,7 @@ class Story:
         """
         Resolves line argument to their real value
         """
-        result = Resolver.resolve(arg, self.get_context())
+        result = Resolver(self).resolve(arg)
 
         self.logger.info(f'Resolved "{arg}" to '
                          f'"{self.get_str_for_logging(result)}" '

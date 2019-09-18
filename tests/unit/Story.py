@@ -152,10 +152,8 @@ def test_story_function_line_by_name(patch, story):
 def test_story_resolve(patch, story, encode):
     patch.object(Resolver, 'resolve')
     patch.object(Story, 'encode')
-    patch.object(Story, 'get_context', return_value={})
     obj = {'$OBJECT': 'string', 'string': 'string'}
     story.resolve(obj, encode)
-    Story.get_context.assert_called_once()
     Resolver.resolve.assert_called_with(obj, {})
     assert Story.encode.call_count == encode
 
