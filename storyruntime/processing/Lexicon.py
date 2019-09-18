@@ -187,7 +187,7 @@ class Lexicon:
         This will setup a new context for the
         function block to be executed, and will return the output (if any).
         """
-        old_context = story._context.copy()
+        old_context = story._context
         function_line = story.function_line_by_name(line.get('function'))
         context = story.context_for_function_call(line, function_line)
         story.set_context(context)
