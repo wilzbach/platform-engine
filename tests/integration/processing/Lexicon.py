@@ -392,7 +392,7 @@ class TestSuite:
     TestSuite(
         preparation_lines='my_list = [1, 2, 3]',
         cases=[
-            TestCase(append='a = (my_list length) + 4',
+            TestCase(append='a = (my_list.length()) + 4',
                      assertion=ContextAssertion(key='a', expected=7)),
             TestCase(append='a = my_list[0]',
                      assertion=ContextAssertion(key='a', expected=1)),
@@ -530,11 +530,11 @@ class TestSuite:
                           'c = [] as List[int]\n',
         cases=[
             TestCase(append='foreach a as elem\n'
-                            '   b append item: elem\n'
+                            '   b.append(item: elem)\n'
                             '   foreach b as elem2\n'
                             '       if elem2 > 1\n'
                             '           break\n'
-                            '       c append item: elem2\n',
+                            '       c.append(item: elem2)\n',
                      assertion=[
                          ContextAssertion(key='b', expected=[1, 2, 3, 4, 5]),
                          ContextAssertion(key='c', expected=[1, 1, 1, 1, 1])
