@@ -49,7 +49,6 @@ class Lexicon:
             story.end_line(line['ln'], output=output,
                            assign={'paths': line.get('output')})
 
-            await Lexicon.execute_block(logger, story, line)
             return Lexicon.line_number_or_none(story.line(line.get('next')))
         else:
             output = await Services.execute(story, line)

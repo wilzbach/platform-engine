@@ -493,7 +493,6 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
     }
 
     patch.object(Services, 'start_container', new=async_mock())
-    patch.object(Lexicon, 'execute_block', new=async_mock())
     patch.object(Lexicon, 'line_number_or_none')
     patch.many(story, ['end_line', 'line'])
     Metrics.container_start_seconds_total = Mock()
@@ -505,8 +504,6 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
     Metrics.container_start_seconds_total.labels().observe.assert_called_once()
     story.line.assert_called_with(line['next'])
     Lexicon.line_number_or_none.assert_called_with(story.line())
-    Lexicon.execute_block.mock \
-        .assert_called_with(story.logger, story, line)
     assert ret == Lexicon.line_number_or_none()
 
 
