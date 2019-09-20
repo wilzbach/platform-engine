@@ -791,6 +791,7 @@ async def test_lexicon_try_catch(patch, magic, logger, tree):
     }],
     []
 ])
+@mark.asyncio
 async def test_lexicon_throw(logger, story, args):
     story.tree = {
         '1': {
