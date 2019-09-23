@@ -347,11 +347,12 @@ class Lexicon:
         the catch block or finally block.
         """
         next_line = story.next_block(line)
+        result_sentinel = None
 
         if next_line is None:
             return None
 
-        async def next_block_or_finally():
+        async def next_block_or_finally(result_sentinel):
             """
             This will execute if the next block is a finally block.
             It happens because the lexicon should always execute
@@ -366,30 +367,43 @@ class Lexicon:
 
             if last_block is not None and \
                     last_block['method'] == 'finally':
-                await Lexicon.execute_block(logger, story,
-                                            last_block)
+                exec_res = await Lexicon.execute_block(logger, story,
+                                                       last_block)
+                if LineSentinels.is_sentinel(exec_res):
+                    # Sentinels are banned inside finally block for now.
+                    # This is to avoid conflicts with sentinels being
+                    # returned from executing the try or the catch block.
+                    # To be reconsidered when a strong use case arises.
+                    raise InvalidKeywordUsage(story, line, exec_res.keyword)
                 last_block = story.next_block(last_block)
 
+            if result_sentinel is not None:
+                return result_sentinel
             return Lexicon.line_number_or_none(last_block)
 
         try:
-            await Lexicon.execute_block(logger, story, line)
+            exec_res = await Lexicon.execute_block(logger, story, line)
+            if LineSentinels.is_sentinel(exec_res):
+                result_sentinel = exec_res
         except StoryscriptError as e:
             if next_line['method'] == 'finally':
                 # skip right to the finally block
-                return await next_block_or_finally()
+                return await next_block_or_finally(result_sentinel)
 
             try:
-                await Lexicon.execute_block(logger, story, next_line)
+                exec_res = await Lexicon.execute_block(
+                    logger, story, next_line)
+                if LineSentinels.is_sentinel(exec_res):
+                    result_sentinel = exec_res
             except StoryscriptError as re:
                 # if the catch block contains a StoryscriptError,
                 # we must catch it, and run the finally
                 # block anyway, followed up by raising the
                 # exception
-                await next_block_or_finally()
+                await next_block_or_finally(result_sentinel)
                 raise re
 
-        return await next_block_or_finally()
+        return await next_block_or_finally(result_sentinel)
 
     @staticmethod
     def throw(logger, story, line):

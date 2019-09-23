@@ -2001,3 +2001,33 @@ async def test_range_mutations(suite: Suite, logger):
 @mark.asyncio
 async def test_float_mutations(suite: Suite, logger):
     await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    Suite(preparation_lines='function test a: int b: int returns string\n'
+                            '    try\n'
+                            '        if a % 2 == 0\n'
+                            '            return "even"\n'
+                            '        a = a / b\n'
+                            '    catch\n'
+                            '        return "error"\n'
+                            '    finally\n'
+                            '        if a % 2 == 0 and b == 0\n'
+                            '            return "evenoverride"\n'
+                            '    return "odd"\n',
+          cases=[
+              Case(append='a = test(a: 10 b: 1)',
+                   assertion=ContextAssertion(key='a', expected='even')),
+              Case(append='a = test(a: 10 b: 0)',
+                   assertion=RuntimeExceptionAssertion(
+                       exception_type=StoryscriptError,
+                       message='Invalid usage of keyword "return".'
+                   )),
+              Case(append='a = test(a: 11 b: 0)',
+                   assertion=ContextAssertion(key='a', expected='error'))
+          ]
+          )
+])
+@mark.asyncio
+async def test_try_catch(suite: Suite, logger):
+    await run_suite(suite, logger)
