@@ -19,7 +19,7 @@ def config():
 
 def test_config():
     assert Config.defaults['LOGGER_NAME'] == 'storyscript'
-    assert Config.defaults['LOGGER_LEVEL'] == 'debug'
+    assert Config.defaults['LOGGER_LEVEL'] == 'info'
     assert Config.defaults['ENGINE_HOST'] == socket.gethostname()
     assert Config.defaults['ASYNCY_SYNAPSE_HOST'] == 'synapse'
     assert Config.defaults['ASYNCY_SYNAPSE_PORT'] == 80

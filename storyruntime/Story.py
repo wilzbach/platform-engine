@@ -135,9 +135,9 @@ class Story:
         """
         result = Resolver.resolve(arg, self.context)
 
-        self.logger.info(f'Resolved "{arg}" to '
-                         f'"{self.get_str_for_logging(result)}" '
-                         f'with type {type(result)}')
+        self.logger.debug(f'Resolved "{arg}" to '
+                          f'"{self.get_str_for_logging(result)}" '
+                          f'with type {type(result)}')
 
         # encode and escape then format for shell
         if encode:

@@ -1162,23 +1162,7 @@ class Suite:
         preparation_lines='i = 0',
         cases=[
             Case(
-                append='while i < 2000000\n'
-                       '   i = i + 1\n',
-                assertion=RuntimeExceptionAssertion(
-                    exception_type=StoryscriptRuntimeError,
-                    context_assertion=ContextAssertion(
-                        key='i',
-                        expected=100000
-                    )
-                )
-            )
-        ]
-    ),
-    Suite(
-        preparation_lines='i = 0',
-        cases=[
-            Case(
-                append='while true\n'
+                append='while i < 5000 or true\n'
                        '   i = i + 1\n',
                 assertion=RuntimeExceptionAssertion(
                     exception_type=StoryscriptRuntimeError,
