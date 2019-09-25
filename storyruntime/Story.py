@@ -69,7 +69,7 @@ class Story:
         """
         global_context = self.global_context()
         for ctx in self._context + [global_context]:
-            if variable in ctx.keys():
+            if variable in ctx:
                 return ctx
         # variable not found in context
         return self._context[-1] if len(self._context) > 0 else global_context
