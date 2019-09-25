@@ -1188,6 +1188,27 @@ class Suite:
             )
         ]
     ),
+    Suite(
+        preparation_lines='a = 1s\n'
+                          'b = 10s',
+        cases=[
+            Case(
+                append='aString = a as string',
+                assertion=ContextAssertion(
+                    key='aString',
+                    expected='1000'
+                )
+            ),
+            Case(
+                append='sum = a + b\n'
+                       'sumString = sum as string',
+                assertion=ContextAssertion(
+                    key='sumString',
+                    expected='11000'
+                )
+            ),
+        ]
+    ),
 ])
 @mark.asyncio
 async def test_mutation(suite: Suite, logger):

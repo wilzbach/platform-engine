@@ -94,6 +94,8 @@ class Resolver:
             return item['dot']
         elif object_type == 'int':
             return item['int']
+        elif object_type == 'time':
+            return item['ms']
         elif object_type == 'boolean':
             return item['boolean']
         elif object_type == 'float':
