@@ -18,7 +18,8 @@ class ServiceOutputValidator:
         'float': float,
         'list': list,
         'number': [int, float],
-        'any': object
+        'any': object,
+        'none': object
     }
 
     python_types_to_omg_types: [type, str] = {
