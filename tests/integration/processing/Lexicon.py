@@ -35,7 +35,7 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
         cases=[
             Case(append='b = "{1} {a}"',
                  assertion=ContextAssertion(key='b',
-                                            expected='1 {\'a\': \'b\'}'))
+                                            expected='1 {"a": "b"}'))
         ]
     ),
     Suite(
@@ -441,13 +441,13 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
                  assertion=[
                      ContextAssertion(
                          key='a',
-                         expected='[\'hello\', \'world\']')
+                         expected='["hello", "world"]')
                  ]),
             Case(append='a = "{dict}"',
                  assertion=[
                      ContextAssertion(
                          key='a',
-                         expected='{\'hello\': \'world\'}')
+                         expected='{"hello": "world"}')
                  ]),
             Case(append='a = "{bytes}"',
                  assertion=[
@@ -1731,6 +1731,14 @@ async def test_resolve_all_objects(suite: Suite, logger, run_suite):
                  assertion=ContextAssertion(key='c', expected=10)),
             Case(append='c = "10.1" as float',
                  assertion=ContextAssertion(key='c', expected=10.1)),
+            Case(append='c = [0, 1, 2] as string',
+                 assertion=ContextAssertion(key='c', expected='[0, 1, 2]')),
+            Case(append='c = {"a": "b", "c": 10} as string',
+                 assertion=ContextAssertion(
+                     key='c', expected='{"a": "b", "c": 10}')),
+            Case(append='c = [{"a":"b"}, {}, {"c": 10}] as string',
+                 assertion=ContextAssertion(
+                     key='c', expected='[{"a": "b"}, {}, {"c": 10}]')),
         ]
     )
 ])
