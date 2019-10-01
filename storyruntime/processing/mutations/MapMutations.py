@@ -53,7 +53,7 @@ class MapMutations:
     def contains(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
         if key is not None:
-            return key in value
+            return key in value and value.get(key) is not None
         item = story.argument_by_name(mutation, 'value')
         for v in value.values():
             if v == item:

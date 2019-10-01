@@ -1209,6 +1209,20 @@ class Suite:
             ),
         ]
     ),
+    Suite(
+        preparation_lines='a = {1: null}',
+        cases=[
+            Case(
+                append='exists = false\n'
+                       'if a.contains(key: 1)\n'
+                       '    exists = true',
+                assertion=ContextAssertion(
+                    key='exists',
+                    expected=False
+                )
+            )
+        ]
+    ),
 ])
 @mark.asyncio
 async def test_mutation(suite: Suite, logger):
