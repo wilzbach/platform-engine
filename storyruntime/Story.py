@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import pathlib
 import time
 import uuid
@@ -250,7 +251,8 @@ class Story:
             if arg['$OBJECT'] == 'argument' or arg['$OBJECT'] == 'arg':
                 arg_name = arg['name']
                 actual = self.argument_by_name(line, arg_name)
-                Dict.set(new_context, [arg_name], actual)
+                copied = copy.deepcopy(actual)
+                Dict.set(new_context, [arg_name], copied)
 
         return new_context
 
