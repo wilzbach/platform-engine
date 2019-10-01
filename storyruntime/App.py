@@ -156,7 +156,7 @@ class App:
 
     async def start_services(self):
         tasks = []
-        reusable_services = set()
+        all_services = set()
         for story_name in self.stories.keys():
             story = Story(self, story_name, self.logger)
             line = story.first_line()
@@ -172,15 +172,14 @@ class App:
                     assert isinstance(chain[0], Service)
                     assert isinstance(chain[1], Command)
 
-                    if Containers.is_service_reusable(story.app, line):
-                        # Simple cache to not unnecessarily make more calls to
-                        # Kubernetes. It's okay if we don't have this check
-                        # though, since the underlying API handles this.
-                        service = chain[0].name
-                        if service in reusable_services:
-                            continue
+                    # Simple cache to not unnecessarily make more calls to
+                    # Kubernetes. It's okay if we don't have this check
+                    # though, since the underlying API handles this.
+                    service = chain[0].name
+                    if service in all_services:
+                        continue
 
-                        reusable_services.add(service)
+                    all_services.add(service)
 
                     if not Services.is_internal(chain[0].name, chain[1].name):
                         tasks.append(Services.start_container(story, line))

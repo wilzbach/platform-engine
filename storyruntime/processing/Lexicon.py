@@ -40,13 +40,14 @@ class Lexicon:
                 when client grep:'bar' as result
                     # do something with result
             """
-            output = await Services.start_container(story, line)
+            container: StreamingService = await Services.get_container(story,
+                                                                       line)
             Metrics.container_start_seconds_total.labels(
                 app_id=story.app.app_id,
                 story_name=story.name, service=service
             ).observe(time.time() - start)
 
-            story.end_line(line['ln'], output=output,
+            story.end_line(line['ln'], output=container,
                            assign={'paths': line.get('output')})
 
             return Lexicon.line_number_or_none(story.line(line.get('next')))
