@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import re
 
 import storyscript.compiler.semantics.types.Types as types
@@ -115,6 +116,10 @@ class TypeResolver:
             # bytes must be properly decoded
             elif isinstance(item, bytes):
                 return item.decode()
+            elif isinstance(item, dict):
+                return json.dumps(item)
+            elif isinstance(item, list):
+                return json.dumps(item)
             return str(item)
         elif isinstance(type_exp, types.AnyType):
             return item

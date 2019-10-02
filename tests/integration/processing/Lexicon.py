@@ -1,35 +1,16 @@
 # -*- coding: utf-8 -*-
 import math
 import re
-import sys
-import tempfile
-from unittest.mock import MagicMock
 
 from pytest import mark
 
 from storyruntime.Exceptions import StackOverflowException, StoryscriptError, \
     StoryscriptRuntimeError, TypeAssertionRuntimeError, TypeValueRuntimeError
-from storyruntime.Story import Story
-from storyruntime.processing import Stories
-from storyruntime.processing.internal import File, Http, Json, Log
 
-import storyscript
+from tests.integration.processing.Entities import Case, Suite
 
 from .Assertions import ContextAssertion, IsANumberAssertion, \
     ListItemAssertion, MapValueAssertion, RuntimeExceptionAssertion
-
-
-class Case:
-    def __init__(self, append=None, prepend=None, assertion=None):
-        self.append = append
-        self.prepend = prepend
-        self.assertion = assertion
-
-
-class Suite:
-    def __init__(self, cases, preparation_lines=''):
-        self.cases = cases
-        self.preparation_lines = preparation_lines
 
 
 @mark.parametrize('suite', [  # See pydoc below for how this runs.
@@ -54,7 +35,7 @@ class Suite:
         cases=[
             Case(append='b = "{1} {a}"',
                  assertion=ContextAssertion(key='b',
-                                            expected='1 {\'a\': \'b\'}'))
+                                            expected='1 {"a": "b"}'))
         ]
     ),
     Suite(
@@ -460,13 +441,13 @@ class Suite:
                  assertion=[
                      ContextAssertion(
                          key='a',
-                         expected='[\'hello\', \'world\']')
+                         expected='["hello", "world"]')
                  ]),
             Case(append='a = "{dict}"',
                  assertion=[
                      ContextAssertion(
                          key='a',
-                         expected='{\'hello\': \'world\'}')
+                         expected='{"hello": "world"}')
                  ]),
             Case(append='a = "{bytes}"',
                  assertion=[
@@ -530,11 +511,11 @@ class Suite:
                           'c = [] as List[int]\n',
         cases=[
             Case(append='foreach a as elem\n'
-                        '   b.append(item: elem)\n'
+                        '   b = b.append(item: elem)\n'
                         '   foreach b as elem2\n'
                         '       if elem2 > 1\n'
                         '           break\n'
-                        '       c.append(item: elem2)\n',
+                        '       c = c.append(item: elem2)\n',
                  assertion=[
                      ContextAssertion(key='b', expected=[1, 2, 3, 4, 5]),
                      ContextAssertion(key='c', expected=[1, 1, 1, 1, 1])
@@ -870,22 +851,22 @@ class Suite:
             Case(append='actual = arr.length()',
                  assertion=ContextAssertion(key='actual', expected=8)),
 
-            Case(append='arr.append(item: 6)',
+            Case(append='arr = arr.append(item: 6)',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5, 6])),
 
-            Case(append='arr.prepend(item: 1)',
+            Case(append='arr = arr.prepend(item: 1)',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 1, 2, 2, 3, 4, 4, 5, 5])),
 
             Case(append='r = arr.random()',
                  assertion=IsANumberAssertion(key='r')),
 
-            Case(append='arr.reverse()',
+            Case(append='arr = arr.reverse()',
                  assertion=ContextAssertion(
                      key='arr', expected=[5, 5, 4, 4, 3, 2, 2, 1])),
 
-            Case(append='arr.sort()',
+            Case(append='arr = arr.sort()',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
@@ -898,7 +879,7 @@ class Suite:
             Case(append='sum = arr.sum()',
                  assertion=ContextAssertion(key='sum', expected=26)),
 
-            Case(append='arr.unique()',
+            Case(append='arr = arr.unique()',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 2, 3, 4, 5])),
 
@@ -924,15 +905,15 @@ class Suite:
                  assertion=ContextAssertion(
                      key='a', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
-            Case(append='arr.replace(item: 3 by: 42)',
+            Case(append='arr = arr.replace(item: 3 by: 42)',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 2, 2, 42, 4, 4, 5, 5])),
 
-            Case(append='arr.replace(item: 6 by: 42)',
+            Case(append='arr = arr.replace(item: 6 by: 42)',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 2, 2, 3, 4, 4, 5, 5])),
 
-            Case(append='arr.replace(item: 2 by: 42)',
+            Case(append='arr = arr.replace(item: 2 by: 42)',
                  assertion=ContextAssertion(
                      key='arr', expected=[1, 42, 42, 3, 4, 4, 5, 5])),
         ]),
@@ -1225,7 +1206,7 @@ class Suite:
     ),
 ])
 @mark.asyncio
-async def test_mutation(suite: Suite, logger):
+async def test_mutation(suite: Suite, logger, run_suite):
     """
     How these test suites run:
     Each test suite contains a set of Storyscript lines. Each suite
@@ -1243,82 +1224,6 @@ async def test_mutation(suite: Suite, logger):
     await run_suite(suite, logger)
 
 
-async def run_suite(suite: Suite, logger):
-    for case in suite.cases:
-        await run_test_case_in_suite(suite, case, logger)
-
-
-async def run_test_case_in_suite(suite: Suite, case: Case, logger):
-    File.init()
-    Log.init()
-    Http.init()
-    Json.init()
-    story_name = 'dummy_name'
-
-    # Combine the preparation lines with those of the test case.
-    all_lines = suite.preparation_lines
-
-    if case.append is not None:
-        all_lines = all_lines + '\n' + case.append
-
-    if case.prepend is not None:
-        all_lines = case.prepend + '\n' + all_lines
-
-    story = storyscript.Api.loads(all_lines, features={'globals': True})
-    errors = story.errors()
-    if len(errors) > 0:
-        print(f'Failed to compile the following story:'
-              f'\n\n{all_lines}', file=sys.stderr)
-        raise errors[0]
-
-    app = MagicMock()
-
-    tmp_dir = tempfile.TemporaryDirectory()
-
-    def get_tmp_dir():
-        return tmp_dir.name
-
-    app.get_tmp_dir = get_tmp_dir
-
-    app.stories = {
-        story_name: story.result().output()
-    }
-    app.environment = {}
-
-    context = {}
-
-    story = Story(app, story_name, logger)
-    story.prepare(context)
-    try:
-        await Stories.execute(logger, story)
-    except StoryscriptError as story_error:
-        try:
-            assert isinstance(case.assertion, RuntimeExceptionAssertion)
-            case.assertion.verify(story_error, context)
-        except BaseException as e:
-            print(f'Failed to assert exception for the following story:'
-                  f'\n\n{all_lines}', file=sys.stderr)
-            print(story_error)
-            raise e
-        return
-    except BaseException as e:
-        print(f'Failed to run the following story:'
-              f'\n\n{all_lines}', file=sys.stderr)
-        raise e
-
-    if type(case.assertion) == list:
-        assertions = case.assertion
-    else:
-        assertions = [case.assertion]
-
-    for a in assertions:
-        try:
-            a.verify(context)
-        except BaseException as e:
-            print(f'Assertion failure ({type(a)}) for story: \n{all_lines}')
-            raise e
-
-
 @mark.parametrize('suite', [
     Suite(preparation_lines='a = [20, 12, 23]', cases=[
         Case(append='a[0] = 100', assertion=ContextAssertion(
@@ -1332,7 +1237,7 @@ async def run_test_case_in_suite(suite: Suite, case: Case, logger):
     ])
 ])
 @mark.asyncio
-async def test_arrays(suite, logger):
+async def test_arrays(suite, logger, run_suite):
     await run_suite(suite, logger)
 
 
@@ -1504,7 +1409,7 @@ async def test_arrays(suite, logger):
     )
 ])
 @mark.asyncio
-async def test_resolve_expressions(suite: Suite, logger):
+async def test_resolve_expressions(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
 
 
@@ -1745,7 +1650,7 @@ async def test_resolve_expressions(suite: Suite, logger):
     ),
 ])
 @mark.asyncio
-async def test_resolve_all_objects(suite: Suite, logger):
+async def test_resolve_all_objects(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
 
 
@@ -1787,7 +1692,8 @@ async def test_resolve_all_objects(suite: Suite, logger):
         ]
     ),
     Suite(
-        preparation_lines='arr = [] as List[any]\narr.append(item: 42)\n'
+        preparation_lines='arr = [] as List[any]\n'
+                          'arr = arr.append(item: 42)\n'
                           'b = arr[0]',
         cases=[
             Case(append='c = b as List[int]',
@@ -1825,11 +1731,19 @@ async def test_resolve_all_objects(suite: Suite, logger):
                  assertion=ContextAssertion(key='c', expected=10)),
             Case(append='c = "10.1" as float',
                  assertion=ContextAssertion(key='c', expected=10.1)),
+            Case(append='c = [0, 1, 2] as string',
+                 assertion=ContextAssertion(key='c', expected='[0, 1, 2]')),
+            Case(append='c = {"a": "b", "c": 10} as string',
+                 assertion=ContextAssertion(
+                     key='c', expected='{"a": "b", "c": 10}')),
+            Case(append='c = [{"a":"b"}, {}, {"c": 10}] as string',
+                 assertion=ContextAssertion(
+                     key='c', expected='[{"a": "b"}, {}, {"c": 10}]')),
         ]
     )
 ])
 @mark.asyncio
-async def test_type_casts(suite: Suite, logger):
+async def test_type_casts(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
 
 
@@ -1878,7 +1792,7 @@ async def test_type_casts(suite: Suite, logger):
     )
 ])
 @mark.asyncio
-async def test_range_mutations(suite: Suite, logger):
+async def test_range_mutations(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
 
 
@@ -2018,7 +1932,7 @@ async def test_range_mutations(suite: Suite, logger):
     )
 ])
 @mark.asyncio
-async def test_float_mutations(suite: Suite, logger):
+async def test_float_mutations(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
 
 
@@ -2048,5 +1962,5 @@ async def test_float_mutations(suite: Suite, logger):
           )
 ])
 @mark.asyncio
-async def test_try_catch(suite: Suite, logger):
+async def test_try_catch(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
