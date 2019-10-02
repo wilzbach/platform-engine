@@ -26,7 +26,8 @@ def test_no_trace_available():
 
 
 @mark.parametrize('with_root', [True, False])
-def test_exception_trace(magic, patch, story, with_root):
+@mark.parametrize('long_message', [True, False])
+def test_exception_trace(magic, patch, story, with_root, long_message):
     root_message = 'test'
     root = BaseException(root_message)
 
@@ -41,8 +42,15 @@ def test_exception_trace(magic, patch, story, with_root):
 
     story.name = 'story_name'
 
-    ex = StoryscriptError(message='unknown error',
-                          story=story, line=magic(), root=root)
+    if long_message:
+        message = f'long error {"x" * 250}'
+    else:
+        message = 'unknown error'
+
+    ex = StoryscriptError(
+        message=message, story=story,
+        line=magic(), root=root
+    )
 
     # We cache the result of str(ex) because if we don't, __str__ will run
     # again, and will then throw a StopIteration exception since
@@ -50,8 +58,14 @@ def test_exception_trace(magic, patch, story, with_root):
     str_version = str(ex)
     if root_message:
         root_message = f': {root_message}'
+
+    if long_message:
+        expected_message = f'{message[:125]}...'
+    else:
+        expected_message = message
+
     assert str_version == f"""An exception has occurred:
-unknown error{root_message}
+{expected_message}{root_message}
     at line 1: line_1 (in story_name)
     at line 2: method=hello (auto generated frame) (in story_name)
     at line 3: line_3 (in story_name)"""
