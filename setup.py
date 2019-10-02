@@ -23,10 +23,10 @@ setup(
     version='0.2.0',
     packages=find_packages(),
     tests_require=[
-        'pytest==4.2.0',
-        'pytest-cov==2.6.1',
-        'pytest-mock==1.10.1',
-        'pytest-asyncio==0.10.0'
+        'pytest==3.6.3',
+        'pytest-cov==2.5.1',
+        'pytest-mock==1.10.0',
+        'pytest-asyncio==0.8.0'
     ],
     setup_requires=['pytest-runner'],
     python_requires='>=3.7',
