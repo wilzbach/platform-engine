@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from pytest import fixture
 
-from storyruntime.utils.Resolver import Resolver
 from storyruntime.Story import Story
+from storyruntime.utils.Resolver import Resolver
 
 
 @fixture
