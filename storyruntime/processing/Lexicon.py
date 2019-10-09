@@ -40,8 +40,7 @@ class Lexicon:
                 when client grep:'bar' as result
                     # do something with result
             """
-            container: StreamingService = await Services.get_container(story,
-                                                                       line)
+            container: StreamingService = Services.get_container(story, line)
             Metrics.container_start_seconds_total.labels(
                 app_id=story.app.app_id,
                 story_name=story.name, service=service
