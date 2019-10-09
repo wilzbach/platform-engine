@@ -7,6 +7,7 @@ from pytest import approx, mark
 
 from storyruntime.Kubernetes import Kubernetes
 from storyruntime.Service import Service
+from storyruntime.Apps import Apps
 from storyruntime.ServiceUsage import ServiceUsage
 from storyruntime.db.Database import Database
 
@@ -77,6 +78,7 @@ async def test_start_metrics_recorder(patch, async_mock, app, metrics):
 
     # mocking
     Service.shutting_down = False
+    Apps.apps = {'active_app_uuid': app, 'deleted_app_uuid': None}
 
     def side_effect(*args, **kwargs):
         Service.shutting_down = True
@@ -111,6 +113,10 @@ async def test_start_metrics_recorder(patch, async_mock, app, metrics):
     await ServiceUsage.start_metrics_recorder(app.config, app.logger)
 
     # assertion
+    assert ServiceUsage.get_service_tag_uuids.mock.mock_calls == [
+        mock.call(app.config, [app])
+    ]
+
     assert ServiceUsage.get_metrics.mock.mock_calls == [
         mock.call(metrics['service_tag_uuid'], app.config, app.logger)
     ]
