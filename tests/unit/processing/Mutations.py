@@ -17,12 +17,15 @@ def test_mutations_for_case_insensitive_dict(story, patch):
         'mutation': 'contains'
     }
 
-    patch.object(story, 'argument_by_name', return_value='a')
-
     value = CaseInsensitiveDict(data={'a': 0})
 
+    patch.object(story, 'argument_by_name', return_value='a')
     ret = Mutations.mutate(mutation, value, story, None)
     assert ret is True
+
+    patch.object(story, 'argument_by_name', return_value='b')
+    ret = Mutations.mutate(mutation, value, story, None)
+    assert ret is False
 
 
 def test_mutations_unexpected_type(story):
