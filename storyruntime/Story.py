@@ -68,7 +68,7 @@ class Story:
         Used by set_variable to determine the context for a given variable
         """
         global_context = self.global_context()
-        for ctx in self._context + [global_context]:
+        for ctx in chain(reversed(self._context), (global_context,)):
             if variable in ctx:
                 return ctx
         # variable not found in context
