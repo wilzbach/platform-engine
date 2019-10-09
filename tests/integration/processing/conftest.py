@@ -59,18 +59,16 @@ async def run_test_case_in_suite(suite: Suite, case: Case, logger):
     app.stories = {
         story_name: story.result().output()
     }
+    app.story_global_context = {}
     app.environment = {}
 
-    context = {}
-
     story = Story(app, story_name, logger)
-    story.prepare(context)
     try:
         await Stories.execute(logger, story)
     except StoryscriptError as story_error:
         try:
             assert isinstance(case.assertion, RuntimeExceptionAssertion)
-            case.assertion.verify(story_error, context)
+            case.assertion.verify(story_error, story.get_context())
         except BaseException as e:
             print(f'Failed to assert exception for the following story:'
                   f'\n\n{all_lines}', file=sys.stderr)
@@ -89,7 +87,7 @@ async def run_test_case_in_suite(suite: Suite, case: Case, logger):
 
     for a in assertions:
         try:
-            a.verify(context)
+            a.verify(story.get_context())
         except BaseException as e:
             print(f'Assertion failure ({type(a)}) for story: \n{all_lines}')
             raise e
