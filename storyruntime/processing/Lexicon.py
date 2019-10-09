@@ -108,7 +108,8 @@ class Lexicon:
                     with story.new_context():
                         return await Lexicon.while_(logger, story, line)
                 elif method == 'try':
-                    return await Lexicon.try_catch(logger, story, line)
+                    with story.new_context():
+                        return await Lexicon.try_catch(logger, story, line)
                 elif method == 'throw':
                     return await Lexicon.throw(logger, story, line)
                 else:
