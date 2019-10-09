@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import copy
+from collections import MutableMapping
+
 from .mutations.FloatMutations import FloatMutations
 from .mutations.IntegerMutations import IntegerMutations
 from .mutations.ListMutations import ListMutations
@@ -18,7 +21,13 @@ class Mutations:
                 handler = getattr(StringMutations, operator)
             elif isinstance(value, list):
                 handler = getattr(ListMutations, operator)
-            elif isinstance(value, dict):
+                # See https://github.com/storyscript/runtime/issues/324
+                # for the reason behind the deep copy.
+                value = copy.deepcopy(value)
+            elif isinstance(value, dict) or isinstance(value, MutableMapping):
+                # See https://github.com/storyscript/runtime/issues/324
+                # for the reason behind the deep copy.
+                value = copy.deepcopy(value)
                 handler = getattr(MapMutations, operator)
             elif isinstance(value, int):
                 handler = getattr(IntegerMutations, operator)

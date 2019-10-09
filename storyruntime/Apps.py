@@ -101,8 +101,8 @@ class Apps:
             if services_count > MAX_SERVICES_BETA:
                 raise TooManyServices(services_count, MAX_SERVICES_BETA)
 
-            services = await cls.get_services(
-                stories.get('yaml', {}), logger, stories)
+            services = await cls.get_services(config, logger,
+                                              stories.get('yaml', {}), stories)
 
             volume_count = 0
             for service in services.keys():
@@ -200,7 +200,7 @@ class Apps:
         return cls.apps[app_id]
 
     @classmethod
-    async def get_services(cls, asyncy_yaml, glogger: Logger,
+    async def get_services(cls, config: Config, glogger: Logger, asyncy_yaml,
                            stories: dict):
         services = {}
         all_services = stories.get('services', [])
@@ -216,10 +216,10 @@ class Apps:
 
             if '/' in service:
                 uuid, pull_url, omg = await GraphQLAPI.get_by_slug(
-                    glogger, service, tag)
+                    config, glogger, service, tag)
             else:
                 uuid, pull_url, omg = await GraphQLAPI.get_by_alias(
-                    glogger, service, tag)
+                    config, glogger, service, tag)
 
             if conf.get('image') is not None:
                 image = f'{conf.get("image")}:{tag}'

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import time
 import uuid
 from contextlib import contextmanager
@@ -173,9 +174,9 @@ class Story:
         """
         result = Resolver(self).resolve(arg)
 
-        self.logger.info(f'Resolved "{arg}" to '
-                         f'"{self.get_str_for_logging(result)}" '
-                         f'with type {type(result)}')
+        self.logger.debug(f'Resolved "{arg}" to '
+                          f'"{self.get_str_for_logging(result)}" '
+                          f'with type {type(result)}')
 
         # encode and escape then format for shell
         if encode:
@@ -292,7 +293,8 @@ class Story:
             if arg['$OBJECT'] == 'argument' or arg['$OBJECT'] == 'arg':
                 arg_name = arg['name']
                 actual = self.argument_by_name(line, arg_name)
-                Dict.set(new_context, [arg_name], actual)
+                copied = copy.deepcopy(actual)
+                Dict.set(new_context, [arg_name], copied)
 
         return new_context
 

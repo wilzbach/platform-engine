@@ -23,10 +23,10 @@ setup(
     version='0.2.0',
     packages=find_packages(),
     tests_require=[
-        'pytest==4.2.0',
-        'pytest-cov==2.6.1',
-        'pytest-mock==1.10.1',
-        'pytest-asyncio==0.10.0'
+        'pytest==3.6.3',
+        'pytest-cov==2.5.1',
+        'pytest-mock==1.10.0',
+        'pytest-asyncio==0.8.0'
     ],
     setup_requires=['pytest-runner'],
     python_requires='>=3.7',
@@ -36,7 +36,7 @@ setup(
         'click==7.0',
         'frustum==0.0.6',
         'sentry-sdk==0.10.2',
-        'storyscript==0.24.0',
+        'storyscript==0.24.2',
         'ujson==1.35',
         'certifi>=2018.8.24',
         'asyncpg==0.18.3',

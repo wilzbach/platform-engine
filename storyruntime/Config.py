@@ -12,11 +12,12 @@ class Config:
         'ASYNCY_SYNAPSE_HOST': 'synapse',
         'ASYNCY_SYNAPSE_PORT': 80,
         'LOGGER_NAME': 'storyscript',
-        'LOGGER_LEVEL': 'debug',
+        'LOGGER_LEVEL': 'info',
         'INGRESS_GLOBAL_STATIC_IP_NAME': 'storyscript-and-storyscriptapp',
         'APP_DOMAIN': 'storyscriptapp.com',
         'POSTGRES_URI': 'postgres://postgres/asyncy?'
                         'search_path=app_public,app_hidden,app_private,public',
+        'GRAPHQL_ENDPOINT': 'https://api.storyscript.io/graphql',
         'ENGINE_HOST': socket.gethostname(),
         'CLUSTER_CERT': '',
         'CLUSTER_AUTH_TOKEN': '',

@@ -19,12 +19,14 @@ class ListMutations:
     @classmethod
     def append(cls, mutation, value, story, line, operator):
         item = story.argument_by_name(mutation, 'item')
-        return value.append(item)
+        value.append(item)
+        return value
 
     @classmethod
     def prepend(cls, mutation, value, story, line, operator):
         item = story.argument_by_name(mutation, 'item')
-        return value.insert(0, item)
+        value.insert(0, item)
+        return value
 
     @classmethod
     def random(cls, mutation, value, story, line, operator):
@@ -33,10 +35,12 @@ class ListMutations:
     @classmethod
     def reverse(cls, mutation, value, story, line, operator):
         value.reverse()
+        return value
 
     @classmethod
     def sort(cls, mutation, value, story, line, operator):
         value.sort()
+        return value
 
     @classmethod
     def min(cls, mutation, value, story, line, operator):
@@ -65,6 +69,7 @@ class ListMutations:
             else:
                 tmp_set.add(value[i])
                 i += 1
+        return value
 
     @classmethod
     def remove(cls, mutation, value, story, line, operator):
@@ -85,3 +90,5 @@ class ListMutations:
         for i, el in enumerate(value):
             if el == item:
                 value[i] = by
+
+        return value

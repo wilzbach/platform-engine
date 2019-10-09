@@ -277,8 +277,7 @@ async def test_services_execute_http(patch, story, async_mock, absolute_url,
         return  # Invalid case.
 
     chain = deque([Service(name='service'), Command(name='cmd')])
-    patch.object(Containers, 'get_hostname',
-                 new=async_mock(return_value='container_host'))
+    patch.object(Containers, 'get_hostname', return_value='container_host')
 
     patch.object(uuid, 'uuid4')
 
@@ -481,6 +480,46 @@ def test_convert_bytes_to_string():
     assert Services._convert_bytes_to_string('hello') == 'hello'
 
 
+# http is a special case service
+@mark.parametrize('case', [
+    [True, 'service_name', 'externally_hosted_service_name'],
+    [False, 'http', 'http']
+])
+def test_services_get_container_for_special_containers(patch, story, case):
+    line = {
+        'ln': '10',
+        Line.service: case[1],
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
+
+    patch.object(Services, 'is_hosted_externally', return_value=case[0])
+    patch.object(Containers, 'get')
+    ret = Services.get_container(story, line)
+
+    assert isinstance(ret, StreamingService)
+
+    expected_name = case[2]
+
+    assert ret.name == expected_name
+
+    Containers.get.assert_not_called()
+
+
+def test_services_get_container_normal(patch, story):
+    line = {
+        'ln': '10',
+        Line.service: 'alpine',
+        Line.method: 'execute',
+        Line.command: 'echo'
+    }
+    patch.object(Containers, 'get')
+    patch.object(Services, 'is_hosted_externally', return_value=False)
+    ret = Services.get_container(story, line)
+    Containers.get.assert_called_with(story, line)
+    assert ret == Containers.get.return_value
+
+
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
     line = {
@@ -547,13 +586,11 @@ async def test_services_execute_external_format(patch, story, async_mock):
     }
 
     patch.object(Containers, 'exec', new=async_mock())
-    patch.object(Services, 'start_container', new=async_mock())
 
     ret = await Services.execute_external(story, line)
     Containers.exec.mock.assert_called_with(
         story.logger, story, line, 'cups', 'print')
     assert ret == await Containers.exec()
-    Services.start_container.mock.assert_called()
 
 
 @mark.asyncio
@@ -577,7 +614,6 @@ async def test_services_execute_external_http(patch, story, async_mock):
     }
 
     patch.object(Services, 'execute_http', new=async_mock())
-    patch.object(Services, 'start_container', new=async_mock())
 
     ret = await Services.execute_external(story, line)
     Services.execute_http.mock.assert_called_with(
@@ -585,7 +621,6 @@ async def test_services_execute_external_http(patch, story, async_mock):
         deque([Service(name='cups'), Command(name='print')]),
         {'http': {}})
     assert ret == await Services.execute_http()
-    Services.start_container.mock.assert_called()
 
 
 class Writer:

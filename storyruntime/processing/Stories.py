@@ -46,7 +46,7 @@ class Stories:
                   function_name=None):
         start = time.time()
         try:
-            logger.log('story-start', story_name, story_id)
+            logger.log('story-start', story_name)
 
             story = cls.story(app, logger, story_name)
             story.prepare(context)

@@ -29,9 +29,8 @@ class MapMutations:
     @classmethod
     def remove(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
-        new_map = value.copy()
-        new_map.pop(key, None)
-        return new_map
+        value.pop(key, None)
+        return value
 
     @classmethod
     def flatten(cls, mutation, value, story, line, operator):
@@ -53,7 +52,7 @@ class MapMutations:
     def contains(cls, mutation, value, story, line, operator):
         key = story.argument_by_name(mutation, 'key')
         if key is not None:
-            return key in value
+            return key in value and value.get(key) is not None
         item = story.argument_by_name(mutation, 'value')
         for v in value.values():
             if v == item:

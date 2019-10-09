@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+MAX_LOG_MESSAGE_LENGTH = 125
 
 
 class StoryscriptError(Exception):
@@ -15,7 +16,13 @@ class StoryscriptError(Exception):
             return super().__str__()
 
         stack = self.story.get_stack()
-        trace = f'An exception has occurred:\n{self.message}'
+
+        exc_message = self.message
+
+        if len(self.message) > MAX_LOG_MESSAGE_LENGTH:
+            exc_message = f'{self.message[:MAX_LOG_MESSAGE_LENGTH]}...'
+
+        trace = f'An exception has occurred:\n{exc_message}'
 
         if self.root is not None:
             trace += f': {str(self.root)}'
