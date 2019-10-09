@@ -537,7 +537,7 @@ def test_make_logger_for_app(patch, config):
 
 
 @mark.asyncio
-async def test_get_services(patch, logger, async_mock):
+async def test_get_services(patch, config, logger, async_mock):
     patch.object(GraphQLAPI, 'get_by_slug',
                  new=async_mock(return_value=('slug_uuid', 'slug_pull',
                                               {'slug': True})))
@@ -559,7 +559,7 @@ async def test_get_services(patch, logger, async_mock):
     stories = {
         'services': ['microservice/slack', 'http', 'lastfm']
     }
-    ret = await Apps.get_services(asyncy_yaml, logger, stories)
+    ret = await Apps.get_services(config, logger, asyncy_yaml, stories)
     assert ret == {
         'microservice/slack': {
             'tag': 'v1',

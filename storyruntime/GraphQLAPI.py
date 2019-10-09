@@ -13,7 +13,7 @@ from .utils.HttpUtils import HttpUtils
 class GraphQLAPI:
 
     @classmethod
-    async def get_by_alias(cls, logger, alias, tag):
+    async def get_by_alias(cls, config, logger, alias, tag):
         query = """
         query GetAlias($alias: Alias! $tag: String!){
           serviceByAlias(alias: $alias){
@@ -42,7 +42,8 @@ class GraphQLAPI:
             'ca_certs': certifi.where()
         }
 
-        res = await cls._fetch_res_with_infinite_retry(logger, client, kwargs)
+        res = await cls._fetch_res_with_infinite_retry(
+            config, logger, client, kwargs)
 
         graph_result = json.loads(res.body)
 
@@ -57,7 +58,7 @@ class GraphQLAPI:
         )
 
     @classmethod
-    async def get_by_slug(cls, logger, image, tag):
+    async def get_by_slug(cls, config, logger, image, tag):
         owner, service = image.split('/')
         query = """
         query GetAlias($owner: Username!, $service: Alias!, $tag: String!) {
@@ -95,7 +96,8 @@ class GraphQLAPI:
             'ca_certs': certifi.where()
         }
 
-        res = await cls._fetch_res_with_infinite_retry(logger, client, kwargs)
+        res = await cls._fetch_res_with_infinite_retry(
+            config, logger, client, kwargs)
 
         graph_result = json.loads(res.body)
         if len(graph_result['data']['allOwners']['nodes']) == 0 \
@@ -114,13 +116,13 @@ class GraphQLAPI:
         )
 
     @classmethod
-    async def _fetch_res_with_infinite_retry(cls, logger,
+    async def _fetch_res_with_infinite_retry(cls, config, logger,
                                              client, kwargs):
         res = None
         while res is None:
             try:
                 res = await HttpUtils.fetch_with_retry(
-                    10, logger, 'https://api.asyncy.com/graphql', client,
+                    10, logger, config.GRAPHQL_ENDPOINT, client,
                     kwargs)
             except HTTPError as e:
                 await asyncio.sleep(0.5)
