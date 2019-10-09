@@ -2033,5 +2033,5 @@ async def test_try_catch(suite: Suite, logger, run_suite):
     )
 ])
 @mark.asyncio
-async def test_stacked_contexts(suite: Suite, logger):
+async def test_stacked_contexts(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
