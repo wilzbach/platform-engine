@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import pathlib
 import time
 import uuid
 from contextlib import contextmanager
+from itertools import chain
 from json import dumps
 
 from .Exceptions import StackOverflowException
@@ -78,9 +78,12 @@ class Story:
         """
         Returns the current context, i.e. all variables in scope
         """
-        context = self.global_context().copy()
-        for ctx in self._context:
-            context.update(ctx)
+        context = {}
+        context_items = chain.from_iterable(
+            d.items() for d in reversed(self._context))
+        for k, v in chain(context_items, self.global_context().items()):
+            if k not in context:
+                context[k] = v
         return context
 
     def line(self, line_number):
