@@ -5,9 +5,9 @@ from unittest import mock
 
 from pytest import approx, mark
 
+from storyruntime.Apps import Apps
 from storyruntime.Kubernetes import Kubernetes
 from storyruntime.Service import Service
-from storyruntime.Apps import Apps
 from storyruntime.ServiceUsage import ServiceUsage
 from storyruntime.db.Database import Database
 
