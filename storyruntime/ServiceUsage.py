@@ -118,7 +118,7 @@ class ServiceUsage:
         from .Apps import Apps
         while not Service.shutting_down:
             try:
-                apps = list(Apps.apps.values())
+                apps = [app for app in Apps.apps.values() if app is not None]
                 services = await cls.get_service_tag_uuids(config, apps)
                 logger.debug(f'Discovered {len(services)} '
                              f'(service_uuid, tag) pairs')
