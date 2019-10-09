@@ -151,10 +151,11 @@ def test_story_function_line_by_name(patch, story):
 @mark.parametrize('encode', [True, False])
 def test_story_resolve(patch, story, encode):
     patch.object(Resolver, 'resolve')
+    patch.init(Resolver)
     patch.object(Story, 'encode')
     obj = {'$OBJECT': 'string', 'string': 'string'}
     story.resolve(obj, encode)
-    Resolver.resolve.assert_called_with(obj, {})
+    Resolver.resolve.assert_called_with(obj)
     assert Story.encode.call_count == encode
 
 

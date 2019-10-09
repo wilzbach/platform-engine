@@ -12,9 +12,9 @@ from storyruntime.utils.TypeUtils import TypeUtils
 # Note: Actual resolution tests for resolution are in integration/Lexicon.
 
 
-def test_expression_invalid_type():
+def test_expression_invalid_type(resolver):
     with pytest.raises(Exception):
-        assert Resolver.expression(
+        assert resolver.expression(
             {'expression': 'a', 'values': [b'asd']}, {}) == 1
 
 
@@ -47,10 +47,10 @@ def test_expression_invalid_type():
         }
     ]
 ])
-def test_path(patch, paths):
-    patch.object(Resolver, 'object', side_effect=Resolver.object)
+def test_path(patch, story, resolver, paths):
+    patch.object(resolver, 'object', side_effect=resolver.object)
     patch.object(TypeUtils, 'isnamedtuple', side_effect=TypeUtils.isnamedtuple)
-    patch.object(Resolver, 'range', side_effect=Resolver.range)
+    patch.object(resolver, 'range', side_effect=resolver.range)
     data = {
         'r': {
             'file': FileFormField(
@@ -62,16 +62,17 @@ def test_path(patch, paths):
             'array': ['1', '2', '3']
         }
     }
-    resolved = Resolver.path(paths, data)
+    story.set_context(data)
+    resolved = resolver.path(paths)
     object_calls = []
     for path in paths[1:]:
         if path['$OBJECT'] == 'range':
-            object_calls.append(call(path['range']['start'], data))
-            object_calls.append(call(path['range']['end'], data))
+            object_calls.append(call(path['range']['start']))
+            object_calls.append(call(path['range']['end']))
         else:
-            object_calls.append(call(path, data))
+            object_calls.append(call(path))
 
-    Resolver.object.assert_has_calls(object_calls)
+    resolver.object.assert_has_calls(object_calls)
 
     nt_calls = [call(data['r'])]
     if paths[2]['$OBJECT'] == 'string':
@@ -103,8 +104,7 @@ def test_path(patch, paths):
         {'int': 5, '$OBJECT': 'int'}
     ]
 ])
-def test_path_invalid_key(patch, paths):
-    patch.object(Resolver, 'object', side_effect=Resolver.object)
+def test_path_invalid_key(patch, story, resolver, paths):
     data = {
         'r': {
             'file': FileFormField(
@@ -116,5 +116,6 @@ def test_path_invalid_key(patch, paths):
             'array': ['1', '2', '3']
         }
     }
+    story.set_context(data)
     with pytest.raises(StoryscriptError):
-        Resolver.path(paths, data)
+        resolver.path(paths)
