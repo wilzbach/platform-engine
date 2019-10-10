@@ -9,6 +9,7 @@ from storyruntime.Exceptions import StoryscriptError
 from storyruntime.Story import Story
 from storyruntime.processing import Stories
 from storyruntime.processing.internal import File, Http, Json, Log
+from storyruntime.utils.ConstDict import ConstDict
 
 import storyscript
 
@@ -59,9 +60,9 @@ async def run_test_case_in_suite(suite: Suite, case: Case, logger):
     app.stories = {
         story_name: story.result().output()
     }
-    app.story_global_contexts = {
+    app.story_global_contexts = ConstDict({
         story_name: {}
-    }
+    })
     app.environment = {}
 
     story = Story(app, story_name, logger)

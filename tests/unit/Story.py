@@ -8,6 +8,7 @@ from pytest import mark
 from storyruntime.Exceptions import StackOverflowException
 from storyruntime.Story import MAX_BYTES_LOGGING, Story
 from storyruntime.utils import Dict, Resolver
+from storyruntime.utils.ConstDict import ConstDict
 
 
 def test_story_init(app, logger, story):
@@ -98,12 +99,16 @@ def test_story_new_context(story):
 
 def test_story_global_context(app, story):
     global_context = {'alpha': 'beta'}
-    app.story_global_contexts[story.name] = global_context
+    app.story_global_contexts = ConstDict({
+        story.name: global_context
+    })
     assert story.global_context() == global_context
 
 
 def test_story_resolve_context(app, story):
-    app.story_global_contexts[story.name] = {'a': 1, 'b': 2, 'c': 3}
+    app.story_global_contexts = ConstDict({
+        story.name: {'a': 1, 'b': 2, 'c': 3}
+    })
     story._contexts = [
         {'d': 4, 'e': 5, 'f': 6},
         {'g': 7, 'h': 8, 'i': 9}
@@ -113,8 +118,10 @@ def test_story_resolve_context(app, story):
     assert story.resolve_context('g') == story._contexts[1]
 
 
-def test_story_get_context(app, story):
-    app.story_global_contexts[story.name] = {'a': 1, 'b': 2, 'c': 3}
+def test_story_build_combined_context(app, story):
+    app.story_global_contexts = ConstDict({
+        story.name: {'a': 1, 'b': 2, 'c': 3}
+    })
     story._contexts = [
         {'d': 4, 'e': 5, 'f': 6},
         {'g': 7, 'h': 8, 'i': 9}
