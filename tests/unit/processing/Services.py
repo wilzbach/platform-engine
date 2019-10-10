@@ -224,6 +224,144 @@ def test_raise_for_type_mismatch_enum(story, val):
                                              val, arg_conf)
 
 
+@mark.parametrize('case', [{
+    # int, min, max, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+            'max': 20
+        }
+    },
+    'value': 15,
+    'valid': True
+}, {
+    # int, min, max, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+            'max': 20
+        }
+    },
+    'value': 5,
+    'valid': False
+}, {
+    # int, min, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+        }
+    },
+    'value': 15,
+    'valid': True
+}, {
+    # int, min, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+        }
+    },
+    'value': 5,
+    'valid': False
+}, {
+    # int, max, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'max': 20,
+        }
+    },
+    'value': -5,
+    'valid': True
+}, {
+    # int, max, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'max': 20,
+        }
+    },
+    'value': 25,
+    'valid': False
+}, {
+    # float, min, max, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.1234,
+            'max': 15.5678
+        }
+    },
+    'value': 12.1234,
+    'valid': True
+}, {
+    # float, min, max, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.1234,
+            'max': 10.5678
+        }
+    },
+    'value': 10.50,
+    'valid': True
+}, {
+    # float, min, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.01,
+        }
+    },
+    'value': 11.05,
+    'valid': True
+}, {
+    # float, min, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.01,
+        }
+    },
+    'value': 5.01,
+    'valid': False
+}, {
+    # float, max, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'max': 20.05,
+        }
+    },
+    'value': -5.02,
+    'valid': True
+}, {
+    # float, max, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'max': 20.05,
+        }
+    },
+    'value': 25.03,
+    'valid': False
+}])
+def test_raise_for_type_mismatch_range(story, case):
+
+    line = {'ln': '10'}
+
+    if case['valid']:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         case['value'], case['arg_conf'])
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             case['value'], case['arg_conf'])
+
+
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
 @mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])

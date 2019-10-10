@@ -5,6 +5,7 @@ import urllib
 import uuid
 from collections import deque
 from functools import partial
+from math import inf
 from re import Pattern
 from urllib import parse
 
@@ -385,9 +386,17 @@ class Services:
         if t == 'string' and isinstance(value, str):
             return
         elif t == 'int' and isinstance(value, int):
-            return
+            int_range = arg_conf.get('range')
+            if int_range is None or \
+                    int_range.get('min', -inf) <= value <= \
+                    int_range.get('max', inf):
+                return
         elif t == 'float' and isinstance(value, float):
-            return
+            float_range = arg_conf.get('range')
+            if float_range is None or \
+                    float_range.get('min', -inf) <= value <= \
+                    float_range.get('max', inf):
+                return
         elif t == 'list' and isinstance(value, list):
             return
         elif t == 'map' and isinstance(value, dict):
