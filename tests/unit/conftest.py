@@ -18,7 +18,9 @@ def config(magic):
 @fixture
 def app(magic):
     app = magic()
-    app.story_global_contexts = {}
+    app.story_global_contexts = {
+        'hello.story': {}
+    }
     return app
 
 

@@ -838,7 +838,6 @@ async def test_when(patch, story, async_mock, service_name):
         }
     }
 
-    story.name = 'my_event_driven_story.story'
     story.app.config.ENGINE_HOST = 'localhost'
     story.app.config.ENGINE_PORT = 8000
     story.app.config.ASYNCY_SYNAPSE_HOST = 'localhost'

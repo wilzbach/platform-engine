@@ -51,7 +51,6 @@ class App:
 
     def __init__(self, app_data: AppData):
         self._subscriptions = {}
-        self.story_global_contexts = {}
         self.release = app_data.release
         release = self.release
         self.app_id = release.app_uuid
@@ -82,6 +81,10 @@ class App:
             'secrets': secrets,
             'hostname': f'{self.app_dns}.{self.config.APP_DOMAIN}',
             'version': self.version
+        }
+        self.story_global_contexts = {
+            story_name: {}
+            for story_name in self.stories
         }
         self._tmp_dir_created = False
 

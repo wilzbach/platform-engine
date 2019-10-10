@@ -62,7 +62,7 @@ class Story:
         """
         Returns the global context for the story
         """
-        return self.app.story_global_contexts.setdefault(self.name, {})
+        return self.app.story_global_contexts[self.name]
 
     def resolve_context(self, variable):
         """
