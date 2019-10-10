@@ -186,14 +186,15 @@ class Resolver:
         elif a == 'sum':
             result = left
 
-            assert type(left) in (int, float, str)
+            assert type(left) in (int, float, str, list)
             # Sum supports flattened values since this only occurs when
             # a string like "{a} {b} {c}" is compiled. Everything else,
             # including arithmetic is compiled as a nested expression.
             for i in range(1, len(values)):
                 r = cls.resolve(values[i], data)
 
-                if type(r) in (int, float) and type(result) in (int, float):
+                if type(r) in (int, float, list) and \
+                        type(result) in (int, float, list):
                     result += r
                 else:
                     result = f'{str(result)}{str(r)}'
