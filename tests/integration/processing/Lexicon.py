@@ -2004,32 +2004,6 @@ async def test_try_catch(suite: Suite, logger, run_suite):
             Case(assertion=ContextAssertion(key='greeting',
                                                 expected='Hello user'))
         ]
-    ),
-    Suite(
-        preparation_lines='did_try = 0\n'
-                          'did_catch = 0\n'
-                          'did_finally = 0\n'
-                          'try\n'
-                          '    try_var = 1\n'
-                          '    did_try = try_var\n'
-                          '    some_var = "abc" as int\n'
-                          'catch\n'
-                          '    catch_var = 2\n'
-                          '    did_catch = catch_var\n'
-                          'finally\n'
-                          '    finally_var = 3\n'
-                          '    did_finally = finally_var\n',
-        cases=[
-            Case(assertion=ContextAssertion(key='did_try', expected=1)),
-            Case(assertion=ContextAssertion(key='did_catch', expected=2)),
-            Case(assertion=ContextAssertion(key='did_finally',
-                                                expected=3)),
-            Case(assertion=ContextAssertion(key='try_var', expected=None)),
-            Case(assertion=ContextAssertion(key='catch_var',
-                                                expected=None)),
-            Case(assertion=ContextAssertion(key='finally_var',
-                                                expected=None)),
-        ]
     )
 ])
 @mark.asyncio
