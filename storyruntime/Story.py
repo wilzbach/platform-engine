@@ -28,7 +28,7 @@ class Story:
         self.entrypoint = app.stories[story_name]['entrypoint']
         self.results = {}
         self.environment = None
-        self._context = []
+        self._contexts = []
         self.containers = None
         self.repository = None
         self.version = None
@@ -54,9 +54,9 @@ class Story:
         """
         Creates a new context in the stack
         """
-        self._context.append({})
+        self._contexts.append({})
         yield
-        self._context.pop()
+        self._contexts.pop()
 
     def global_context(self):
         """
@@ -69,11 +69,11 @@ class Story:
         Used by set_variable to determine the context for a given variable
         """
         global_context = self.global_context()
-        for ctx in chain(reversed(self._context), (global_context,)):
+        for ctx in chain(reversed(self._contexts), (global_context,)):
             if variable in ctx:
                 return ctx
         # variable not found in context
-        return self._context[-1] if len(self._context) > 0 else global_context
+        return self._contexts[-1] if len(self._contexts) > 0 else global_context
 
     def get_context(self):
         """
@@ -81,7 +81,7 @@ class Story:
         """
         context = {}
         context_items = chain.from_iterable(
-            d.items() for d in reversed(self._context))
+            d.items() for d in reversed(self._contexts))
         for k, v in chain(context_items, self.global_context().items()):
             if k not in context:
                 context[k] = v
@@ -301,7 +301,7 @@ class Story:
     def set_context(self, context):
         if context is None:
             return
-        self._context = [context]
+        self._contexts = [context]
 
     def prepare(self, context=None):
         self.set_context(context)

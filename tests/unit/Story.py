@@ -90,10 +90,10 @@ def test_story_line(magic, story):
 
 
 def test_story_new_context(story):
-    assert len(story._context) == 0
+    assert len(story._contexts) == 0
     with story.new_context():
-        assert len(story._context) == 1
-    assert len(story._context) == 0
+        assert len(story._contexts) == 1
+    assert len(story._contexts) == 0
 
 
 def test_story_global_context(app, story):
@@ -104,25 +104,25 @@ def test_story_global_context(app, story):
 
 def test_story_resolve_context(app, story):
     app.story_global_context[story.name] = {'a': 1, 'b': 2, 'c': 3}
-    story._context = [
+    story._contexts = [
         {'d': 4, 'e': 5, 'f': 6},
         {'g': 7, 'h': 8, 'i': 9}
     ]
     assert story.resolve_context('a') == app.story_global_context[story.name]
-    assert story.resolve_context('d') == story._context[0]
-    assert story.resolve_context('g') == story._context[1]
+    assert story.resolve_context('d') == story._contexts[0]
+    assert story.resolve_context('g') == story._contexts[1]
 
 
 def test_story_get_context(app, story):
     app.story_global_context[story.name] = {'a': 1, 'b': 2, 'c': 3}
-    story._context = [
+    story._contexts = [
         {'d': 4, 'e': 5, 'f': 6},
         {'g': 7, 'h': 8, 'i': 9}
     ]
     assert story.get_context() == {
         **app.story_global_context[story.name],
-        **story._context[0],
-        **story._context[1],
+        **story._contexts[0],
+        **story._contexts[1],
     }
 
 
@@ -285,7 +285,7 @@ def test_story_prepare_context(story, app):
     context = {'app': app.app_context}
     story.prepare(context=context)
     assert story.environment == app.environment
-    assert story._context == [context]
+    assert story._contexts == [context]
 
 
 def test_story_next_block_simple(patch, story):

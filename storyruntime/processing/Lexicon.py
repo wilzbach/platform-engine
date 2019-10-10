@@ -188,7 +188,7 @@ class Lexicon:
         This will setup a new context for the
         function block to be executed, and will return the output (if any).
         """
-        old_context = story._context
+        old_contexts = story._contexts
         function_line = story.function_line_by_name(line.get('function'))
         context = story.context_for_function_call(line, function_line)
         story.set_context(context)
@@ -206,7 +206,7 @@ class Lexicon:
 
             return Lexicon.line_number_or_none(story.line(line.get('next')))
         finally:
-            story._context = old_context
+            story._contexts = old_contexts
             if line.get('name') is not None and len(line['name']) > 0:
                 story.end_line(line['ln'],
                                output=return_from_function_call,
