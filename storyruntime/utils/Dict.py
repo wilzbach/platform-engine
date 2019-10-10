@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from .Resolver import Resolver
 
 
 class Dict:

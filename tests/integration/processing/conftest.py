@@ -59,7 +59,7 @@ async def run_test_case_in_suite(suite: Suite, case: Case, logger):
     app.stories = {
         story_name: story.result().output()
     }
-    app.story_global_context = {}
+    app.story_global_contexts = {}
     app.environment = {}
 
     story = Story(app, story_name, logger)

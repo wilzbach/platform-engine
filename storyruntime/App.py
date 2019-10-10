@@ -51,7 +51,7 @@ class App:
 
     def __init__(self, app_data: AppData):
         self._subscriptions = {}
-        self.story_global_context = {}
+        self.story_global_contexts = {}
         self.release = app_data.release
         release = self.release
         self.app_id = release.app_uuid
