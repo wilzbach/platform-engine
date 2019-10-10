@@ -379,7 +379,8 @@ class Services:
         Validates for types listed on
         https://microservice.guide/schema/actions/#arguments.
 
-        Supported types: int, float, string, list, map, boolean, enum, or any
+        Supported types: int, float, string, list,
+                         map, boolean, enum, object or any
         """
         t = arg_conf.get('type', 'any')
 
@@ -408,6 +409,14 @@ class Services:
         elif t == 'enum' and isinstance(value, str):
             valid_values = arg_conf.get('enum', [])
             if value in valid_values:
+                return
+        elif t == 'object' and isinstance(value, dict):
+            properties = arg_conf.get('properties')
+            if properties is not None and properties.keys() == value.keys():
+                for property_name, property_conf in properties.items():
+                    cls.raise_for_type_mismatch(
+                        story, line, property_name,
+                        value.get(property_name), property_conf)
                 return
         elif t == 'any':
             return

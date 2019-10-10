@@ -388,6 +388,156 @@ def test_raise_for_type_mismatch_pattern(story, case):
                                              case['value'], arg_conf)
 
 
+@mark.parametrize('case', [{
+    # unnested, valid
+    'properties': {
+        'red': {
+            'type': 'float'
+        },
+        'green': {
+            'type': 'string'
+        },
+        'blue': {
+            'type': 'any'
+        }
+    },
+    'value': {
+        'red': 1.023,
+        'green': 'green color',
+        'blue': None
+    },
+    'valid': True
+}, {
+    # unnested, invalid
+    'properties': {
+        'green': {
+            'type': 'string'
+        },
+        'red': {
+            'type': 'float'
+        },
+        'blue': {
+            'type': 'any'
+        }
+    },
+    'value': {
+        'red': 1,
+        'green': 'green color',
+        'blue': None
+    },
+    'valid': False
+}, {
+    # unnested, invalid, extra key in value
+    'properties': {
+        'green': {
+            'type': 'string'
+        },
+        'red': {
+            'type': 'float'
+        },
+        'blue': {
+            'type': 'any'
+        }
+    },
+    'value': {
+        'red': 1.023,
+        'green': 'green color',
+        'blue': None,
+        'magenta': 'magenta color'
+    },
+    'valid': False
+}, {
+    # unnested, invalid, extra key in conf
+    'properties': {
+        'green': {
+            'type': 'string'
+        },
+        'red': {
+            'type': 'float'
+        },
+        'blue': {
+            'type': 'any'
+        },
+        'magenta': {
+            'type': 'string'
+        }
+    },
+    'value': {
+        'red': 1.023,
+        'green': 'green color',
+        'blue': None,
+    },
+    'valid': False
+}, {
+    # nested, valid
+    'properties': {
+        'name': {
+            'type': 'string'
+        },
+        'location': {
+            'type': 'object',
+            'properties': {
+                'street': {
+                    'type': 'string'
+                },
+                'postcode': {
+                    'type': 'int'
+                }
+            }
+        }
+    },
+    'value': {
+        'name': 'some place',
+        'location': {
+            'street': 'some street',
+            'postcode': 123
+        }
+    },
+    'valid': True
+}, {
+    # nested, invalid
+    'properties': {
+        'name': {
+            'type': 'string'
+        },
+        'location': {
+            'type': 'object',
+            'properties': {
+                'street': {
+                    'type': 'string'
+                },
+                'postcode': {
+                    'type': 'int'
+                }
+            }
+        }
+    },
+    'value': {
+        'name': 'some place',
+        'location': {
+            'street': 'some street',
+            'postcode': 'some postcode'
+        }
+    },
+    'valid': False
+}])
+def test_raise_for_type_mismatch_object(story, case):
+    arg_conf = {
+        'type': 'object',
+        'properties': case['properties']
+    }
+
+    line = {'ln': '10'}
+
+    if case['valid']:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         case['value'], arg_conf)
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             case['value'], arg_conf)
+
+
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
 @mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])
