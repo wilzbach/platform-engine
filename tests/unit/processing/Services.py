@@ -362,6 +362,32 @@ def test_raise_for_type_mismatch_range(story, case):
                                              case['value'], case['arg_conf'])
 
 
+@mark.parametrize('case', [{
+    'pattern': '[a-z]+',
+    'value': 'abc',
+    'valid': True
+}, {
+    'pattern': '[a-z]+',
+    'value': 'abc123',
+    'valid': False
+}])
+def test_raise_for_type_mismatch_pattern(story, case):
+    arg_conf = {
+        'type': 'string',
+        'pattern': case['pattern']
+    }
+
+    line = {'ln': '10'}
+
+    if case['valid']:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         case['value'], arg_conf)
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             case['value'], arg_conf)
+
+
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
 @mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])

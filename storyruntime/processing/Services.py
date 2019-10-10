@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import base64
 import json
+import re
 import urllib
 import uuid
 from collections import deque
 from functools import partial
 from math import inf
-from re import Pattern
 from urllib import parse
 
 from requests.structures import CaseInsensitiveDict
@@ -53,7 +53,7 @@ class HttpDataEncoder(json.JSONEncoder):
         elif isinstance(obj, CaseInsensitiveDict):
             # convert this to a regular dict
             return dict(obj.items())
-        elif isinstance(obj, Pattern):
+        elif isinstance(obj, re.Pattern):
             return obj.pattern
 
         return json.JSONEncoder.default(self, obj)
@@ -384,7 +384,9 @@ class Services:
         t = arg_conf.get('type', 'any')
 
         if t == 'string' and isinstance(value, str):
-            return
+            pattern = arg_conf.get('pattern')
+            if pattern is None or re.fullmatch(pattern, value) is not None:
+                return
         elif t == 'int' and isinstance(value, int):
             int_range = arg_conf.get('range')
             if int_range is None or \
