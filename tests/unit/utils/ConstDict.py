@@ -24,6 +24,9 @@ def test_is_const():
         assert const_dict[key] == value
     # keys
     assert normal_dict.keys() == const_dict.keys()
+    # setattr
+    with pytest.raises(Exception):
+        const_dict.a = 0
     # setitem
     with pytest.raises(Exception):
         const_dict['a'] = 0
