@@ -148,16 +148,14 @@ class Lexicon:
                 output=parent_line['output'][0]
             )
 
-            if story.resolve({
+            event_body = story.resolve({
                 '$OBJECT': 'path',
                 'paths': [ContextConstants.service_event]
-            }) is not None:
+            })
+            if event_body is not None:
                 story.set_variable(
                     assign={'paths': parent_line['output']},
-                    output=story.resolve({
-                        '$OBJECT': 'path',
-                        'paths': [ContextConstants.service_event]
-                    }).get('data')
+                    output=event_body.get('data')
                 )
 
         while next_line is not None \
