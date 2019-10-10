@@ -1955,18 +1955,6 @@ async def test_try_catch(suite: Suite, logger, run_suite):
 
 @mark.parametrize('suite', [
     Suite(
-        preparation_lines='list = [1, 2, 3]\n'
-                          'total = 0\n'
-                          'foreach list as l\n'
-                          '    current = l\n'
-                          '    total += current',
-        cases=[
-            Case(assertion=ContextAssertion(key='l', expected=None)),
-            Case(assertion=ContextAssertion(key='current', expected=None)),
-            Case(assertion=ContextAssertion(key='total', expected=6))
-        ]
-    ),
-    Suite(
         preparation_lines='i = 0\n'
                           'total = 0\n'
                           'while i <= 10\n'
@@ -1981,7 +1969,6 @@ async def test_try_catch(suite: Suite, logger, run_suite):
     ),
     Suite(
         preparation_lines='name = "nobody"\n'
-                          'greeting = ""\n'
 
                           'function sayHello name: string\n'
                           '    prefix = "Hello"\n'
@@ -2000,9 +1987,7 @@ async def test_try_catch(suite: Suite, logger, run_suite):
             Case(assertion=ContextAssertion(key='prefix',
                                                 expected=None)),
             Case(assertion=ContextAssertion(key='name',
-                                                expected='nobody')),
-            Case(assertion=ContextAssertion(key='greeting',
-                                                expected='Hello user'))
+                                                expected='nobody'))
         ]
     )
 ])
