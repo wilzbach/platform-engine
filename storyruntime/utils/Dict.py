@@ -9,7 +9,7 @@ class Dict:
             _dict[keys[0]] = output
         else:
             _cur = _dict
-            intermediate, last = keys[:-1], keys[-1]
+            *intermediate, last = keys
             for key in intermediate:
                 if isinstance(_cur, list):
                     _cur = _cur[key]
