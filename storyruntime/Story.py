@@ -72,10 +72,14 @@ class Story:
         for ctx in chain(reversed(self._contexts), (global_context,)):
             if variable in ctx:
                 return ctx
-        # variable not found in context
-        return self._contexts[-1] if len(self._contexts) > 0 else global_context
+        # variable not found in existing context
+        if len(self._contexts) > 0:
+            context = self._contexts[-1]
+        else:
+            context = global_context
+        return context
 
-    def get_context(self):
+    def build_combined_context(self):
         """
         Returns the current context, i.e. all variables in scope
         """

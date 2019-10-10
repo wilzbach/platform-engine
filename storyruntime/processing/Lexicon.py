@@ -310,7 +310,7 @@ class Lexicon:
 
         # while true here because all if/elif/elif/else is executed here.
         while True:
-            logger.log('lexicon-if', line, story.get_context())
+            logger.log('lexicon-if', line, story.build_combined_context())
 
             if line['method'] == 'else':
                 result = True
@@ -342,7 +342,7 @@ class Lexicon:
 
     @staticmethod
     def unless_condition(logger, story, line):
-        logger.log('lexicon-unless', line, story.get_context())
+        logger.log('lexicon-unless', line, story.build_combined_context())
         result = story.resolve(line['args'][0], encode=False)
         if result:
             return line['exit']

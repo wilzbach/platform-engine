@@ -347,7 +347,7 @@ def test_lexicon_unless(logger, story, line, patch):
     patch.object(Story, 'resolve')
     result = Lexicon.unless_condition(logger, story, line)
     logger.log.assert_called_with('lexicon-unless', line,
-                                  story.get_context())
+                                  story.build_combined_context())
     story.resolve.assert_called_with(line['args'][0], encode=False)
     assert result == line['exit']
 
@@ -799,7 +799,7 @@ async def test_lexicon_try_catch(patch, magic, logger, tree):
         else:
             assert final_line is None
 
-    assert 'err' not in story.get_context()
+    assert 'err' not in story.build_combined_context()
 
 
 @mark.parametrize('args', [
