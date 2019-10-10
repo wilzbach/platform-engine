@@ -188,7 +188,7 @@ def test_resolve_chain(story):
 def test_smart_insert(patch, story, value):
     patch.object(Services, 'raise_for_type_mismatch')
 
-    command_conf = {
+    arg_conf = {
         'type': 'string'
     }
 
@@ -201,34 +201,34 @@ def test_smart_insert(patch, story, value):
     else:
         expected = value
 
-    Services.smart_insert(story, {}, command_conf, key, value, m)
+    Services.smart_insert(story, {}, arg_conf, key, value, m)
     Services.raise_for_type_mismatch.assert_called_with(
-        story, {}, key, expected, command_conf)
+        story, {}, key, expected, arg_conf)
 
     assert m[key] == expected
 
 
 @mark.parametrize('val', ['a', 'b', 'c', 'd'])
 def test_raise_for_type_mismatch_enum(story, val):
-    command_conf = {
+    arg_conf = {
         'type': 'enum',
         'enum': ['a', 'b', 'c']
     }
 
-    if val in command_conf['enum']:
+    if val in arg_conf['enum']:
         Services.raise_for_type_mismatch(story, {}, 'arg_name',
-                                         val, command_conf)
+                                         val, arg_conf)
     else:
         with pytest.raises(ArgumentTypeMismatchError):
             Services.raise_for_type_mismatch(story, {}, 'arg_name',
-                                             val, command_conf)
+                                             val, arg_conf)
 
 
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
 @mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])
 def test_raise_for_type_mismatch(story, typ, val):
-    command_conf = {
+    arg_conf = {
         'type': typ
     }
 
@@ -252,11 +252,11 @@ def test_raise_for_type_mismatch(story, typ, val):
 
     if valid:
         Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                         val, command_conf)
+                                         val, arg_conf)
     else:
         with pytest.raises(ArgumentTypeMismatchError):
             Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                             val, command_conf)
+                                             val, arg_conf)
 
 
 @mark.parametrize('location', ['requestBody', 'query', 'path',
