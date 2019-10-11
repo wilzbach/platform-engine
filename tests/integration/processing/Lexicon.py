@@ -1339,6 +1339,17 @@ async def test_arrays(suite, logger, run_suite):
         ]
     ),
     Suite(
+        preparation_lines='a = [1, 2, 3]\n'
+                          'b = [3, 4, 5]\n'
+                          'c = a + b',
+        cases=[
+            Case(
+                assertion=ContextAssertion(key='c',
+                                           expected=[1, 2, 3, 3, 4, 5])
+            )
+        ]
+    ),
+    Suite(
         preparation_lines='foo = 2\n'
                           'zero = 0\n'
                           'a = 2 * 4 / (4 * foo) + 1 * 20 + zero',
