@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
+from .RegExpUtils import RegExpUtils
 from .TypeResolver import TypeResolver
 from .TypeUtils import TypeUtils
 from ..Exceptions import StoryscriptRuntimeError
@@ -101,7 +102,9 @@ class Resolver:
         elif object_type == 'path':
             return self.path(item['paths'])
         elif object_type == 'regexp':
-            return re.compile(item['regexp'])
+            return re.compile(
+                item['regexp'],
+                flags=RegExpUtils.process_flags(item.get('flags', '')))
         elif object_type == 'value':
             return item['value']
         elif object_type == 'dict':
