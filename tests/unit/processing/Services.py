@@ -287,6 +287,22 @@ def test_raise_for_type_mismatch_enum(story, val):
     'value': 25,
     'valid': False
 }, {
+    # int, empty dict, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {}
+    },
+    'value': 10,
+    'valid': True
+}, {
+    # not an int, empty dict, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {}
+    },
+    'value': 'a',
+    'valid': False
+}, {
     # float, min, max, valid
     'arg_conf': {
         'type': 'float',
@@ -348,6 +364,22 @@ def test_raise_for_type_mismatch_enum(story, val):
     },
     'value': 25.03,
     'valid': False
+}, {
+    # float, empty dict, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {}
+    },
+    'value': 10.00,
+    'valid': True
+}, {
+    # not a float, empty dict, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {}
+    },
+    'value': 'b',
+    'valid': False
 }])
 def test_raise_for_type_mismatch_range(story, case):
 
@@ -369,6 +401,10 @@ def test_raise_for_type_mismatch_range(story, case):
 }, {
     'pattern': '[a-z]+',
     'value': 'abc123',
+    'valid': False
+}, {
+    'pattern': '',
+    'value': 'abc',
     'valid': False
 }])
 def test_raise_for_type_mismatch_pattern(story, case):
