@@ -404,8 +404,8 @@ def test_raise_for_type_mismatch_range(story, case):
     'valid': False
 }, {
     'pattern': '',
-    'value': 'abc',
-    'valid': False
+    'value': 'abc123!@#',
+    'valid': True
 }])
 def test_raise_for_type_mismatch_pattern(story, case):
     arg_conf = {

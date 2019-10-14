@@ -386,7 +386,8 @@ class Services:
 
         if t == 'string' and isinstance(value, str):
             pattern = arg_conf.get('pattern')
-            if pattern is None or re.fullmatch(pattern, value) is not None:
+            if pattern in ['', None] or \
+                    re.fullmatch(pattern, value) is not None:
                 return
         elif t == 'int' and isinstance(value, int):
             int_range = arg_conf.get('range')
