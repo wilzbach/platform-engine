@@ -1204,6 +1204,25 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
             )
         ]
     ),
+    Suite(
+        preparation_lines='a = true',
+        cases=[
+            Case(
+                append='c = a + true',
+                assertion=ContextAssertion(
+                    key='c',
+                    expected=2
+                )
+            ),
+            Case(
+                append='c = a + false',
+                assertion=ContextAssertion(
+                    key='c',
+                    expected=1
+                )
+            )
+        ]
+    )
 ])
 @mark.asyncio
 async def test_mutation(suite: Suite, logger, run_suite):
