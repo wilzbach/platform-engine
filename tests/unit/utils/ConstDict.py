@@ -4,29 +4,40 @@ import pytest
 from storyruntime.utils.ConstDict import ConstDict
 
 
-def test_is_const():
-    normal_dict = {
+@pytest.fixture
+def regular_dict():
+    return {
         'a': 1,
         'b': 2,
         'c': 3
     }
-    const_dict = ConstDict({
-        'a': 1,
-        'b': 2,
-        'c': 3
-    })
-    # getattr
-    assert const_dict.a == normal_dict['a']
-    assert const_dict.b == normal_dict['b']
-    assert const_dict.c == normal_dict['c']
-    # getitem
-    for key, value in normal_dict.items():
+
+
+@pytest.fixture
+def const_dict(regular_dict):
+    return ConstDict(regular_dict)
+
+
+def test_getattr(regular_dict, const_dict):
+    assert const_dict.a == regular_dict['a']
+    assert const_dict.b == regular_dict['b']
+    assert const_dict.c == regular_dict['c']
+
+
+def test_getitem(regular_dict, const_dict):
+    for key, value in regular_dict.items():
         assert const_dict[key] == value
-    # keys
-    assert normal_dict.keys() == const_dict.keys()
-    # setattr
+
+
+def test_keys(regular_dict, const_dict):
+    assert const_dict.keys() == regular_dict.keys()
+
+
+def test_setattr(const_dict):
     with pytest.raises(Exception):
         const_dict.a = 0
-    # setitem
+
+
+def test_setitem(const_dict):
     with pytest.raises(Exception):
         const_dict['a'] = 0

@@ -127,9 +127,9 @@ def test_story_build_combined_context(app, story):
         {'g': 7, 'h': 8, 'i': 9}
     ]
     assert story.build_combined_context() == {
-        **app.story_global_contexts[story.name],
-        **story._contexts[0],
-        **story._contexts[1],
+        'a': 1, 'b': 2, 'c': 3,
+        'd': 4, 'e': 5, 'f': 6,
+        'g': 7, 'h': 8, 'i': 9
     }
 
 
