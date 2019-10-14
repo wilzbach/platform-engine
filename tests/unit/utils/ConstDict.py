@@ -29,10 +29,6 @@ def test_getitem(regular_dict, const_dict):
         assert const_dict[key] == value
 
 
-def test_keys(regular_dict, const_dict):
-    assert const_dict.keys() == regular_dict.keys()
-
-
 def test_setattr(const_dict):
     with pytest.raises(Exception):
         const_dict.a = 0
@@ -41,3 +37,11 @@ def test_setattr(const_dict):
 def test_setitem(const_dict):
     with pytest.raises(Exception):
         const_dict['a'] = 0
+
+
+def test_keys(regular_dict, const_dict):
+    assert const_dict.keys() == regular_dict.keys()
+
+
+def test_items(regular_dict, const_dict):
+    assert const_dict.items() == regular_dict.items()

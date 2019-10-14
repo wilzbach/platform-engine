@@ -17,3 +17,6 @@ class ConstDict:
 
     def keys(self):
         return self._data.keys()
+
+    def items(self):
+        return self._data.items()
