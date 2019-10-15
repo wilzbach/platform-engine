@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import base64
 import json
+import re
 import urllib
 import uuid
 from collections import deque
 from functools import partial
-from re import Pattern
+from math import inf
 from urllib import parse
 
 from requests.structures import CaseInsensitiveDict
@@ -52,7 +53,7 @@ class HttpDataEncoder(json.JSONEncoder):
         elif isinstance(obj, CaseInsensitiveDict):
             # convert this to a regular dict
             return dict(obj.items())
-        elif isinstance(obj, Pattern):
+        elif isinstance(obj, re.Pattern):
             return obj.pattern
 
         return json.JSONEncoder.default(self, obj)
@@ -373,21 +374,33 @@ class Services:
         yield write(b'--%s--\r\n' % (boundary.encode(),))
 
     @classmethod
-    def raise_for_type_mismatch(cls, story, line, name, value, command_conf):
+    def raise_for_type_mismatch(cls, story, line, name, value, arg_conf):
         """
         Validates for types listed on
         https://microservice.guide/schema/actions/#arguments.
 
-        Supported types: int, float, string, list, map, boolean, enum, or any
+        Supported types: int, float, string, list,
+                         map, boolean, enum, object or any
         """
-        t = command_conf.get('type', 'any')
+        t = arg_conf.get('type', 'any')
 
         if t == 'string' and isinstance(value, str):
-            return
+            pattern = arg_conf.get('pattern')
+            if pattern in ['', None] or \
+                    re.fullmatch(pattern, value) is not None:
+                return
         elif t == 'int' and isinstance(value, int):
-            return
+            int_range = arg_conf.get('range')
+            if int_range is None or \
+                    int_range.get('min', -inf) <= value <= \
+                    int_range.get('max', inf):
+                return
         elif t == 'float' and isinstance(value, float):
-            return
+            float_range = arg_conf.get('range')
+            if float_range is None or \
+                    float_range.get('min', -inf) <= value <= \
+                    float_range.get('max', inf):
+                return
         elif t == 'list' and isinstance(value, list):
             return
         elif t == 'map' and isinstance(value, dict):
@@ -395,8 +408,16 @@ class Services:
         elif t == 'boolean' and isinstance(value, bool):
             return
         elif t == 'enum' and isinstance(value, str):
-            valid_values = command_conf.get('enum', [])
+            valid_values = arg_conf.get('enum', [])
             if value in valid_values:
+                return
+        elif t == 'object' and isinstance(value, dict):
+            properties = arg_conf.get('properties')
+            if properties is not None and properties.keys() == value.keys():
+                for property_name, property_conf in properties.items():
+                    cls.raise_for_type_mismatch(
+                        story, line, property_name,
+                        value.get(property_name), property_conf)
                 return
         elif t == 'any':
             return
@@ -404,7 +425,7 @@ class Services:
         raise ArgumentTypeMismatchError(name, t, story=story, line=line)
 
     @classmethod
-    def smart_insert(cls, story, line, command_conf: dict, key: str, value,
+    def smart_insert(cls, story, line, arg_conf: dict, key: str, value,
                      m: dict):
         """
         Validates type, and sets the key in the map m.
@@ -415,17 +436,17 @@ class Services:
 
         :param line: The line
         :param story: The story
-        :param command_conf: The command config, as seen in the OMG
+        :param arg_conf: The arg config, as seen in the OMG
         :param key: The key to insert this value as
         :param value: The value, which might be "smartly" stringified to JSON
         :param m: The map to insert the value in
         """
-        t = command_conf.get('type', 'any')
+        t = arg_conf.get('type', 'any')
         if t == 'string':
             if isinstance(value, dict) or isinstance(value, list):
                 value = json.dumps(value)
 
-        cls.raise_for_type_mismatch(story, line, key, value, command_conf)
+        cls.raise_for_type_mismatch(story, line, key, value, arg_conf)
 
         m[key] = value
 
@@ -444,15 +465,16 @@ class Services:
 
         for arg in args:
             value = story.argument_by_name(line, arg)
-            location = args[arg].get('in', 'requestBody')
+            arg_conf = args[arg]
+            location = arg_conf.get('in', 'requestBody')
             if location == 'query':
-                cls.smart_insert(story, line, command_conf,
+                cls.smart_insert(story, line, arg_conf,
                                  arg, value, query_params)
             elif location == 'path':
-                cls.smart_insert(story, line, command_conf,
+                cls.smart_insert(story, line, arg_conf,
                                  arg, value, path_params)
             elif location == 'requestBody':
-                cls.smart_insert(story, line, command_conf,
+                cls.smart_insert(story, line, arg_conf,
                                  arg, value, body)
                 request_body_fields_count += 1
             elif location == 'formBody':
@@ -464,7 +486,7 @@ class Services:
                     body[arg] = FormField(arg, value)
                 form_fields_count += 1
             elif location == 'header':
-                cls.smart_insert(story, line, command_conf, arg, value,
+                cls.smart_insert(story, line, arg_conf, arg, value,
                                  header_params)
             else:
                 raise StoryscriptError(
