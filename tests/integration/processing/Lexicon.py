@@ -2019,7 +2019,16 @@ async def test_try_catch(suite: Suite, logger, run_suite):
             Case(assertion=ContextAssertion(key='name',
                                                 expected='nobody'))
         ]
-    )
+    ),
+    Suite(
+        preparation_lines='if true\n'
+                          '  a = 0\n'
+                          'if true\n'
+                          '  a = 1\n',
+        cases=[
+            Case(assertion=ContextAssertion(key='a', expected=1))
+        ]
+    ),
 ])
 @mark.asyncio
 async def test_stacked_contexts(suite: Suite, logger, run_suite):
