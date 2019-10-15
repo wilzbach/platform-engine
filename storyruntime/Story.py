@@ -87,8 +87,7 @@ class Story:
         context_items = chain.from_iterable(
             d.items() for d in reversed(self._contexts))
         for k, v in chain(context_items, self.global_context().items()):
-            if k not in context:
-                context[k] = v
+            context[k] = v
         return context
 
     def line(self, line_number):
