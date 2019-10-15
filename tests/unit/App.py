@@ -20,6 +20,7 @@ from storyruntime.entities.Release import Release
 from storyruntime.enums.AppEnvironment import AppEnvironment
 from storyruntime.processing import Stories
 from storyruntime.processing.Services import Command, Service, Services
+from storyruntime.utils.ConstDict import ConstDict
 from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
@@ -209,10 +210,14 @@ async def test_app_bootstrap(patch, app, async_mock):
     patch.object(app, 'start_services', new=async_mock())
     stories = {'entrypoint': ['foo'], 'stories': {'foo': {}}}
     app.stories = stories
+    app.story_global_contexts = {'foo': {}}
     await app.bootstrap()
 
     assert app.run_stories.mock.call_count == 1
     assert app.start_services.mock.call_count == 1
+
+    for story in app.story_global_contexts:
+        assert isinstance(app.story_global_contexts[story], ConstDict)
 
 
 def test_app_get_tmp_dir(app):

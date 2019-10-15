@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import copy
-import pathlib
 import time
 import uuid
 from contextlib import contextmanager
+from itertools import chain
 from json import dumps
 
 from .Exceptions import StackOverflowException
@@ -28,7 +28,7 @@ class Story:
         self.entrypoint = app.stories[story_name]['entrypoint']
         self.results = {}
         self.environment = None
-        self.context = None
+        self._contexts = []
         self.containers = None
         self.repository = None
         self.version = None
@@ -48,6 +48,47 @@ class Story:
 
     def get_stack(self) -> []:
         return self._stack
+
+    @contextmanager
+    def new_context(self):
+        """
+        Creates a new context in the stack
+        """
+        self._contexts.append({})
+        yield
+        self._contexts.pop()
+
+    def global_context(self):
+        """
+        Returns the global context for the story
+        """
+        return self.app.story_global_contexts[self.name]
+
+    def resolve_context(self, variable):
+        """
+        Used by set_variable to determine the context for a given variable
+        """
+        global_context = self.global_context()
+        for ctx in chain(reversed(self._contexts), (global_context,)):
+            if variable in ctx:
+                return ctx
+        # variable not found in existing context
+        if len(self._contexts) > 0:
+            context = self._contexts[-1]
+        else:
+            context = global_context
+        return context
+
+    def build_combined_context(self):
+        """
+        Returns the current context, i.e. all variables in scope
+        """
+        context = {}
+        context_items = chain.from_iterable(
+            d.items() for d in reversed(self._contexts))
+        for k, v in chain(context_items, self.global_context().items()):
+            context[k] = v
+        return context
 
     def line(self, line_number):
         if line_number is None:
@@ -134,7 +175,7 @@ class Story:
         """
         Resolves line argument to their real value
         """
-        result = Resolver.resolve(arg, self.context)
+        result = Resolver(self).resolve(arg)
 
         self.logger.debug(f'Resolved "{arg}" to '
                           f'"{self.get_str_for_logging(result)}" '
@@ -208,7 +249,11 @@ class Story:
                 'but no variable found!')
             return
 
-        Dict.set(self.context, assign['paths'], output)
+        variable = assign['paths'][0]
+        # Resolving context for assign['paths'][0] works
+        # because all subsequent paths have been resolved to their values
+        context = self.resolve_context(variable)
+        Dict.set(context, assign['paths'], output)
 
     def function_line_by_name(self, function_name):
         """
@@ -258,11 +303,10 @@ class Story:
 
     def set_context(self, context):
         if context is None:
-            context = {}
-        self.context = context
-        # Optimise this later.
-        self.context['app'] = self.app.app_context.copy()
+            return
+        self._contexts = [context]
 
     def prepare(self, context=None):
         self.set_context(context)
         self.environment = self.app.environment or {}
+        self.global_context().update({'app': self.app.app_context})

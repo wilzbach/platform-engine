@@ -1423,19 +1423,6 @@ async def test_arrays(suite, logger, run_suite):
                                            })
             )
         ]
-    ),
-    Suite(
-        preparation_lines='l = [1, 2, 3]\n'
-                          'foreach l as el\n'
-                          '  c = [4, 5, 6]\n'
-                          '  a = [1, 2, 3]\n'
-                          '  c[a[0]] = 1\n',
-        cases=[
-            Case(
-                assertion=ContextAssertion(key='c',
-                                           expected=[4, 1, 6])
-            )
-        ]
     )
 ])
 @mark.asyncio
@@ -1993,4 +1980,47 @@ async def test_float_mutations(suite: Suite, logger, run_suite):
 ])
 @mark.asyncio
 async def test_try_catch(suite: Suite, logger, run_suite):
+    await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    Suite(
+        preparation_lines='i = 0\n'
+                          'total = 0\n'
+                          'while i <= 10\n'
+                          '    current = i\n'
+                          '    i = current + 1\n'
+                          '    total += current',
+        cases=[
+            Case(assertion=ContextAssertion(key='current', expected=None)),
+            Case(assertion=ContextAssertion(key='total', expected=55)),
+            Case(assertion=ContextAssertion(key='i', expected=11))
+        ]
+    ),
+    Suite(
+        preparation_lines='name = "nobody"\n'
+
+                          'function sayHello name: string\n'
+                          '    prefix = "Hello"\n'
+                          '    greeting = "{prefix} {name}"\n'
+                          '    log info msg: greeting\n'
+
+                          'l = [1, 2, 3]\n'
+                          'total = 0\n'
+
+                          'foreach l as x\n'
+                          '    sayHello(name: "user")\n'
+                          '    total += x',
+        cases=[
+            Case(assertion=ContextAssertion(key='total',
+                                                expected=6)),
+            Case(assertion=ContextAssertion(key='prefix',
+                                                expected=None)),
+            Case(assertion=ContextAssertion(key='name',
+                                                expected='nobody'))
+        ]
+    )
+])
+@mark.asyncio
+async def test_stacked_contexts(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)

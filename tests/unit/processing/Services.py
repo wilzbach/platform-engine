@@ -1090,10 +1090,10 @@ async def test_execute_inline(patch, story, command, simulate_finished,
 
     req.is_finished = is_finished
     io_loop = MagicMock()
-    story.context = {
+    story.set_context({
         ContextConstants.server_request: req,
         ContextConstants.server_io_loop: io_loop
-    }
+    })
 
     command_conf = {
         'arguments': {
@@ -1188,7 +1188,6 @@ async def test_when(patch, story, async_mock, service_name):
         }
     }
 
-    story.name = 'my_event_driven_story.story'
     story.app.config.ENGINE_HOST = 'localhost'
     story.app.config.ENGINE_PORT = 8000
     story.app.config.ASYNCY_SYNAPSE_HOST = 'localhost'
@@ -1198,9 +1197,9 @@ async def test_when(patch, story, async_mock, service_name):
 
     streaming_service = StreamingService(service_name, 'time-server',
                                          'asyncy--foo-1', 'foo.com')
-    story.context = {
+    story.set_context({
         service_name: streaming_service
-    }
+    })
 
     expected_sub_url = 'http://foo.com:2000/sub'
     expected_url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
@@ -1253,8 +1252,11 @@ async def test_when(patch, story, async_mock, service_name):
         100, story.logger, expected_url, client, expected_kwargs)
 
     story.app.add_subscription.assert_called_with(
-        'my_guid_here', story.context[service_name],
-        'updates', expected_body)
+        'my_guid_here',
+        story.resolve({'$OBJECT': 'path', 'paths': [service_name]}),
+        'updates',
+        expected_body
+    )
 
     assert ret is None
 
