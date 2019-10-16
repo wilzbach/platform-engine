@@ -55,6 +55,13 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
         ]
     ),
     Suite(
+        preparation_lines='a = json stringify content: [1, 2, 3]',
+        cases=[
+            Case(assertion=ContextAssertion(key='a',
+                                            expected='[1, 2, 3]'))
+        ]
+    ),
+    Suite(
         preparation_lines='a = http fetch '
                           'url: "https://stories.storyscriptapp.com/status"',
         cases=[
