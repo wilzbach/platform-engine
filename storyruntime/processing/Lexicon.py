@@ -440,7 +440,7 @@ class Lexicon:
         for a, b in iterable:
             output = line['output']
             assert 1 <= len(output) <= 2, \
-                f'for loop output must be one or two values'
+                f'for loop output must be 1 or 2 values, found {len(output)}'
             if len(output) == 1:
                 story.set_variable(assign={'paths': output},
                                    output=b if isinstance(data, list) else a)
