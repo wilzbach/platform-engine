@@ -434,12 +434,13 @@ class Lexicon:
         Evaluates a for loop.
         """
         data = story.resolve(line['args'][0], encode=False)
-        assert type(data) in [list, dict]
+        assert type(data) in [list, dict], f'Cannot iterate over {type(data)}'
         iterable = enumerate(data) if isinstance(data, list) else data.items()
 
         for a, b in iterable:
             output = line['output']
-            assert 1 <= len(output) <= 2
+            assert 1 <= len(output) <= 2, \
+                f'for loop output must be one or two values'
             if len(output) == 1:
                 story.set_variable(assign={'paths': output},
                                    output=b if isinstance(data, list) else a)
