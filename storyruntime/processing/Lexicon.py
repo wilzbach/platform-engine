@@ -292,7 +292,7 @@ class Lexicon:
         inside an if-block.
 
         Execution strategy:
-        1. Evaluate the if condition. If true, return the 'enter' line number
+        1. Evaluate the if condition. If true, run its block
         2. If the condition is false, find next elif, and perform step 1
         3. If we reach an else block, perform step 1 without condition check
 
@@ -315,7 +315,11 @@ class Lexicon:
                 result = Lexicon._is_if_condition_true(story, line)
 
             if result:
-                return line['enter']
+                exec_res = await Lexicon.execute_block(logger, story, line)
+                if LineSentinels.is_sentinel(exec_res):
+                    return exec_res
+                return Lexicon.line_number_or_none(
+                    story.line(line.get('next')))
             else:
                 # Check for an elif block or an else block
                 # (step 2 of execution strategy).
@@ -398,7 +402,7 @@ class Lexicon:
             exec_res = await Lexicon.execute_block(logger, story, line)
             if LineSentinels.is_sentinel(exec_res):
                 result_sentinel = exec_res
-        except StoryscriptError as e:
+        except StoryscriptError:
             if next_line['method'] == 'finally':
                 # skip right to the finally block
                 return await next_block_or_finally(result_sentinel)
