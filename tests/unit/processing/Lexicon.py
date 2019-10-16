@@ -179,8 +179,7 @@ async def test_if_condition_1(patch, logger, magic):
             'ln': '1',
             'method': 'if',
             'parent': None,
-            'enter': '2',
-            'next': '2'
+            'enter': '2'
         },
         '2': {
             'ln': '2',
@@ -205,12 +204,11 @@ async def test_if_condition_2(patch, logger, magic):
             'ln': '1',
             'method': 'if',
             'enter': '2',
-            'next': '2'
+            'next': '3'
         },
         '2': {
             'ln': '2',
             'parent': '1',
-            'next': '3'
         },
         '3': {
             'ln': '3',
@@ -247,69 +245,66 @@ def test__is_if_condition_true_complex(patch, story):
 @mark.parametrize('case', [
     # case[0] - side_effect for Lexicon._is_if_condition_true
     # case[1] - expected line number to be returned
-    [[True, False, False], '2'],
-    [[False, True, False], '4'],
-    [[False, False, True], '6'],
-    [[False, False, False], '8'],
+    [[True, False, False], '3'],
+    [[False, True, False], '5'],
+    [[False, False, True], '7'],
+    [[False, False, False], None],
 ])
 @mark.asyncio
-async def test_if_condition(patch, logger, magic, case):
+async def test_if_condition(patch, logger, magic, case, async_mock):
     tree = {
         '1': {
             'ln': '1',
             'method': 'if',
             'parent': None,
             'enter': '2',
-            'next': '2'
+            'next': '3'
         },
         '2': {
             'ln': '2',
             'parent': '1',
-            'next': '3'
         },
         '3': {
             'ln': '3',
             'method': 'elif',
             'parent': None,
             'enter': '4',
-            'next': '4'
+            'next': '5'
         },
         '4': {
             'ln': '4',
             'parent': '3',
-            'next': '5'
         },
         '5': {
             'ln': '5',
             'method': 'elif',
             'parent': None,
             'enter': '6',
-            'next': '6'
+            'next': '7'
         },
         '6': {
             'ln': '6',
             'parent': '5',
-            'next': '7'
         },
         '7': {
             'ln': '7',
             'method': 'else',
             'parent': None,
-            'next': '8',
             'enter': '8'
         },
         '8': {
             'ln': '8',
-            'parent': '7',
-            'next': None
+            'parent': '7'
         }
     }
 
     patch.object(Lexicon, '_is_if_condition_true', side_effect=case[0])
+    patch.object(Lexicon, 'execute_block', new=async_mock())
     story = Story(magic(), 'foo', logger)
 
     story.tree = tree
     ret = await Lexicon.if_condition(logger, story, tree['1'])
+    Lexicon.execute_block.mock.assert_called()
     assert ret == case[1]
 
 
@@ -679,22 +674,22 @@ async def test_lexicon_execute_block(patch, logger, story,
 @mark.parametrize('tree', [
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
             'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
+            'enter': '4', 'exit': '5', 'next': '5'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '3', 'next': '5'
+            'command': 'info', 'parent': '3'
         },
         '5': {
-            'method': 'finally', 'ln': '5', 'enter': '6', 'next': '6'
+            'method': 'finally', 'ln': '5', 'enter': '6'
         },
         '6': {
             'method': 'execute', 'ln': '6', 'output': [], 'service': 'log',
@@ -703,14 +698,14 @@ async def test_lexicon_execute_block(patch, logger, story,
     },
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
-            'method': 'finally', 'ln': '3', 'enter': '4', 'next': '4'
+            'method': 'finally', 'ln': '3', 'enter': '4'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [],
@@ -719,22 +714,22 @@ async def test_lexicon_execute_block(patch, logger, story,
     },
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
             'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
+            'enter': '4', 'exit': '5', 'next': '5'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'fail', 'parent': '3', 'next': '5'
+            'command': 'fail', 'parent': '3'
         },
         '5': {
-            'method': 'finally', 'ln': '5', 'enter': '6', 'next': '6'
+            'method': 'finally', 'ln': '5', 'enter': '6'
         },
         '6': {
             'method': 'execute', 'ln': '6', 'output': [], 'service': 'log',
@@ -743,26 +738,26 @@ async def test_lexicon_execute_block(patch, logger, story,
     },
     {
         '1': {
-            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '2'
+            'method': 'try', 'ln': '1', 'enter': '2', 'exit': '3', 'next': '3'
         },
         '2': {
             'method': 'execute', 'ln': '2', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '1', 'next': '3'
+            'command': 'info', 'parent': '1'
         },
         '3': {
             'method': 'catch', 'ln': '3', 'output': [],
-            'enter': '4', 'exit': '5', 'next': '4'
+            'enter': '4', 'exit': '5', 'next': '5'
         },
         '4': {
             'method': 'execute', 'ln': '4', 'output': [], 'service': 'log',
-            'command': 'info', 'parent': '3', 'next': '5'
+            'command': 'info', 'parent': '3'
         },
         '5': {
             'method': 'execute', 'ln': '5', 'output': [], 'service': 'log',
             'command': 'info'
         }
     }])
-async def test_lexicon_try_catch(patch, magic, logger, tree):
+async def test_lexicon_try_catch(patch, magic, logger, tree, async_mock):
     story = Story(magic(), 'foo', logger)
 
     story.tree = tree
@@ -783,6 +778,8 @@ async def test_lexicon_try_catch(patch, magic, logger, tree):
             return await execute_block(*args)
 
     patch.object(Lexicon, 'execute_block', side_effect=execute_block_proxy)
+    output = MagicMock()
+    patch.object(Services, 'execute', new=async_mock(return_value=output))
 
     if should_throw_exc:
         with pytest.raises(StoryscriptError):
@@ -809,6 +806,7 @@ async def test_lexicon_try_catch(patch, magic, logger, tree):
     }],
     []
 ])
+@mark.asyncio
 async def test_lexicon_throw(logger, story, args):
     story.tree = {
         '1': {

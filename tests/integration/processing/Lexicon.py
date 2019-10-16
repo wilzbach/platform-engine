@@ -317,7 +317,7 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
     Suite(
         preparation_lines='a = 1283',
         cases=[
-            Case(append='b = a + ""',
+            Case(append='b = "{a}"',
                  assertion=ContextAssertion(key='b', expected='1283'))
         ]
     ),
@@ -514,8 +514,8 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
     ),
     Suite(
         preparation_lines='a = [1, 2, 3, 4, 5]\n'
-                          'b = [] as List[int]\n'
-                          'c = [] as List[int]\n',
+                          'b = [] to List[int]\n'
+                          'c = [] to List[int]\n',
         cases=[
             Case(append='foreach a as elem\n'
                         '   b = b.append(item: elem)\n'
@@ -1181,7 +1181,7 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
                           'b = 10s',
         cases=[
             Case(
-                append='aString = a as string',
+                append='aString = a to string',
                 assertion=ContextAssertion(
                     key='aString',
                     expected='1000'
@@ -1189,7 +1189,7 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
             ),
             Case(
                 append='sum = a + b\n'
-                       'sumString = sum as string',
+                       'sumString = sum to string',
                 assertion=ContextAssertion(
                     key='sumString',
                     expected='11000'
@@ -1384,7 +1384,7 @@ async def test_arrays(suite, logger, run_suite):
         ]
     ),
     Suite(
-        preparation_lines='a = {} as Map[any,int]\n',
+        preparation_lines='a = {} to Map[any,int]\n',
         cases=[
             Case(append='a["b"] = 1',
                  assertion=MapValueAssertion(key='a',
@@ -1417,17 +1417,54 @@ async def test_arrays(suite, logger, run_suite):
         ]
     ),
     Suite(
-        preparation_lines='a = {"a": 1, "b": {} as Map[string,string],'
+        preparation_lines='a = {"a": 1, "b": {} to Map[string,string],'
                           ' "c": 3}\n'
                           'b = ["a", "b", "c"]\n'
-                          'c = 1',
+                          'c = 1\n',
         cases=[
             Case(
-                append='a[b[c]][c] = -1',
+                append='m = a[b[c]] to Map[int,int]\n'
+                       'm[1] = -1\n',
+                assertion=ContextAssertion(key='a',
+                                           expected={
+                                               'a': 1, 'b': {}, 'c': 3
+                                           })
+            ),
+            Case(
+                append='m = a[b[c]] to Map[int,int]\n'
+                       'm[1] = -1\n'
+                       'a[b[c]] = m',
                 assertion=ContextAssertion(key='a',
                                            expected={
                                                'a': 1, 'b': {1: -1}, 'c': 3
                                            })
+            ),
+        ]
+    ),
+    Suite(
+        preparation_lines='a = ["1", 2]\n',
+        cases=[
+            Case(
+                append='m = a to List[int]\n'
+                       'm[1] = -1',
+                assertion=[ContextAssertion(key='a',
+                                            expected=['1', 2]),
+                           ContextAssertion(key='m',
+                                            expected=[1, -1])]
+            ),
+            Case(
+                append='m = a to List[int]\n'
+                       'm[1] = -1\n'
+                       'a = m',
+                assertion=ContextAssertion(key='a',
+                                           expected=[1, -1])
+            ),
+            Case(
+                append='m = a to List[int]\n'
+                       'm[0] = 0\n'
+                       'a = m',
+                assertion=ContextAssertion(key='a',
+                                           expected=[0, 2])
             )
         ]
     )
@@ -1681,56 +1718,56 @@ async def test_resolve_all_objects(suite: Suite, logger, run_suite):
 @mark.parametrize('suite', [
     Suite(
         cases=[
-            Case(append='a = [0] as List[int]',
+            Case(append='a = [0] to List[int]',
                  assertion=ContextAssertion(key='a', expected=[0])),
-            Case(append='a = [] as List[int]',
+            Case(append='a = [] to List[int]',
                  assertion=ContextAssertion(key='a', expected=[])),
-            Case(append='a = ["3", "2"] as List[int]',
+            Case(append='a = ["3", "2"] to List[int]',
                  assertion=ContextAssertion(key='a', expected=[3, 2])),
-            Case(append='a = 2 as float',
+            Case(append='a = 2 to float',
                  assertion=ContextAssertion(key='a', expected=2.)),
-            Case(append='a = 2.5 as int',
+            Case(append='a = 2.5 to int',
                  assertion=ContextAssertion(key='a', expected=2)),
-            Case(append='a = 2 as string',
+            Case(append='a = 2 to string',
                  assertion=ContextAssertion(key='a', expected='2')),
-            Case(append='a = {2: "42"} as Map[float,float]',
+            Case(append='a = {2: "42"} to Map[float,float]',
                  assertion=ContextAssertion(key='a', expected={2.: 42.})),
-            Case(append='a = "foo" as regex',
+            Case(append='a = "foo" to regex',
                  assertion=ContextAssertion(key='a',
                                             expected=re.compile('foo'))),
-            Case(append='a = /foo/ as regex',
+            Case(append='a = /foo/ to regex',
                  assertion=ContextAssertion(key='a',
                                             expected=re.compile('foo'))),
-            Case(append='a = 2 as any',
+            Case(append='a = 2 to any',
                  assertion=ContextAssertion(key='a', expected=2)),
-            Case(append='a = true as int',
+            Case(append='a = true to int',
                  assertion=ContextAssertion(key='a', expected=1)),
-            Case(append='a = false as int',
+            Case(append='a = false to int',
                  assertion=ContextAssertion(key='a', expected=0)),
-            Case(append='a = {"foo": 42} as Map[string,int]',
+            Case(append='a = {"foo": 42} to Map[string,int]',
                  assertion=ContextAssertion(key='a',
                                             expected={'foo': 42})),
-            Case(append='a = {} as Map[int,boolean]',
+            Case(append='a = {} to Map[int,boolean]',
                  assertion=ContextAssertion(key='a',
                                             expected={}))
         ]
     ),
     Suite(
-        preparation_lines='arr = [] as List[any]\n'
+        preparation_lines='arr = [] to List[any]\n'
                           'arr = arr.append(item: 42)\n'
                           'b = arr[0]',
         cases=[
-            Case(append='c = b as List[int]',
+            Case(append='c = b to List[int]',
                  assertion=RuntimeExceptionAssertion(
                      TypeAssertionRuntimeError,
                      message='Incompatible type assertion: Received 42 '
                              '(int), but expected List[int]')),
-            Case(append='c = b as Map[int,string]',
+            Case(append='c = b to Map[int,string]',
                  assertion=RuntimeExceptionAssertion(
                      TypeAssertionRuntimeError,
                      message='Incompatible type assertion: Received 42 '
                              '(int), but expected Map[int,string]')),
-            Case(append='b=/foo/\nc = b as List[int]',
+            Case(append='b=/foo/\nc = b to List[int]',
                  assertion=RuntimeExceptionAssertion(
                      TypeAssertionRuntimeError,
                      message='Incompatible type assertion: Received /foo/ '
@@ -1739,28 +1776,28 @@ async def test_resolve_all_objects(suite: Suite, logger, run_suite):
     ),
     Suite(
         cases=[
-            Case(append='c = "foo" as float',
+            Case(append='c = "foo" to float',
                  assertion=RuntimeExceptionAssertion(
                      TypeValueRuntimeError,
                      message='Type conversion failed from str to float '
                              'with `foo`')),
-            Case(append='c = "foo" as int',
+            Case(append='c = "foo" to int',
                  assertion=RuntimeExceptionAssertion(
                      TypeValueRuntimeError,
                      message='Type conversion failed from str to int '
                              'with `foo`')),
-            Case(append='c = "foo" as string',
+            Case(append='c = "foo" to string',
                  assertion=ContextAssertion(key='c', expected='foo')),
-            Case(append='c = "10" as int',
+            Case(append='c = "10" to int',
                  assertion=ContextAssertion(key='c', expected=10)),
-            Case(append='c = "10.1" as float',
+            Case(append='c = "10.1" to float',
                  assertion=ContextAssertion(key='c', expected=10.1)),
-            Case(append='c = [0, 1, 2] as string',
+            Case(append='c = [0, 1, 2] to string',
                  assertion=ContextAssertion(key='c', expected='[0, 1, 2]')),
-            Case(append='c = {"a": "b", "c": 10} as string',
+            Case(append='c = {"a": "b", "c": 10} to string',
                  assertion=ContextAssertion(
                      key='c', expected='{"a": "b", "c": 10}')),
-            Case(append='c = [{"a":"b"}, {}, {"c": 10}] as string',
+            Case(append='c = [{"a":"b"}, {}, {"c": 10}] to string',
                  assertion=ContextAssertion(
                      key='c', expected='[{"a": "b"}, {}, {"c": 10}]')),
         ]
@@ -1888,11 +1925,11 @@ async def test_range_mutations(suite: Suite, logger, run_suite):
                 assertion=ContextAssertion(key='b', expected=1)
             ),
             Case(
-                append='a = "nan" as float\nb = a.isNaN()',
+                append='a = "nan" to float\nb = a.isNaN()',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             Case(
-                append='a = "inf" as float\nb = a.isInfinity()',
+                append='a = "inf" to float\nb = a.isInfinity()',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             Case(
