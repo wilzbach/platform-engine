@@ -2,6 +2,7 @@
 from pytest import fixture
 
 from storyruntime.Story import Story
+from storyruntime.utils.Resolver import Resolver
 
 
 @fixture
@@ -22,3 +23,8 @@ def app(magic):
 @fixture
 def story(app, logger):
     return Story(app, 'hello.story', logger)
+
+
+@fixture
+def resolver(story):
+    return Resolver(story)

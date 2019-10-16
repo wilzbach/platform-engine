@@ -8,6 +8,7 @@ from pytest import mark
 from storyruntime.Exceptions import StackOverflowException
 from storyruntime.Story import MAX_BYTES_LOGGING, Story
 from storyruntime.utils import Dict, Resolver
+from storyruntime.utils.ConstDict import ConstDict
 
 
 def test_story_init(app, logger, story):
@@ -89,6 +90,49 @@ def test_story_line(magic, story):
     assert line == story.tree['1']
 
 
+def test_story_new_context(story):
+    assert len(story._contexts) == 0
+    with story.new_context():
+        assert len(story._contexts) == 1
+    assert len(story._contexts) == 0
+
+
+def test_story_global_context(app, story):
+    global_context = {'alpha': 'beta'}
+    app.story_global_contexts = {
+        story.name: global_context
+    }
+    assert story.global_context() == global_context
+
+
+def test_story_resolve_context(app, story):
+    app.story_global_contexts = {
+        story.name: {'a': 1, 'b': 2, 'c': 3}
+    }
+    story._contexts = [
+        {'d': 4, 'e': 5, 'f': 6},
+        {'g': 7, 'h': 8, 'i': 9}
+    ]
+    assert story.resolve_context('a') == app.story_global_contexts[story.name]
+    assert story.resolve_context('d') == story._contexts[0]
+    assert story.resolve_context('g') == story._contexts[1]
+
+
+def test_story_build_combined_context(app, story):
+    app.story_global_contexts = {
+        story.name: {'a': 1, 'b': 2, 'c': 3}
+    }
+    story._contexts = [
+        {'d': 4, 'e': 5, 'f': 6},
+        {'g': 7, 'h': 8, 'i': 9}
+    ]
+    assert story.build_combined_context() == {
+        'a': 1, 'b': 2, 'c': 3,
+        'd': 4, 'e': 5, 'f': 6,
+        'g': 7, 'h': 8, 'i': 9
+    }
+
+
 def test_story_line_none(magic, story):
     story.tree = magic()
     line = story.line(None)
@@ -114,10 +158,11 @@ def test_story_function_line_by_name(patch, story):
 @mark.parametrize('encode', [True, False])
 def test_story_resolve(patch, story, encode):
     patch.object(Resolver, 'resolve')
+    patch.init(Resolver)
     patch.object(Story, 'encode')
     obj = {'$OBJECT': 'string', 'string': 'string'}
     story.resolve(obj, encode)
-    Resolver.resolve.assert_called_with(obj, story.context)
+    Resolver.resolve.assert_called_with(obj)
     assert Story.encode.call_count == encode
 
 
@@ -163,12 +208,12 @@ def test_story_end_line_output(patch, story):
 
 
 def test_story_end_line_output_assign(patch, story):
-    patch.object(Dict, 'set')
+    patch.object(Story, 'set_variable')
     story.results = {'1': {'start': 'start'}}
     assign = {'paths': ['x']}
     story.end_line('1', output='output', assign=assign)
     assert story.results['1']['output'] == 'output'
-    Dict.set.assert_called_with(story.context, assign['paths'], 'output')
+    Story.set_variable.assert_called_with(assign, 'output')
 
 
 def test_story_end_line_output_as_list(patch, story):
@@ -247,7 +292,7 @@ def test_story_prepare_context(story, app):
     context = {'app': app.app_context}
     story.prepare(context=context)
     assert story.environment == app.environment
-    assert story.context == context
+    assert story._contexts == [context]
 
 
 def test_story_next_block_simple(patch, story):

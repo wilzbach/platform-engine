@@ -8,35 +8,36 @@ from ..Exceptions import StoryscriptRuntimeError
 
 class Resolver:
 
-    @classmethod
-    def values(cls, items_list, data):
+    def __init__(self, story):
+        self.story = story
+
+    def values(self, items_list):
         """
         Parses a list of values objects. The list may contain other objects.
         """
         return [
-            Resolver.resolve(value, data)
+            self.resolve(value)
             for value in items_list
         ]
 
-    @classmethod
-    def string(cls, string, data, values=None):
+    def string(self, string, values=None):
         """
         Resolves a string to itself. If values are given, the string
         is formatted against data, using the order in values.
         """
         if values:
-            values = Resolver.values(values, data)
+            values = self.values(values)
             return string.format(*values)
         return string
 
-    @classmethod
-    def path(cls, paths, data):
+    def path(self, paths):
         """
         Resolves a path against some data, for example the path ['a', 'b']
         with data {'a': {'b': 'value'}} produces 'value'
         """
-        resolved = None
+        resolved = paths[0]
         try:
+            data = self.story.resolve_context(paths[0])
             item = data[paths[0]]
             for path in paths[1:]:
                 if isinstance(path, str):
@@ -45,9 +46,9 @@ class Resolver:
                 assert isinstance(path, dict)
                 object_type = path.get('$OBJECT')
                 if object_type == 'range':
-                    item = cls.range(path['range'], item, data)
+                    item = self.range(path['range'], item)
                 else:
-                    resolved = Resolver.object(path, data)
+                    resolved = self.object(path)
                     # Allow a namedtuple to use keys or index
                     # to retrieve data.
                     if TypeUtils.isnamedtuple(item) and \
@@ -69,27 +70,24 @@ class Resolver:
         except TypeError:
             return None
 
-    @classmethod
-    def dictionary(cls, dictionary, data):
+    def dictionary(self, dictionary):
         result = {}
         for key, value in dictionary.items():
-            result[key] = cls.resolve(value, data)
+            result[key] = self.resolve(value)
         return result
 
-    @classmethod
-    def list_object(cls, items, data):
+    def list_object(self, items):
         for item in items:
-            yield cls.resolve(item, data)
+            yield self.resolve(item)
 
-    @classmethod
-    def object(cls, item, data):
+    def object(self, item):
         if not isinstance(item, dict):
             return item
         object_type = item.get('$OBJECT')
         if object_type == 'string':
             if 'values' in item:
-                return cls.string(item['string'], data, values=item['values'])
-            return cls.string(item['string'], data)
+                return self.string(item['string'], values=item['values'])
+            return self.string(item['string'])
         elif object_type == 'dot':
             return item['dot']
         elif object_type == 'int':
@@ -101,25 +99,24 @@ class Resolver:
         elif object_type == 'float':
             return item['float']
         elif object_type == 'path':
-            return cls.path(item['paths'], data)
+            return self.path(item['paths'])
         elif object_type == 'regexp':
             return re.compile(item['regexp'])
         elif object_type == 'value':
             return item['value']
         elif object_type == 'dict':
-            return dict(cls.dict(item['items'], data))
+            return dict(self.dict(item['items']))
         elif object_type == 'list':
-            return list(cls.list_object(item['items'], data))
+            return list(self.list_object(item['items']))
         elif object_type == 'expression' or object_type == 'assertion':
-            return cls.expression(item, data)
+            return self.expression(item)
         elif object_type == 'type_cast':
-            return cls.type_cast(item, data)
+            return self.type_cast(item)
         elif object_type == 'type':
-            return cls.type_cast(item, data)
-        return cls.dictionary(item, data)
+            return self.type_cast(item)
+        return self.dictionary(item)
 
-    @classmethod
-    def expression(cls, item, data):
+    def expression(self, item):
         """
         Handles expression where item['assertion'/'expression']
         is one of the following:
@@ -141,25 +138,25 @@ class Resolver:
 
         values = item['values']
 
-        left = cls.resolve(values[0], data)
+        left = self.resolve(values[0])
 
         if a == 'equals' or a == 'equal':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             return left == right
         elif a == 'not_equal':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             return left != right
         elif a == 'greater':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             return left > right
         elif a == 'greater_equal':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             return left >= right
         elif a == 'less':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             return left < right
         elif a == 'less_equal':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             return left <= right
         elif a == 'not':
             return not left
@@ -168,7 +165,7 @@ class Resolver:
                 return True
 
             for i in range(1, len(values)):
-                result = cls.resolve(values[i], data)
+                result = self.resolve(values[i])
                 if result is True:
                     return True
 
@@ -178,7 +175,7 @@ class Resolver:
                 return False
 
             for i in range(1, len(values)):
-                result = cls.resolve(values[i], data)
+                result = self.resolve(values[i])
                 if result is False:
                     return False
 
@@ -186,87 +183,83 @@ class Resolver:
         elif a == 'sum':
             result = left
 
-            assert type(left) in (int, float, str)
+            assert type(left) in (int, float, str, list)
             # Sum supports flattened values since this only occurs when
             # a string like "{a} {b} {c}" is compiled. Everything else,
             # including arithmetic is compiled as a nested expression.
             for i in range(1, len(values)):
-                r = cls.resolve(values[i], data)
+                r = self.resolve(values[i])
 
-                if type(r) in (int, float) and type(result) in (int, float):
+                if type(r) in (int, float, list) and \
+                        type(result) in (int, float, list):
                     result += r
                 else:
                     result = f'{str(result)}{str(r)}'
 
             return result
         elif a == 'subtraction':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             assert type(left) in (int, float)
             assert type(right) in (int, float)
             return left - right
         elif a == 'multiplication':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left * right
         elif a == 'modulus':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             assert type(left) in (int, float)
             assert type(right) in (int, float)
             return left % right
         elif a == 'division':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left / right
         elif a == 'exponential':
-            right = cls.resolve(values[1], data)
+            right = self.resolve(values[1])
             assert type(left) in (int, float)
             assert type(right) in (int, float)
             return left ** right
         else:
             assert False, f'Unsupported operation: {a}'
 
-    @classmethod
-    def dict(cls, items, data):
+    def dict(self, items):
         for k, v in items:
-            k = cls.object(k, data)
+            k = self.object(k)
             if k in (list, tuple, dict):
                 # warn or raise?
                 pass
             else:
-                yield k, cls.object(v, data)
+                yield k, self.object(v)
 
-    @classmethod
-    def list(cls, items, data):
+    def list(self, items):
         result = []
         for item in items:
-            result.append(cls.resolve(item, data))
+            result.append(self.resolve(item))
         return ' '.join(result)
 
-    @classmethod
-    def type_cast(cls, item, data):
+    def type_cast(self, item):
         type_ = item['type']
-        item = cls.object(item['value'], data)
-        return TypeResolver.type_cast(item, type_, data)
+        item = self.object(item['value'])
+        return TypeResolver.type_cast(item, type_)
 
-    @classmethod
-    def range(cls, path, item, data):
+    def range(self, path, item):
         start = 0
         end = len(item)
         if 'start' in path:
-            start = cls.object(path['start'], data)
+            start = self.object(path['start'])
         if 'end' in path:
-            end = cls.object(path['end'], data)
+            end = self.object(path['end'])
         return item[start:end]
 
-    @classmethod
-    def resolve(cls, item, data):
+    def resolve(self, item):
         # Sanitize this item so we can ensure that
         # any unwanted data doesn't leak.
         item = TypeUtils.safe_type(item)
         if type(item) is dict:
-            return cls.object(item, data)
+            return self.object(item)
         elif type(item) is list:
-            return cls.list(item, data)
+            return self.list(item)
         return item

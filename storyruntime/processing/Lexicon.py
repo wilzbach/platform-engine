@@ -85,7 +85,8 @@ class Lexicon:
                 if method == 'if' or method == 'else' or method == 'elif':
                     return await Lexicon.if_condition(logger, story, line)
                 elif method == 'for':
-                    return await Lexicon.for_loop(logger, story, line)
+                    with story.new_context():
+                        return await Lexicon.foreach(logger, story, line)
                 elif method == 'execute':
                     return await Lexicon.execute(logger, story, line)
                 elif method == 'set' or method == 'expression' \
@@ -104,7 +105,8 @@ class Lexicon:
                 elif method == 'continue':
                     return await Lexicon.continue_(logger, story, line)
                 elif method == 'while':
-                    return await Lexicon.while_(logger, story, line)
+                    with story.new_context():
+                        return await Lexicon.while_(logger, story, line)
                 elif method == 'try':
                     return await Lexicon.try_catch(logger, story, line)
                 elif method == 'throw':
@@ -141,12 +143,20 @@ class Lexicon:
         # output to the context, so that Lexicon can read it later.
         if parent_line.get('output') is not None \
                 and parent_line.get('method') == 'when':
-            story.context[ContextConstants.service_output] = \
-                parent_line['output'][0]
+            story.set_variable(
+                assign={'paths': [ContextConstants.service_output]},
+                output=parent_line['output'][0]
+            )
 
-            if story.context.get(ContextConstants.service_event) is not None:
-                story.context[parent_line['output'][0]] = \
-                    story.context[ContextConstants.service_event].get('data')
+            event_body = story.resolve({
+                '$OBJECT': 'path',
+                'paths': [ContextConstants.service_event]
+            })
+            if event_body is not None:
+                story.set_variable(
+                    assign={'paths': parent_line['output']},
+                    output=event_body.get('data')
+                )
 
         while next_line is not None \
                 and story.line_has_parent(parent_line['ln'], next_line):
@@ -175,12 +185,12 @@ class Lexicon:
         This will setup a new context for the
         function block to be executed, and will return the output (if any).
         """
-        current_context = story.context
+        old_contexts = story._contexts
         function_line = story.function_line_by_name(line.get('function'))
         context = story.context_for_function_call(line, function_line)
+        story.set_context(context)
         return_from_function_call = None
         try:
-            story.set_context(context)
             result = await Lexicon.execute_block(logger, story, function_line)
             if LineSentinels.is_sentinel(result):
                 if not isinstance(result, ReturnSentinel):
@@ -193,7 +203,7 @@ class Lexicon:
 
             return Lexicon.line_number_or_none(story.line(line.get('next')))
         finally:
-            story.set_context(current_context)
+            story._contexts = old_contexts
             if line.get('name') is not None and len(line['name']) > 0:
                 story.end_line(line['ln'],
                                output=return_from_function_call,
@@ -245,6 +255,9 @@ class Lexicon:
 
     @staticmethod
     async def set(logger, story, line):
+        name = line['name']
+        if name is not None:
+            name = [story.resolve(expr) for expr in line['name']]
         value = story.resolve(line['args'][0])
 
         if len(line['args']) > 1:
@@ -259,7 +272,7 @@ class Lexicon:
                     story=story, line=line)
 
         story.end_line(line['ln'], output=value,
-                       assign={'$OBJECT': 'path', 'paths': line['name']})
+                       assign={'$OBJECT': 'path', 'paths': name})
         return Lexicon.line_number_or_none(story.line(line.get('next')))
 
     @staticmethod
@@ -279,7 +292,7 @@ class Lexicon:
         inside an if-block.
 
         Execution strategy:
-        1. Evaluate the if condition. If true, return the 'enter' line number
+        1. Evaluate the if condition. If true, run its block
         2. If the condition is false, find next elif, and perform step 1
         3. If we reach an else block, perform step 1 without condition check
 
@@ -294,7 +307,7 @@ class Lexicon:
 
         # while true here because all if/elif/elif/else is executed here.
         while True:
-            logger.log('lexicon-if', line, story.context)
+            logger.log('lexicon-if', line, story.build_combined_context())
 
             if line['method'] == 'else':
                 result = True
@@ -302,7 +315,11 @@ class Lexicon:
                 result = Lexicon._is_if_condition_true(story, line)
 
             if result:
-                return line['enter']
+                exec_res = await Lexicon.execute_block(logger, story, line)
+                if LineSentinels.is_sentinel(exec_res):
+                    return exec_res
+                return Lexicon.line_number_or_none(
+                    story.line(line.get('next')))
             else:
                 # Check for an elif block or an else block
                 # (step 2 of execution strategy).
@@ -326,7 +343,7 @@ class Lexicon:
 
     @staticmethod
     def unless_condition(logger, story, line):
-        logger.log('lexicon-unless', line, story.context)
+        logger.log('lexicon-unless', line, story.build_combined_context())
         result = story.resolve(line['args'][0], encode=False)
         if result:
             return line['exit']
@@ -385,7 +402,7 @@ class Lexicon:
             exec_res = await Lexicon.execute_block(logger, story, line)
             if LineSentinels.is_sentinel(exec_res):
                 result_sentinel = exec_res
-        except StoryscriptError as e:
+        except StoryscriptError:
             if next_line['method'] == 'finally':
                 # skip right to the finally block
                 return await next_block_or_finally(result_sentinel)
@@ -416,30 +433,36 @@ class Lexicon:
         raise StoryscriptError(message=err_str, story=story, line=line)
 
     @staticmethod
-    async def for_loop(logger, story, line):
+    async def foreach(logger, story, line):
         """
-        Evaluates a for loop.
+        Evaluates a foreach loop.
         """
-        _list = story.resolve(line['args'][0], encode=False)
-        output = line['output'][0]
+        data = story.resolve(line['args'][0], encode=False)
+        assert type(data) in [list, dict], f'Cannot iterate over {type(data)}'
+        iterable = enumerate(data) if isinstance(data, list) else data.items()
 
-        try:
-            for item in _list:
-                story.context[output] = item
+        output = line['output']
+        assert 1 <= len(output) <= 2, \
+            f'foreach output must be 1 or 2 values, found {len(output)}'
 
-                result = await Lexicon.execute_block(logger, story, line)
+        for a, b in iterable:
+            if len(output) == 1:
+                story.set_variable(assign={'paths': output},
+                                   output=b if isinstance(data, list) else a)
+            else:
+                story.set_variable(assign={'paths': [output[0]]}, output=a)
+                story.set_variable(assign={'paths': [output[1]]}, output=b)
 
-                if LineSentinels.BREAK == result:
-                    break
-                if LineSentinels.CONTINUE == result:
-                    continue
-                elif LineSentinels.is_sentinel(result):
-                    # We do not know what to do with this sentinel,
-                    # so bubble it up.
-                    return result
-        finally:
-            # Don't leak the variable to the outer scope.
-            del story.context[output]
+            result = await Lexicon.execute_block(logger, story, line)
+
+            if LineSentinels.BREAK == result:
+                break
+            if LineSentinels.CONTINUE == result:
+                continue
+            elif LineSentinels.is_sentinel(result):
+                # We do not know what to do with this sentinel,
+                # so bubble it up.
+                return result
 
         # Use story.next_block(line), because line["exit"] is unreliable...
         return Lexicon.line_number_or_none(story.next_block(line))
@@ -447,7 +470,7 @@ class Lexicon:
     @staticmethod
     async def while_(logger, story, line):
         call_count = 0
-        while Resolver.resolve(line['args'][0], story.context):
+        while story.resolve(line['args'][0]):
             # note this is only a temporary solution,
             # and we will address this in the future.
             if call_count >= 100000:
@@ -479,7 +502,7 @@ class Lexicon:
         service = line[LineConstants.service]
 
         # Does this service belong to a streaming service?
-        s = story.context.get(service)
+        s = story.resolve({'$OBJECT': 'path', 'paths': [service]})
         if isinstance(s, StreamingService):
             # Yes, we need to subscribe to an event with the service.
             await Services.when(s, story, line)

@@ -188,7 +188,7 @@ def test_resolve_chain(story):
 def test_smart_insert(patch, story, value):
     patch.object(Services, 'raise_for_type_mismatch')
 
-    command_conf = {
+    arg_conf = {
         'type': 'string'
     }
 
@@ -201,34 +201,384 @@ def test_smart_insert(patch, story, value):
     else:
         expected = value
 
-    Services.smart_insert(story, {}, command_conf, key, value, m)
+    Services.smart_insert(story, {}, arg_conf, key, value, m)
     Services.raise_for_type_mismatch.assert_called_with(
-        story, {}, key, expected, command_conf)
+        story, {}, key, expected, arg_conf)
 
     assert m[key] == expected
 
 
 @mark.parametrize('val', ['a', 'b', 'c', 'd'])
 def test_raise_for_type_mismatch_enum(story, val):
-    command_conf = {
+    arg_conf = {
         'type': 'enum',
         'enum': ['a', 'b', 'c']
     }
 
-    if val in command_conf['enum']:
+    if val in arg_conf['enum']:
         Services.raise_for_type_mismatch(story, {}, 'arg_name',
-                                         val, command_conf)
+                                         val, arg_conf)
     else:
         with pytest.raises(ArgumentTypeMismatchError):
             Services.raise_for_type_mismatch(story, {}, 'arg_name',
-                                             val, command_conf)
+                                             val, arg_conf)
+
+
+@mark.parametrize('case', [{
+    # int, min, max, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+            'max': 20
+        }
+    },
+    'value': 15,
+    'valid': True
+}, {
+    # int, min, max, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+            'max': 20
+        }
+    },
+    'value': 5,
+    'valid': False
+}, {
+    # int, min, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+        }
+    },
+    'value': 15,
+    'valid': True
+}, {
+    # int, min, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'min': 10,
+        }
+    },
+    'value': 5,
+    'valid': False
+}, {
+    # int, max, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'max': 20,
+        }
+    },
+    'value': -5,
+    'valid': True
+}, {
+    # int, max, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {
+            'max': 20,
+        }
+    },
+    'value': 25,
+    'valid': False
+}, {
+    # int, empty dict, valid
+    'arg_conf': {
+        'type': 'int',
+        'range': {}
+    },
+    'value': 10,
+    'valid': True
+}, {
+    # not an int, empty dict, invalid
+    'arg_conf': {
+        'type': 'int',
+        'range': {}
+    },
+    'value': 'a',
+    'valid': False
+}, {
+    # float, min, max, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.1234,
+            'max': 15.5678
+        }
+    },
+    'value': 12.1234,
+    'valid': True
+}, {
+    # float, min, max, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.1234,
+            'max': 10.5678
+        }
+    },
+    'value': 10.50,
+    'valid': True
+}, {
+    # float, min, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.01,
+        }
+    },
+    'value': 11.05,
+    'valid': True
+}, {
+    # float, min, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'min': 10.01,
+        }
+    },
+    'value': 5.01,
+    'valid': False
+}, {
+    # float, max, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'max': 20.05,
+        }
+    },
+    'value': -5.02,
+    'valid': True
+}, {
+    # float, max, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {
+            'max': 20.05,
+        }
+    },
+    'value': 25.03,
+    'valid': False
+}, {
+    # float, empty dict, valid
+    'arg_conf': {
+        'type': 'float',
+        'range': {}
+    },
+    'value': 10.00,
+    'valid': True
+}, {
+    # not a float, empty dict, invalid
+    'arg_conf': {
+        'type': 'float',
+        'range': {}
+    },
+    'value': 'b',
+    'valid': False
+}])
+def test_raise_for_type_mismatch_range(story, case):
+
+    line = {'ln': '10'}
+
+    if case['valid']:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         case['value'], case['arg_conf'])
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             case['value'], case['arg_conf'])
+
+
+@mark.parametrize('case', [{
+    'pattern': '[a-z]+',
+    'value': 'abc',
+    'valid': True
+}, {
+    'pattern': '[a-z]+',
+    'value': 'abc123',
+    'valid': False
+}, {
+    'pattern': '',
+    'value': 'abc123!@#',
+    'valid': True
+}])
+def test_raise_for_type_mismatch_pattern(story, case):
+    arg_conf = {
+        'type': 'string',
+        'pattern': case['pattern']
+    }
+
+    line = {'ln': '10'}
+
+    if case['valid']:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         case['value'], arg_conf)
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             case['value'], arg_conf)
+
+
+@mark.parametrize('case', [{
+    # unnested, valid
+    'properties': {
+        'red': {
+            'type': 'float'
+        },
+        'green': {
+            'type': 'string'
+        },
+        'blue': {
+            'type': 'any'
+        }
+    },
+    'value': {
+        'red': 1.023,
+        'green': 'green color',
+        'blue': None
+    },
+    'valid': True
+}, {
+    # unnested, invalid
+    'properties': {
+        'green': {
+            'type': 'string'
+        },
+        'red': {
+            'type': 'float'
+        },
+        'blue': {
+            'type': 'any'
+        }
+    },
+    'value': {
+        'red': 1,
+        'green': 'green color',
+        'blue': None
+    },
+    'valid': False
+}, {
+    # unnested, invalid, extra key in value
+    'properties': {
+        'green': {
+            'type': 'string'
+        },
+        'red': {
+            'type': 'float'
+        },
+        'blue': {
+            'type': 'any'
+        }
+    },
+    'value': {
+        'red': 1.023,
+        'green': 'green color',
+        'blue': None,
+        'magenta': 'magenta color'
+    },
+    'valid': False
+}, {
+    # unnested, invalid, extra key in conf
+    'properties': {
+        'green': {
+            'type': 'string'
+        },
+        'red': {
+            'type': 'float'
+        },
+        'blue': {
+            'type': 'any'
+        },
+        'magenta': {
+            'type': 'string'
+        }
+    },
+    'value': {
+        'red': 1.023,
+        'green': 'green color',
+        'blue': None,
+    },
+    'valid': False
+}, {
+    # nested, valid
+    'properties': {
+        'name': {
+            'type': 'string'
+        },
+        'location': {
+            'type': 'object',
+            'properties': {
+                'street': {
+                    'type': 'string'
+                },
+                'postcode': {
+                    'type': 'int'
+                }
+            }
+        }
+    },
+    'value': {
+        'name': 'some place',
+        'location': {
+            'street': 'some street',
+            'postcode': 123
+        }
+    },
+    'valid': True
+}, {
+    # nested, invalid
+    'properties': {
+        'name': {
+            'type': 'string'
+        },
+        'location': {
+            'type': 'object',
+            'properties': {
+                'street': {
+                    'type': 'string'
+                },
+                'postcode': {
+                    'type': 'int'
+                }
+            }
+        }
+    },
+    'value': {
+        'name': 'some place',
+        'location': {
+            'street': 'some street',
+            'postcode': 'some postcode'
+        }
+    },
+    'valid': False
+}])
+def test_raise_for_type_mismatch_object(story, case):
+    arg_conf = {
+        'type': 'object',
+        'properties': case['properties']
+    }
+
+    line = {'ln': '10'}
+
+    if case['valid']:
+        Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                         case['value'], arg_conf)
+    else:
+        with pytest.raises(ArgumentTypeMismatchError):
+            Services.raise_for_type_mismatch(story, line, 'arg_name',
+                                             case['value'], arg_conf)
 
 
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
 @mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])
 def test_raise_for_type_mismatch(story, typ, val):
-    command_conf = {
+    arg_conf = {
         'type': typ
     }
 
@@ -252,11 +602,11 @@ def test_raise_for_type_mismatch(story, typ, val):
 
     if valid:
         Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                         val, command_conf)
+                                         val, arg_conf)
     else:
         with pytest.raises(ArgumentTypeMismatchError):
             Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                             val, command_conf)
+                                             val, arg_conf)
 
 
 @mark.parametrize('location', ['requestBody', 'query', 'path',
@@ -740,10 +1090,10 @@ async def test_execute_inline(patch, story, command, simulate_finished,
 
     req.is_finished = is_finished
     io_loop = MagicMock()
-    story.context = {
+    story.set_context({
         ContextConstants.server_request: req,
         ContextConstants.server_io_loop: io_loop
-    }
+    })
 
     command_conf = {
         'arguments': {
@@ -838,7 +1188,6 @@ async def test_when(patch, story, async_mock, service_name):
         }
     }
 
-    story.name = 'my_event_driven_story.story'
     story.app.config.ENGINE_HOST = 'localhost'
     story.app.config.ENGINE_PORT = 8000
     story.app.config.ASYNCY_SYNAPSE_HOST = 'localhost'
@@ -848,9 +1197,9 @@ async def test_when(patch, story, async_mock, service_name):
 
     streaming_service = StreamingService(service_name, 'time-server',
                                          'asyncy--foo-1', 'foo.com')
-    story.context = {
+    story.set_context({
         service_name: streaming_service
-    }
+    })
 
     expected_sub_url = 'http://foo.com:2000/sub'
     expected_url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
@@ -903,8 +1252,11 @@ async def test_when(patch, story, async_mock, service_name):
         100, story.logger, expected_url, client, expected_kwargs)
 
     story.app.add_subscription.assert_called_with(
-        'my_guid_here', story.context[service_name],
-        'updates', expected_body)
+        'my_guid_here',
+        story.resolve({'$OBJECT': 'path', 'paths': [service_name]}),
+        'updates',
+        expected_body
+    )
 
     assert ret is None
 

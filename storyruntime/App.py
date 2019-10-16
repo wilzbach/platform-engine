@@ -22,6 +22,7 @@ from .entities.Release import Release
 from .processing import Stories
 from .processing.Services import Command, Service, Services
 from .utils import Dict
+from .utils.ConstDict import ConstDict
 from .utils.HttpUtils import HttpUtils
 
 Subscription = namedtuple('Subscription',
@@ -82,6 +83,12 @@ class App:
             'hostname': f'{self.app_dns}.{self.config.APP_DOMAIN}',
             'version': self.version
         }
+        self.story_global_contexts = {
+            story_name: {
+                'app': self.app_context
+            }
+            for story_name in self.stories
+        }
         self._tmp_dir_created = False
 
     def image_pull_policy(self):
@@ -99,6 +106,8 @@ class App:
         await self.start_services()
         await self.expose_services()
         await self.run_stories()
+        for k, v in self.story_global_contexts.items():
+            self.story_global_contexts[k] = ConstDict(v)
 
     def create_tmp_dir(self):
         if self._tmp_dir_created:

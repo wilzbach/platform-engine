@@ -3,7 +3,7 @@
 
 def test_story_get(patch, magic, story):
     assert story.tree is not None
-    assert story.context is None
+    assert story._contexts == []
     assert story.version is None
 
 

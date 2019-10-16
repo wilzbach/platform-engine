@@ -140,7 +140,7 @@ class TypeResolver:
         return str(item)
 
     @classmethod
-    def type_cast(cls, item, type_, data):
+    def type_cast(cls, item, type_):
         t = cls.resolve_type(type_)
         value = cls.item_to_string(item)
         type_received = cls.type_string(item)
