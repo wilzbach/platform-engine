@@ -382,7 +382,7 @@ async def test_lexicon_for_loop(patch, logger, story, line,
 
     story.set_context({'elements': ['one', 'two', 'three']})
     story.environment = {}
-    result = await Lexicon.for_loop(logger, story, line)
+    result = await Lexicon.foreach(logger, story, line)
 
     if execute_block_return == LineSentinels.BREAK:
         assert iterated_over_items == ['one']
@@ -571,7 +571,8 @@ Method = collections.namedtuple('Method', 'name lexicon_name async_mock')
     Method(name='if', lexicon_name='if_condition', async_mock=True),
     Method(name='elif', lexicon_name='if_condition', async_mock=True),
     Method(name='else', lexicon_name='if_condition', async_mock=True),
-    Method(name='for', lexicon_name='for_loop', async_mock=True),
+    Method(name='for', lexicon_name='foreach', async_mock=True),
+    Method(name='while', lexicon_name='while_', async_mock=True),
     Method(name='execute', lexicon_name='execute', async_mock=True),
     Method(name='set', lexicon_name='set', async_mock=True),
     Method(name='function', lexicon_name='function', async_mock=True),

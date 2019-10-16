@@ -86,7 +86,7 @@ class Lexicon:
                     return await Lexicon.if_condition(logger, story, line)
                 elif method == 'for':
                     with story.new_context():
-                        return await Lexicon.for_loop(logger, story, line)
+                        return await Lexicon.foreach(logger, story, line)
                 elif method == 'execute':
                     return await Lexicon.execute(logger, story, line)
                 elif method == 'set' or method == 'expression' \
@@ -433,14 +433,25 @@ class Lexicon:
         raise StoryscriptError(message=err_str, story=story, line=line)
 
     @staticmethod
-    async def for_loop(logger, story, line):
+    async def foreach(logger, story, line):
         """
-        Evaluates a for loop.
+        Evaluates a foreach loop.
         """
-        _list = story.resolve(line['args'][0], encode=False)
+        data = story.resolve(line['args'][0], encode=False)
+        assert type(data) in [list, dict], f'Cannot iterate over {type(data)}'
+        iterable = enumerate(data) if isinstance(data, list) else data.items()
 
-        for item in _list:
-            story.set_variable(assign={'paths': line['output']}, output=item)
+        output = line['output']
+        assert 1 <= len(output) <= 2, \
+            f'foreach output must be 1 or 2 values, found {len(output)}'
+
+        for a, b in iterable:
+            if len(output) == 1:
+                story.set_variable(assign={'paths': output},
+                                   output=b if isinstance(data, list) else a)
+            else:
+                story.set_variable(assign={'paths': [output[0]]}, output=a)
+                story.set_variable(assign={'paths': [output[1]]}, output=b)
 
             result = await Lexicon.execute_block(logger, story, line)
 
