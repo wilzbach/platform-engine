@@ -5,8 +5,8 @@ from .Decorators import Decorators
 
 
 @Decorators.create_service(name='json', command='stringify', arguments={
-    'content': {'type': 'string'}
-}, output_type='any')
+    'content': {'type': 'any'}
+}, output_type='string')
 async def stringify(story, line, resolved_args):
     return json.dumps(resolved_args['content'])
 
