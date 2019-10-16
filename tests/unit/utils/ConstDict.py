@@ -45,3 +45,8 @@ def test_keys(regular_dict, const_dict):
 
 def test_items(regular_dict, const_dict):
     assert const_dict.items() == regular_dict.items()
+
+
+def test_contains(const_dict):
+    assert ('a' in const_dict) is True
+    assert ('x' in const_dict) is False
