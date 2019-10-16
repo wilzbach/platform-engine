@@ -35,7 +35,7 @@ class Resolver:
         Resolves a path against some data, for example the path ['a', 'b']
         with data {'a': {'b': 'value'}} produces 'value'
         """
-        resolved = None
+        resolved = paths[0]
         try:
             data = self.story.resolve_context(paths[0])
             item = data[paths[0]]
