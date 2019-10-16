@@ -435,8 +435,22 @@ class Lexicon:
         """
         _list = story.resolve(line['args'][0], encode=False)
 
-        for item in _list:
-            story.set_variable(assign={'paths': line['output']}, output=item)
+        for index, element in enumerate(_list):
+            output = line['output']
+            if len(output) == 1:
+                story.set_variable(assign={'paths': output},
+                                   output=element)
+            elif len(output) == 2:
+                story.set_variable(assign={'paths': [output[0]]},
+                                   output=index)
+                story.set_variable(assign={'paths': [output[1]]},
+                                   output=element)
+            else:
+                raise StoryscriptError(
+                    message='for loops can only have one or two outputs',
+                    story=story,
+                    line=line
+                )
 
             result = await Lexicon.execute_block(logger, story, line)
 

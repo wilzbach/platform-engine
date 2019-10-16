@@ -472,6 +472,22 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
         ]
     ),
     Suite(
+        preparation_lines='l = [8, 9, 10]\n'
+                          'index_sum = 0\n'
+                          'value_sum = 0\n'
+                          'foreach l as index, value\n'
+                          '  index_sum += index\n'
+                          '  value_sum += value\n',
+        cases=[
+            Case(
+                assertion=ContextAssertion(key='index_sum', expected=3)
+            ),
+            Case(
+                assertion=ContextAssertion(key='value_sum', expected=27)
+            )
+        ]
+    ),
+    Suite(
         preparation_lines='a = 1\n'
                           'b = 5\n'
                           'c = null\n',
