@@ -496,7 +496,7 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
                           '  value_sum += value\n',
         cases=[
             Case(
-                assertion=ContextAssertion(key='key_string', expected="abc")
+                assertion=ContextAssertion(key='key_string', expected='abc')
             ),
             Case(
                 assertion=ContextAssertion(key='value_sum', expected=27)
