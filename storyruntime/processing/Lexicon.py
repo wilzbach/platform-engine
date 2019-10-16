@@ -433,19 +433,19 @@ class Lexicon:
         """
         Evaluates a for loop.
         """
-        _list = story.resolve(line['args'][0], encode=False)
+        data = story.resolve(line['args'][0], encode=False)
+        assert type(data) in [list, dict]
+        iterable = enumerate(data) if isinstance(data, list) else data.items()
 
-        for index, element in enumerate(_list):
+        for a, b in iterable:
             output = line['output']
             assert 1 <= len(output) <= 2
             if len(output) == 1:
                 story.set_variable(assign={'paths': output},
-                                   output=element)
+                                   output=b if isinstance(data, list) else a)
             else:
-                story.set_variable(assign={'paths': [output[0]]},
-                                   output=index)
-                story.set_variable(assign={'paths': [output[1]]},
-                                   output=element)
+                story.set_variable(assign={'paths': [output[0]]}, output=a)
+                story.set_variable(assign={'paths': [output[1]]}, output=b)
 
             result = await Lexicon.execute_block(logger, story, line)
 
