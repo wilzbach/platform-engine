@@ -84,7 +84,9 @@ class App:
             'version': self.version
         }
         self.story_global_contexts = {
-            story_name: {}
+            story_name: {
+                'app': self.app_context
+            }
             for story_name in self.stories
         }
         self._tmp_dir_created = False

@@ -309,4 +309,3 @@ class Story:
     def prepare(self, context=None):
         self.set_context(context)
         self.environment = self.app.environment or {}
-        self.global_context().update({'app': self.app.app_context})
