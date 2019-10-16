@@ -437,10 +437,11 @@ class Lexicon:
         assert type(data) in [list, dict], f'Cannot iterate over {type(data)}'
         iterable = enumerate(data) if isinstance(data, list) else data.items()
 
+        output = line['output']
+        assert 1 <= len(output) <= 2, \
+            f'foreach output must be 1 or 2 values, found {len(output)}'
+
         for a, b in iterable:
-            output = line['output']
-            assert 1 <= len(output) <= 2, \
-                f'foreach output must be 1 or 2 values, found {len(output)}'
             if len(output) == 1:
                 story.set_variable(assign={'paths': output},
                                    output=b if isinstance(data, list) else a)
