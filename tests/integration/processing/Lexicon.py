@@ -2114,3 +2114,43 @@ async def test_try_catch(suite: Suite, logger, run_suite):
 @mark.asyncio
 async def test_stacked_contexts(suite: Suite, logger, run_suite):
     await run_suite(suite, logger)
+
+
+@mark.parametrize('suite', [
+    Suite(
+        cases=[
+            Case(
+                append=f'a = "fooBar"\n'
+                       'b = a.replace(pattern: /bar/i by: "foo")',
+                assertion=ContextAssertion(key='b', expected='foofoo')
+            ),
+            Case(
+                append=f'a = "fooBar\\nmv foo.txt"\n'
+                       'b = a.replace(pattern: /Bar.+/s by: "rm")',
+                assertion=ContextAssertion(key='b', expected='foorm')
+            ),
+            Case(
+                append=f'a = "fooBar\\nfoobar"\n'
+                       'b = a.replace(pattern: /^foo/m by: "Foo")',
+                assertion=ContextAssertion(key='b', expected='FooBar\nFoobar')
+            ),
+            Case(
+                append=f'a = "fooBar"\n'
+                       'b = a.contains(pattern: /ar/)',
+                assertion=ContextAssertion(key='b', expected=True)
+            ),
+            Case(
+                append=f'a = "fooBar"\n'
+                       'b = a.contains(pattern: /ar/g)',
+                assertion=RuntimeExceptionAssertion(
+                    exception_type=StoryscriptError,
+                    message='Failed to apply mutation contains! '
+                            'err=Invalid flag combination: `g`'
+                )
+            )
+        ]
+    )
+])
+@mark.asyncio
+async def test_string_mutations(suite: Suite, logger, run_suite):
+    await run_suite(suite, logger)
