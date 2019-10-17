@@ -576,7 +576,8 @@ def test_raise_for_type_mismatch_object(story, case):
 
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
-@mark.parametrize('val', [None, 1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])
+@mark.parametrize('val', [None, 1, 0.9, 'hello', [0, 1], {'a': 'b'}, True,
+                          False])
 @mark.parametrize('required', [True, False])
 def test_raise_for_type_mismatch(story, typ, val, required):
     arg_conf = {
