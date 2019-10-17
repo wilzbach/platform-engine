@@ -62,18 +62,7 @@ from .Assertions import ContextAssertion, IsANumberAssertion, \
         ]
     ),
     Suite(
-        preparation_lines='a = http fetch '
-                          'url: "https://stories.storyscriptapp.com/status"',
-        cases=[
-            Case(assertion=ContextAssertion(
-                key='a',
-                expected='OK'
-            ))
-        ]
-    ),
-    Suite(
-        preparation_lines='a = http fetch '
-                          'url: "https://www.google.com/"\n'
+        preparation_lines='a = http fetch url: "https://www.google.com/"\n'
                           'passed = true',
         cases=[
             Case(assertion=ContextAssertion(
