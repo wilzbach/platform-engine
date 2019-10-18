@@ -26,7 +26,7 @@ def simple_chain():
     ('string', None, False),
     ('int', 10, False),
     ('int', 10.1, True),
-    # ('int', True, True), Will fail because of bool being a subclass of int
+    ('int', True, True),
     ('int', 'a', True),
     ('int', None, False),
     ('float', 0.1, False),
@@ -40,7 +40,7 @@ def simple_chain():
     ('number', 10, False),
     ('number', 10.0, False),
     ('number', 10.5, False),
-    # ('number', True, True), Will fail because of bool being a subclass of int
+    ('number', True, True),
     ('number', '10', True),
     ('number', None, False),
     ('boolean', True, False),
