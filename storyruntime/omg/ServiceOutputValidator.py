@@ -106,13 +106,12 @@ class ServiceOutputValidator:
         """
         Check if value belongs to the type specified.
         """
-        # Works because isinstance(list, list) is false.
-        if isinstance(python_type, list):  # For number (it can be int/float).
+        if type(python_type) is list:  # For number (it can be int/float).
             for item in python_type:
-                if isinstance(val, item):
+                if type(val) is item:
                     return
         else:
-            if isinstance(val, python_type):
+            if type(val) is python_type or python_type is object:
                 return
 
         omg_type_name = cls.python_types_to_omg_types.get(type(val), 'unknown')
