@@ -111,7 +111,7 @@ class ServiceOutputValidator:
                 if type(val) is item:
                     return
         else:
-            if type(val) is python_type or python_type is object:
+            if python_type is object or type(val) is python_type:
                 return
 
         omg_type_name = cls.python_types_to_omg_types.get(type(val), 'unknown')
