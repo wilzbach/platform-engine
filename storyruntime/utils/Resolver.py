@@ -124,9 +124,6 @@ class Resolver:
         Handles expression where item['assertion'/'expression']
         is one of the following:
         - equals
-        - not_equal
-        - greater
-        - greater_equal
         - less
         - less_equal
         - not
@@ -146,15 +143,6 @@ class Resolver:
         if a == 'equals' or a == 'equal':
             right = self.resolve(values[1])
             return left == right
-        elif a == 'not_equal':
-            right = self.resolve(values[1])
-            return left != right
-        elif a == 'greater':
-            right = self.resolve(values[1])
-            return left > right
-        elif a == 'greater_equal':
-            right = self.resolve(values[1])
-            return left >= right
         elif a == 'less':
             right = self.resolve(values[1])
             return left < right
