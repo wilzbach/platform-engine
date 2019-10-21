@@ -376,7 +376,8 @@ async def test_arrays(suite, logger, run_suite):
                           'b = a to Map[string,List[int]]\n'
                           'b["a"][0] = 10\n',
         cases=[
-            Case(assertion=ContextAssertion(key='a', expected={'a': [1, 2]}))
+            Case(assertion=ContextAssertion(key='a', expected={'a': [1, 2]})),
+            Case(assertion=ContextAssertion(key='b', expected={'a': [10, 2]}))
         ]
     ),
     Suite(
@@ -385,7 +386,9 @@ async def test_arrays(suite, logger, run_suite):
                           'b["a"]["b"] = "d"\n',
         cases=[
             Case(assertion=ContextAssertion(
-                key='a', expected={'a': {'b': 'c'}}))
+                key='a', expected={'a': {'b': 'c'}})),
+            Case(assertion=ContextAssertion(
+                key='b', expected={'a': {'b': 'd'}}))
         ]
     )
 ])
