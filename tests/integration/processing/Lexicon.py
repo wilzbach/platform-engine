@@ -370,6 +370,23 @@ async def test_arrays(suite, logger, run_suite):
                 )
             )
         ]
+    ),
+    Suite(
+        preparation_lines='a = {"a": [1, 2]}\n'
+                          'b = a to Map[string,List[int]]\n'
+                          'b["a"][0] = 10\n',
+        cases=[
+            Case(assertion=ContextAssertion(key='a', expected={'a': [1, 2]}))
+        ]
+    ),
+    Suite(
+        preparation_lines='a = {"a": {"b": "c"}}\n'
+                          'b = a to Map[string,Map[string, any]]\n'
+                          'b["a"]["b"] = "d"\n',
+        cases=[
+            Case(assertion=ContextAssertion(
+                key='a', expected={'a': {'b': 'c'}}))
+        ]
     )
 ])
 @mark.asyncio
