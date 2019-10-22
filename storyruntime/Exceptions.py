@@ -27,7 +27,7 @@ class StoryscriptError(Exception):
         if self.root is not None:
             trace += f': {str(self.root)}'
 
-        for item in stack:
+        for item in stack[::-1]:
             line = self.story.line(item)
             src = line.get('src')
 
