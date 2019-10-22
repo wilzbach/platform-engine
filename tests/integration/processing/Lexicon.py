@@ -857,8 +857,8 @@ async def test_range_mutations(suite: Suite, logger, run_suite):
             ),
             Case(
                 append=f'a = {math.pi / 4}\n'
-                       'b = a.tan()\n'
-                       'c = b.approxEqual(value: 1)',
+                'b = a.tan()\n'
+                'c = b.approxEqual(value: 1)',
                 assertion=ContextAssertion(key='c', expected=True)
             ),
             Case(
@@ -895,8 +895,8 @@ async def test_range_mutations(suite: Suite, logger, run_suite):
             ),
             Case(
                 append=f'a = {math.pi / 4}\n'
-                       'b = a.tan()\n'
-                       'c = b.approxEqual(value: 1)',
+                'b = a.tan()\n'
+                'c = b.approxEqual(value: 1)',
                 assertion=ContextAssertion(key='c', expected=True)
             ),
             Case(
@@ -950,11 +950,11 @@ async def test_float_mutations(suite: Suite, logger, run_suite):
                           '    total += x',
         cases=[
             Case(assertion=ContextAssertion(key='total',
-                                                expected=6)),
+                                            expected=6)),
             Case(assertion=ContextAssertion(key='prefix',
-                                                expected=None)),
+                                            expected=None)),
             Case(assertion=ContextAssertion(key='name',
-                                                expected='nobody'))
+                                            expected='nobody'))
         ]
     ),
     Suite(
@@ -1101,27 +1101,27 @@ async def test_stacked_contexts(suite: Suite, logger, run_suite):
         cases=[
             Case(
                 append=f'a = "fooBar"\n'
-                       'b = a.replace(pattern: /bar/i by: "foo")',
+                'b = a.replace(pattern: /bar/i by: "foo")',
                 assertion=ContextAssertion(key='b', expected='foofoo')
             ),
             Case(
                 append=f'a = "fooBar\\nmv foo.txt"\n'
-                       'b = a.replace(pattern: /Bar.+/s by: "rm")',
+                'b = a.replace(pattern: /Bar.+/s by: "rm")',
                 assertion=ContextAssertion(key='b', expected='foorm')
             ),
             Case(
                 append=f'a = "fooBar\\nfoobar"\n'
-                       'b = a.replace(pattern: /^foo/m by: "Foo")',
+                'b = a.replace(pattern: /^foo/m by: "Foo")',
                 assertion=ContextAssertion(key='b', expected='FooBar\nFoobar')
             ),
             Case(
                 append=f'a = "fooBar"\n'
-                       'b = a.contains(pattern: /ar/)',
+                'b = a.contains(pattern: /ar/)',
                 assertion=ContextAssertion(key='b', expected=True)
             ),
             Case(
                 append=f'a = "fooBar"\n'
-                       'b = a.contains(pattern: /ar/g)',
+                'b = a.contains(pattern: /ar/g)',
                 assertion=RuntimeExceptionAssertion(
                     exception_type=StoryscriptError,
                     message='Failed to apply mutation contains! '
@@ -1754,6 +1754,33 @@ async def test_function(suite: Suite, logger, run_suite):
         ]
     ),
     Suite(
+        preparation_lines='failed = true\n'
+                          'try\n'
+                          '  throw "error"\n',
+        cases=[
+            Case(append='failed = false',
+                 assertion=ContextAssertion(key='failed', expected=False))
+        ]
+    ),
+    Suite(
+        preparation_lines='failed = false\n'
+                          'try\n'
+                          '  a = 1\n',
+        cases=[
+            Case(assertion=ContextAssertion(key='failed', expected=False)),
+            Case(assertion=ContextAssertion(key='a', expected=None))
+        ]
+    ),
+    Suite(
+        preparation_lines='failed = true\n'
+                          'try\n'
+                          '  throw "error"\n'
+                          '  failed = false\n',
+        cases=[
+            Case(assertion=ContextAssertion(key='failed', expected=True))
+        ]
+    ),
+    Suite(
         preparation_lines='try\n'
                           '  throw "error"\n'
                           'catch\n'
@@ -1778,6 +1805,41 @@ async def test_function(suite: Suite, logger, run_suite):
         cases=[
             Case(prepend='failed = false',
                  assertion=ContextAssertion(key='failed', expected=False))
+        ]
+    ),
+    Suite(
+        preparation_lines='try\n'
+                          '  throw "error"\n'
+                          'finally\n'
+                          '  _finally = true\n'
+                          '  throw "finally error"',
+        cases=[
+            Case(prepend='_finally = false',
+                 assertion=RuntimeExceptionAssertion(
+                     exception_type=StoryscriptError,
+                     context_assertion=ContextAssertion(
+                         key='_finally', expected=True
+                     )
+                 )),
+        ]
+    ),
+    Suite(
+        preparation_lines='try\n'
+                          '  throw "error"\n'
+                          'catch\n'
+                          '  throw "catch err"\n'
+                          'finally\n'
+                          '  _finally = true\n'
+                          '  throw "finally error"',
+        cases=[
+            Case(prepend='_finally = false',
+                 assertion=RuntimeExceptionAssertion(
+                     exception_type=StoryscriptError,
+                     message='finally error',
+                     context_assertion=ContextAssertion(
+                         key='_finally', expected=True
+                     )
+                 )),
         ]
     ),
     Suite(
