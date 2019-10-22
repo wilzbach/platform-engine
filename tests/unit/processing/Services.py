@@ -576,11 +576,16 @@ def test_raise_for_type_mismatch_object(story, case):
 
 @mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
                           'boolean', 'any'])
-@mark.parametrize('val', [1, 0.9, 'hello', [0, 1], {'a': 'b'}, True, False])
-def test_raise_for_type_mismatch(story, typ, val):
+@mark.parametrize('val', [None, 1, 0.9, 'hello', [0, 1], {'a': 'b'}, True,
+                          False])
+@mark.parametrize('required', [True, False])
+def test_raise_for_type_mismatch(story, typ, val, required):
     arg_conf = {
         'type': typ
     }
+
+    if required:
+        arg_conf['required'] = True
 
     line = {'ln': '10'}
 
@@ -598,6 +603,8 @@ def test_raise_for_type_mismatch(story, typ, val):
     elif typ == 'boolean' and isinstance(val, bool):
         valid = True
     elif typ == 'any':
+        valid = True
+    elif val is None and not required:
         valid = True
 
     if valid:

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
+from .RegExpUtils import RegExpUtils
 from .TypeResolver import TypeResolver
 from .TypeUtils import TypeUtils
 from ..Exceptions import StoryscriptRuntimeError
@@ -101,7 +102,9 @@ class Resolver:
         elif object_type == 'path':
             return self.path(item['paths'])
         elif object_type == 'regexp':
-            return re.compile(item['regexp'])
+            return re.compile(
+                item['regexp'],
+                flags=RegExpUtils.process_flags(item.get('flags', '')))
         elif object_type == 'value':
             return item['value']
         elif object_type == 'dict':
@@ -121,9 +124,6 @@ class Resolver:
         Handles expression where item['assertion'/'expression']
         is one of the following:
         - equals
-        - not_equal
-        - greater
-        - greater_equal
         - less
         - less_equal
         - not
@@ -143,15 +143,6 @@ class Resolver:
         if a == 'equals' or a == 'equal':
             right = self.resolve(values[1])
             return left == right
-        elif a == 'not_equal':
-            right = self.resolve(values[1])
-            return left != right
-        elif a == 'greater':
-            right = self.resolve(values[1])
-            return left > right
-        elif a == 'greater_equal':
-            right = self.resolve(values[1])
-            return left >= right
         elif a == 'less':
             right = self.resolve(values[1])
             return left < right

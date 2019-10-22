@@ -390,6 +390,10 @@ class Services:
         """
         t = arg_conf.get('type', 'any')
 
+        if value is None and not arg_conf.get('required', False):
+            # Optional argument.
+            return
+
         if t == 'string' and isinstance(value, str):
             pattern = arg_conf.get('pattern')
             if pattern in ['', None] or \
