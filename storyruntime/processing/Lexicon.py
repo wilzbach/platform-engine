@@ -403,7 +403,10 @@ class Lexicon:
             if LineSentinels.is_sentinel(exec_res):
                 result_sentinel = exec_res
         except StoryscriptError:
-            if next_line['method'] == 'finally':
+            if next_line['method'] != 'finally' and \
+                    next_line['method'] != 'catch':
+                return Lexicon.line_number_or_none(next_line)
+            elif next_line['method'] == 'finally':
                 # skip right to the finally block
                 return await next_block_or_finally(result_sentinel)
 
