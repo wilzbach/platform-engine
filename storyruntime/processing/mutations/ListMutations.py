@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import random
 
+from storyruntime.utils.TypeResolver import TypeResolver
+
 
 class ListMutations:
 
@@ -92,3 +94,14 @@ class ListMutations:
                 value[i] = by
 
         return value
+
+    @classmethod
+    def join(cls, mutation, value, story, line, operator):
+        sep = story.argument_by_name(mutation, 'sep')
+        return sep.join([
+            TypeResolver.type_cast(item=v, type_={
+                '$OBJECT': 'type',
+                'type': 'string'
+            })
+            for v in value
+        ])
