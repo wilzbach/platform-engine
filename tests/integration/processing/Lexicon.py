@@ -1143,6 +1143,33 @@ async def test_function(suite: Suite, logger, run_suite):
         ]
     ),
     Suite(
+        preparation_lines='failed = true\n'
+                          'try\n'
+                          '  throw "error"\n',
+        cases=[
+            Case(append='failed = false',
+                 assertion=ContextAssertion(key='failed', expected=False))
+        ]
+    ),
+    Suite(
+        preparation_lines='failed = false\n'
+                          'try\n'
+                          '  a = 1\n',
+        cases=[
+            Case(assertion=ContextAssertion(key='failed', expected=False)),
+            Case(assertion=ContextAssertion(key='a', expected=None))
+        ]
+    ),
+    Suite(
+        preparation_lines='failed = true\n'
+                          'try\n'
+                          '  throw "error"\n'
+                          '  failed = false\n',
+        cases=[
+            Case(assertion=ContextAssertion(key='failed', expected=True))
+        ]
+    ),
+    Suite(
         preparation_lines='try\n'
                           '  throw "error"\n'
                           'catch\n'
@@ -1167,6 +1194,41 @@ async def test_function(suite: Suite, logger, run_suite):
         cases=[
             Case(prepend='failed = false',
                  assertion=ContextAssertion(key='failed', expected=False))
+        ]
+    ),
+    Suite(
+        preparation_lines='try\n'
+                          '  throw "error"\n'
+                          'finally\n'
+                          '  _finally = true\n'
+                          '  throw "finally error"',
+        cases=[
+            Case(prepend='_finally = false',
+                 assertion=RuntimeExceptionAssertion(
+                     exception_type=StoryscriptError,
+                     context_assertion=ContextAssertion(
+                         key='_finally', expected=True
+                     )
+                 )),
+        ]
+    ),
+    Suite(
+        preparation_lines='try\n'
+                          '  throw "error"\n'
+                          'catch\n'
+                          '  throw "catch err"\n'
+                          'finally\n'
+                          '  _finally = true\n'
+                          '  throw "finally error"',
+        cases=[
+            Case(prepend='_finally = false',
+                 assertion=RuntimeExceptionAssertion(
+                     exception_type=StoryscriptError,
+                     message='finally error',
+                     context_assertion=ContextAssertion(
+                         key='_finally', expected=True
+                     )
+                 )),
         ]
     ),
     Suite(
