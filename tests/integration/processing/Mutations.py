@@ -558,6 +558,22 @@ async def test_string_mutations(suite: Suite, logger, run_suite):
                     expected=[1, 42, 42, 3, 4, 4, 5, 5]
                 )
             ),
+            Case(
+                append='s = arr.join(sep: "x")',
+                assertion=ContextAssertion(key='s', expected='1x2x2x3x4x4x5x5')
+            )
+        ]
+    ),
+    Suite(
+        preparation_lines='arr = [{"a": 1, "b": 2}, [1, 2], true, 4, 5d, 3.0]',
+        cases=[
+            Case(
+                append='s = arr.join(sep: ",")',
+                assertion=ContextAssertion(
+                    key='s',
+                    expected='{"a": 1, "b": 2},[1, 2],true,4,432000000,3.0'
+                )
+            )
         ]
     )
 ])
