@@ -19,7 +19,7 @@ setup(
     description='The runtime powering Storyscript Cloud & executing stories.',
     long_description=readme,
     author='Storyscript',
-    author_email='noreply@storyscript.io',
+    author_email='support@storyscript.io',
     version='0.2.0',
     packages=find_packages(),
     python_requires='>=3.7',
