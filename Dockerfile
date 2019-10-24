@@ -1,7 +1,6 @@
 FROM          python:3.7.4
 
-RUN           apt-get update
-RUN           apt-get install -y socat
+RUN           apt-get update && apt-get install -y socat
 
 # Optimization to not keep downloading dependencies on every build.
 RUN           mkdir /app
