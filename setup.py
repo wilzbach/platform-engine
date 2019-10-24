@@ -38,13 +38,13 @@ setup(
         'requests==2.21.0'  # Used for structures like CaseInsensitiveDict.
     ],
     extras_require={
-        'pep8': [
+        'stylecheck': [
             'flake8==3.5.0',
             'flake8-quotes==1.0.0',
             'flake8-import-order==0.18',
             'pep8-naming==0.7.0'
         ],
-        'py37': [
+        'pytest': [
             'pytest==3.6.3',
             'pytest-cov==2.5.1',
             'pytest-mock==1.10.0',
