@@ -15,8 +15,8 @@ if sys.argv[-1] == 'publish':
 readme = io.open('README.md', 'r', encoding='utf-8').read()
 
 setup(
-    name='storyscript-platform-engine',
-    description='The engine of the Storyscript platform',
+    name='storyruntime',
+    description='The runtime powering Storyscript Cloud & executing stories.',
     long_description=readme,
     author='Storyscript',
     author_email='noreply@storyscript.io',
