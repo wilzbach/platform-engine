@@ -39,10 +39,7 @@ setup(
     ],
     extras_require={
         'stylecheck': [
-            'flake8==3.5.0',
-            'flake8-quotes==1.0.0',
-            'flake8-import-order==0.18',
-            'pep8-naming==0.7.0'
+            'black==19.3b0'
         ],
         'pytest': [
             'pytest==3.6.3',
