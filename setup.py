@@ -35,7 +35,7 @@ setup(
         "asyncpg==0.18.3",
         "numpy==1.16.4",
         "expiringdict==1.1.4",
-        "requests==2.21.0",  # Used for structures like CaseInsensitiveDict.
+        "requests==2.22.0",  # Used for structures like CaseInsensitiveDict.
     ],
     extras_require={
         "stylecheck": ["black==19.3b0"],
