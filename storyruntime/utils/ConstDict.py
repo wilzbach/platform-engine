@@ -4,7 +4,7 @@ class ConstDict:
     """
 
     def __init__(self, data):
-        object.__setattr__(self, '_data', data)
+        object.__setattr__(self, "_data", data)
 
     def __getattr__(self, attr):
         return self._data[attr]

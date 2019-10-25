@@ -5,8 +5,12 @@ import re
 import ujson
 
 from .AppConfig import Forward
-from .Exceptions import ActionNotFound, ContainerSpecNotRegisteredError,\
-    EnvironmentVariableNotFound, K8sError
+from .Exceptions import (
+    ActionNotFound,
+    ContainerSpecNotRegisteredError,
+    EnvironmentVariableNotFound,
+    K8sError,
+)
 from .Kubernetes import Kubernetes
 from .Types import StreamingService
 from .constants.LineConstants import LineConstants
@@ -18,7 +22,6 @@ from .utils import Dict
 
 
 class Containers:
-
     @classmethod
     async def remove_volume(cls, app, name):
         await Kubernetes.remove_volume(app, name)
@@ -40,8 +43,8 @@ class Containers:
         # Note: 'uuid' and 'image' are inserted by asyncy.Apps,
         # and are not a part of the OMG spec.
         omg = app.services[service_name][ServiceConstants.config]
-        image = omg.get('image', service_name)
-        service_uuid = omg['uuid']
+        image = omg.get("image", service_name)
+        service_uuid = omg["uuid"]
 
         action = None
         if line is not None:
@@ -49,56 +52,68 @@ class Containers:
 
         command_conf = None
         if action is not None:
-            command_conf = Dict.find(omg, f'actions.{action}')
+            command_conf = Dict.find(omg, f"actions.{action}")
 
             if command_conf is None:
                 raise ActionNotFound(service=service_name, action=action)
 
-        shutdown_command = Dict.find(omg, f'lifecycle.shutdown.command')
+        shutdown_command = Dict.find(omg, f"lifecycle.shutdown.command")
 
-        if command_conf is not None and command_conf.get('run'):
-            start_command = Dict.find(command_conf, 'run.command')
+        if command_conf is not None and command_conf.get("run"):
+            start_command = Dict.find(command_conf, "run.command")
         else:
-            start_command = Dict.find(omg, f'lifecycle.startup.command')
+            start_command = Dict.find(omg, f"lifecycle.startup.command")
 
         if start_command is None:
-            start_command = ['tail', '-f', '/dev/null']
+            start_command = ["tail", "-f", "/dev/null"]
 
         volumes = []
-        if omg.get('volumes'):
-            for name, data in omg['volumes'].items():
+        if omg.get("volumes"):
+            for name, data in omg["volumes"].items():
                 vol_name = cls.hash_volume_name(app, line, service_name, name)
-                persist = data.get('persist', False)
-                target = data.get('target', False)
+                persist = data.get("persist", False)
+                target = data.get("target", False)
 
-                volumes.append(Volume(persist=persist, name=vol_name,
-                                      mount_path=target))
+                volumes.append(
+                    Volume(persist=persist, name=vol_name, mount_path=target)
+                )
 
         registry_url = cls.get_registry_url(image)
-        container_configs = list(map(lambda config: ContainerConfig(
-            name=cls.get_containerconfig_name(app, config.name),
-            data=config.data
-        ), await Database.get_container_configs(app, registry_url)))
+        container_configs = list(
+            map(
+                lambda config: ContainerConfig(
+                    name=cls.get_containerconfig_name(app, config.name),
+                    data=config.data,
+                ),
+                await Database.get_container_configs(app, registry_url),
+            )
+        )
 
         env = {}
-        for key, omg_config in omg.get('environment', {}).items():
+        for key, omg_config in omg.get("environment", {}).items():
             actual_val = app.environment.get(service_name, {}).get(key)
             if actual_val is None:
-                actual_val = omg_config.get('default')
-            if omg_config.get('required', False) and actual_val is None:
-                raise EnvironmentVariableNotFound(service=service_name,
-                                                  variable=key)
+                actual_val = omg_config.get("default")
+            if omg_config.get("required", False) and actual_val is None:
+                raise EnvironmentVariableNotFound(
+                    service=service_name, variable=key
+                )
 
             if actual_val is not None:
                 env[key] = actual_val
 
-        await Kubernetes.create_pod(app=app, service_name=service_name,
-                                    service_uuid=service_uuid, image=image,
-                                    container_name=container_name,
-                                    start_command=start_command,
-                                    shutdown_command=shutdown_command, env=env,
-                                    volumes=volumes,
-                                    container_configs=container_configs)
+        await Kubernetes.create_pod(
+            app=app,
+            service_name=service_name,
+            service_uuid=service_uuid,
+            image=image,
+            container_name=container_name,
+            start_command=start_command,
+            shutdown_command=shutdown_command,
+            env=env,
+            volumes=volumes,
+            container_configs=container_configs,
+        )
 
     @classmethod
     async def clean_app(cls, app):
@@ -110,45 +125,59 @@ class Containers:
 
     @classmethod
     def get_hostname(cls, story, line, service_alias):
-        container = cls.get_container_name(story.app, story.name, line,
-                                           service_alias)
+        container = cls.get_container_name(
+            story.app, story.name, line, service_alias
+        )
         return Kubernetes.get_hostname(story.app, container)
 
     @classmethod
     def get_registry_url(cls, image):
-        official = ['docker.io', 'index.docker.io']
-        i = image.find('/')
-        if i == -1 or (not any(c in image[:i] for c in '.:') and
-                       image[:i] != 'localhost') or image[:i] in official:
-            return 'https://index.docker.io/v1/'
+        official = ["docker.io", "index.docker.io"]
+        i = image.find("/")
+        if (
+            i == -1
+            or (
+                not any(c in image[:i] for c in ".:")
+                and image[:i] != "localhost"
+            )
+            or image[:i] in official
+        ):
+            return "https://index.docker.io/v1/"
         else:
             return image[:i]
 
     @classmethod
     async def expose_service(cls, app, expose: Forward):
-        container_name = cls.get_container_name(app, None, None,
-                                                expose.service)
+        container_name = cls.get_container_name(
+            app, None, None, expose.service
+        )
         await cls.create_and_start(app, None, expose.service, container_name)
         ingress_name = cls.hash_ingress_name(expose)
-        hostname = f'{app.app_dns}--{cls.get_simple_name(expose.service)}'
-        await Kubernetes.create_ingress(ingress_name, app,
-                                        expose, container_name,
-                                        hostname=hostname)
+        hostname = f"{app.app_dns}--{cls.get_simple_name(expose.service)}"
+        await Kubernetes.create_ingress(
+            ingress_name, app, expose, container_name, hostname=hostname
+        )
 
-        app.logger.info(f'Exposed service {expose.service} as '
-                        f'https://{hostname}.{app.config.APP_DOMAIN}'
-                        f'{expose.http_path}')
+        app.logger.info(
+            f"Exposed service {expose.service} as "
+            f"https://{hostname}.{app.config.APP_DOMAIN}"
+            f"{expose.http_path}"
+        )
 
     @classmethod
     def get(cls, story, line) -> StreamingService:
         service = line[LineConstants.service]
         hostname = cls.get_hostname(story, line, service)
-        container_name = cls.get_container_name(story.app, story.name,
-                                                line, service)
+        container_name = cls.get_container_name(
+            story.app, story.name, line, service
+        )
 
-        return StreamingService(name=service, command=line['command'],
-                                container_name=container_name,
-                                hostname=hostname)
+        return StreamingService(
+            name=service,
+            command=line["command"],
+            container_name=container_name,
+            hostname=hostname,
+        )
 
     @classmethod
     async def start(cls, story, line):
@@ -158,14 +187,15 @@ class Containers:
         If a container already exists, then it will be reused.
         """
         service = line[LineConstants.service]
-        story.logger.debug(f'Starting container {service}')
-        container_name = cls.get_container_name(story.app, story.name,
-                                                line, service)
+        story.logger.debug(f"Starting container {service}")
+        container_name = cls.get_container_name(
+            story.app, story.name, line, service
+        )
         await cls.create_and_start(story.app, line, service, container_name)
 
         ss = cls.get(story, line)
 
-        story.logger.debug(f'Started container {container_name}')
+        story.logger.debug(f"Started container {container_name}")
         return ss
 
     @classmethod
@@ -175,19 +205,19 @@ class Containers:
 
         if spec is None:
             raise ContainerSpecNotRegisteredError(
-                container_name=container_name,
-                story=story,
-                line=line
+                container_name=container_name, story=story, line=line
             )
 
-        args = spec[ServiceConstants.config]['actions'][command]\
-            .get('arguments')
+        args = spec[ServiceConstants.config]["actions"][command].get(
+            "arguments"
+        )
 
         if args is None:
             return [command]
 
-        command_format = spec[ServiceConstants.config]['actions'][command]\
-            .get('format')
+        command_format = spec[ServiceConstants.config]["actions"][command].get(
+            "format"
+        )
         if command_format is None:
             # Construct a dictionary of all arguments required and send them
             # as a JSON string to the command.
@@ -197,13 +227,14 @@ class Containers:
 
             return [command, ujson.dumps(all_args)]
 
-        command_parts = command_format.split(' ')
+        command_parts = command_format.split(" ")
 
         for k in args:
             actual = story.argument_by_name(line, k)
             for i in range(0, len(command_parts)):
-                command_parts[i] = command_parts[i].replace('{' + k + '}',
-                                                            actual)
+                command_parts[i] = command_parts[i].replace(
+                    "{" + k + "}", actual
+                )
 
         return command_parts
 
@@ -211,7 +242,7 @@ class Containers:
     def get_containerconfig_name(cls, app, name):
         simple_name = cls.get_simple_name(name)[:20]
         h = cls.hash_containerconfig_name(app, name)
-        return f'{simple_name}-{h}'
+        return f"{simple_name}-{h}"
 
     @classmethod
     def get_container_name(cls, app, story_name, line, name):
@@ -227,42 +258,45 @@ class Containers:
         simple_name = cls.get_simple_name(name)[:20]
         h = cls.hash_service_name(app, name)
 
-        return f'{simple_name}-{h}'
+        return f"{simple_name}-{h}"
 
     @classmethod
     def get_simple_name(cls, string):
-        parts = re.findall('[a-zA-Z]*', string)
-        out = ''
+        parts = re.findall("[a-zA-Z]*", string)
+        out = ""
         for i in parts:
-            if i != '':
+            if i != "":
                 out += i
 
         return out.lower()
 
     @classmethod
     def hash_service_name(cls, app, name):
-        return hashlib.sha1(f'{name}-{app.version}'
-                            .encode('utf-8')).hexdigest()
+        return hashlib.sha1(
+            f"{name}-{app.version}".encode("utf-8")
+        ).hexdigest()
 
     @classmethod
     def hash_ingress_name(cls, expose: Forward):
         simple_name = cls.get_simple_name(expose.service_forward_name)[:20]
-        h = hashlib.sha1(f'{expose.service}-{expose.service_forward_name}'
-                         .encode('utf-8')).hexdigest()
-        return f'{simple_name}-{h}'
+        h = hashlib.sha1(
+            f"{expose.service}-{expose.service_forward_name}".encode("utf-8")
+        ).hexdigest()
+        return f"{simple_name}-{h}"
 
     @classmethod
     def hash_volume_name(cls, app, line, service, volume_name):
-        key = f'{volume_name}-{service}'
+        key = f"{volume_name}-{service}"
 
         simple_name = cls.get_simple_name(volume_name)[:20]
-        h = hashlib.sha1(key.encode('utf-8')).hexdigest()
-        return f'{simple_name}-{h}'
+        h = hashlib.sha1(key.encode("utf-8")).hexdigest()
+        return f"{simple_name}-{h}"
 
     @classmethod
     def hash_containerconfig_name(cls, app, name):
-        return hashlib.sha1(f'{app.version}-{name}'
-                            .encode('utf-8')).hexdigest()
+        return hashlib.sha1(
+            f"{app.version}-{name}".encode("utf-8")
+        ).hexdigest()
 
     @classmethod
     async def exec(cls, logger, story, line, container_name, command):
@@ -276,4 +310,4 @@ class Containers:
         asyncy.Exceptions.K8sError:
             If the execution failed for an unknown reason.
         """
-        raise K8sError(story=story, line=line, message='Not implemented')
+        raise K8sError(story=story, line=line, message="Not implemented")

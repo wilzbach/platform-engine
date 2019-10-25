@@ -54,10 +54,10 @@ class IsANumberAssertion(Assertion):
         assert type(val) == int or type(val) == float
 
 
-class RuntimeExceptionAssertion():
-
-    def __init__(self, exception_type, context_assertion=None,
-                 **fields_to_check):
+class RuntimeExceptionAssertion:
+    def __init__(
+        self, exception_type, context_assertion=None, **fields_to_check
+    ):
         self.exception_type = exception_type
         self.context_assertion = context_assertion
         self.fields_to_check = fields_to_check
@@ -68,7 +68,6 @@ class RuntimeExceptionAssertion():
             attr = getattr(exception, k)
             assert attr == v
 
-        if self.context_assertion is not None and \
-                context is not None:
+        if self.context_assertion is not None and context is not None:
             assert isinstance(self.context_assertion, ContextAssertion)
             self.context_assertion.verify(context)

@@ -23,7 +23,6 @@ from .utils.HttpUtils import HttpUtils
 
 
 class Kubernetes:
-
     @classmethod
     def is_2xx(cls, res: HTTPResponse):
         return int(res.code / 100) == 2
@@ -34,149 +33,163 @@ class Kubernetes:
             return
 
         path = res.request.url
-        raise K8sError(message=f'Failed to call {path}! '
-                               f'code={res.code}; body={res.body}; '
-                               f'error={res.error}')
+        raise K8sError(
+            message=f"Failed to call {path}! "
+            f"code={res.code}; body={res.body}; "
+            f"error={res.error}"
+        )
 
     @classmethod
-    async def create_ingress(cls, ingress_name, app, forward: Forward,
-                             container_name: str, hostname: str):
-        if await cls._does_resource_exist(app, 'ingresses', ingress_name):
-            app.logger.debug(f'Kubernetes ingress for {forward} exists')
+    async def create_ingress(
+        cls,
+        ingress_name,
+        app,
+        forward: Forward,
+        container_name: str,
+        hostname: str,
+    ):
+        if await cls._does_resource_exist(app, "ingresses", ingress_name):
+            app.logger.debug(f"Kubernetes ingress for {forward} exists")
             return
 
         service_config = app.services[forward.service][ServiceConstants.config]
         all_forwards = service_config.get(
-            AppConfig.KEY_FORWARDS, service_config.get(AppConfig.KEY_EXPOSE))
+            AppConfig.KEY_FORWARDS, service_config.get(AppConfig.KEY_EXPOSE)
+        )
 
         expose_conf = all_forwards[forward.service_forward_name]
 
-        http_conf = expose_conf['http']
+        http_conf = expose_conf["http"]
 
         payload = {
-            'apiVersion': 'extensions/v1beta1',
-            'kind': 'Ingress',
-            'metadata': {
-                'name': ingress_name,
-                'annotations': {
-                    'kubernetes.io/ingress.class': 'nginx',
-                    'kubernetes.io/ingress.global-static-ip-name':
-                        app.config.INGRESS_GLOBAL_STATIC_IP_NAME,
-                    'ingress.kubernetes.io/rewrite-target': forward.http_path,
-                    'nginx.ingress.kubernetes.io/proxy-body-size': '1m',
-                    'nginx.ingress.kubernetes.io/proxy-read-timeout': '120'
-                }
+            "apiVersion": "extensions/v1beta1",
+            "kind": "Ingress",
+            "metadata": {
+                "name": ingress_name,
+                "annotations": {
+                    "kubernetes.io/ingress.class": "nginx",
+                    "kubernetes.io/ingress.global-static-ip-name": app.config.INGRESS_GLOBAL_STATIC_IP_NAME,
+                    "ingress.kubernetes.io/rewrite-target": forward.http_path,
+                    "nginx.ingress.kubernetes.io/proxy-body-size": "1m",
+                    "nginx.ingress.kubernetes.io/proxy-read-timeout": "120",
+                },
             },
-            'spec': {
-                'tls': [
-                    {
-                        'hosts': [f'{hostname}.'
-                                  f'{app.config.APP_DOMAIN}']
-                    }
+            "spec": {
+                "tls": [
+                    {"hosts": [f"{hostname}." f"{app.config.APP_DOMAIN}"]}
                 ],
-                'rules': [
+                "rules": [
                     {
-                        'host': f'{hostname}.{app.config.APP_DOMAIN}',
-                        'http': {
-                            'paths': [
+                        "host": f"{hostname}.{app.config.APP_DOMAIN}",
+                        "http": {
+                            "paths": [
                                 {
-                                    'path': http_conf['path'],
-                                    'backend': {
-                                        'serviceName': container_name,
-                                        'servicePort': http_conf['port']
-                                    }
+                                    "path": http_conf["path"],
+                                    "backend": {
+                                        "serviceName": container_name,
+                                        "servicePort": http_conf["port"],
+                                    },
                                 }
                             ]
-                        }
+                        },
                     }
-                ]
-            }
+                ],
+            },
         }
 
-        prefix = cls._get_api_path_prefix('ingresses')
-        res = await cls.make_k8s_call(app.config, app.logger,
-                                      f'{prefix}/{app.app_id}/ingresses',
-                                      payload=payload)
+        prefix = cls._get_api_path_prefix("ingresses")
+        res = await cls.make_k8s_call(
+            app.config,
+            app.logger,
+            f"{prefix}/{app.app_id}/ingresses",
+            payload=payload,
+        )
 
         if not cls.is_2xx(res):
             raise K8sError(
-                message=f'Failed to create ingress for expose {forward}!')
+                message=f"Failed to create ingress for expose {forward}!"
+            )
 
-        app.logger.debug(f'Kubernetes ingress created')
+        app.logger.debug(f"Kubernetes ingress created")
 
     @classmethod
     async def create_namespace(cls, app):
-        res = await cls.make_k8s_call(app.config, app.logger,
-                                      f'/api/v1/namespaces/{app.app_id}')
+        res = await cls.make_k8s_call(
+            app.config, app.logger, f"/api/v1/namespaces/{app.app_id}"
+        )
 
         if res.code == 200:
-            app.logger.debug(f'Kubernetes namespace exists')
+            app.logger.debug(f"Kubernetes namespace exists")
             return
 
-        app.logger.debug(f'Kubernetes namespace does not exist')
+        app.logger.debug(f"Kubernetes namespace does not exist")
         payload = {
-            'apiVersion': 'v1',
-            'kind': 'Namespace',
-            'metadata': {
-                'name': app.app_id
-            }
+            "apiVersion": "v1",
+            "kind": "Namespace",
+            "metadata": {"name": app.app_id},
         }
 
-        res = await cls.make_k8s_call(app.config, app.logger,
-                                      '/api/v1/namespaces', payload=payload)
+        res = await cls.make_k8s_call(
+            app.config, app.logger, "/api/v1/namespaces", payload=payload
+        )
 
         if not cls.is_2xx(res):
-            raise K8sError(message='Failed to create namespace!')
+            raise K8sError(message="Failed to create namespace!")
 
-        app.logger.debug(f'Kubernetes namespace created')
+        app.logger.debug(f"Kubernetes namespace created")
 
     @classmethod
     def new_ssl_context(cls):
         return ssl.SSLContext()
 
     @classmethod
-    async def make_k8s_call(cls, config, logger, path: str,
-                            payload: dict = None,
-                            method: str = 'get') -> HTTPResponse:
+    async def make_k8s_call(
+        cls,
+        config,
+        logger,
+        path: str,
+        payload: dict = None,
+        method: str = "get",
+    ) -> HTTPResponse:
         context = cls.new_ssl_context()
 
         cert = config.CLUSTER_CERT
-        cert = cert.replace('\\n', '\n')
+        cert = cert.replace("\\n", "\n")
         context.load_verify_locations(cadata=cert)
 
         kwargs = {
-            'ssl_options': context,
-            'headers': {
-                'Authorization': f'bearer {config.CLUSTER_AUTH_TOKEN}',
-                'Content-Type': 'application/json; charset=utf-8'
+            "ssl_options": context,
+            "headers": {
+                "Authorization": f"bearer {config.CLUSTER_AUTH_TOKEN}",
+                "Content-Type": "application/json; charset=utf-8",
             },
-            'method': method.upper()
+            "method": method.upper(),
         }
 
-        if method.lower() == 'patch':
-            kwargs['headers']['Content-Type'] = \
-                'application/merge-patch+json; charset=utf-8'
+        if method.lower() == "patch":
+            kwargs["headers"][
+                "Content-Type"
+            ] = "application/merge-patch+json; charset=utf-8"
 
         if payload is not None:
-            kwargs['body'] = json.dumps(payload)
+            kwargs["body"] = json.dumps(payload)
 
-            if method == 'get':  # Default value.
-                kwargs['method'] = 'POST'
+            if method == "get":  # Default value.
+                kwargs["method"] = "POST"
 
         client = AsyncHTTPClient()
         return await HttpUtils.fetch_with_retry(
-            3, logger, f'https://{config.CLUSTER_HOST}{path}',
-            client, kwargs)
+            3, logger, f"https://{config.CLUSTER_HOST}{path}", client, kwargs
+        )
 
     @classmethod
     async def remove_volume(cls, app, name):
-        await cls._delete_resource(app, 'persistentvolumeclaims', name)
+        await cls._delete_resource(app, "persistentvolumeclaims", name)
 
     @classmethod
     async def _does_resource_exist(cls, app, resource, name):
         prefix = cls._get_api_path_prefix(resource)
-        path = f'{prefix}/{app.app_id}' \
-            f'/{resource}/{name}'
+        path = f"{prefix}/{app.app_id}" f"/{resource}/{name}"
 
         res = await cls.make_k8s_call(app.config, app.logger, path)
         if res.code == 404:
@@ -185,89 +198,89 @@ class Kubernetes:
             return True
 
         raise K8sError(
-            message=f'Failed to check if {resource}/{name} exists! '
-            f'Kubernetes API returned {res.code}.')
+            message=f"Failed to check if {resource}/{name} exists! "
+            f"Kubernetes API returned {res.code}."
+        )
 
     @classmethod
     async def _update_volume_label(cls, app, name):
-        path = f'/api/v1/namespaces/{app.app_id}/persistentvolumeclaims/{name}'
+        path = f"/api/v1/namespaces/{app.app_id}/persistentvolumeclaims/{name}"
         payload = {
-            'metadata': {
-                'labels': {
-                    'last_referenced_on': f'{int(time.time())}'
-                }
+            "metadata": {
+                "labels": {"last_referenced_on": f"{int(time.time())}"}
             }
         }
-        res = await cls.make_k8s_call(app.config, app.logger,
-                                      path, payload, method='patch')
+        res = await cls.make_k8s_call(
+            app.config, app.logger, path, payload, method="patch"
+        )
         cls.raise_if_not_2xx(res)
-        app.logger.debug(
-            f'Updated reference time for volume {name}')
+        app.logger.debug(f"Updated reference time for volume {name}")
 
     @classmethod
     async def create_volume(cls, app, name, persist):
-        if await cls._does_resource_exist(
-                app, 'persistentvolumeclaims', name):
-            app.logger.debug(f'Kubernetes volume {name} already exists')
+        if await cls._does_resource_exist(app, "persistentvolumeclaims", name):
+            app.logger.debug(f"Kubernetes volume {name} already exists")
             # Update the last_referenced_on label
             await cls._update_volume_label(app, name)
             return
 
-        path = f'/api/v1/namespaces/{app.app_id}/persistentvolumeclaims'
+        path = f"/api/v1/namespaces/{app.app_id}/persistentvolumeclaims"
         payload = {
-            'apiVersion': 'v1',
-            'kind': 'PersistentVolumeClaim',
-            'metadata': {
-                'name': name,
-                'namespace': app.app_id,
-                'labels': {
-                    'last_referenced_on': f'{int(time.time())}',
-                    'omg_persist': f'{persist}'
-                }
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": name,
+                "namespace": app.app_id,
+                "labels": {
+                    "last_referenced_on": f"{int(time.time())}",
+                    "omg_persist": f"{persist}",
+                },
             },
-            'spec': {
-                'accessModes': ['ReadWriteOnce'],
-                'resources': {
-                    'requests': {
-                        'storage': '100Mi'  # For now, during beta.
-                    }
-                }
-            }
+            "spec": {
+                "accessModes": ["ReadWriteOnce"],
+                "resources": {
+                    "requests": {"storage": "100Mi"}  # For now, during beta.
+                },
+            },
         }
 
         res = await cls.make_k8s_call(app.config, app.logger, path, payload)
         cls.raise_if_not_2xx(res)
-        app.logger.debug(f'Created a Kubernetes volume - {name}')
+        app.logger.debug(f"Created a Kubernetes volume - {name}")
 
     @classmethod
     def _get_api_path_prefix(cls, resource):
-        if resource == 'deployments':
-            return '/apis/apps/v1/namespaces'
-        elif resource == 'ingresses':
-            return '/apis/extensions/v1beta1/namespaces'
-        elif resource == 'services' or \
-                resource == 'persistentvolumeclaims' or \
-                resource == 'pods' or \
-                resource == 'secrets':
-            return '/api/v1/namespaces'
-        elif resource == 'metrics':
-            return '/apis/metrics.k8s.io/v1beta1'
+        if resource == "deployments":
+            return "/apis/apps/v1/namespaces"
+        elif resource == "ingresses":
+            return "/apis/extensions/v1beta1/namespaces"
+        elif (
+            resource == "services"
+            or resource == "persistentvolumeclaims"
+            or resource == "pods"
+            or resource == "secrets"
+        ):
+            return "/api/v1/namespaces"
+        elif resource == "metrics":
+            return "/apis/metrics.k8s.io/v1beta1"
 
         else:
-            raise Exception(f'Unsupported resource type {resource}')
+            raise Exception(f"Unsupported resource type {resource}")
 
     @classmethod
     async def _list_resource_names(cls, app, resource) -> typing.List[str]:
         prefix = cls._get_api_path_prefix(resource)
         res = await cls.make_k8s_call(
-            app.config, app.logger, f'{prefix}/{app.app_id}/{resource}'
-            f'?includeUninitialized=true')
+            app.config,
+            app.logger,
+            f"{prefix}/{app.app_id}/{resource}" f"?includeUninitialized=true",
+        )
 
-        body = json.loads(res.body, encoding='utf-8')
+        body = json.loads(res.body, encoding="utf-8")
         out = []
 
-        for i in body['items']:
-            out.append(i['metadata']['name'])
+        for i in body["items"]:
+            out.append(i["metadata"]["name"])
 
         return out
 
@@ -281,13 +294,15 @@ class Kubernetes:
         """
         prefix = cls._get_api_path_prefix(resource)
         res = await cls.make_k8s_call(
-            app.config, app.logger,
-            f'{prefix}/{app.app_id}/{resource}/{name}'
-            f'?gracePeriodSeconds=0',
-            method='delete')
+            app.config,
+            app.logger,
+            f"{prefix}/{app.app_id}/{resource}/{name}"
+            f"?gracePeriodSeconds=0",
+            method="delete",
+        )
 
         if res.code == 404:
-            app.logger.debug(f'Resource {resource}/{name} not found')
+            app.logger.debug(f"Resource {resource}/{name} not found")
             return
 
         # Sometimes, the API will throw a 409, indicating that a
@@ -299,65 +314,66 @@ class Kubernetes:
         # Wait until the resource has actually been killed.
         while True:
             res = await cls.make_k8s_call(
-                app.config, app.logger,
-                f'{prefix}/{app.app_id}/{resource}/{name}')
+                app.config,
+                app.logger,
+                f"{prefix}/{app.app_id}/{resource}/{name}",
+            )
 
             if res.code == 404:
                 break
 
-            app.logger.debug(f'{resource}/{name} is still terminating...')
+            app.logger.debug(f"{resource}/{name} is still terminating...")
 
             await asyncio.sleep(0.7)
 
-        app.logger.debug(f'Deleted {resource}/{name} successfully!')
+        app.logger.debug(f"Deleted {resource}/{name} successfully!")
 
     @classmethod
     async def clean_namespace(cls, app):
-        app.logger.debug(f'Clearing namespace contents...')
+        app.logger.debug(f"Clearing namespace contents...")
         # Things to delete:
         # 1. Services
         # 2. Deployments (should delete all pods internally too)
         # 3. Volumes which are marked with persist as false
         # 4. Ingresses
 
-        for i in await cls._list_resource_names(app, 'services'):
-            await cls._delete_resource(app, 'services', i)
+        for i in await cls._list_resource_names(app, "services"):
+            await cls._delete_resource(app, "services", i)
 
-        for i in await cls._list_resource_names(app, 'deployments'):
-            await cls._delete_resource(app, 'deployments', i)
+        for i in await cls._list_resource_names(app, "deployments"):
+            await cls._delete_resource(app, "deployments", i)
 
-        for i in await cls._list_resource_names(app, 'pods'):
-            await cls._delete_resource(app, 'pods', i)
+        for i in await cls._list_resource_names(app, "pods"):
+            await cls._delete_resource(app, "pods", i)
 
-        for i in await cls._list_resource_names(app, 'ingresses'):
-            await cls._delete_resource(app, 'ingresses', i)
+        for i in await cls._list_resource_names(app, "ingresses"):
+            await cls._delete_resource(app, "ingresses", i)
 
-        for i in await cls._list_resource_names(app, 'secrets'):
-            await cls._delete_resource(app, 'secrets', i)
+        for i in await cls._list_resource_names(app, "secrets"):
+            await cls._delete_resource(app, "secrets", i)
 
         # Volumes are not deleted at this moment.
         # See https://github.com/asyncy/platform-engine/issues/189
 
     @classmethod
     def get_hostname(cls, app, container_name):
-        return f'{container_name}.' \
-            f'{app.app_id}.svc.cluster.local'
+        return f"{container_name}." f"{app.app_id}.svc.cluster.local"
 
     @classmethod
     def find_all_ports(cls, service_config: dict, inside_http=False) -> set:
         ports = set()
         for key, value in service_config.items():
             if isinstance(value, dict):
-                http = key == 'http' or inside_http
+                http = key == "http" or inside_http
                 ports.update(cls.find_all_ports(value, inside_http=http))
-            elif inside_http and key == 'port':
+            elif inside_http and key == "port":
                 assert isinstance(value, int)
                 ports.add(value)
 
         if not inside_http:
-            expose = service_config.get('expose', {})
+            expose = service_config.get("expose", {})
             for name, expose_conf in expose.items():
-                expose_port = Dict.find(expose_conf, 'http.port')
+                expose_port = Dict.find(expose_conf, "http.port")
                 if expose_port is not None:
                     ports.add(expose_port)
 
@@ -367,16 +383,13 @@ class Kubernetes:
     def format_ports(cls, ports: {int}):
         port_list = []
         for port in ports:
-            port_list.append({
-                'port': port,
-                'protocol': 'TCP',
-                'targetPort': port
-            })
+            port_list.append(
+                {"port": port, "protocol": "TCP", "targetPort": port}
+            )
         return port_list
 
     @classmethod
-    async def create_service(cls, app, service: str,
-                             container_name: str):
+    async def create_service(cls, app, service: str, container_name: str):
         # Note: We don't check if this service exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a service.
@@ -384,36 +397,30 @@ class Kubernetes:
         port_list = cls.format_ports(ports)
 
         payload = {
-            'apiVersion': 'v1',
-            'kind': 'Service',
-            'metadata': {
-                'name': container_name,
-                'namespace': app.app_id,
-                'labels': {
-                    'app': container_name
-                }
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": container_name,
+                "namespace": app.app_id,
+                "labels": {"app": container_name},
             },
-            'spec': {
-                'ports': port_list,
-                'selector': {
-                    'app': container_name
-                }
-            }
+            "spec": {"ports": port_list, "selector": {"app": container_name}},
         }
 
-        path = f'/api/v1/namespaces/{app.app_id}/services'
+        path = f"/api/v1/namespaces/{app.app_id}/services"
         res = await cls.make_k8s_call(app.config, app.logger, path, payload)
         cls.raise_if_not_2xx(res)
 
         # Wait until the ports of the destination pod are open.
         hostname = cls.get_hostname(app, container_name)
-        app.logger.info(f'Waiting for ports to open: {ports}')
+        app.logger.info(f"Waiting for ports to open: {ports}")
         for port in ports:
             success = await cls.wait_for_port(hostname, port)
             if not success:
                 app.logger.warn(
-                    f'Timed out waiting for {hostname}:{port} to open. '
-                    f'Some actions of {service} might fail!')
+                    f"Timed out waiting for {hostname}:{port} to open. "
+                    f"Some actions of {service} might fail!"
+                )
 
     @classmethod
     async def create_imagepullsecret(cls, app, config: ContainerConfig):
@@ -423,24 +430,20 @@ class Kubernetes:
         ).decode()
 
         payload = {
-            'apiVersion': 'v1',
-            'kind': 'Secret',
-            'type': 'kubernetes.io/dockerconfigjson',
-            'metadata': {
-                'name': config.name,
-                'namespace': app.app_id
-            },
-            'data': {
-                '.dockerconfigjson': b64_container_config
-            }
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "type": "kubernetes.io/dockerconfigjson",
+            "metadata": {"name": config.name, "namespace": app.app_id},
+            "data": {".dockerconfigjson": b64_container_config},
         }
 
-        path = f'/api/v1/namespaces/{app.app_id}/secrets'
+        path = f"/api/v1/namespaces/{app.app_id}/secrets"
         res = await cls.make_k8s_call(app.config, app.logger, path, payload)
         if not cls.is_2xx(res):
             raise K8sError(
                 message=f'Failed to create imagePullSecret {config["name"]} '
-                        f'in namespace {app.app_id}!')
+                f"in namespace {app.app_id}!"
+            )
 
     @classmethod
     async def wait_for_port(cls, host, port):
@@ -462,26 +465,26 @@ class Kubernetes:
         # List of image pull errors taken from the kubernetes source code
         # github/kubernetes/kubernetes/blob/master/pkg/kubelet/images/types.go
         image_errors = [
-            'ImagePullBackOff',
-            'ImageInspectError',
-            'ErrImagePull',
-            'ErrImageNeverPull',
-            'RegistryUnavailable',
-            'InvalidImageName'
+            "ImagePullBackOff",
+            "ImageInspectError",
+            "ErrImagePull",
+            "ErrImageNeverPull",
+            "RegistryUnavailable",
+            "InvalidImageName",
         ]
-        prefix = cls._get_api_path_prefix('pods')
-        qs = urllib.parse.urlencode({
-            'labelSelector': f'app={container_name}'
-        })
-        res = await cls.make_k8s_call(app.config, app.logger,
-                                      f'{prefix}/{app.app_id}/pods?{qs}')
+        prefix = cls._get_api_path_prefix("pods")
+        qs = urllib.parse.urlencode({"labelSelector": f"app={container_name}"})
+        res = await cls.make_k8s_call(
+            app.config, app.logger, f"{prefix}/{app.app_id}/pods?{qs}"
+        )
         cls.raise_if_not_2xx(res)
-        body = json.loads(res.body, encoding='utf-8')
-        for pod in body['items']:
-            for container_status in pod['status'].get('containerStatuses', []):
-                is_waiting = Dict.find(container_status,
-                                       'state.waiting', False)
-                if is_waiting and is_waiting['reason'] in image_errors:
+        body = json.loads(res.body, encoding="utf-8")
+        for pod in body["items"]:
+            for container_status in pod["status"].get("containerStatuses", []):
+                is_waiting = Dict.find(
+                    container_status, "state.waiting", False
+                )
+                if is_waiting and is_waiting["reason"] in image_errors:
                     raise K8sError(
                         message=f'{is_waiting["reason"]} - '
                         f'Failed to pull image {container_status["image"]}'
@@ -497,29 +500,36 @@ class Kubernetes:
         the default state is Success.
         """
         omg = app.services[service][ServiceConstants.config]
-        health_check = Dict.find(omg, 'health.http')
+        health_check = Dict.find(omg, "health.http")
         if health_check is None:
             return None
-        assert health_check.get('method', 'get') == 'get'
+        assert health_check.get("method", "get") == "get"
         return {
-            'httpGet': {
-                'path': health_check['path'],
-                'port': health_check['port']
+            "httpGet": {
+                "path": health_check["path"],
+                "port": health_check["port"],
             },
-            'initialDelaySeconds': 10,
-            'timeoutSeconds': 30,
-            'periodSeconds': 30,
-            'successThreshold': 1,
-            'failureThreshold': 5
+            "initialDelaySeconds": 10,
+            "timeoutSeconds": 30,
+            "periodSeconds": 30,
+            "successThreshold": 1,
+            "failureThreshold": 5,
         }
 
     @classmethod
-    async def create_deployment(cls, app, service_name: str, service_uuid: str,
-                                image: str, container_name: str,
-                                start_command: [] or str,
-                                shutdown_command: [] or str,
-                                env: dict, volumes: Volumes,
-                                container_configs: ContainerConfigs):
+    async def create_deployment(
+        cls,
+        app,
+        service_name: str,
+        service_uuid: str,
+        image: str,
+        container_name: str,
+        start_command: [] or str,
+        shutdown_command: [] or str,
+        env: dict,
+        volumes: Volumes,
+        container_configs: ContainerConfigs,
+    ):
         # Note: We don't check if this deployment exists because if it did,
         # then we'd not get here. create_pod checks it. During beta, we tie
         # 1:1 between a pod and a deployment.
@@ -530,30 +540,26 @@ class Kubernetes:
             for k, v in env.items():
                 if isinstance(v, bool):
                     if v:
-                        v = 'true'
+                        v = "true"
                     else:
-                        v = 'false'
+                        v = "false"
 
                 v = str(v)  # In case it was a number.
-                env_k8s.append({
-                    'name': k,
-                    'value': v
-                })
+                env_k8s.append({"name": k, "value": v})
 
         volume_mounts = []
         volumes_k8s = []
         for vol in volumes:
-            volume_mounts.append({
-                'mountPath': vol.mount_path,
-                'name': vol.name
-            })
+            volume_mounts.append(
+                {"mountPath": vol.mount_path, "name": vol.name}
+            )
 
-            volumes_k8s.append({
-                'name': vol.name,
-                'persistentVolumeClaim': {
-                    'claimName': vol.name
+            volumes_k8s.append(
+                {
+                    "name": vol.name,
+                    "persistentVolumeClaim": {"claimName": vol.name},
                 }
-            })
+            )
 
             if not vol.persist:
                 await cls.remove_volume(app, vol.name)
@@ -563,18 +569,16 @@ class Kubernetes:
         image_pull_secrets = []
         for config in container_configs:
             await cls.create_imagepullsecret(app, config)
-            image_pull_secrets.append({
-                'name': config.name
-            })
+            image_pull_secrets.append({"name": config.name})
 
-        app.logger.debug(f'imagePullPolicy set to {app.image_pull_policy()}')
+        app.logger.debug(f"imagePullPolicy set to {app.image_pull_policy()}")
 
         liveness_probe = cls.get_liveness_probe(app, service_name)
 
-        tag = image.split(':')[-1]
+        tag = image.split(":")[-1]
         # Reusing method called by metrics recorder for bulk querying
         service_tag_uuids = await Database.get_service_tag_uuids(
-            app.config, [{'service_uuid': service_uuid, 'tag': tag}]
+            app.config, [{"service_uuid": service_uuid, "tag": tag}]
         )
         assert len(service_tag_uuids) == 1
         limits = await Database.get_service_limits(
@@ -582,69 +586,57 @@ class Kubernetes:
         )
 
         payload = {
-            'apiVersion': 'apps/v1',
-            'kind': 'Deployment',
-            'metadata': {
-                'name': container_name,
-                'namespace': app.app_id
-            },
-            'spec': {
-                'replicas': 1,
-                'strategy': {
-                    'type': 'RollingUpdate'
-                },
-                'selector': {
-                    'matchLabels': {
-                        'app': container_name
-                    }
-                },
-                'template': {
-                    'metadata': {
-                        'labels': {
-                            'app': container_name,
-                            'service-tag-uuid': service_tag_uuids[0],
-                            'logstash-enabled': 'true'
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {"name": container_name, "namespace": app.app_id},
+            "spec": {
+                "replicas": 1,
+                "strategy": {"type": "RollingUpdate"},
+                "selector": {"matchLabels": {"app": container_name}},
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": container_name,
+                            "service-tag-uuid": service_tag_uuids[0],
+                            "logstash-enabled": "true",
                         }
                     },
-                    'spec': {
-                        'containers': [
+                    "spec": {
+                        "containers": [
                             {
-                                'name': container_name,
-                                'image': image,
-                                'resources': {
-                                    'limits': {
-                                        'memory': limits['memory'],
-                                        'cpu': 0
+                                "name": container_name,
+                                "image": image,
+                                "resources": {
+                                    "limits": {
+                                        "memory": limits["memory"],
+                                        "cpu": 0,
                                     }
                                 },
-                                'command': start_command,
-                                'imagePullPolicy': app.image_pull_policy(),
-                                'env': env_k8s,
-                                'lifecycle': {
-                                },
-                                'volumeMounts': volume_mounts
+                                "command": start_command,
+                                "imagePullPolicy": app.image_pull_policy(),
+                                "env": env_k8s,
+                                "lifecycle": {},
+                                "volumeMounts": volume_mounts,
                             }
                         ],
-                        'volumes': volumes_k8s,
-                        'imagePullSecrets': image_pull_secrets
-                    }
-                }
-            }
+                        "volumes": volumes_k8s,
+                        "imagePullSecrets": image_pull_secrets,
+                    },
+                },
+            },
         }
 
-        container = payload['spec']['template']['spec']['containers'][0]
+        container = payload["spec"]["template"]["spec"]["containers"][0]
 
         if liveness_probe is not None:
-            container['livenessProbe'] = liveness_probe
+            container["livenessProbe"] = liveness_probe
 
         if shutdown_command is not None:
-            container['lifecycle']['preStop'] = {
-                'exec': {
-                    'command': shutdown_command
-                }
+            container["lifecycle"]["preStop"] = {
+                "exec": {"command": shutdown_command}
             }
 
-        path = f'/apis/apps/v1/namespaces/{app.app_id}/deployments'
+        path = f"/apis/apps/v1/namespaces/{app.app_id}/deployments"
 
         # When a namespace is created for the first time, K8s needs to perform
         # some sort of preparation. Pods creation fails sporadically for new
@@ -653,53 +645,74 @@ class Kubernetes:
         res = None
         while tries < 10:
             tries = tries + 1
-            res = await cls.make_k8s_call(app.config, app.logger,
-                                          path, payload)
+            res = await cls.make_k8s_call(
+                app.config, app.logger, path, payload
+            )
             if cls.is_2xx(res):
                 break
 
-            app.logger.debug(f'Failed to create deployment, retrying...')
+            app.logger.debug(f"Failed to create deployment, retrying...")
             await asyncio.sleep(1)
 
         cls.raise_if_not_2xx(res)
 
-        path = f'/apis/apps/v1/namespaces/{app.app_id}' \
-            f'/deployments/{container_name}'
+        path = (
+            f"/apis/apps/v1/namespaces/{app.app_id}"
+            f"/deployments/{container_name}"
+        )
 
         # Wait until the deployment is ready.
-        app.logger.debug('Waiting for deployment to be ready...')
+        app.logger.debug("Waiting for deployment to be ready...")
         while True:
             res = await cls.make_k8s_call(app.config, app.logger, path)
             cls.raise_if_not_2xx(res)
-            body = json.loads(res.body, encoding='utf-8')
-            if body['status'].get('readyReplicas', 0) > 0:
+            body = json.loads(res.body, encoding="utf-8")
+            if body["status"].get("readyReplicas", 0) > 0:
                 break
 
             await cls.check_for_image_errors(app, container_name)
             await asyncio.sleep(1)
 
-        app.logger.debug('Deployment is ready')
+        app.logger.debug("Deployment is ready")
 
     @classmethod
-    async def create_pod(cls, app, service_name: str, service_uuid: str,
-                         image: str, container_name: str,
-                         start_command: [] or str,
-                         shutdown_command: [] or str,
-                         env: dict, volumes: Volumes,
-                         container_configs: ContainerConfigs):
+    async def create_pod(
+        cls,
+        app,
+        service_name: str,
+        service_uuid: str,
+        image: str,
+        container_name: str,
+        start_command: [] or str,
+        shutdown_command: [] or str,
+        env: dict,
+        volumes: Volumes,
+        container_configs: ContainerConfigs,
+    ):
         res = await cls.make_k8s_call(
-            app.config, app.logger,
-            f'/apis/apps/v1/namespaces/{app.app_id}'
-            f'/deployments/{container_name}')
+            app.config,
+            app.logger,
+            f"/apis/apps/v1/namespaces/{app.app_id}"
+            f"/deployments/{container_name}",
+        )
 
         if res.code == 200:
-            app.logger.debug(f'Deployment {container_name} '
-                             f'already exists, reusing')
+            app.logger.debug(
+                f"Deployment {container_name} " f"already exists, reusing"
+            )
             return
 
-        await cls.create_deployment(app, service_name, service_uuid,
-                                    image, container_name,
-                                    start_command, shutdown_command, env,
-                                    volumes, container_configs)
+        await cls.create_deployment(
+            app,
+            service_name,
+            service_uuid,
+            image,
+            container_name,
+            start_command,
+            shutdown_command,
+            env,
+            volumes,
+            container_configs,
+        )
 
         await cls.create_service(app, service_name, container_name)

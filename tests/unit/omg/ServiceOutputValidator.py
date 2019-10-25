@@ -5,186 +5,173 @@ import pytest
 from pytest import fixture, mark
 
 from storyruntime.Types import Command, Service
-from storyruntime.omg.Exceptions import FieldValueTypeMismatchOmgError, \
-    MissingFieldOmgError, UnsupportedTypeOmgError
+from storyruntime.omg.Exceptions import (
+    FieldValueTypeMismatchOmgError,
+    MissingFieldOmgError,
+    UnsupportedTypeOmgError,
+)
 from storyruntime.omg.ServiceOutputValidator import ServiceOutputValidator
 
 
 @fixture
 def simple_chain():
     chain = deque()
-    chain.append(Service(name='service_name'))
-    chain.append(Command(name='action_name'))
+    chain.append(Service(name="service_name"))
+    chain.append(Command(name="action_name"))
     return chain
 
 
-@mark.parametrize('omg_type,actual_value,expect_throw', [
-    ('string', 'hello world', False),
-    ('string', 0.1, True),
-    ('string', 10, True),
-    ('string', True, True),
-    ('string', None, False),
-    ('int', 10, False),
-    ('int', 10.1, True),
-    ('int', True, True),
-    ('int', 'a', True),
-    ('int', None, False),
-    ('float', 0.1, False),
-    ('float', 1, True),
-    ('float', True, True),
-    ('float', '', True),
-    ('float', None, False),
-    ('none', 123, False),
-    ('none', '123', False),
-    ('none', None, False),
-    ('number', 10, False),
-    ('number', 10.0, False),
-    ('number', 10.5, False),
-    ('number', True, True),
-    ('number', '10', True),
-    ('number', None, False),
-    ('boolean', True, False),
-    ('boolean', False, False),
-    ('boolean', 10, True),
-    ('boolean', 1, True),
-    ('boolean', 0, True),
-    ('boolean', None, False),
-    ('map', {}, False),
-    ('map', 0, True),
-    ('map', 'hello world', True),
-    ('map', None, False),
-    ('list', [], False),
-    ('list', [1, 2], False),
-    ('list', ['1', '2'], False),
-    ('list', 1, True),
-    ('list', None, False),
-    ('any', 1, False),
-    ('any', '', False),
-    ('any', '19', False),
-    ('any', 0.5, False),
-    ('any', [], False),
-    ('any', {}, False),
-    ('any', True, False),
-    ('any', False, False),
-    ('any', None, False),
-])
+@mark.parametrize(
+    "omg_type,actual_value,expect_throw",
+    [
+        ("string", "hello world", False),
+        ("string", 0.1, True),
+        ("string", 10, True),
+        ("string", True, True),
+        ("string", None, False),
+        ("int", 10, False),
+        ("int", 10.1, True),
+        ("int", True, True),
+        ("int", "a", True),
+        ("int", None, False),
+        ("float", 0.1, False),
+        ("float", 1, True),
+        ("float", True, True),
+        ("float", "", True),
+        ("float", None, False),
+        ("none", 123, False),
+        ("none", "123", False),
+        ("none", None, False),
+        ("number", 10, False),
+        ("number", 10.0, False),
+        ("number", 10.5, False),
+        ("number", True, True),
+        ("number", "10", True),
+        ("number", None, False),
+        ("boolean", True, False),
+        ("boolean", False, False),
+        ("boolean", 10, True),
+        ("boolean", 1, True),
+        ("boolean", 0, True),
+        ("boolean", None, False),
+        ("map", {}, False),
+        ("map", 0, True),
+        ("map", "hello world", True),
+        ("map", None, False),
+        ("list", [], False),
+        ("list", [1, 2], False),
+        ("list", ["1", "2"], False),
+        ("list", 1, True),
+        ("list", None, False),
+        ("any", 1, False),
+        ("any", "", False),
+        ("any", "19", False),
+        ("any", 0.5, False),
+        ("any", [], False),
+        ("any", {}, False),
+        ("any", True, False),
+        ("any", False, False),
+        ("any", None, False),
+    ],
+)
 def test_raise_if_invalid(actual_value, omg_type, expect_throw, simple_chain):
     command_conf = {
-        'type': 'object',
-        'contentType': 'application/json',
-        'properties': {
-            'value': {
-                'type': omg_type
-            }
-        }
+        "type": "object",
+        "contentType": "application/json",
+        "properties": {"value": {"type": omg_type}},
     }
 
-    output = {
-        'value': actual_value
-    }
+    output = {"value": actual_value}
 
     if expect_throw:
         with pytest.raises(FieldValueTypeMismatchOmgError):
             ServiceOutputValidator.raise_if_invalid(
-                command_conf, output, simple_chain)
+                command_conf, output, simple_chain
+            )
     else:
         ServiceOutputValidator.raise_if_invalid(
-            command_conf, output, simple_chain)
+            command_conf, output, simple_chain
+        )
 
 
 def test_raise_for_type_mismatch_unsupported_omg():
     with pytest.raises(UnsupportedTypeOmgError):
         ServiceOutputValidator.raise_for_type_mismatch(
-            'foo', 'unknown_omg_type', 0, None)
+            "foo", "unknown_omg_type", 0, None
+        )
 
 
 def test_raise_if_invalid_for_missing_key(simple_chain):
     command_conf = {
-        'type': 'object',
-        'contentType': 'application/json',
-        'properties': {
-            'my_field': {
-                'type': 'int'
-            }
-        }
+        "type": "object",
+        "contentType": "application/json",
+        "properties": {"my_field": {"type": "int"}},
     }
 
     output = {}
 
     with pytest.raises(MissingFieldOmgError):
         ServiceOutputValidator.raise_if_invalid(
-            command_conf, output, simple_chain)
+            command_conf, output, simple_chain
+        )
 
 
 def test_raise_if_invalid_for_maps(simple_chain):
-    command_conf = {
-        'type': 'map',
-        'contentType': 'application/json'
-    }
+    command_conf = {"type": "map", "contentType": "application/json"}
 
-    output = {'any': 'thing', 'is': 'allowed'}
+    output = {"any": "thing", "is": "allowed"}
 
-    ServiceOutputValidator.raise_if_invalid(
-        command_conf, output, simple_chain)
+    ServiceOutputValidator.raise_if_invalid(command_conf, output, simple_chain)
 
 
 def test_raise_if_invalid_for_objects_with_no_props(simple_chain):
-    command_conf = {
-        'type': 'object',
-        'contentType': 'application/json'
-    }
+    command_conf = {"type": "object", "contentType": "application/json"}
 
-    output = {'any': 'thing', 'is': 'allowed'}
+    output = {"any": "thing", "is": "allowed"}
 
-    ServiceOutputValidator.raise_if_invalid(
-        command_conf, output, simple_chain)
+    ServiceOutputValidator.raise_if_invalid(command_conf, output, simple_chain)
 
 
 def test_raise_if_invalid_for_null_object(simple_chain):
     command_conf = {
-        'type': 'object',
-        'contentType': 'application/json',
-        'properties': {
-            'my_object': {
-                'type': 'object'
-            }
-        }
+        "type": "object",
+        "contentType": "application/json",
+        "properties": {"my_object": {"type": "object"}},
     }
 
-    output = {'my_object': None}
+    output = {"my_object": None}
 
     with pytest.raises(MissingFieldOmgError):
         ServiceOutputValidator.raise_if_invalid(
-            command_conf, output, simple_chain)
+            command_conf, output, simple_chain
+        )
 
 
-@mark.parametrize('error_out_deep', [True, False])
+@mark.parametrize("error_out_deep", [True, False])
 def test_raise_if_invalid_nested(simple_chain, error_out_deep):
     command_conf = {
-        'type': 'object',
-        'contentType': 'application/json',
-        'properties': {
-            'd0': {
-                'type': 'object',
-                'properties': {
-                    'd1': {
-                        'type': 'object',
-                        'properties': {
-                            'd2': {
-                                'type': 'int'
-                            }
-                        }
+        "type": "object",
+        "contentType": "application/json",
+        "properties": {
+            "d0": {
+                "type": "object",
+                "properties": {
+                    "d1": {
+                        "type": "object",
+                        "properties": {"d2": {"type": "int"}},
                     }
-                }
+                },
             }
-        }
+        },
     }
 
-    output = {'d0': {'d1': {'d2': 'not_int' if error_out_deep else 100}}}
+    output = {"d0": {"d1": {"d2": "not_int" if error_out_deep else 100}}}
     if error_out_deep:
         with pytest.raises(FieldValueTypeMismatchOmgError):
             ServiceOutputValidator.raise_if_invalid(
-                command_conf, output, simple_chain)
+                command_conf, output, simple_chain
+            )
     else:
         ServiceOutputValidator.raise_if_invalid(
-            command_conf, output, simple_chain)
+            command_conf, output, simple_chain
+        )

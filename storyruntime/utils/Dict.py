@@ -2,7 +2,6 @@
 
 
 class Dict:
-
     @staticmethod
     def set(_dict, keys, output):
         if len(keys) == 1:
@@ -31,7 +30,7 @@ class Dict:
             return default_value
 
         assert isinstance(path, str)
-        tokens = path.split('.')
+        tokens = path.split(".")
         for token in tokens:
             root = root.get(token)
             if root is None:

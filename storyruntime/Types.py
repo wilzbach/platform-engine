@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
 
-StreamingService = namedtuple('StreamingService',
-                              ['name', 'command',
-                               'container_name', 'hostname'])
+StreamingService = namedtuple(
+    "StreamingService", ["name", "command", "container_name", "hostname"]
+)
 
-SafeStreamingService = namedtuple('StreamingService',
-                                  ['name', 'command'])
+SafeStreamingService = namedtuple("StreamingService", ["name", "command"])
 
-InternalCommand = namedtuple('InternalCommand',
-                             ['arguments', 'output_type', 'handler'])
+InternalCommand = namedtuple(
+    "InternalCommand", ["arguments", "output_type", "handler"]
+)
 
-SafeInternalCommand = namedtuple('InternalCommand',
-                                 ['arguments', 'output_type'])
+SafeInternalCommand = namedtuple(
+    "InternalCommand", ["arguments", "output_type"]
+)
 
-InternalService = namedtuple('InternalService', ['commands'])
+InternalService = namedtuple("InternalService", ["commands"])
 
-Service = namedtuple('Service', ['name'])
-Command = namedtuple('Command', ['name'])
-Event = namedtuple('Event', ['name'])
+Service = namedtuple("Service", ["name"])
+Command = namedtuple("Command", ["name"])
+Event = namedtuple("Event", ["name"])
