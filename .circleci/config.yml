@@ -20,40 +20,19 @@ jobs:
     steps:
       - checkout
 
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-deps-{{ checksum "setup.py" }}
-          - v1-deps-
+      - run:
+          name: Install tox
+          command: |
+            pip install --user tox
 
       - run:
-          name: install dependencies
+          name: Run tests
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip3 install tox
-            env
-            python3 setup.py install
-
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-deps-{{ checksum "setup.py" }}
-
-      # run tests!
-      # this example uses Django's built-in test-runner
-      # other common Python testing frameworks include pytest and nose
-      # https://pytest.org
-      # https://nose.readthedocs.io
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
             env
             tox
 
       - run:
-          name: collect coverage
+          name: Collect coverage
           command: |
             bash <(curl -s https://codecov.io/bash)
 
