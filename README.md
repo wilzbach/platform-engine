@@ -7,34 +7,36 @@
 
 # Storyscript Cloud Runtime
 
-The Storyscript runtime powering the Storyscript Cloud and executing stories.
+The runtime powering Storyscript Cloud and executing stories.
 
-## Installing
+## Setup
+
+- Install dependencies
+```bash
+$ pip install -e ".[pytest,stylecheck]"
+```
+
+- Run tests
+```bash
+$ pytest
+```
+
+- Populate [environment variables](https://github.com/storyscript/runtime/blob/master/storyruntime/Config.py) and start!
+```bash
+$ storyscript-server start
+```
 
 See https://github.com/storyscript/stack-compose to install in production.
 
-```
-$ python setup.py install
-```
-
-## Testing
-
-1. Compile assets required for the engine
-2. Set the ASSET_DIR environment variable to this dir
-3. Start the engine
-
-```
-$ asyncy-server start
+## Contributing
+- Pin exact dependencies in `requirements.txt` after any changes to `setup.py`
+```bash
+$ pip-compile                        # available in pip-tools package
 ```
 
-## Configuration options
-
-The engine loads its configuration options from the environment. Defaults are
-provided:
-
-```
-$ export logger_name=storyscript
-$ export logger_level=debug
+- Format code using `black`
+```bash
+$ black . --config=.black.toml
 ```
 
 ## License
