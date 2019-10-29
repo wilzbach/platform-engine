@@ -4,7 +4,7 @@ import json
 import pathlib
 import shutil
 from collections import deque
-from unittest.mock import MagicMock
+from unittest.mock import ANY, call
 
 import pytest
 from pytest import fixture, mark
@@ -335,6 +335,66 @@ async def test_start_services(patch, app, async_mock, magic, internal):
 
     if not internal:
         asyncio.wait.mock.assert_called_with(tasks)
+
+        assert Services.start_container.call_count == 1
+        Services.start_container.assert_has_calls(
+            calls=[call(ANY, {"method": "execute", "next": "2"})]
+        )
+
+    else:
+        assert Services.start_container.call_count == 0
+
+
+@mark.asyncio
+async def test_start_services_multiple(patch, app, async_mock, magic):
+    app.stories = {
+        "a.story": {
+            "tree": {
+                "1": {"method": "execute", "src": "1"},
+                "2": {"method": "execute", "src": "2"},
+                "3": {"method": "not_execute"},
+                "4": {"method": "execute", "src": "4"},
+                "5": {"method": "execute", "src": "5"},
+            },
+            "entrypoint": "1",
+        }
+    }
+    # checks that only three services get spawned (no duplicate of
+    # cold_service)
+    chains = [
+        deque([Service(name="cold_service"), Command(name="cold_command")]),
+        deque([Service(name="cold_service"), Command(name="cold_command")]),
+        deque([Service(name="warm_service"), Command(name="cold_command")]),
+        deque([Service(name="hot_service"), Command(name="cold_command")]),
+    ]
+
+    start_container_result = magic()
+
+    patch.object(Services, "resolve_chain", side_effect=chains)
+    patch.object(Services, "is_internal", return_value=False)
+    patch.object(
+        Services, "start_container", return_value=start_container_result
+    )
+    patch.object(asyncio, "wait", new=async_mock(return_value=([], [])))
+
+    await app.start_services()
+
+    tasks = [
+        start_container_result,
+        start_container_result,
+        start_container_result,
+    ]
+
+    asyncio.wait.mock.assert_called_with(tasks)
+
+    assert Services.start_container.call_count == 3
+    Services.start_container.assert_has_calls(
+        calls=[
+            call(ANY, {"method": "execute", "src": "1"}),
+            call(ANY, {"method": "execute", "src": "4"}),
+            call(ANY, {"method": "execute", "src": "5"}),
+        ]
+    )
 
 
 @mark.asyncio
