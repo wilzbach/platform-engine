@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from pytest import mark, raises
 
+from storyruntime import Exceptions
 from storyruntime.Exceptions import (
     StoryscriptError,
     TooManyActiveApps,
@@ -54,7 +55,7 @@ def test_exception_trace(magic, patch, story, with_root, long_message):
     story.name = "story_name"
 
     if long_message:
-        message = f'long error {"x" * 250}'
+        message = f'long error {"x" * Exceptions.MAX_LOG_MESSAGE_LENGTH * 2}'
     else:
         message = "unknown error"
 
@@ -70,7 +71,7 @@ def test_exception_trace(magic, patch, story, with_root, long_message):
         root_message = f": {root_message}"
 
     if long_message:
-        expected_message = f"{message[:125]}..."
+        expected_message = f"{message[:Exceptions.MAX_LOG_MESSAGE_LENGTH]}..."
     else:
         expected_message = message
 
