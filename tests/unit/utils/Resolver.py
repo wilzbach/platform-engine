@@ -52,7 +52,7 @@ def test_path(patch, story, resolver, paths):
                 name="file",
                 body=b"body",
                 filename="file",
-                content_type="content_type",
+                contentType="contentType",
             ),
             "array": ["1", "2", "3"],
         }
@@ -103,7 +103,7 @@ def test_path_invalid_key(patch, story, resolver, paths):
                 name="file",
                 body=b"body",
                 filename="file",
-                content_type="content_type",
+                contentType="contentType",
             ),
             "array": ["1", "2", "3"],
         }

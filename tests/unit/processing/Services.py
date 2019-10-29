@@ -1202,7 +1202,7 @@ def test_http_data_encoder(patch):
         "name": "name",
         "body": "body",
         "filename": "filename",
-        "content_type": "content_type",
+        "contentType": "contentType",
     }
     patch.object(FileFormField, "_asdict", return_value=file_json)
     form_field_json = {"name": "name", "body": "body"}
@@ -1213,7 +1213,7 @@ def test_http_data_encoder(patch):
             name="name",
             body="body",
             filename="filename",
-            content_type="content_type",
+            contentType="contentType",
         ),
         "field": FormField(name="name", body="body"),
         "key": b"v",

@@ -375,7 +375,7 @@ class Services:
 
             if isinstance(field, FileFormField):
                 buf += f'name="{field.name}"; filename="{field.filename}"\r\n'
-                buf += f"Content-Type: {field.content_type}\r\n"
+                buf += f"Content-Type: {field.contentType}\r\n"
             else:
                 buf += f'name="{field.name}"\r\n'
 
