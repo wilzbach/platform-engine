@@ -29,14 +29,14 @@ $ storyscript-server start
 See https://github.com/storyscript/stack-compose to install in production.
 
 ## Contributing
+- Install [pre-commit](https://pre-commit.com/#install) and set up the git hook scripts
+```bash
+$ pip install --user pre-commit
+$ pre-commit install
+```
 - Pin exact dependencies in `requirements.txt` after any changes to `setup.py`
 ```bash
-$ pip-compile                        # available in pip-tools package
-```
-
-- Format code using `black`
-```bash
-$ black . --config=.black.toml
+$ pip-compile                        # available in the pip-tools package
 ```
 
 ## License
