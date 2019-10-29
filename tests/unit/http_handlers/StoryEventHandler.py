@@ -137,7 +137,7 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
     )
 
     expected_context = {
-        ContextConstants.service_event: {"data": {"hello": hello_field}},
+        ContextConstants.service_event: {"files": {"hello": hello_field}},
         ContextConstants.server_io_loop: tornado.ioloop.IOLoop.current(),
         ContextConstants.server_request: handler,
     }
