@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-MAX_LOG_MESSAGE_LENGTH = 125
+MAX_LOG_MESSAGE_LENGTH = 512
 
 
 class StoryscriptError(Exception):
