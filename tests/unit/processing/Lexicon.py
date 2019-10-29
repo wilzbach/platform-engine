@@ -860,25 +860,18 @@ async def test_lexicon_when(patch, story, async_mock, service_name):
     if service_name == "unknown_service":
         ss = "foo"
 
-    line = {LineConstants.service: "http"}
+    line = {LineConstants.service: "http", "exit": "-1"}
 
     story.set_context({"http": ss})
 
-    patch.object(story, "next_block")
-
     patch.object(Services, "when", new=async_mock())
-    patch.object(Lexicon, "line_number_or_none")
 
     if service_name == "unknown_service":
         with pytest.raises(StoryscriptError):
             await Lexicon.when(story.logger, story, line)
     else:
         ret = await Lexicon.when(story.logger, story, line)
-        story.next_block.assert_called_with(line)
-        Lexicon.line_number_or_none.assert_called_with(
-            story.next_block.return_value
-        )
-        assert ret == Lexicon.line_number_or_none.return_value
+        assert ret == line["exit"]
 
 
 @mark.asyncio
