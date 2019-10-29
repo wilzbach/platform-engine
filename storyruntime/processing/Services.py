@@ -19,8 +19,14 @@ import ujson
 from ..Containers import Containers
 from ..Exceptions import ArgumentTypeMismatchError, StoryscriptError
 from ..Logger import Logger
-from ..Types import Command, Event, InternalCommand, \
-    InternalService, Service, StreamingService
+from ..Types import (
+    Command,
+    Event,
+    InternalCommand,
+    InternalService,
+    Service,
+    StreamingService,
+)
 from ..constants.ContextConstants import ContextConstants
 from ..constants.LineConstants import LineConstants
 from ..constants.ServiceConstants import ServiceConstants
@@ -37,6 +43,7 @@ class HttpDataEncoder(json.JSONEncoder):
     This is utilized to sanitize the data sent back
     from the http service.
     """
+
     def default(self, obj):
         """
         This converts anything that the default encoder
@@ -49,7 +56,7 @@ class HttpDataEncoder(json.JSONEncoder):
         if isinstance(obj, bytes):
             # we always want to convert bytes
             # to base64 within json
-            return base64.b64encode(obj).decode('utf-8')
+            return base64.b64encode(obj).decode("utf-8")
         elif isinstance(obj, CaseInsensitiveDict):
             # convert this to a regular dict
             return dict(obj.items())
@@ -104,9 +111,9 @@ class Services:
             service = InternalService(commands={})
             cls.internal_services[name] = service
 
-        service.commands[command] = InternalCommand(arguments=arguments,
-                                                    output_type=output_type,
-                                                    handler=handler)
+        service.commands[command] = InternalCommand(
+            arguments=arguments, output_type=output_type, handler=handler
+        )
 
     @classmethod
     def is_internal(cls, service, command):
@@ -118,8 +125,9 @@ class Services:
 
     @classmethod
     def is_hosted_externally(cls, app, service):
-        if app.services[service][ServiceConstants.config]\
-                .get(ServiceConstants.hosted_externally):
+        if app.services[service][ServiceConstants.config].get(
+            ServiceConstants.hosted_externally
+        ):
             return True
 
         return False
@@ -141,8 +149,8 @@ class Services:
 
     @classmethod
     async def execute_internal(cls, story, line):
-        service = cls.internal_services[line['service']]
-        command = service.commands.get(line['command'])
+        service = cls.internal_services[line["service"]]
+        command = service.commands.get(line["command"])
 
         resolved_args = {}
 
@@ -153,15 +161,14 @@ class Services:
                 # we will not pass the argument into resolved args.
                 # This allows us to set default for arguments when
                 # they aren't set
-                required = command.arguments[arg].get('required', True)
+                required = command.arguments[arg].get("required", True)
 
                 if not required and actual is None:
                     continue
                 resolved_args[arg] = actual
 
         return await command.handler(
-            story=story, line=line,
-            resolved_args=resolved_args
+            story=story, line=line, resolved_args=resolved_args
         )
 
     @classmethod
@@ -177,24 +184,24 @@ class Services:
         service = line[LineConstants.service]
         chain = cls.resolve_chain(story, line)
         command_conf = cls.get_command_conf(story, chain)
-        if command_conf.get('format') is not None:
-            return await Containers.exec(story.logger, story, line,
-                                         service, line['command'])
-        elif command_conf.get('http') is not None:
-            if command_conf['http'].get('use_event_conn', False):
+        if command_conf.get("format") is not None:
+            return await Containers.exec(
+                story.logger, story, line, service, line["command"]
+            )
+        elif command_conf.get("http") is not None:
+            if command_conf["http"].get("use_event_conn", False):
                 return await cls.execute_inline(
-                    story, line,
-                    chain, command_conf
-                )
-            else:
-                return await cls.execute_http(
                     story, line, chain, command_conf
                 )
+            else:
+                return await cls.execute_http(story, line, chain, command_conf)
         else:
             raise StoryscriptError(
                 message=f'Service {service}/{line["command"]} '
-                f'has neither http nor format sections!',
-                story=story, line=line)
+                f"has neither http nor format sections!",
+                story=story,
+                line=line,
+            )
 
     @classmethod
     def resolve_chain(cls, story, line):
@@ -222,9 +229,11 @@ class Services:
 
                 line = story.line(parent)
                 output = line.get(LineConstants.output)
-                if output is not None \
-                        and len(output) == 1 \
-                        and service == output[0]:
+                if (
+                    output is not None
+                    and len(output) == 1
+                    and service == output[0]
+                ):
                     return line
 
         chain = deque()
@@ -233,14 +242,15 @@ class Services:
         while True:
             service = parent_line[LineConstants.service]
 
-            if parent_line[LineConstants.method] == 'when':
+            if parent_line[LineConstants.method] == "when":
                 chain.appendleft(Event(parent_line[LineConstants.command]))
             else:
                 chain.appendleft(Command(parent_line[LineConstants.command]))
 
             # Is this a concrete service?
-            if story.app.services.get(service) is not None or \
-                    cls.is_internal(service, parent_line['command']):
+            if story.app.services.get(service) is not None or cls.is_internal(
+                service, parent_line["command"]
+            ):
                 chain.appendleft(Service(service))
                 break
 
@@ -248,7 +258,7 @@ class Services:
             parent_line = get_owner(parent_line)
             assert parent_line is not None
 
-        story.logger.debug(f'Chain resolved - {chain}')
+        story.logger.debug(f"Chain resolved - {chain}")
         return chain
 
     @classmethod
@@ -259,11 +269,11 @@ class Services:
         next = story.app.services
         for entry in chain:
             if isinstance(entry, Service):
-                next = next[entry.name]['configuration']['actions']
+                next = next[entry.name]["configuration"]["actions"]
             elif isinstance(entry, Command):
                 next = next[entry.name]
             elif isinstance(entry, Event):
-                next = next['events'][entry.name]['output']['actions']
+                next = next["events"][entry.name]["output"]["actions"]
 
         return next or {}
 
@@ -273,27 +283,27 @@ class Services:
         command = cls.last(chain)
         assert isinstance(command, Command)
 
-        args = command_conf.get('arguments', {})
-        body = {'command': command.name, 'data': {}}
+        args = command_conf.get("arguments", {})
+        body = {"command": command.name, "data": {}}
 
         for arg in args:
             arg_val = story.argument_by_name(line, arg)
-            body['data'][arg] = arg_val
+            body["data"][arg] = arg_val
 
-        req = story.resolve({
-            '$OBJECT': 'path',
-            'paths': [ContextConstants.server_request]
-        })
-        io_loop = story.resolve({
-            '$OBJECT': 'path',
-            'paths': [ContextConstants.server_io_loop]
-        })
+        req = story.resolve(
+            {"$OBJECT": "path", "paths": [ContextConstants.server_request]}
+        )
+        io_loop = story.resolve(
+            {"$OBJECT": "path", "paths": [ContextConstants.server_io_loop]}
+        )
 
         if req.is_finished():
             raise StoryscriptError(
-                message='No more actions can be executed for'
-                        ' this service as it\'s already closed.',
-                story=story, line=line)
+                message="No more actions can be executed for"
+                " this service as it's already closed.",
+                story=story,
+                line=line,
+            )
 
         # BEGIN hack for writing a binary response to the gateway
         # How we write binary response to the gateway right now:
@@ -301,45 +311,50 @@ class Services:
         # and the content is an instance of bytes, write it directly
         # 2. Set the content-type to "application/octet-stream"
         # 3. Dump the bytes directly in the response
-        if chain[0].name == 'http' and command.name == 'write' \
-                and isinstance(body['data']['content'], bytes):
+        if (
+            chain[0].name == "http"
+            and command.name == "write"
+            and isinstance(body["data"]["content"], bytes)
+        ):
             req.set_header(
-                name='Content-Type',
-                value='application/octet-stream'
+                name="Content-Type", value="application/octet-stream"
             )
-            req.write(body['data']['content'])
+            req.write(body["data"]["content"])
             # Close this connection immediately,
             # as no more data can be written to it.
-            story.app.logger.info('Connection has been closed '
-                                  'for service http implicitly, '
-                                  'as binary data was written to it.')
+            story.app.logger.info(
+                "Connection has been closed "
+                "for service http implicitly, "
+                "as binary data was written to it."
+            )
             io_loop.add_callback(req.finish)
             return
 
         # END hack for writing a binary response to the gateway
 
         # Set the header for the first time to something we know.
-        req.set_header('Content-Type', 'application/stream+json')
+        req.set_header("Content-Type", "application/stream+json")
 
-        req.write(json.dumps(body, cls=HttpDataEncoder) + '\n')
+        req.write(json.dumps(body, cls=HttpDataEncoder) + "\n")
 
         # HTTP hack
-        if chain[0].name == 'http' and command.name == 'finish':
+        if chain[0].name == "http" and command.name == "finish":
             io_loop.add_callback(req.finish)
         # HTTP hack
 
     @classmethod
     def _fill_http_req_body(cls, http_res_kwargs, content_type, body):
-        headers = http_res_kwargs.setdefault('headers', {})
-        if content_type.startswith('application/json'):
-            http_res_kwargs['body'] = json.dumps(body)
-            headers['Content-Type'] = 'application/json; charset=utf-8'
-        elif content_type.startswith('multipart/form-data'):
+        headers = http_res_kwargs.setdefault("headers", {})
+        if content_type.startswith("application/json"):
+            http_res_kwargs["body"] = json.dumps(body)
+            headers["Content-Type"] = "application/json; charset=utf-8"
+        elif content_type.startswith("multipart/form-data"):
             boundary = uuid.uuid4().hex
-            headers['Content-Type'] = f'multipart/form-data; ' \
-                                      f'boundary={boundary}'
+            headers["Content-Type"] = (
+                f"multipart/form-data; " f"boundary={boundary}"
+            )
             producer = partial(cls._multipart_producer, body, boundary)
-            http_res_kwargs['body_producer'] = producer
+            http_res_kwargs["body_producer"] = producer
 
     @classmethod
     @coroutine
@@ -352,32 +367,32 @@ class Services:
         """
 
         for _, field in body.items():
-            assert isinstance(field, FormField) or \
-                isinstance(field, FileFormField)
+            assert isinstance(field, FormField) or isinstance(
+                field, FileFormField
+            )
 
-            buf = f'--{boundary}\r\n' \
-                  f'Content-Disposition: form-data; '
+            buf = f"--{boundary}\r\n" f"Content-Disposition: form-data; "
 
             if isinstance(field, FileFormField):
                 buf += f'name="{field.name}"; filename="{field.filename}"\r\n'
-                buf += f'Content-Type: {field.content_type}\r\n'
+                buf += f"Content-Type: {field.content_type}\r\n"
             else:
                 buf += f'name="{field.name}"\r\n'
 
-            buf += f'\r\n'
+            buf += f"\r\n"
 
             yield write(buf.encode())
 
             if isinstance(field.body, bytes):
                 yield write(field.body)
             elif not isinstance(field.body, str):
-                yield write(f'{field.body}'.encode())
+                yield write(f"{field.body}".encode())
             else:
                 yield write(field.body.encode())
 
-            yield write(b'\r\n')
+            yield write(b"\r\n")
 
-        yield write(b'--%s--\r\n' % (boundary.encode(),))
+        yield write(b"--%s--\r\n" % (boundary.encode(),))
 
     @classmethod
     def raise_for_type_mismatch(cls, story, line, name, value, arg_conf):
@@ -388,55 +403,62 @@ class Services:
         Supported types: int, float, string, list,
                          map, boolean, enum, object or any
         """
-        t = arg_conf.get('type', 'any')
+        t = arg_conf.get("type", "any")
 
-        if value is None and not arg_conf.get('required', False):
+        if value is None and not arg_conf.get("required", False):
             # Optional argument.
             return
 
-        if t == 'string' and isinstance(value, str):
-            pattern = arg_conf.get('pattern')
-            if pattern in ['', None] or \
-                    re.fullmatch(pattern, value) is not None:
+        if t == "string" and isinstance(value, str):
+            pattern = arg_conf.get("pattern")
+            if (
+                pattern in ["", None]
+                or re.fullmatch(pattern, value) is not None
+            ):
                 return
-        elif t == 'int' and isinstance(value, int):
-            int_range = arg_conf.get('range')
-            if int_range is None or \
-                    int_range.get('min', -inf) <= value <= \
-                    int_range.get('max', inf):
+        elif t == "int" and isinstance(value, int):
+            int_range = arg_conf.get("range")
+            if int_range is None or int_range.get(
+                "min", -inf
+            ) <= value <= int_range.get("max", inf):
                 return
-        elif t == 'float' and isinstance(value, float):
-            float_range = arg_conf.get('range')
-            if float_range is None or \
-                    float_range.get('min', -inf) <= value <= \
-                    float_range.get('max', inf):
+        elif t == "float" and isinstance(value, float):
+            float_range = arg_conf.get("range")
+            if float_range is None or float_range.get(
+                "min", -inf
+            ) <= value <= float_range.get("max", inf):
                 return
-        elif t == 'list' and isinstance(value, list):
+        elif t == "list" and isinstance(value, list):
             return
-        elif t == 'map' and isinstance(value, dict):
+        elif t == "map" and isinstance(value, dict):
             return
-        elif t == 'boolean' and isinstance(value, bool):
+        elif t == "boolean" and isinstance(value, bool):
             return
-        elif t == 'enum' and isinstance(value, str):
-            valid_values = arg_conf.get('enum', [])
+        elif t == "enum" and isinstance(value, str):
+            valid_values = arg_conf.get("enum", [])
             if value in valid_values:
                 return
-        elif t == 'object' and isinstance(value, dict):
-            properties = arg_conf.get('properties')
+        elif t == "object" and isinstance(value, dict):
+            properties = arg_conf.get("properties")
             if properties is not None and properties.keys() == value.keys():
                 for property_name, property_conf in properties.items():
                     cls.raise_for_type_mismatch(
-                        story, line, property_name,
-                        value.get(property_name), property_conf)
+                        story,
+                        line,
+                        property_name,
+                        value.get(property_name),
+                        property_conf,
+                    )
                 return
-        elif t == 'any':
+        elif t == "any":
             return
 
         raise ArgumentTypeMismatchError(name, t, story=story, line=line)
 
     @classmethod
-    def smart_insert(cls, story, line, arg_conf: dict, key: str, value,
-                     m: dict):
+    def smart_insert(
+        cls, story, line, arg_conf: dict, key: str, value, m: dict
+    ):
         """
         Validates type, and sets the key in the map m.
         Additionally, it performs a "smart" cast - if the value is of type
@@ -451,8 +473,8 @@ class Services:
         :param value: The value, which might be "smartly" stringified to JSON
         :param m: The map to insert the value in
         """
-        t = arg_conf.get('type', 'any')
-        if t == 'string':
+        t = arg_conf.get("type", "any")
+        if t == "string":
             if isinstance(value, dict) or isinstance(value, list):
                 value = json.dumps(value)
 
@@ -464,7 +486,7 @@ class Services:
     async def execute_http(cls, story, line, chain, command_conf):
         assert isinstance(chain, deque)
         assert isinstance(chain[0], Service)
-        args = command_conf.get('arguments', {})
+        args = command_conf.get("arguments", {})
         body = {}
         query_params = {}
         path_params = {}
@@ -476,153 +498,175 @@ class Services:
         for arg in args:
             value = story.argument_by_name(line, arg)
             arg_conf = args[arg]
-            location = arg_conf.get('in', 'requestBody')
-            if location == 'query':
-                cls.smart_insert(story, line, arg_conf,
-                                 arg, value, query_params)
-            elif location == 'path':
-                cls.smart_insert(story, line, arg_conf,
-                                 arg, value, path_params)
-            elif location == 'requestBody':
-                cls.smart_insert(story, line, arg_conf,
-                                 arg, value, body)
+            location = arg_conf.get("in", "requestBody")
+            if location == "query":
+                cls.smart_insert(
+                    story, line, arg_conf, arg, value, query_params
+                )
+            elif location == "path":
+                cls.smart_insert(
+                    story, line, arg_conf, arg, value, path_params
+                )
+            elif location == "requestBody":
+                cls.smart_insert(story, line, arg_conf, arg, value, body)
                 request_body_fields_count += 1
-            elif location == 'formBody':
+            elif location == "formBody":
                 # Created in StoryEventHandler.
                 if isinstance(value, FileFormField):
-                    body[arg] = FileFormField(arg, value.body, value.filename,
-                                              value.content_type)
+                    body[arg] = FileFormField(
+                        arg, value.body, value.filename, value.content_type
+                    )
                 else:
                     body[arg] = FormField(arg, value)
                 form_fields_count += 1
-            elif location == 'header':
-                cls.smart_insert(story, line, arg_conf, arg, value,
-                                 header_params)
+            elif location == "header":
+                cls.smart_insert(
+                    story, line, arg_conf, arg, value, header_params
+                )
             else:
                 raise StoryscriptError(
-                    f'Invalid location for'
+                    f"Invalid location for"
                     f' argument "{arg}" specified: {location}',
-                    story=story, line=line
+                    story=story,
+                    line=line,
                 )
 
         if form_fields_count > 0 and request_body_fields_count > 0:
-            raise StoryscriptError(f'Mixed locations are not permitted. '
-                                   f'Found {request_body_fields_count}'
-                                   f' fields of which '
-                                   f'{form_fields_count}'
-                                   f' were in the form body',
-                                   story=story, line=line)
+            raise StoryscriptError(
+                f"Mixed locations are not permitted. "
+                f"Found {request_body_fields_count}"
+                f" fields of which "
+                f"{form_fields_count}"
+                f" were in the form body",
+                story=story,
+                line=line,
+            )
 
-        method = command_conf['http'].get('method', 'post')
+        method = command_conf["http"].get("method", "post")
 
         # set the default request timeout
         # to 2 minutes, and set the retry
         # timeout to 1s
         kwargs = {
-            'method': method.upper(),
-            'headers': header_params,
-            'request_timeout': 60000 * 2,
-            'retry_timeout': 1
+            "method": method.upper(),
+            "headers": header_params,
+            "request_timeout": 60000 * 2,
+            "retry_timeout": 1,
         }
 
-        content_type = command_conf['http'] \
-            .get('contentType', 'application/json')
+        content_type = command_conf["http"].get(
+            "contentType", "application/json"
+        )
 
-        if method.lower() == 'post':
+        if method.lower() == "post":
             cls._fill_http_req_body(kwargs, content_type, body)
         elif len(body) > 0:
             raise StoryscriptError(
-                message=f'Parameters found in the request body, '
-                f'but the method is {method}', story=story, line=line)
+                message=f"Parameters found in the request body, "
+                f"but the method is {method}",
+                story=story,
+                line=line,
+            )
 
-        url = await cls._get_url_for_http_call(story, line, chain,
-                                               command_conf,
-                                               path_params, query_params)
+        url = await cls._get_url_for_http_call(
+            story, line, chain, command_conf, path_params, query_params
+        )
 
-        story.logger.debug(f'Invoking service on {url} with payload {kwargs}')
+        story.logger.debug(f"Invoking service on {url} with payload {kwargs}")
 
         client = AsyncHTTPClient()
         response = await HttpUtils.fetch_with_retry(
             3, story.logger, url, client, kwargs
         )
 
-        story.logger.debug(f'HTTP response code is {response.code}')
+        story.logger.debug(f"HTTP response code is {response.code}")
         if int(response.code / 100) == 2:
-            content_type = response.headers.get('Content-Type')
-            if content_type and 'application/json' in content_type:
+            content_type = response.headers.get("Content-Type")
+            if content_type and "application/json" in content_type:
                 try:
                     body = ujson.loads(response.body)
                 except TypeError:
                     raise StoryscriptError(
-                        message=f'Failed to parse service output as JSON!'
-                        f' Response body is {body}.',
-                        story=story, line=line)
+                        message=f"Failed to parse service output as JSON!"
+                        f" Response body is {body}.",
+                        story=story,
+                        line=line,
+                    )
 
-                expected_service_output = command_conf.get('output')
+                expected_service_output = command_conf.get("output")
                 if expected_service_output is not None:
                     ServiceOutputValidator.raise_if_invalid(
-                        expected_service_output, body, chain)
+                        expected_service_output, body, chain
+                    )
                 return body
             else:
-                return cls.parse_output(command_conf, response.body,
-                                        story, line, content_type)
+                return cls.parse_output(
+                    command_conf, response.body, story, line, content_type
+                )
         else:
             response_body = HttpUtils.read_response_body_quietly(response)
             raise StoryscriptError(
-                message=f'Failed to invoke service! '
-                f'Status code: {response.code}; '
-                f'response body: {response_body}',
-                story=story, line=line
+                message=f"Failed to invoke service! "
+                f"Status code: {response.code}; "
+                f"response body: {response_body}",
+                story=story,
+                line=line,
             )
 
     @classmethod
-    async def _get_url_for_http_call(cls, story, line, chain, command_conf,
-                                     path_params, query_params):
-        external_url = command_conf['http'].get('url')
+    async def _get_url_for_http_call(
+        cls, story, line, chain, command_conf, path_params, query_params
+    ):
+        external_url = command_conf["http"].get("url")
         if external_url is not None:
             return HttpUtils.add_params_to_url(
-                external_url.format(**path_params), query_params)
+                external_url.format(**path_params), query_params
+            )
         else:
             hostname = Containers.get_hostname(story, line, chain[0].name)
-            port = command_conf['http'].get('port', 5000)
+            port = command_conf["http"].get("port", 5000)
 
             path = HttpUtils.add_params_to_url(
-                command_conf['http']['path'].format(**path_params),
-                query_params)
+                command_conf["http"]["path"].format(**path_params),
+                query_params,
+            )
 
-            url = f'http://{hostname}:{port}{path}'
+            url = f"http://{hostname}:{port}{path}"
 
             return url
 
     @classmethod
-    def parse_output(cls, command_conf: dict, raw_output, story,
-                     line, content_type: str):
-        output = command_conf.get('output', None)
+    def parse_output(
+        cls, command_conf: dict, raw_output, story, line, content_type: str
+    ):
+        output = command_conf.get("output", None)
         if output is None:
             return raw_output
-        t = output.get('type', None)
-        if t is None or t == 'any':
+        t = output.get("type", None)
+        if t is None or t == "any":
             return raw_output  # We don't know what it is, return raw bytes.
 
         try:
-            if t == 'string':
+            if t == "string":
                 return cls._convert_bytes_to_string(raw_output)
-            elif t == 'int':
+            elif t == "int":
                 return int(cls._convert_bytes_to_string(raw_output))
-            elif t == 'float':
+            elif t == "float":
                 return float(cls._convert_bytes_to_string(raw_output))
-            elif t == 'boolean':
+            elif t == "boolean":
                 raw_output = cls._convert_bytes_to_string(raw_output).lower()
-                return raw_output == 'true'
+                return raw_output == "true"
 
-            raise Exception(f'Unsupported type {t}')
+            raise Exception(f"Unsupported type {t}")
         except BaseException:
             truncated_output = StringUtils.truncate(raw_output, 160)
             raise StoryscriptError(
-                message=f'Failed to parse output as type {t}. '
+                message=f"Failed to parse output as type {t}. "
                 f'Content-Type received: "{content_type}". '
-                f'Output received {truncated_output}.',
-                story=story, line=line)
+                f"Output received {truncated_output}.",
+                story=story,
+                line=line,
+            )
 
     @classmethod
     def _convert_bytes_to_string(cls, raw):
@@ -639,17 +683,19 @@ class Services:
             # Externally hosted service, such as an OpenAPI backed
             # service.
             return StreamingService(
-                name=f'externally_hosted_{chain[0].name}',
+                name=f"externally_hosted_{chain[0].name}",
                 command=line[LineConstants.command],
                 container_name=None,
-                hostname=None)
+                hostname=None,
+            )
 
-        if chain[0].name == 'http':
+        if chain[0].name == "http":
             return StreamingService(
-                name='http',
+                name="http",
                 command=line[LineConstants.command],
-                container_name='gateway',
-                hostname=story.app.config.ASYNCY_HTTP_GW_HOST)
+                container_name="gateway",
+                hostname=story.app.config.ASYNCY_HTTP_GW_HOST,
+            )
 
         return None
 
@@ -678,88 +724,92 @@ class Services:
         service = line[LineConstants.service]
         command = line[LineConstants.command]
         conf = story.app.services[s.name][ServiceConstants.config]
-        conf_event = Dict.find(
-            conf, f'actions.{s.command}.events.{command}')
+        conf_event = Dict.find(conf, f"actions.{s.command}.events.{command}")
 
-        port = Dict.find(conf_event, f'http.port', 80)
-        subscribe_path = Dict.find(conf_event, 'http.subscribe.path')
-        subscribe_method = Dict.find(conf_event,
-                                     'http.subscribe.method', 'post')
+        port = Dict.find(conf_event, f"http.port", 80)
+        subscribe_path = Dict.find(conf_event, "http.subscribe.path")
+        subscribe_method = Dict.find(
+            conf_event, "http.subscribe.method", "post"
+        )
 
-        event_args = Dict.find(conf_event, 'arguments', {})
+        event_args = Dict.find(conf_event, "arguments", {})
 
         data = {}
         for key in event_args:
             data[key] = story.argument_by_name(line, key)
 
         # HACK for http - send the DNS name of the app.
-        if s.name == 'http':
-            data['host'] = story.app.app_dns
+        if s.name == "http":
+            data["host"] = story.app.app_dns
         # END HACK for http.
 
-        sub_url = f'http://{s.hostname}:{port}{subscribe_path}'
+        sub_url = f"http://{s.hostname}:{port}{subscribe_path}"
 
-        story.logger.debug(f'Subscription URL - {sub_url}')
+        story.logger.debug(f"Subscription URL - {sub_url}")
 
-        engine = f'{story.app.config.ENGINE_HOST}:' \
-            f'{story.app.config.ENGINE_PORT}'
+        engine = (
+            f"{story.app.config.ENGINE_HOST}:"
+            f"{story.app.config.ENGINE_PORT}"
+        )
 
-        query_params = urllib.parse.urlencode({
-            'story': story.name,
-            'block': line['ln'],
-            'app': story.app.app_id
-        })
+        query_params = urllib.parse.urlencode(
+            {"story": story.name, "block": line["ln"], "app": story.app.app_id}
+        )
 
         sub_id = str(uuid.uuid4())
 
         sub_body = {
-            'endpoint': f'http://{engine}/story/event?{query_params}',
-            'data': data,
-            'event': command,
-            'id': sub_id
+            "endpoint": f"http://{engine}/story/event?{query_params}",
+            "data": data,
+            "event": command,
+            "id": sub_id,
         }
 
         body = {
-            'sub_id': sub_id,
-            'sub_url': sub_url,
-            'sub_method': subscribe_method.upper(),
-            'sub_body': sub_body,
-            'pod_name': s.container_name,
-            'app_id': story.app.app_id
+            "sub_id": sub_id,
+            "sub_url": sub_url,
+            "sub_method": subscribe_method.upper(),
+            "sub_body": sub_body,
+            "pod_name": s.container_name,
+            "app_id": story.app.app_id,
         }
 
         # Why request_timeout is set to 120 seconds:
         # Since this is the Synapse, Synapse does multiple internal retries,
         # so we must set this to a really high value.
         kwargs = {
-            'method': 'POST',
-            'body': json.dumps(body, cls=HttpDataEncoder),
-            'headers': {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            'request_timeout': 120
+            "method": "POST",
+            "body": json.dumps(body, cls=HttpDataEncoder),
+            "headers": {"Content-Type": "application/json; charset=utf-8"},
+            "request_timeout": 120,
         }
 
         client = AsyncHTTPClient()
-        story.logger.debug(f'Subscribing to {service} '
-                           f'from {s.command} via Synapse...')
+        story.logger.debug(
+            f"Subscribing to {service} " f"from {s.command} via Synapse..."
+        )
 
-        url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
-            f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
-            f'/subscribe'
+        url = (
+            f"http://{story.app.config.ASYNCY_SYNAPSE_HOST}:"
+            f"{story.app.config.ASYNCY_SYNAPSE_PORT}"
+            f"/subscribe"
+        )
 
         # Okay to retry a request to the Synapse a hundred times.
-        response = await HttpUtils.fetch_with_retry(100, story.logger, url,
-                                                    client, kwargs)
+        response = await HttpUtils.fetch_with_retry(
+            100, story.logger, url, client, kwargs
+        )
         if int(response.code / 100) == 2:
-            story.logger.debug(f'Subscribed!')
+            story.logger.debug(f"Subscribed!")
             story.app.add_subscription(sub_id, s, command, body)
         else:
             raise StoryscriptError(
-                message=f'Failed to subscribe to {service} from '
-                f'{s.command} in {s.container_name}! '
-                f'http err={response.error}; code={response.code}',
-                story=story, line=line)
+                message=f"Failed to subscribe to {service} from "
+                f"{s.command} in {s.container_name}! "
+                f"http err={response.error}; code={response.code}",
+                story=story,
+                line=line,
+            )
 
     @classmethod
     def log_internal(cls):
@@ -768,4 +818,4 @@ class Services:
             for command in cls.internal_services[key].commands:
                 commands.append(command)
 
-            cls.logger.info(f'Discovered internal service {key} - {commands}')
+            cls.logger.info(f"Discovered internal service {key} - {commands}")

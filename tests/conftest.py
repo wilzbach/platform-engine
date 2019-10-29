@@ -23,12 +23,12 @@ def async_cm_mock(magic):
 
         async def __aexit__(self, *args):
             pass
+
     return AsyncContextManagerMock(magic)
 
 
 @fixture
 def async_mock():
-
     def return_value(*args, **kwargs):
         """
         Inspired from
@@ -50,8 +50,10 @@ def patch_init(mocker):
     """
     Makes patching a class' constructor slightly easier
     """
+
     def patch_init(item):
-        mocker.patch.object(item, '__init__', return_value=None)
+        mocker.patch.object(item, "__init__", return_value=None)
+
     return patch_init
 
 
@@ -60,9 +62,11 @@ def patch_many(mocker):
     """
     Makes patching many attributes of the same object simpler
     """
+
     def patch_many(item, attributes):
         for attribute in attributes:
             mocker.patch.object(item, attribute)
+
     return patch_many
 
 
@@ -76,41 +80,30 @@ def patch(mocker, patch_init, patch_many):
 @fixture
 def echo_line():
     return {
-        'ln': '1',
-        LineConstants.service: 'alpine',
-        LineConstants.command: 'echo',
-        'args': [
+        "ln": "1",
+        LineConstants.service: "alpine",
+        LineConstants.command: "echo",
+        "args": [
             {
-                '$OBJECT': 'argument',
-                'name': 'msg',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': 'foo'
-                }
+                "$OBJECT": "argument",
+                "name": "msg",
+                "argument": {"$OBJECT": "string", "string": "foo"},
             }
-        ]
+        ],
     }
 
 
 @fixture
 def echo_service():
     return {
-        'alpine': {
+        "alpine": {
             ServiceConstants.config: {
-                'lifecycle': {
-                    'startup': {
-                        'command': ['tail', '-f', '/dev/null']
-                    }
+                "lifecycle": {
+                    "startup": {"command": ["tail", "-f", "/dev/null"]}
                 },
-                'actions': {
-                    'echo': {
-                        'arguments': {
-                            'msg': {
-                                'type': 'string'
-                            }
-                        }
-                    }
-                }
+                "actions": {
+                    "echo": {"arguments": {"msg": {"type": "string"}}}
+                },
             }
         }
     }

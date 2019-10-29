@@ -16,17 +16,19 @@ _pg_pool = None
 
 
 class Database:
-
     @classmethod
     async def pg_pool(cls, config: Config):
         """Create a Connection Pool."""
         global _pg_pool
         if not _pg_pool:
-            _pg_pool = await \
-                asyncpg.create_pool(dsn=config.POSTGRES_URI,
-                                    min_size=5, max_size=15, max_queries=50000,
-                                    max_inactive_connection_lifetime=900.0,
-                                    init=cls.apply_codecs)
+            _pg_pool = await asyncpg.create_pool(
+                dsn=config.POSTGRES_URI,
+                min_size=5,
+                max_size=15,
+                max_queries=50000,
+                max_inactive_connection_lifetime=900.0,
+                init=cls.apply_codecs,
+            )
         return _pg_pool
 
     @classmethod
@@ -54,17 +56,24 @@ class Database:
             return await con.fetch(query, config.APP_ENVIRONMENT.value)
 
     @classmethod
-    async def update_release_state(cls, glogger, config, app_id, version,
-                                   state: ReleaseState):
+    async def update_release_state(
+        cls, glogger, config, app_id, version, state: ReleaseState
+    ):
         async with cls.get_pooled_conn(config) as con:
-            result = await con.execute("""\
+            result = await con.execute(
+                """\
                 update releases
                 set state = $1
                 where app_uuid = $2 and id = $3;
-            """, state.value, app_id, version)
+            """,
+                state.value,
+                app_id,
+                version,
+            )
 
-            glogger.info(f'Updated state for {app_id}@{version}'
-                         f' to {state.name}')
+            glogger.info(
+                f"Updated state for {app_id}@{version}" f" to {state.name}"
+            )
 
             return result
 
@@ -86,8 +95,11 @@ class Database:
 
             result = []
             for config in data:
-                result.append(ContainerConfig(name=config['name'],
-                                              data=config['containerconfig']))
+                result.append(
+                    ContainerConfig(
+                        name=config["name"], data=config["containerconfig"]
+                    )
+                )
             return result
 
     @classmethod
@@ -115,19 +127,19 @@ class Database:
             data = await con.fetchrow(query, app_id)
 
         return Release(
-            app_uuid=data['app_uuid'],
-            app_environment=AppEnvironment[data['app_environment']],
-            app_name=data['app_name'],
-            version=data['version'],
-            environment=data['environment'],
-            stories=data['stories'],
-            maintenance=data['maintenance'],
-            always_pull_images=data['always_pull_images'],
-            app_dns=data['app_dns'],
-            state=data['state'],
-            deleted=data['deleted'],
-            owner_uuid=data['owner_uuid'],
-            owner_email=data['owner_email']
+            app_uuid=data["app_uuid"],
+            app_environment=AppEnvironment[data["app_environment"]],
+            app_name=data["app_name"],
+            version=data["version"],
+            environment=data["environment"],
+            stories=data["stories"],
+            maintenance=data["maintenance"],
+            always_pull_images=data["always_pull_images"],
+            app_dns=data["app_dns"],
+            state=data["state"],
+            deleted=data["deleted"],
+            owner_uuid=data["owner_uuid"],
+            owner_email=data["owner_email"],
         )
 
     @classmethod
@@ -140,9 +152,9 @@ class Database:
             """
             stmt = await con.prepare(query)
             res = [
-                await stmt.fetchrow(d['service_uuid'], d['tag']) for d in data
+                await stmt.fetchrow(d["service_uuid"], d["tag"]) for d in data
             ]
-            return [row['uuid'] for row in res]
+            return [row["uuid"] for row in res]
 
     @classmethod
     async def create_service_usage(cls, config: Config, data):
@@ -153,9 +165,9 @@ class Database:
                 insert into service_usage (service_tag_uuid)
                 values ($1) on conflict (service_tag_uuid) do nothing;
                 """
-                await con.executemany(query, [
-                    (d['service_tag_uuid'],) for d in data
-                ])
+                await con.executemany(
+                    query, [(d["service_tag_uuid"],) for d in data]
+                )
 
     @classmethod
     async def update_service_usage(cls, config: Config, data):
@@ -171,16 +183,22 @@ class Database:
             where service_tag_uuid = $1;
             """
 
-            await con.executemany(update_service_resources_stmt, [
-                (record['cpu_units'], record['memory_bytes'],
-                 record['service_tag_uuid'])
-                for record in data
-            ])
+            await con.executemany(
+                update_service_resources_stmt,
+                [
+                    (
+                        record["cpu_units"],
+                        record["memory_bytes"],
+                        record["service_tag_uuid"],
+                    )
+                    for record in data
+                ],
+            )
 
-            await con.executemany(update_next_index_stmt, [
-                (record['service_tag_uuid'],)
-                for record in data
-            ])
+            await con.executemany(
+                update_next_index_stmt,
+                [(record["service_tag_uuid"],) for record in data],
+            )
 
     @classmethod
     async def get_service_limits(cls, config: Config, service_tag_uuid: str):
@@ -191,38 +209,31 @@ class Database:
             where service_tag_uuid = $1;
             """
             res = await con.fetchrow(query, service_tag_uuid)
-            if res is None or -1 in res['memory_bytes']:
-                limits = {
-                    'cpu': 0,
-                    'memory': 209715000  # 200Mi
-                }
+            if res is None or -1 in res["memory_bytes"]:
+                limits = {"cpu": 0, "memory": 209715000}  # 200Mi
             else:
                 limits = {
-                    'cpu': 1.25 * np.percentile(res['cpu_units'], 95),
-                    'memory': min(
+                    "cpu": 1.25 * np.percentile(res["cpu_units"], 95),
+                    "memory": min(
                         209715000.0,  # 200Mi
-                        max(5e6, 1.25 * np.percentile(res['memory_bytes'], 95))
-                    )
+                        max(
+                            5e6, 1.25 * np.percentile(res["memory_bytes"], 95)
+                        ),
+                    ),
                 }
             return limits
 
     @staticmethod
     async def apply_codecs(con):
         await con.set_type_codec(
-            'json',
-            encoder=json.dumps,
-            decoder=json.loads,
-            schema='pg_catalog'
+            "json", encoder=json.dumps, decoder=json.loads, schema="pg_catalog"
         )
         await con.set_type_codec(
-            'jsonb',
+            "jsonb",
             encoder=json.dumps,
             decoder=json.loads,
-            schema='pg_catalog',
+            schema="pg_catalog",
         )
         await con.set_type_codec(
-            'uuid',
-            encoder=str,
-            decoder=str,
-            schema='pg_catalog',
+            "uuid", encoder=str, decoder=str, schema="pg_catalog"
         )

@@ -3,16 +3,19 @@ import re
 from requests.structures import CaseInsensitiveDict
 
 from ..Exceptions import StoryscriptRuntimeError
-from ..Types import InternalCommand, \
-    InternalService, SafeInternalCommand, \
-    SafeStreamingService, StreamingService
-from ..entities.Multipart import \
-    FileFormField, FormField
+from ..Types import (
+    InternalCommand,
+    InternalService,
+    SafeInternalCommand,
+    SafeStreamingService,
+    StreamingService,
+)
+from ..entities.Multipart import FileFormField, FormField
 
 
 class TypeUtils:
 
-    RE_PATTERN = type(re.compile('a'))
+    RE_PATTERN = type(re.compile("a"))
 
     allowed_types = [
         FileFormField,
@@ -24,7 +27,7 @@ class TypeUtils:
         bool,
         list,
         dict,
-        bytes
+        bytes,
     ]
 
     @staticmethod
@@ -33,7 +36,7 @@ class TypeUtils:
         b = t.__bases__
         if len(b) != 1 or b[0] != tuple:
             return False
-        f = getattr(t, '_fields', None)
+        f = getattr(t, "_fields", None)
         if not isinstance(f, tuple):
             return False
         return all(type(n) == str for n in f)
@@ -52,28 +55,21 @@ class TypeUtils:
         elif isinstance(o, CaseInsensitiveDict):
             return dict(o.items())
         elif isinstance(o, StreamingService):
-            return SafeStreamingService(
-                name=o.name,
-                command=o.command
-            )
+            return SafeStreamingService(name=o.name, command=o.command)
         elif isinstance(o, InternalService):
             service = InternalService(commands={})
             for key, value in o.commands.items():
-                service.commands[key] = TypeUtils.safe_type(
-                    value
-                )
+                service.commands[key] = TypeUtils.safe_type(value)
             return service
         elif isinstance(o, InternalCommand):
             return SafeInternalCommand(
-                arguments=o.arguments,
-                output_type=o.output_type
+                arguments=o.arguments, output_type=o.output_type
             )
         else:
             # ensure the type is a primitive type
             if not type(o) in TypeUtils.allowed_types:
                 raise StoryscriptRuntimeError(
-                    message=f'Incompatible type: '
-                            f'{type(o)}'
+                    message=f"Incompatible type: " f"{type(o)}"
                 )
 
             return o

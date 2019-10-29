@@ -22,7 +22,7 @@ def app(magic):
 
 @fixture
 def story(app, logger):
-    return Story(app, 'hello.story', logger)
+    return Story(app, "hello.story", logger)
 
 
 @fixture

@@ -22,7 +22,7 @@ class SentryAgent(ReportingAgent):
             release=release,
             max_breadcrumbs=0,
             integrations=[],
-            default_integrations=False
+            default_integrations=False,
         )
 
     async def capture(self, re: ReportingEvent):
@@ -33,16 +33,16 @@ class SentryAgent(ReportingAgent):
 
         with sentry_sdk.configure_scope() as scope:
             user_context = {
-                'app_uuid': re.app_uuid,
-                'app_version': re.app_version,
-                'platform_release': self._release,
-                'app_name': re.app_name,
-                'story_name': re.story_name,
-                'story_line': re.story_line
+                "app_uuid": re.app_uuid,
+                "app_version": re.app_version,
+                "platform_release": self._release,
+                "app_name": re.app_name,
+                "story_name": re.story_name,
+                "story_line": re.story_line,
             }
 
             if re.owner_email is not None:
-                user_context['email'] = re.owner_email
+                user_context["email"] = re.owner_email
 
             scope.user = user_context
 

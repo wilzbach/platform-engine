@@ -16,17 +16,16 @@ from ..entities.Multipart import FileFormField
 from ..processing import Stories
 from ..utils.Dict import Dict
 
-CLOUD_EVENTS_FILE_KEY = '_ce_payload'
+CLOUD_EVENTS_FILE_KEY = "_ce_payload"
 
 
 class StoryEventHandler(BaseHandler):
-
     async def run_story(self, app_id, story_name, block, event_body):
         io_loop = tornado.ioloop.IOLoop.current()
         context = {
             ContextConstants.service_event: event_body,
             ContextConstants.server_io_loop: io_loop,
-            ContextConstants.server_request: self
+            ContextConstants.server_request: self,
         }
 
         app = Apps.get(app_id)
@@ -36,30 +35,37 @@ class StoryEventHandler(BaseHandler):
                 continue
 
             tf = self.get_req().files[key][0]
-            f = FileFormField(name=key, body=tf.body,
-                              filename=tf.filename,
-                              content_type=tf.content_type)
-            event_body.setdefault('data', {})[key] = f
+            f = FileFormField(
+                name=key,
+                body=tf.body,
+                filename=tf.filename,
+                content_type=tf.content_type,
+            )
+            event_body.setdefault("data", {})[key] = f
 
-        await Stories.run(app, app.logger,
-                          story_name=story_name,
-                          context=context,
-                          block=block)
+        await Stories.run(
+            app,
+            app.logger,
+            story_name=story_name,
+            context=context,
+            block=block,
+        )
 
     async def post(self):
         start = time.time()
-        story_name = self.get_argument('story')
-        block = self.get_argument('block')
-        app_id = self.get_argument('app')
+        story_name = self.get_argument("story")
+        block = self.get_argument("block")
+        app_id = self.get_argument("app")
 
         try:
             event_body = self.get_ce_event_payload()
-            self.logger.info(f'Running story for {app_id}: '
-                             f'{story_name} @ {block} for '
-                             f'event {event_body}')
+            self.logger.info(
+                f"Running story for {app_id}: "
+                f"{story_name} @ {block} for "
+                f"event {event_body}"
+            )
 
-            await self.run_story(app_id, story_name, block,
-                                 event_body)
+            await self.run_story(app_id, story_name, block, event_body)
 
             if not self.is_finished():
                 self.set_status(200)
@@ -68,8 +74,7 @@ class StoryEventHandler(BaseHandler):
             self.handle_story_exc(app_id, story_name, e)
         finally:
             Metrics.story_request.labels(
-                app_id=app_id,
-                story_name=story_name
+                app_id=app_id, story_name=story_name
             ).observe(time.time() - start)
 
     def get_req(self) -> HTTPServerRequest:
@@ -79,27 +84,30 @@ class StoryEventHandler(BaseHandler):
         return self.request
 
     def get_ce_event_payload(self) -> dict:
-        ct = self.get_req().headers.get('Content-Type')
+        ct = self.get_req().headers.get("Content-Type")
         assert isinstance(ct, str)
 
         payload: dict
-        if ct.startswith('application/json'):
+        if ct.startswith("application/json"):
             payload = ujson.loads(self.request.body)
-        elif ct.startswith('multipart/form-data'):
+        elif ct.startswith("multipart/form-data"):
             file = self.get_req().files.get(CLOUD_EVENTS_FILE_KEY)
             assert file is not None  # If not there, then we need to raise.
             assert len(file) == 1  # There can be only one payload.
-            assert file[0].content_type == 'application/json'
-            payload = ujson.loads(file[0].body.decode('utf-8'))
+            assert file[0].content_type == "application/json"
+            payload = ujson.loads(file[0].body.decode("utf-8"))
         else:
-            raise Exception(f'Unsupported Content-Type ({ct}) '
-                            f'for CloudEvents payload!')
+            raise Exception(
+                f"Unsupported Content-Type ({ct}) " f"for CloudEvents payload!"
+            )
 
-        if payload.get('eventType') == 'http_request' \
-                and payload.get('source') == 'gateway':
-            headers = Dict.find(payload, 'data.headers')
+        if (
+            payload.get("eventType") == "http_request"
+            and payload.get("source") == "gateway"
+        ):
+            headers = Dict.find(payload, "data.headers")
             if headers is not None:
                 headers = CaseInsensitiveDict(data=headers)
-                payload['data']['headers'] = headers
+                payload["data"]["headers"] = headers
 
         return payload

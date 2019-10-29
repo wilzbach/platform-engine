@@ -8,7 +8,6 @@ from ..Exceptions import StoryscriptRuntimeError
 
 
 class Resolver:
-
     def __init__(self, story):
         self.story = story
 
@@ -16,10 +15,7 @@ class Resolver:
         """
         Parses a list of values objects. The list may contain other objects.
         """
-        return [
-            self.resolve(value)
-            for value in items_list
-        ]
+        return [self.resolve(value) for value in items_list]
 
     def string(self, string, values=None):
         """
@@ -45,29 +41,32 @@ class Resolver:
                     item = item[path]
 
                 assert isinstance(path, dict)
-                object_type = path.get('$OBJECT')
-                if object_type == 'range':
-                    item = self.range(path['range'], item)
+                object_type = path.get("$OBJECT")
+                if object_type == "range":
+                    item = self.range(path["range"], item)
                 else:
                     resolved = self.object(path)
                     # Allow a namedtuple to use keys or index
                     # to retrieve data.
-                    if TypeUtils.isnamedtuple(item) and \
-                            isinstance(resolved, str):
+                    if TypeUtils.isnamedtuple(item) and isinstance(
+                        resolved, str
+                    ):
                         item = getattr(item, resolved)
                     else:
                         item = item[resolved]
             return item
         except IndexError:
             raise StoryscriptRuntimeError(
-                message=f'List index out of bounds: {resolved}')
+                message=f"List index out of bounds: {resolved}"
+            )
         except (KeyError, AttributeError):
             raise StoryscriptRuntimeError(
                 message=f'Map does not contain the key "{resolved}". '
-                f'Use map.get(key: <key> default: <default value>) to '
-                f'prevent an exception from being thrown. Additionally, you '
-                f'may also use map.contains(key: <key>) to check if a key '
-                f'exists in a map.')
+                f"Use map.get(key: <key> default: <default value>) to "
+                f"prevent an exception from being thrown. Additionally, you "
+                f"may also use map.contains(key: <key>) to check if a key "
+                f"exists in a map."
+            )
         except TypeError:
             return None
 
@@ -84,38 +83,39 @@ class Resolver:
     def object(self, item):
         if not isinstance(item, dict):
             return item
-        object_type = item.get('$OBJECT')
-        if object_type == 'string':
-            if 'values' in item:
-                return self.string(item['string'], values=item['values'])
-            return self.string(item['string'])
-        elif object_type == 'dot':
-            return item['dot']
-        elif object_type == 'int':
-            return item['int']
-        elif object_type == 'time':
-            return item['ms']
-        elif object_type == 'boolean':
-            return item['boolean']
-        elif object_type == 'float':
-            return item['float']
-        elif object_type == 'path':
-            return self.path(item['paths'])
-        elif object_type == 'regexp':
+        object_type = item.get("$OBJECT")
+        if object_type == "string":
+            if "values" in item:
+                return self.string(item["string"], values=item["values"])
+            return self.string(item["string"])
+        elif object_type == "dot":
+            return item["dot"]
+        elif object_type == "int":
+            return item["int"]
+        elif object_type == "time":
+            return item["ms"]
+        elif object_type == "boolean":
+            return item["boolean"]
+        elif object_type == "float":
+            return item["float"]
+        elif object_type == "path":
+            return self.path(item["paths"])
+        elif object_type == "regexp":
             return re.compile(
-                item['regexp'],
-                flags=RegExpUtils.process_flags(item.get('flags', '')))
-        elif object_type == 'value':
-            return item['value']
-        elif object_type == 'dict':
-            return dict(self.dict(item['items']))
-        elif object_type == 'list':
-            return list(self.list_object(item['items']))
-        elif object_type == 'expression' or object_type == 'assertion':
+                item["regexp"],
+                flags=RegExpUtils.process_flags(item.get("flags", "")),
+            )
+        elif object_type == "value":
+            return item["value"]
+        elif object_type == "dict":
+            return dict(self.dict(item["items"]))
+        elif object_type == "list":
+            return list(self.list_object(item["items"]))
+        elif object_type == "expression" or object_type == "assertion":
             return self.expression(item)
-        elif object_type == 'type_cast':
+        elif object_type == "type_cast":
             return self.type_cast(item)
-        elif object_type == 'type':
+        elif object_type == "type":
             return self.type_cast(item)
         return self.dictionary(item)
 
@@ -124,9 +124,6 @@ class Resolver:
         Handles expression where item['assertion'/'expression']
         is one of the following:
         - equals
-        - not_equal
-        - greater
-        - greater_equal
         - less
         - less_equal
         - not
@@ -137,33 +134,24 @@ class Resolver:
         - multiplication
         - exponential
         """
-        a = item.get('assertion', item.get('expression'))
+        a = item.get("assertion", item.get("expression"))
 
-        values = item['values']
+        values = item["values"]
 
         left = self.resolve(values[0])
 
-        if a == 'equals' or a == 'equal':
+        if a == "equals" or a == "equal":
             right = self.resolve(values[1])
             return left == right
-        elif a == 'not_equal':
-            right = self.resolve(values[1])
-            return left != right
-        elif a == 'greater':
-            right = self.resolve(values[1])
-            return left > right
-        elif a == 'greater_equal':
-            right = self.resolve(values[1])
-            return left >= right
-        elif a == 'less':
+        elif a == "less":
             right = self.resolve(values[1])
             return left < right
-        elif a == 'less_equal':
+        elif a == "less_equal":
             right = self.resolve(values[1])
             return left <= right
-        elif a == 'not':
+        elif a == "not":
             return not left
-        elif a == 'or':
+        elif a == "or":
             if left is True:
                 return True
 
@@ -173,7 +161,7 @@ class Resolver:
                     return True
 
             return False
-        elif a == 'and':
+        elif a == "and":
             if left is False:
                 return False
 
@@ -183,7 +171,7 @@ class Resolver:
                     return False
 
             return True
-        elif a == 'sum':
+        elif a == "sum":
             result = left
 
             assert type(left) in (int, float, str, list)
@@ -193,40 +181,43 @@ class Resolver:
             for i in range(1, len(values)):
                 r = self.resolve(values[i])
 
-                if type(r) in (int, float, list) and \
-                        type(result) in (int, float, list):
+                if type(r) in (int, float, list) and type(result) in (
+                    int,
+                    float,
+                    list,
+                ):
                     result += r
                 else:
-                    result = f'{str(result)}{str(r)}'
+                    result = f"{str(result)}{str(r)}"
 
             return result
-        elif a == 'subtraction':
+        elif a == "subtraction":
             right = self.resolve(values[1])
             assert type(left) in (int, float)
             assert type(right) in (int, float)
             return left - right
-        elif a == 'multiplication':
+        elif a == "multiplication":
             right = self.resolve(values[1])
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left * right
-        elif a == 'modulus':
+        elif a == "modulus":
             right = self.resolve(values[1])
             assert type(left) in (int, float)
             assert type(right) in (int, float)
             return left % right
-        elif a == 'division':
+        elif a == "division":
             right = self.resolve(values[1])
             assert type(left) in (int, float, str)
             assert type(right) in (int, float, str)
             return left / right
-        elif a == 'exponential':
+        elif a == "exponential":
             right = self.resolve(values[1])
             assert type(left) in (int, float)
             assert type(right) in (int, float)
             return left ** right
         else:
-            assert False, f'Unsupported operation: {a}'
+            assert False, f"Unsupported operation: {a}"
 
     def dict(self, items):
         for k, v in items:
@@ -241,20 +232,20 @@ class Resolver:
         result = []
         for item in items:
             result.append(self.resolve(item))
-        return ' '.join(result)
+        return " ".join(result)
 
     def type_cast(self, item):
-        type_ = item['type']
-        item = self.object(item['value'])
+        type_ = item["type"]
+        item = self.object(item["value"])
         return TypeResolver.type_cast(item, type_)
 
     def range(self, path, item):
         start = 0
         end = len(item)
-        if 'start' in path:
-            start = self.object(path['start'])
-        if 'end' in path:
-            end = self.object(path['end'])
+        if "start" in path:
+            start = self.object(path["start"])
+        if "end" in path:
+            end = self.object(path["end"])
         return item[start:end]
 
     def resolve(self, item):

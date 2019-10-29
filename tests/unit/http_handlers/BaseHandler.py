@@ -27,25 +27,30 @@ def test_finished(magic, logger):
     assert handler.is_not_finished() is False
 
 
-@mark.parametrize('exception', [StoryscriptError(
-    story=MagicMock(), line={'ln': 1}), Exception()])
-@mark.parametrize('story_name', [None, 'super_story'])
+@mark.parametrize(
+    "exception",
+    [StoryscriptError(story=MagicMock(), line={"ln": 1}), Exception()],
+)
+@mark.parametrize("story_name", [None, "super_story"])
 def test_handle_story_exc(patch, magic, logger, exception, story_name):
     handler = BaseHandler(magic(), magic(), logger=logger)
-    patch.many(ReportingEvent, ['from_release', 'from_exc'])
-    patch.object(Reporter, 'capture_evt')
-    patch.many(handler, ['set_status', 'finish'])
-    handler.handle_story_exc('app_id', story_name, exception)
-    handler.set_status.assert_called_with(500, 'Story execution failed')
+    patch.many(ReportingEvent, ["from_release", "from_exc"])
+    patch.object(Reporter, "capture_evt")
+    patch.many(handler, ["set_status", "finish"])
+    handler.handle_story_exc("app_id", story_name, exception)
+    handler.set_status.assert_called_with(500, "Story execution failed")
     handler.finish.assert_called()
     logger.error.assert_called()
     if isinstance(exception, StoryscriptError):
         ReportingEvent.from_release.assert_called_with(
-            exception.story.app.release, Events.APP_REQUEST_ERROR)
+            exception.story.app.release, Events.APP_REQUEST_ERROR
+        )
 
         Reporter.capture_evt.assert_called_with(
-            ReportingEvent.from_release.return_value)
+            ReportingEvent.from_release.return_value
+        )
     else:
         ReportingEvent.from_exc.assert_called_with(exception)
         Reporter.capture_evt.assert_called_with(
-            ReportingEvent.from_exc.return_value)
+            ReportingEvent.from_exc.return_value
+        )
