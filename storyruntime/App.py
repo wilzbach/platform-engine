@@ -176,32 +176,27 @@ class App:
         all_services = set()
         for story_name in self.stories.keys():
             story = Story(self, story_name, self.logger)
-            line = story.first_line()
-            while line is not None:
-                line = story.line(line)
+            for line in story.tree.values():
                 method = line["method"]
 
-                try:
-                    if method != "execute":
-                        continue
+                if method != "execute":
+                    continue
 
-                    chain = Services.resolve_chain(story, line)
-                    assert isinstance(chain[0], Service)
-                    assert isinstance(chain[1], Command)
+                chain = Services.resolve_chain(story, line)
+                assert isinstance(chain[0], Service)
+                assert isinstance(chain[1], Command)
 
-                    # Simple cache to not unnecessarily make more calls to
-                    # Kubernetes. It's okay if we don't have this check
-                    # though, since the underlying API handles this.
-                    service = chain[0].name
-                    if service in all_services:
-                        continue
+                # Simple cache to not unnecessarily make more calls to
+                # Kubernetes. It's okay if we don't have this check
+                # though, since the underlying API handles this.
+                service = chain[0].name
+                if service in all_services:
+                    continue
 
-                    all_services.add(service)
+                all_services.add(service)
 
-                    if not Services.is_internal(chain[0].name, chain[1].name):
-                        tasks.append(Services.start_container(story, line))
-                finally:
-                    line = line.get("next")
+                if not Services.is_internal(chain[0].name, chain[1].name):
+                    tasks.append(Services.start_container(story, line))
 
         if len(tasks) > 0:
             completed, pending = await asyncio.wait(tasks)
