@@ -449,7 +449,7 @@ async def test_lexicon_execute_streaming_container(patch, story, async_mock):
         assign={"paths": line.get("output")},
     )
     Metrics.container_start_seconds_total.labels().observe.assert_called_once()
-    story.line.assert_called_with(line["next"])
+    story.line.assert_called_with(line["enter"])
     Lexicon.line_number_or_none.assert_called_with(story.line())
     assert ret == Lexicon.line_number_or_none()
 

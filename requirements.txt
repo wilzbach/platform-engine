@@ -22,7 +22,7 @@ prometheus-client==0.2.0
 requests==2.22.0
 sentry-sdk==0.10.2
 story-hub==0.1.10         # via storyscript
-storyscript==0.25.4
+storyscript==0.25.6
 tornado==5.0.2
 ujson==1.35
 urllib3==1.25.6           # via requests, sentry-sdk

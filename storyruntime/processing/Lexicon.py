@@ -54,7 +54,7 @@ class Lexicon:
                 assign={"paths": line.get("output")},
             )
 
-            return Lexicon.line_number_or_none(story.line(line.get("next")))
+            return Lexicon.line_number_or_none(story.line(line.get("enter")))
         else:
             output = await Services.execute(story, line)
             Metrics.container_exec_seconds_total.labels(
