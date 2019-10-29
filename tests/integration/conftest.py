@@ -20,7 +20,7 @@ def app(magic):
     asset_dir = examples.__path__[0]
     app = magic()
 
-    with open(asset_dir + '/services.json', 'r') as file:
+    with open(asset_dir + "/services.json", "r") as file:
         app.services = ujson.loads(file.read())
 
     return app
@@ -30,10 +30,10 @@ def app(magic):
 def story(app, logger):
     asset_dir = examples.__path__[0]
 
-    with open(asset_dir + '/stories.json', 'r') as file:
-        app.stories = ujson.loads(file.read())['stories']
+    with open(asset_dir + "/stories.json", "r") as file:
+        app.stories = ujson.loads(file.read())["stories"]
 
-    return Story(app, 'hello.story', logger)
+    return Story(app, "hello.story", logger)
 
 
 @fixture

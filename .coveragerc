@@ -1,9 +1,0 @@
-[run]
-branch = True
-source =
-  app
-
-[report]
-omit =
-  venv/*
-  .tox/*

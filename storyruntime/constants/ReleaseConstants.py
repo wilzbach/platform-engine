@@ -2,4 +2,4 @@
 
 
 class ReleaseConstants:
-    table = 'release'
+    table = "release"

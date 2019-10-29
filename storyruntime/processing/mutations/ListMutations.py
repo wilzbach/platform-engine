@@ -5,10 +5,9 @@ from storyruntime.utils.TypeResolver import TypeResolver
 
 
 class ListMutations:
-
     @classmethod
     def index(cls, mutation, value, story, line, operator):
-        item = story.argument_by_name(mutation, 'of')
+        item = story.argument_by_name(mutation, "of")
         try:
             return value.index(item)
         except ValueError:
@@ -20,13 +19,13 @@ class ListMutations:
 
     @classmethod
     def append(cls, mutation, value, story, line, operator):
-        item = story.argument_by_name(mutation, 'item')
+        item = story.argument_by_name(mutation, "item")
         value.append(item)
         return value
 
     @classmethod
     def prepend(cls, mutation, value, story, line, operator):
-        item = story.argument_by_name(mutation, 'item')
+        item = story.argument_by_name(mutation, "item")
         value.insert(0, item)
         return value
 
@@ -58,7 +57,7 @@ class ListMutations:
 
     @classmethod
     def contains(cls, mutation, value, story, line, operator):
-        item = story.argument_by_name(mutation, 'item')
+        item = story.argument_by_name(mutation, "item")
         return item in value
 
     @classmethod
@@ -75,7 +74,7 @@ class ListMutations:
 
     @classmethod
     def remove(cls, mutation, value, story, line, operator):
-        item = story.argument_by_name(mutation, 'item')
+        item = story.argument_by_name(mutation, "item")
         try:
             new_list = value[:]
             new_list.remove(item)
@@ -87,8 +86,8 @@ class ListMutations:
 
     @classmethod
     def replace(cls, mutation, value, story, line, operator):
-        by = story.argument_by_name(mutation, 'by')
-        item = story.argument_by_name(mutation, 'item')
+        by = story.argument_by_name(mutation, "by")
+        item = story.argument_by_name(mutation, "item")
         for i, el in enumerate(value):
             if el == item:
                 value[i] = by
@@ -97,11 +96,12 @@ class ListMutations:
 
     @classmethod
     def join(cls, mutation, value, story, line, operator):
-        sep = story.argument_by_name(mutation, 'sep')
-        return sep.join([
-            TypeResolver.type_cast(item=v, type_={
-                '$OBJECT': 'type',
-                'type': 'string'
-            })
-            for v in value
-        ])
+        sep = story.argument_by_name(mutation, "sep")
+        return sep.join(
+            [
+                TypeResolver.type_cast(
+                    item=v, type_={"$OBJECT": "type", "type": "string"}
+                )
+                for v in value
+            ]
+        )

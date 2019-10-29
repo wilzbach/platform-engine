@@ -11,10 +11,9 @@ from ..Exceptions import StoryscriptError
 
 
 class Mutations:
-
     @classmethod
     def mutate(cls, mutation, value, story, line):
-        operator = mutation['mutation']
+        operator = mutation["mutation"]
         handler = None
         try:
             if isinstance(value, str):
@@ -38,12 +37,16 @@ class Mutations:
 
         if handler is None:
             raise StoryscriptError(
-                message=f'Unsupported data type {str(type(value))} '
-                        f'for mutation {operator}',
-                story=story, line=line)
+                message=f"Unsupported data type {str(type(value))} "
+                f"for mutation {operator}",
+                story=story,
+                line=line,
+            )
         try:
             return handler(mutation, value, story, line, operator)
         except BaseException as e:
             raise StoryscriptError(
-                message=f'Failed to apply mutation {operator}! err={str(e)}',
-                story=story, line=line)
+                message=f"Failed to apply mutation {operator}! err={str(e)}",
+                story=story,
+                line=line,
+            )
