@@ -534,14 +534,17 @@ class Lexicon:
 
         # Does this service belong to a streaming service?
         s = story.resolve({"$OBJECT": "path", "paths": [service]})
-        if not isinstance(s, StreamingService):
+        if isinstance(s, StreamingService):
+            # Yes, we need to subscribe to an event with the service.
+            await Services.when(s, story, line)
+            next_line = story.next_block(line)
+            return Lexicon.line_number_or_none(next_line)
+        else:
             raise StoryscriptError(
                 message=f"Unknown service {service} for when!",
                 story=story,
                 line=line,
             )
-        await Services.when(s, story, line)
-        return line.get("exit")
 
     @classmethod
     async def ret(cls, logger, story: Story, line):
