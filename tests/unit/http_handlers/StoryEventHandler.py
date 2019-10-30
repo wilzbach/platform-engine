@@ -50,7 +50,7 @@ def test_get_ce_event_payload_invalid(handler: StoryEventHandler):
 def test_get_ce_event_payload_multipart(handler: StoryEventHandler, magic):
     handler.request.headers = {"Content-Type": "multipart/form-data"}
     ce_payload_file = magic()
-    ce_payload_file.content_type = "application/json"
+    ce_payload_file.contentType = "application/json"
     ce_payload_file.body = b'{"foo": "bar"}'
 
     handler.request.files = {CLOUD_EVENTS_FILE_KEY: [ce_payload_file]}
@@ -133,11 +133,11 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
         name="hello",
         body=hello_file.body,
         filename=hello_file.filename,
-        content_type=hello_file.content_type,
+        contentType=hello_file.content_type,
     )
 
     expected_context = {
-        ContextConstants.service_event: {"data": {"hello": hello_field}},
+        ContextConstants.service_event: {"files": {"hello": hello_field}},
         ContextConstants.server_io_loop: tornado.ioloop.IOLoop.current(),
         ContextConstants.server_request: handler,
     }

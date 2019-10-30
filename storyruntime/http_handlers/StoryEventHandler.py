@@ -29,6 +29,8 @@ class StoryEventHandler(BaseHandler):
         }
 
         app = Apps.get(app_id)
+        files = {}
+        event_body["files"] = files
 
         for key in self.get_req().files.keys():
             if key == CLOUD_EVENTS_FILE_KEY:
@@ -39,9 +41,9 @@ class StoryEventHandler(BaseHandler):
                 name=key,
                 body=tf.body,
                 filename=tf.filename,
-                content_type=tf.content_type,
+                contentType=tf.content_type,
             )
-            event_body.setdefault("data", {})[key] = f
+            files[key] = f
 
         await Stories.run(
             app,
@@ -94,7 +96,7 @@ class StoryEventHandler(BaseHandler):
             file = self.get_req().files.get(CLOUD_EVENTS_FILE_KEY)
             assert file is not None  # If not there, then we need to raise.
             assert len(file) == 1  # There can be only one payload.
-            assert file[0].content_type == "application/json"
+            assert file[0].contentType == "application/json"
             payload = ujson.loads(file[0].body.decode("utf-8"))
         else:
             raise Exception(
