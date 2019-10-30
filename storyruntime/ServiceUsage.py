@@ -81,7 +81,7 @@ class ServiceUsage:
             return None
         for pod in body["items"]:
             # Assert 1:1 container to pod mapping
-            if len(pod["containers"]) > 1:
+            if len(pod["containers"]) != 1:
                 raise K8sError(
                     message=f'Found {len(pod["containers"])} containers '
                     f'in pod {pod["metadata"]["name"]}, expected 1'

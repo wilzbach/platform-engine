@@ -70,3 +70,14 @@ def test_add_params_to_url():
         HttpUtils.add_params_to_url("asyncy.com", {"a": 1, "b": "c"})
         == "asyncy.com?a=1&b=c"
     )
+    assert (
+        HttpUtils.add_params_to_url("asyncy.com", {"a": [1, 2, 3], "b": "c"})
+        == "asyncy.com?a=1&a=2&a=3&b=c"
+    )
+
+    assert (
+        HttpUtils.add_params_to_url(
+            "asyncy.com", {"a": [1, 2, 3], "b": "hello world!X+-"}
+        )
+        == "asyncy.com?a=1&a=2&a=3&b=hello+world%21X%2B-"
+    )

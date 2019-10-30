@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import urllib
 from urllib.parse import urlencode
 
 from tornado.httpclient import HTTPError
@@ -52,4 +53,14 @@ class HttpUtils:
         if len(params) == 0:
             return url
 
-        return f"{url}?{urlencode(params)}"
+        parts = []
+
+        for key, value in params.items():
+            key = urllib.parse.quote(key)
+            if type(value) is list:
+                for lv in value:
+                    parts.append((key, str(lv)))
+            else:
+                parts.append((key, str(value)))
+
+        return f"{url}?{urlencode(parts)}"
