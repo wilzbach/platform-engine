@@ -116,6 +116,11 @@ async def test_start_metrics_recorder(patch, async_mock, app, metrics):
         },
         {
             "service_tag_uuid": "08605d2c-9305-474a-949b-d57a6f01c62c",
+            "k8s_response": {"items": [{"containers": []}]},
+            "metrics": None,
+        },
+        {
+            "service_tag_uuid": "08605d2c-9305-474a-949b-d57a6f01c62c",
             "k8s_response": {
                 "items": [
                     {

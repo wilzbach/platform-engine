@@ -80,8 +80,11 @@ class ServiceUsage:
             # Metrics not available yet
             return None
         for pod in body["items"]:
+            if len(pod["containers"]) == 0:
+                # Crashed container
+                continue
             # Assert 1:1 container to pod mapping
-            if len(pod["containers"]) != 1:
+            if len(pod["containers"]) > 1:
                 raise K8sError(
                     message=f'Found {len(pod["containers"])} containers '
                     f'in pod {pod["metadata"]["name"]}, expected 1'
@@ -93,6 +96,10 @@ class ServiceUsage:
             memory_bytes.append(
                 cls.memory_bytes(pod["containers"][0]["usage"]["memory"])
             )
+
+        if len(cpu_units) == 0:
+            # All containers for this service are in a crashed state
+            return None
 
         return {
             "service_tag_uuid": service_tag_uuid,
