@@ -10,5 +10,6 @@ exclude = '''
     | dist
     | \.tox
     | \.venv
+    | venv
 )
 '''
