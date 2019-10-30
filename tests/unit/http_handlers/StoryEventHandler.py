@@ -50,7 +50,7 @@ def test_get_ce_event_payload_invalid(handler: StoryEventHandler):
 def test_get_ce_event_payload_multipart(handler: StoryEventHandler, magic):
     handler.request.headers = {"Content-Type": "multipart/form-data"}
     ce_payload_file = magic()
-    ce_payload_file.contentType = "application/json"
+    ce_payload_file.content_type = "application/json"
     ce_payload_file.body = b'{"foo": "bar"}'
 
     handler.request.files = {CLOUD_EVENTS_FILE_KEY: [ce_payload_file]}
@@ -64,7 +64,7 @@ async def test_run_story(async_mock, throw_exc, handler, patch):
     app_id = "app_id"
     story_name = "story_name"
     block = "1"
-    event_body = {"body": True}
+    event_body = {"data": {"body": True}}
     io_loop = tornado.ioloop.IOLoop.current()
 
     expected_context = {
@@ -110,6 +110,7 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
         CLOUD_EVENTS_FILE_KEY: "chill, ignored.",
     }
     handler.request.headers = {"Content-Type": "application/json"}
+    handler.request.body = '{"data": {}}'
     handler.logger = magic()
     patch.object(
         handler, "get_argument", side_effect=["hello.story", "1", "app_id"]
@@ -137,7 +138,9 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
     )
 
     expected_context = {
-        ContextConstants.service_event: {"files": {"hello": hello_field}},
+        ContextConstants.service_event: {
+            "data": {"files": {"hello": hello_field}}
+        },
         ContextConstants.server_io_loop: tornado.ioloop.IOLoop.current(),
         ContextConstants.server_request: handler,
     }

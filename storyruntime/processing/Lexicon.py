@@ -388,9 +388,6 @@ class Lexicon:
         next_line = story.next_block(line)
         result_sentinel = None
 
-        if next_line is None:
-            return None
-
         async def next_block_or_finally(result_sentinel):
             """
             This will execute if the next block is a finally block.
@@ -399,6 +396,8 @@ class Lexicon:
 
             :return: Returns the next line to be executed.
             """
+            if next_line is None:
+                return
             if next_line["method"] != "finally":
                 last_block = story.next_block(next_line)
             else:
@@ -425,6 +424,8 @@ class Lexicon:
             if LineSentinels.is_sentinel(exec_res):
                 result_sentinel = exec_res
         except StoryscriptError:
+            if next_line is None:
+                return None
             if (
                 next_line["method"] != "finally"
                 and next_line["method"] != "catch"
