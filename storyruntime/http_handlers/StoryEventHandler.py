@@ -32,18 +32,17 @@ class StoryEventHandler(BaseHandler):
         files = {}
         event_body["files"] = files
 
-        for key in self.get_req().files.keys():
+        for key, value in self.get_req().files.items():
             if key == CLOUD_EVENTS_FILE_KEY:
                 continue
 
-            tf = self.get_req().files[key][0]
-            f = FileFormField(
+            tf = value[0]
+            files[key] = FileFormField(
                 name=key,
                 body=tf.body,
                 filename=tf.filename,
                 contentType=tf.content_type,
             )
-            files[key] = f
 
         await Stories.run(
             app,
