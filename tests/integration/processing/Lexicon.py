@@ -721,6 +721,54 @@ async def test_resolve_all_objects(suite: Suite, logger, run_suite):
                     append="a = {} to Map[int,boolean]",
                     assertion=ContextAssertion(key="a", expected={}),
                 ),
+                Case(
+                    append='a = ("false" to any) to boolean',
+                    assertion=ContextAssertion(key="a", expected=False),
+                ),
+                Case(
+                    append='a = ("true" to any) to boolean',
+                    assertion=ContextAssertion(key="a", expected=True),
+                ),
+                Case(
+                    append="a = (0 to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=False),
+                ),
+                Case(
+                    append="a = (1 to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=True),
+                ),
+                Case(
+                    append="a = (0.0 to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=False),
+                ),
+                Case(
+                    append="a = (1.0 to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=True),
+                ),
+                Case(
+                    append="a = ([] to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=False),
+                ),
+                Case(
+                    append="a = ([1] to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=True),
+                ),
+                Case(
+                    append="a = ({} to any) to boolean",
+                    assertion=ContextAssertion(key="a", expected=False),
+                ),
+                Case(
+                    append='a = ({"a": "b"} to any) to boolean',
+                    assertion=ContextAssertion(key="a", expected=True),
+                ),
+                Case(
+                    append="a = (/re/ to any) to boolean",
+                    assertion=RuntimeExceptionAssertion(
+                        TypeAssertionRuntimeError,
+                        message="Incompatible type assertion: Received /re/ "
+                        "(regexp), but expected boolean",
+                    ),
+                ),
             ]
         ),
         Suite(
