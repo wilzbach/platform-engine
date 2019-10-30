@@ -1257,6 +1257,14 @@ async def test_function(suite: Suite, logger, run_suite):
     "suite",
     [
         Suite(
+            preparation_lines="try\n" "  a = 2\n",
+            cases=[Case(assertion=ContextAssertion(key="a", expected=2))],
+        ),
+        Suite(
+            preparation_lines="try\n" "  a = 2\n" '  throw "err"\n',
+            cases=[Case(assertion=ContextAssertion(key="a", expected=2))],
+        ),
+        Suite(
             preparation_lines="try\n"
             '  throw "error"\n'
             "catch\n"
@@ -1281,7 +1289,7 @@ async def test_function(suite: Suite, logger, run_suite):
             preparation_lines="failed = false\n" "try\n" "  a = 1\n",
             cases=[
                 Case(assertion=ContextAssertion(key="failed", expected=False)),
-                Case(assertion=ContextAssertion(key="a", expected=None)),
+                Case(assertion=ContextAssertion(key="a", expected=1)),
             ],
         ),
         Suite(
