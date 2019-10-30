@@ -2,7 +2,9 @@ from pytest import mark
 
 from tests.integration.processing.Entities import Case, Suite
 
-from .Assertions import ContextAssertion
+from storyruntime.Exceptions import StoryscriptError
+
+from .Assertions import ContextAssertion, RuntimeExceptionAssertion
 
 
 @mark.parametrize(
@@ -234,6 +236,60 @@ async def test_http_service(suite: Suite, logger, run_suite):
                     )
                 )
             ],
+        ),
+        Suite(
+            preparation_lines='file removeFile path: "file"',
+            cases=[
+                Case(
+                    assertion=RuntimeExceptionAssertion(
+                        exception_type=StoryscriptError
+                    )
+                )
+            ],
+        ),
+        Suite(
+            preparation_lines='file removeDir path: "dir"',
+            cases=[
+                Case(
+                    assertion=RuntimeExceptionAssertion(
+                        exception_type=StoryscriptError
+                    )
+                )
+            ],
+        ),
+        Suite(
+            preparation_lines='file mkdir path: "a"\n'
+            'file removeFile path: "a"',
+            cases=[
+                Case(
+                    assertion=RuntimeExceptionAssertion(
+                        exception_type=StoryscriptError
+                    )
+                )
+            ],
+        ),
+        Suite(
+            preparation_lines='file write path: "a" content: "."\n'
+            'file removeDir path: "a"',
+            cases=[
+                Case(
+                    assertion=RuntimeExceptionAssertion(
+                        exception_type=StoryscriptError
+                    )
+                )
+            ],
+        ),
+        Suite(
+            preparation_lines='file write path: "a" content:"."\n'
+            'file removeFile path: "a"\n'
+            'e = file exists path: "a"',
+            cases=[Case(assertion=ContextAssertion(key="e", expected=False))],
+        ),
+        Suite(
+            preparation_lines='file mkdir path: "a"\n'
+            'file removeDir path: "a"\n'
+            'e = file exists path: "a"',
+            cases=[Case(assertion=ContextAssertion(key="e", expected=False))],
         ),
     ],
 )
