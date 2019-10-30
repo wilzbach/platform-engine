@@ -104,7 +104,20 @@ class TypeResolver:
                 obj[key] = value
             return obj
         elif isinstance(type_exp, types.BooleanType):
-            return bool(item)
+            cls.assert_type([str, list, dict, int, float], item)
+            if isinstance(item, str):
+                if item == "true":
+                    return True
+                return False
+            if isinstance(item, list):
+                return len(item) > 0
+            if isinstance(item, dict):
+                return len(item) > 0
+            if isinstance(item, int):
+                return item != 0
+            else:
+                assert isinstance(item, float), f"{item}r is unknown"
+                return item != 0
         elif isinstance(type_exp, types.IntType):
             return int(item)
         elif isinstance(type_exp, types.FloatType):
