@@ -1012,6 +1012,32 @@ async def test_stacked_contexts(suite: Suite, logger, run_suite):
                 )
             ],
         ),
+        Suite(
+            preparation_lines='a = "abc"\n' 'b = ""\n',
+            cases=[
+                Case(
+                    append="foreach a as elem\n"
+                    '   if elem == "a"\n'
+                    "       continue\n"
+                    "   b += elem\n",
+                    assertion=ContextAssertion(key="b", expected="bc"),
+                )
+            ],
+        ),
+        Suite(
+            preparation_lines='a = "abc"\n' 'b = ""\n' "c = 0\n",
+            cases=[
+                Case(
+                    append="foreach a as i, elem\n"
+                    "   b += elem\n"
+                    "   c += i\n",
+                    assertion=[
+                        ContextAssertion(key="b", expected="abc"),
+                        ContextAssertion(key="c", expected=3),
+                    ],
+                )
+            ],
+        ),
     ],
 )
 @mark.asyncio

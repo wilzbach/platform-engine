@@ -466,8 +466,15 @@ class Lexicon:
         Evaluates a foreach loop.
         """
         data = story.resolve(line["args"][0], encode=False)
-        assert type(data) in [list, dict], f"Cannot iterate over {type(data)}"
-        iterable = enumerate(data) if isinstance(data, list) else data.items()
+        assert type(data) in [
+            list,
+            dict,
+            str,
+        ], f"Cannot iterate over {type(data)}"
+        if isinstance(data, list) or isinstance(data, str):
+            iterable = enumerate(data)
+        else:
+            iterable = data.items()
 
         output = line["output"]
         assert (
@@ -476,10 +483,11 @@ class Lexicon:
 
         for a, b in iterable:
             if len(output) == 1:
-                story.set_variable(
-                    assign={"paths": output},
-                    output=b if isinstance(data, list) else a,
-                )
+                if isinstance(data, list) or isinstance(data, str):
+                    output_val = b
+                else:
+                    output_val = a
+                story.set_variable(assign={"paths": output}, output=output_val)
             else:
                 story.set_variable(assign={"paths": [output[0]]}, output=a)
                 story.set_variable(assign={"paths": [output[1]]}, output=b)
