@@ -94,6 +94,7 @@ async def test_get_all_app_uuids_for_deployment(config, pool):
             from releases
                      inner join apps on releases.app_uuid = apps.uuid
             where environment = $1
+            and not apps.deleted
             group by app_uuid;
             """
     await Database.get_all_app_uuids_for_deployment(config)

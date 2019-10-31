@@ -51,6 +51,7 @@ class Database:
             from releases
                      inner join apps on releases.app_uuid = apps.uuid
             where environment = $1
+            and not apps.deleted
             group by app_uuid;
             """
             return await con.fetch(query, config.APP_ENVIRONMENT.value)
