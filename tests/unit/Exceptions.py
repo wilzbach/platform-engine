@@ -46,9 +46,9 @@ def test_exception_trace(magic, patch, story, with_root, long_message):
         story,
         "line",
         side_effect=[
-            {"src": "line_1"},
-            {"method": "hello"},
             {"src": "line_3"},
+            {"method": "hello"},
+            {"src": "line_1"},
         ],
     )
 
@@ -79,9 +79,9 @@ def test_exception_trace(magic, patch, story, with_root, long_message):
         str_version
         == f"""An exception has occurred:
 {expected_message}{root_message}
-    at line 1: line_1 (in story_name)
+    at line 3: line_3 (in story_name)
     at line 2: method=hello (auto generated frame) (in story_name)
-    at line 3: line_3 (in story_name)"""
+    at line 1: line_1 (in story_name)"""
     )
 
 
