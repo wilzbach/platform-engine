@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 from collections import deque
 
-from .Exceptions import FieldValueTypeMismatchOmgError, MissingFieldOmgError, \
-    UnsupportedTypeOmgError
+from .Exceptions import (
+    FieldValueTypeMismatchOmgError,
+    MissingFieldOmgError,
+    UnsupportedTypeOmgError,
+)
 
 
 class ServiceOutputValidator:
@@ -11,29 +14,30 @@ class ServiceOutputValidator:
     """
 
     omg_types_to_python_types: [str, type] = {
-        'string': str,
-        'int': int,
-        'boolean': bool,
-        'map': dict,
-        'float': float,
-        'list': list,
-        'number': [int, float],
-        'any': object,
-        'none': object
+        "string": str,
+        "int": int,
+        "boolean": bool,
+        "map": dict,
+        "float": float,
+        "list": list,
+        "number": [int, float],
+        "any": object,
+        "none": object,
     }
 
     python_types_to_omg_types: [type, str] = {
-        str: 'string',
-        int: 'int',
-        bool: 'boolean',
-        dict: 'map',
-        float: 'float',
-        list: 'list'
+        str: "string",
+        int: "int",
+        bool: "boolean",
+        dict: "map",
+        float: "float",
+        list: "list",
     }
 
     @classmethod
-    def raise_for_type_mismatch(cls, prop_name, omg_type_name, value,
-                                action_resolution_chain):
+    def raise_for_type_mismatch(
+        cls, prop_name, omg_type_name, value, action_resolution_chain
+    ):
         """
         Ensures that the value matches the expected type as listed on
         https://microservice.guide/schema/actions/#arguments.
@@ -48,12 +52,18 @@ class ServiceOutputValidator:
         if value is None:
             return
 
-        cls.ensure_type(prop_name, python_type, omg_type_name,
-                        value, action_resolution_chain)
+        cls.ensure_type(
+            prop_name,
+            python_type,
+            omg_type_name,
+            value,
+            action_resolution_chain,
+        )
 
     @classmethod
-    def raise_if_invalid(cls, expected_output: dict, body: dict,
-                         action_resolution_chain: deque):
+    def raise_if_invalid(
+        cls, expected_output: dict, body: dict, action_resolution_chain: deque
+    ):
         """
         Verify all properties are contained in the return body.
 
@@ -72,37 +82,44 @@ class ServiceOutputValidator:
                 name:
                   type: string
         """
-        omg_type = expected_output.get('type')
-        if omg_type != 'object':
+        omg_type = expected_output.get("type")
+        if omg_type != "object":
             cls.raise_for_type_mismatch(
-                '#root', omg_type,
-                body, action_resolution_chain)
+                "#root", omg_type, body, action_resolution_chain
+            )
             return
 
-        props = expected_output.get('properties')
+        props = expected_output.get("properties")
 
         if props is None:
             return
 
         for prop_name, prop_config in props.items():
             if prop_name not in body:
-                raise MissingFieldOmgError(prop_name, action_resolution_chain,
-                                           body)
-            elif prop_config.get('type') == 'object':
+                raise MissingFieldOmgError(
+                    prop_name, action_resolution_chain, body
+                )
+            elif prop_config.get("type") == "object":
                 if body.get(prop_name) is None:
                     raise MissingFieldOmgError(
-                        prop_name, action_resolution_chain, body)
+                        prop_name, action_resolution_chain, body
+                    )
 
-                cls.raise_if_invalid(prop_config, body.get(
-                    prop_name), action_resolution_chain)
+                cls.raise_if_invalid(
+                    prop_config, body.get(prop_name), action_resolution_chain
+                )
             else:
                 cls.raise_for_type_mismatch(
-                    prop_name, prop_config.get('type'),
-                    body.get(prop_name), action_resolution_chain)
+                    prop_name,
+                    prop_config.get("type"),
+                    body.get(prop_name),
+                    action_resolution_chain,
+                )
 
     @classmethod
-    def ensure_type(cls, key, python_type, omg_type, val,
-                    action_resolution_chain):
+    def ensure_type(
+        cls, key, python_type, omg_type, val, action_resolution_chain
+    ):
         """
         Check if value belongs to the type specified.
         """
@@ -114,7 +131,8 @@ class ServiceOutputValidator:
             if python_type is object or type(val) is python_type:
                 return
 
-        omg_type_name = cls.python_types_to_omg_types.get(type(val), 'unknown')
+        omg_type_name = cls.python_types_to_omg_types.get(type(val), "unknown")
 
-        raise FieldValueTypeMismatchOmgError(key, omg_type, omg_type_name, val,
-                                             action_resolution_chain)
+        raise FieldValueTypeMismatchOmgError(
+            key, omg_type, omg_type_name, val, action_resolution_chain
+        )

@@ -2,5 +2,5 @@
 
 
 class ServiceConstants:
-    config = 'configuration'
-    hosted_externally = 'hostedExternally'
+    config = "configuration"
+    hosted_externally = "hostedExternally"

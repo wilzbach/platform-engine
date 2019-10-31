@@ -24,8 +24,8 @@ class Story:
         self.app = app
         self.name = story_name
         self.logger = logger
-        self.tree = app.stories[story_name]['tree']
-        self.entrypoint = app.stories[story_name]['entrypoint']
+        self.tree = app.stories[story_name]["tree"]
+        self.entrypoint = app.stories[story_name]["entrypoint"]
         self.results = {}
         self.environment = None
         self._contexts = []
@@ -85,7 +85,8 @@ class Story:
         """
         context = {}
         context_items = chain.from_iterable(
-            d.items() for d in reversed(self._contexts))
+            d.items() for d in reversed(self._contexts)
+        )
         for k, v in chain(context_items, self.global_context().items()):
             context[k] = v
         return context
@@ -111,11 +112,11 @@ class Story:
         """
 
         # Fast test - this line is an immediate child of the parent.
-        if parent_line_number == line.get('parent', None):
+        if parent_line_number == line.get("parent", None):
             return True
 
         while line is not None:
-            my_parent_number = line.get('parent', None)
+            my_parent_number = line.get("parent", None)
 
             if my_parent_number is None:
                 return False
@@ -132,18 +133,20 @@ class Story:
         """
         next_line = parent_line
 
-        while next_line.get('next') is not None:
-            next_line = self.line(next_line['next'])
+        while next_line.get("next") is not None:
+            next_line = self.line(next_line["next"])
 
             # See if the next line is a block. If it is, skip through it.
-            if next_line.get('enter', None) is not None \
-                    and next_line.get('parent') == parent_line['ln']:
+            if (
+                next_line.get("enter", None) is not None
+                and next_line.get("parent") == parent_line["ln"]
+            ):
                 next_line = self.next_block(next_line)
 
                 if next_line is None:
                     return None
 
-            if not self.line_has_parent(parent_line['ln'], next_line):
+            if not self.line_has_parent(parent_line["ln"], next_line):
                 break
 
         # We might have skipped through all the lines in this story,
@@ -151,13 +154,14 @@ class Story:
         # If this last line belongs to the same parent, then return None.
         # This check is required because the while loop breaks when it can't
         # find a next line.
-        if next_line.get('parent') is not None \
-                and self.line_has_parent(parent_line['ln'], next_line):
+        if next_line.get("parent") is not None and self.line_has_parent(
+            parent_line["ln"], next_line
+        ):
             return None
 
         # If the next_line == parent_line, then there weren't any more lines
         # after the parent.
-        if next_line['ln'] == parent_line['ln']:
+        if next_line["ln"] == parent_line["ln"]:
             return None
 
         return next_line
@@ -177,9 +181,11 @@ class Story:
         """
         result = Resolver(self).resolve(arg)
 
-        self.logger.debug(f'Resolved "{arg}" to '
-                          f'"{self.get_str_for_logging(result)}" '
-                          f'with type {type(result)}')
+        self.logger.debug(
+            f'Resolved "{arg}" to '
+            f'"{self.get_str_for_logging(result)}" '
+            f"with type {type(result)}"
+        )
 
         # encode and escape then format for shell
         if encode:
@@ -194,7 +200,7 @@ class Story:
             arg = dumps(arg)
         else:
             arg = str(arg)
-        return "'%s'" % arg.replace("'", "\'")
+        return "'%s'" % arg.replace("'", "'")
 
     def command_arguments_list(self, arguments):
         results = []
@@ -203,13 +209,13 @@ class Story:
             arg = arguments[0]
             # if first path is undefined assume command
             if (
-                    isinstance(arg, dict) and
-                    arg['$OBJECT'] == 'path' and
-                    len(arg['paths']) == 1
+                isinstance(arg, dict)
+                and arg["$OBJECT"] == "path"
+                and len(arg["paths"]) == 1
             ):
                 res = self.resolve(arguments.pop(0))
                 if res is None:
-                    results.append(arg['paths'][0])
+                    results.append(arg["paths"][0])
                 else:
                     results.append(self.encode(res))
 
@@ -220,10 +226,10 @@ class Story:
         return results
 
     def start_line(self, line_number):
-        self.results[line_number] = {'start': time.time()}
+        self.results[line_number] = {"start": time.time()}
 
     def end_line(self, line_number, output=None, assign=None):
-        start = self.results[line_number]['start']
+        start = self.results[line_number]["start"]
 
         # Please see https://github.com/asyncy/platform-engine/issues/148
         # for the rationale on removing auto conversion. Code commented and
@@ -235,7 +241,7 @@ class Story:
         #     except JSONDecodeError:
         #         output = output
 
-        dictionary = {'output': output, 'end': time.time(), 'start': start}
+        dictionary = {"output": output, "end": time.time(), "start": start}
         self.results[line_number] = dictionary
 
         # assign a variable to the output
@@ -243,35 +249,38 @@ class Story:
             self.set_variable(assign, output)
 
     def set_variable(self, assign, output):
-        if assign is None or assign.get('paths') is None:
+        if assign is None or assign.get("paths") is None:
             self.logger.warn(
-                'Output should ne assigned to something, '
-                'but no variable found!')
+                "Output should ne assigned to something, "
+                "but no variable found!"
+            )
             return
 
-        variable = assign['paths'][0]
+        variable = assign["paths"][0]
         # Resolving context for assign['paths'][0] works
         # because all subsequent paths have been resolved to their values
         context = self.resolve_context(variable)
-        Dict.set(context, assign['paths'], output)
+        Dict.set(context, assign["paths"], output)
 
     def function_line_by_name(self, function_name):
         """
         Returns the line at which the given function_name was defined at.
         """
-        line_number = self.app.stories[self.name]['functions'][function_name]
+        line_number = self.app.stories[self.name]["functions"][function_name]
         return self.line(line_number)
 
     def argument_by_name(self, line, argument_name, encode=False):
-        args = line.get('args', line.get('arguments', line.get('arg')))
+        args = line.get("args", line.get("arguments", line.get("arg")))
         if args is None:
             return None
 
         for arg in args:
-            if (arg['$OBJECT'] == 'argument' or arg['$OBJECT'] == 'arg') and \
-                    arg['name'] == argument_name:
-                return self.resolve(arg.get('argument', arg.get('arg')),
-                                    encode=encode)
+            if (
+                arg["$OBJECT"] == "argument" or arg["$OBJECT"] == "arg"
+            ) and arg["name"] == argument_name:
+                return self.resolve(
+                    arg.get("argument", arg.get("arg")), encode=encode
+                )
 
         return None
 
@@ -291,10 +300,10 @@ class Story:
         :return: A new context, which contains the arguments required (if any)
         """
         new_context = {}
-        args = function_line.get('args', function_line.get('arg', []))
+        args = function_line.get("args", function_line.get("arg", []))
         for arg in args:
-            if arg['$OBJECT'] == 'argument' or arg['$OBJECT'] == 'arg':
-                arg_name = arg['name']
+            if arg["$OBJECT"] == "argument" or arg["$OBJECT"] == "arg":
+                arg_name = arg["name"]
                 actual = self.argument_by_name(line, arg_name)
                 copied = copy.deepcopy(actual)
                 Dict.set(new_context, [arg_name], copied)

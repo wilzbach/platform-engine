@@ -2,7 +2,6 @@
 
 
 class IntegerMutations:
-
     @classmethod
     def isOdd(cls, mutation, value, story, line, operator):
         return value % 2 == 1

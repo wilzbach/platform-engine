@@ -22,13 +22,14 @@ class BaseHandler(RequestHandler):
             logger = Apps.get(app_id).logger
         except BaseException:
             logger = self.logger
-        logger.error(f'Story execution failed; cause={str(e)}', exc=e)
-        self.set_status(500, 'Story execution failed')
+        logger.error(f"Story execution failed; cause={str(e)}", exc=e)
+        self.set_status(500, "Story execution failed")
         self.finish()
 
         if isinstance(e, StoryscriptError):
             re = ReportingEvent.from_release(
-                e.story.app.release, APP_REQUEST_ERROR)
+                e.story.app.release, APP_REQUEST_ERROR
+            )
         else:
             re = ReportingEvent.from_exc(e)
 

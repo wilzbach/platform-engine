@@ -10,42 +10,42 @@ from ..utils.TypeUtils import TypeUtils
 
 # Python 3.6: _sre.SRE_Pattern
 # Python 3.7: re.Pattern
-RE_PATTERN = type(re.compile('a'))
+RE_PATTERN = type(re.compile("a"))
 
 
 class TypeAssertionError(Exception):
     """
     Raised when runtime type can't be converted.
     """
+
     pass
 
 
 class TypeResolver:
-
     @classmethod
     def resolve_type(cls, item):
         assert isinstance(item, dict)
-        object_type = item.get('type')
-        if object_type == 'List':
-            return types.ListType(cls.resolve_type(item['values'][0]))
-        elif object_type == 'Map':
-            values = item['values']
+        object_type = item.get("type")
+        if object_type == "List":
+            return types.ListType(cls.resolve_type(item["values"][0]))
+        elif object_type == "Map":
+            values = item["values"]
             assert len(values) == 2
             key = cls.resolve_type(values[0])
             value = cls.resolve_type(values[1])
             return types.MapType(key, value)
-        elif object_type == 'any':
+        elif object_type == "any":
             return types.AnyType.instance()
-        elif object_type == 'regex':
+        elif object_type == "regex":
             return types.RegExpType.instance()
-        elif object_type == 'boolean':
+        elif object_type == "boolean":
             return types.BooleanType.instance()
-        elif object_type == 'int':
+        elif object_type == "int":
             return types.IntType.instance()
-        elif object_type == 'float':
+        elif object_type == "float":
             return types.FloatType.instance()
         else:
-            assert object_type == 'string'
+            assert object_type == "string"
             return types.StringType.instance()
 
     @staticmethod
@@ -58,30 +58,30 @@ class TypeResolver:
     @classmethod
     def type_string(cls, item):
         if isinstance(item, list):
-            inner = 'any'
+            inner = "any"
             if len(item) > 0:
                 inner = cls.type_string(item[0])
-            return f'List[{inner}]'
+            return f"List[{inner}]"
         elif isinstance(item, dict):
-            key = 'any'
-            value = 'any'
+            key = "any"
+            value = "any"
             if len(item) > 0:
                 k, v = next(iter(item.items()))
                 key = cls.type_string(k)
                 value = cls.type_string(v)
-            return f'Map[{key},{value}]'
+            return f"Map[{key},{value}]"
         elif isinstance(item, bool):
-            return 'boolean'
+            return "boolean"
         elif isinstance(item, int):
-            return 'int'
+            return "int"
         elif isinstance(item, float):
-            return 'float'
+            return "float"
         elif isinstance(item, str):
-            return 'str'
+            return "str"
         elif isinstance(item, RE_PATTERN):
-            return 'regexp'
+            return "regexp"
         else:
-            return f'unknown type {type(item)}'
+            return f"unknown type {type(item)}"
 
     @classmethod
     def check_type_cast(cls, type_exp, item):
@@ -104,7 +104,20 @@ class TypeResolver:
                 obj[key] = value
             return obj
         elif isinstance(type_exp, types.BooleanType):
-            return bool(item)
+            cls.assert_type([str, list, dict, int, float], item)
+            if isinstance(item, str):
+                if item == "true":
+                    return True
+                return False
+            if isinstance(item, list):
+                return len(item) > 0
+            if isinstance(item, dict):
+                return len(item) > 0
+            if isinstance(item, int):
+                return item != 0
+            else:
+                assert isinstance(item, float), f"{item}r is unknown"
+                return item != 0
         elif isinstance(type_exp, types.IntType):
             return int(item)
         elif isinstance(type_exp, types.FloatType):
@@ -136,7 +149,7 @@ class TypeResolver:
         Stringifies an item.
         """
         if isinstance(item, RE_PATTERN):
-            return f'/{item.pattern}/'
+            return f"/{item.pattern}/"
         return str(item)
 
     @classmethod
@@ -147,10 +160,10 @@ class TypeResolver:
         try:
             return cls.check_type_cast(t, item)
         except (TypeError, TypeAssertionError):
-            raise TypeAssertionRuntimeError(type_expected=t,
-                                            type_received=type_received,
-                                            value=value)
+            raise TypeAssertionRuntimeError(
+                type_expected=t, type_received=type_received, value=value
+            )
         except (ValueError, re.error):
-            raise TypeValueRuntimeError(type_expected=t,
-                                        type_received=type_received,
-                                        value=value)
+            raise TypeValueRuntimeError(
+                type_expected=t, type_received=type_received, value=value
+            )

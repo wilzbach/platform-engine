@@ -13,17 +13,27 @@ from pytest import fixture, mark
 from requests.structures import CaseInsensitiveDict
 
 from storyruntime.Containers import Containers
-from storyruntime.Exceptions import ArgumentTypeMismatchError, \
-    StoryscriptError, StoryscriptRuntimeError
+from storyruntime.Exceptions import (
+    ArgumentTypeMismatchError,
+    StoryscriptError,
+    StoryscriptRuntimeError,
+)
 from storyruntime.Types import StreamingService
 from storyruntime.constants import ContextConstants
-from storyruntime.constants.LineConstants import \
-    LineConstants as Line, LineConstants
+from storyruntime.constants.LineConstants import (
+    LineConstants as Line,
+    LineConstants,
+)
 from storyruntime.constants.ServiceConstants import ServiceConstants
 from storyruntime.entities.Multipart import FileFormField, FormField
 from storyruntime.omg.ServiceOutputValidator import ServiceOutputValidator
-from storyruntime.processing.Services import Command, Event, HttpDataEncoder, \
-    Service, Services
+from storyruntime.processing.Services import (
+    Command,
+    Event,
+    HttpDataEncoder,
+    Service,
+    Services,
+)
 from storyruntime.utils.HttpUtils import HttpUtils
 
 from tornado.gen import coroutine
@@ -32,87 +42,97 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 @mark.asyncio
 async def test_services_execute_execute_internal(story, async_mock):
-    handler = async_mock(return_value='output')
+    handler = async_mock(return_value="output")
 
-    Services.register_internal('my_service', 'my_command', {}, 'any', handler)
+    Services.register_internal("my_service", "my_command", {}, "any", handler)
 
-    assert Services.is_internal('my_service', 'my_command') is True
+    assert Services.is_internal("my_service", "my_command") is True
     line = {
-        Line.service: 'my_service',
-        Line.command: 'my_command',
-        Line.method: 'execute'
+        Line.service: "my_service",
+        Line.command: "my_command",
+        Line.method: "execute",
     }
 
-    assert await Services.execute(story, line) == 'output'
+    assert await Services.execute(story, line) == "output"
 
 
 @mark.asyncio
 async def test_services_execute_execute_external(patch, story, async_mock):
-    patch.object(Services, 'execute_external', new=async_mock())
-    assert Services.is_internal('foo_service', 'blah') is False
+    patch.object(Services, "execute_external", new=async_mock())
+    assert Services.is_internal("foo_service", "blah") is False
     line = {
-        Line.service: 'foo_service',
-        Line.command: 'foo_command',
-        Line.method: 'execute'
+        Line.service: "foo_service",
+        Line.command: "foo_command",
+        Line.method: "execute",
     }
 
-    assert await Services.execute(story, line) \
+    assert (
+        await Services.execute(story, line)
         == await Services.execute_external()
+    )
 
 
 @mark.asyncio
-async def test_services_execute_execute_external_inline(patch, story,
-                                                        async_mock):
-    patch.object(Services, 'execute_inline', new=async_mock())
-    patch.object(Services, 'start_container', new=async_mock())
-    patch.object(Services, 'get_command_conf',
-                 return_value={'http': {'use_event_conn': True}})
+async def test_services_execute_execute_external_inline(
+    patch, story, async_mock
+):
+    patch.object(Services, "execute_inline", new=async_mock())
+    patch.object(Services, "start_container", new=async_mock())
+    patch.object(
+        Services,
+        "get_command_conf",
+        return_value={"http": {"use_event_conn": True}},
+    )
     line = {
-        Line.service: 'foo_service',
-        Line.command: 'foo_command',
-        Line.method: 'execute'
+        Line.service: "foo_service",
+        Line.command: "foo_command",
+        Line.method: "execute",
     }
 
-    assert await Services.execute(story, line) \
-        == await Services.execute_inline()
+    assert (
+        await Services.execute(story, line) == await Services.execute_inline()
+    )
 
 
 @mark.asyncio
 async def test_services_execute_args(story, async_mock):
-    handler = async_mock(return_value='output')
+    handler = async_mock(return_value="output")
 
-    Services.register_internal('my_service', 'my_command',
-                               {'arg1': {'type': 'string'}},
-                               'any', handler)
+    Services.register_internal(
+        "my_service",
+        "my_command",
+        {"arg1": {"type": "string"}},
+        "any",
+        handler,
+    )
 
-    assert Services.is_internal('my_service', 'my_command') is True
+    assert Services.is_internal("my_service", "my_command") is True
     line = {
-        Line.service: 'my_service',
-        Line.command: 'my_command',
-        Line.method: 'execute',
-        'args': [
+        Line.service: "my_service",
+        Line.command: "my_command",
+        Line.method: "execute",
+        "args": [
             {
-                '$OBJECT': 'argument',
-                'name': 'arg1',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': 'Hello world!'
-                }
+                "$OBJECT": "argument",
+                "name": "arg1",
+                "argument": {"$OBJECT": "string", "string": "Hello world!"},
             }
-        ]
+        ],
     }
 
-    assert await Services.execute(story, line) == 'output'
-    handler.mock.assert_called_with(story=story, line=line,
-                                    resolved_args={'arg1': 'Hello world!'})
+    assert await Services.execute(story, line) == "output"
+    handler.mock.assert_called_with(
+        story=story, line=line, resolved_args={"arg1": "Hello world!"}
+    )
 
 
 def test_services_log_registry(logger):
     Services.init(logger)
-    Services.register_internal('my_service', 'my_command', {}, 'any', None)
+    Services.register_internal("my_service", "my_command", {}, "any", None)
     Services.log_internal()
     logger.info.assert_called_with(
-        'Discovered internal service my_service - [\'my_command\']')
+        "Discovered internal service my_service - ['my_command']"
+    )
 
 
 def test_resolve_chain(story):
@@ -125,76 +145,84 @@ def test_resolve_chain(story):
             echo_helper sonar
 
     """
-    story.app.services = {
-        'alpine': {}
-    }
+    story.app.services = {"alpine": {}}
 
     story.tree = {
-        '1': {
-            Line.method: 'execute',
-            Line.service: 'alpine',
-            Line.command: 'echo',
-            Line.enter: '2',
-            Line.output: ['client']
+        "1": {
+            Line.method: "execute",
+            Line.service: "alpine",
+            Line.command: "echo",
+            Line.enter: "2",
+            Line.output: ["client"],
         },
-        '2': {
-            Line.method: 'when',
-            Line.service: 'client',
-            Line.command: 'foo',
-            Line.parent: '1',
-            Line.output: ['echo_helper']
+        "2": {
+            Line.method: "when",
+            Line.service: "client",
+            Line.command: "foo",
+            Line.parent: "1",
+            Line.output: ["echo_helper"],
         },
-        '3': {
-            Line.method: 'execute',
-            Line.service: 'alpine',
-            Line.command: 'echo',
-            Line.parent: '2',
-            Line.enter: '4'
+        "3": {
+            Line.method: "execute",
+            Line.service: "alpine",
+            Line.command: "echo",
+            Line.parent: "2",
+            Line.enter: "4",
         },
-        '4': {
-            Line.method: 'execute',
-            Line.service: 'echo_helper',
-            Line.command: 'sonar',
-            Line.parent: '3'
+        "4": {
+            Line.method: "execute",
+            Line.service: "echo_helper",
+            Line.command: "sonar",
+            Line.parent: "3",
         },
-        '5': {
-            Line.method: 'execute',
-            Line.service: 'echo_helper',
-            Line.command: 'sonar',
-            Line.parent: '2'
-        }
+        "5": {
+            Line.method: "execute",
+            Line.service: "echo_helper",
+            Line.command: "sonar",
+            Line.parent: "2",
+        },
     }
 
-    assert Services.resolve_chain(story, story.tree['1']) \
-        == deque([Service(name='alpine'), Command(name='echo')])
+    assert Services.resolve_chain(story, story.tree["1"]) == deque(
+        [Service(name="alpine"), Command(name="echo")]
+    )
 
-    assert Services.resolve_chain(story, story.tree['2']) \
-        == deque([Service(name='alpine'),
-                  Command(name='echo'), Event(name='foo')])
+    assert Services.resolve_chain(story, story.tree["2"]) == deque(
+        [Service(name="alpine"), Command(name="echo"), Event(name="foo")]
+    )
 
-    assert Services.resolve_chain(story, story.tree['3']) \
-        == deque([Service(name='alpine'), Command(name='echo')])
+    assert Services.resolve_chain(story, story.tree["3"]) == deque(
+        [Service(name="alpine"), Command(name="echo")]
+    )
 
-    assert Services.resolve_chain(story, story.tree['4']) \
-        == deque([Service(name='alpine'), Command(name='echo'),
-                  Event(name='foo'), Command(name='sonar')])
+    assert Services.resolve_chain(story, story.tree["4"]) == deque(
+        [
+            Service(name="alpine"),
+            Command(name="echo"),
+            Event(name="foo"),
+            Command(name="sonar"),
+        ]
+    )
 
-    assert Services.resolve_chain(story, story.tree['5']) \
-        == deque([Service(name='alpine'), Command(name='echo'),
-                  Event(name='foo'), Command(name='sonar')])
+    assert Services.resolve_chain(story, story.tree["5"]) == deque(
+        [
+            Service(name="alpine"),
+            Command(name="echo"),
+            Event(name="foo"),
+            Command(name="sonar"),
+        ]
+    )
 
 
-@mark.parametrize('value', [{'a': 'b'}, [0, 2, 'hello'], 'a'])
+@mark.parametrize("value", [{"a": "b"}, [0, 2, "hello"], "a"])
 def test_smart_insert(patch, story, value):
-    patch.object(Services, 'raise_for_type_mismatch')
+    patch.object(Services, "raise_for_type_mismatch")
 
-    arg_conf = {
-        'type': 'string'
-    }
+    arg_conf = {"type": "string"}
 
     m = {}
 
-    key = 'my_key'
+    key = "my_key"
 
     if isinstance(value, dict) or isinstance(value, list):
         expected = json.dumps(value)
@@ -203,537 +231,444 @@ def test_smart_insert(patch, story, value):
 
     Services.smart_insert(story, {}, arg_conf, key, value, m)
     Services.raise_for_type_mismatch.assert_called_with(
-        story, {}, key, expected, arg_conf)
+        story, {}, key, expected, arg_conf
+    )
 
     assert m[key] == expected
 
 
-@mark.parametrize('val', ['a', 'b', 'c', 'd'])
+@mark.parametrize("val", ["a", "b", "c", "d"])
 def test_raise_for_type_mismatch_enum(story, val):
-    arg_conf = {
-        'type': 'enum',
-        'enum': ['a', 'b', 'c']
-    }
+    arg_conf = {"type": "enum", "enum": ["a", "b", "c"]}
 
-    if val in arg_conf['enum']:
-        Services.raise_for_type_mismatch(story, {}, 'arg_name',
-                                         val, arg_conf)
+    if val in arg_conf["enum"]:
+        Services.raise_for_type_mismatch(story, {}, "arg_name", val, arg_conf)
     else:
         with pytest.raises(ArgumentTypeMismatchError):
-            Services.raise_for_type_mismatch(story, {}, 'arg_name',
-                                             val, arg_conf)
+            Services.raise_for_type_mismatch(
+                story, {}, "arg_name", val, arg_conf
+            )
 
 
-@mark.parametrize('case', [{
-    # int, min, max, valid
-    'arg_conf': {
-        'type': 'int',
-        'range': {
-            'min': 10,
-            'max': 20
-        }
-    },
-    'value': 15,
-    'valid': True
-}, {
-    # int, min, max, invalid
-    'arg_conf': {
-        'type': 'int',
-        'range': {
-            'min': 10,
-            'max': 20
-        }
-    },
-    'value': 5,
-    'valid': False
-}, {
-    # int, min, valid
-    'arg_conf': {
-        'type': 'int',
-        'range': {
-            'min': 10,
-        }
-    },
-    'value': 15,
-    'valid': True
-}, {
-    # int, min, invalid
-    'arg_conf': {
-        'type': 'int',
-        'range': {
-            'min': 10,
-        }
-    },
-    'value': 5,
-    'valid': False
-}, {
-    # int, max, valid
-    'arg_conf': {
-        'type': 'int',
-        'range': {
-            'max': 20,
-        }
-    },
-    'value': -5,
-    'valid': True
-}, {
-    # int, max, invalid
-    'arg_conf': {
-        'type': 'int',
-        'range': {
-            'max': 20,
-        }
-    },
-    'value': 25,
-    'valid': False
-}, {
-    # int, empty dict, valid
-    'arg_conf': {
-        'type': 'int',
-        'range': {}
-    },
-    'value': 10,
-    'valid': True
-}, {
-    # not an int, empty dict, invalid
-    'arg_conf': {
-        'type': 'int',
-        'range': {}
-    },
-    'value': 'a',
-    'valid': False
-}, {
-    # float, min, max, valid
-    'arg_conf': {
-        'type': 'float',
-        'range': {
-            'min': 10.1234,
-            'max': 15.5678
-        }
-    },
-    'value': 12.1234,
-    'valid': True
-}, {
-    # float, min, max, invalid
-    'arg_conf': {
-        'type': 'float',
-        'range': {
-            'min': 10.1234,
-            'max': 10.5678
-        }
-    },
-    'value': 10.50,
-    'valid': True
-}, {
-    # float, min, valid
-    'arg_conf': {
-        'type': 'float',
-        'range': {
-            'min': 10.01,
-        }
-    },
-    'value': 11.05,
-    'valid': True
-}, {
-    # float, min, invalid
-    'arg_conf': {
-        'type': 'float',
-        'range': {
-            'min': 10.01,
-        }
-    },
-    'value': 5.01,
-    'valid': False
-}, {
-    # float, max, valid
-    'arg_conf': {
-        'type': 'float',
-        'range': {
-            'max': 20.05,
-        }
-    },
-    'value': -5.02,
-    'valid': True
-}, {
-    # float, max, invalid
-    'arg_conf': {
-        'type': 'float',
-        'range': {
-            'max': 20.05,
-        }
-    },
-    'value': 25.03,
-    'valid': False
-}, {
-    # float, empty dict, valid
-    'arg_conf': {
-        'type': 'float',
-        'range': {}
-    },
-    'value': 10.00,
-    'valid': True
-}, {
-    # not a float, empty dict, invalid
-    'arg_conf': {
-        'type': 'float',
-        'range': {}
-    },
-    'value': 'b',
-    'valid': False
-}])
+@mark.parametrize(
+    "case",
+    [
+        {
+            # int, min, max, valid
+            "arg_conf": {"type": "int", "range": {"min": 10, "max": 20}},
+            "value": 15,
+            "valid": True,
+        },
+        {
+            # int, min, max, invalid
+            "arg_conf": {"type": "int", "range": {"min": 10, "max": 20}},
+            "value": 5,
+            "valid": False,
+        },
+        {
+            # int, min, valid
+            "arg_conf": {"type": "int", "range": {"min": 10}},
+            "value": 15,
+            "valid": True,
+        },
+        {
+            # int, min, invalid
+            "arg_conf": {"type": "int", "range": {"min": 10}},
+            "value": 5,
+            "valid": False,
+        },
+        {
+            # int, max, valid
+            "arg_conf": {"type": "int", "range": {"max": 20}},
+            "value": -5,
+            "valid": True,
+        },
+        {
+            # int, max, invalid
+            "arg_conf": {"type": "int", "range": {"max": 20}},
+            "value": 25,
+            "valid": False,
+        },
+        {
+            # int, empty dict, valid
+            "arg_conf": {"type": "int", "range": {}},
+            "value": 10,
+            "valid": True,
+        },
+        {
+            # not an int, empty dict, invalid
+            "arg_conf": {"type": "int", "range": {}},
+            "value": "a",
+            "valid": False,
+        },
+        {
+            # float, min, max, valid
+            "arg_conf": {
+                "type": "float",
+                "range": {"min": 10.1234, "max": 15.5678},
+            },
+            "value": 12.1234,
+            "valid": True,
+        },
+        {
+            # float, min, max, invalid
+            "arg_conf": {
+                "type": "float",
+                "range": {"min": 10.1234, "max": 10.5678},
+            },
+            "value": 10.50,
+            "valid": True,
+        },
+        {
+            # float, min, valid
+            "arg_conf": {"type": "float", "range": {"min": 10.01}},
+            "value": 11.05,
+            "valid": True,
+        },
+        {
+            # float, min, invalid
+            "arg_conf": {"type": "float", "range": {"min": 10.01}},
+            "value": 5.01,
+            "valid": False,
+        },
+        {
+            # float, max, valid
+            "arg_conf": {"type": "float", "range": {"max": 20.05}},
+            "value": -5.02,
+            "valid": True,
+        },
+        {
+            # float, max, invalid
+            "arg_conf": {"type": "float", "range": {"max": 20.05}},
+            "value": 25.03,
+            "valid": False,
+        },
+        {
+            # float, empty dict, valid
+            "arg_conf": {"type": "float", "range": {}},
+            "value": 10.00,
+            "valid": True,
+        },
+        {
+            # not a float, empty dict, invalid
+            "arg_conf": {"type": "float", "range": {}},
+            "value": "b",
+            "valid": False,
+        },
+    ],
+)
 def test_raise_for_type_mismatch_range(story, case):
 
-    line = {'ln': '10'}
+    line = {"ln": "10"}
 
-    if case['valid']:
-        Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                         case['value'], case['arg_conf'])
+    if case["valid"]:
+        Services.raise_for_type_mismatch(
+            story, line, "arg_name", case["value"], case["arg_conf"]
+        )
     else:
         with pytest.raises(ArgumentTypeMismatchError):
-            Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                             case['value'], case['arg_conf'])
+            Services.raise_for_type_mismatch(
+                story, line, "arg_name", case["value"], case["arg_conf"]
+            )
 
 
-@mark.parametrize('case', [{
-    'pattern': '[a-z]+',
-    'value': 'abc',
-    'valid': True
-}, {
-    'pattern': '[a-z]+',
-    'value': 'abc123',
-    'valid': False
-}, {
-    'pattern': '',
-    'value': 'abc123!@#',
-    'valid': True
-}])
+@mark.parametrize(
+    "case",
+    [
+        {"pattern": "[a-z]+", "value": "abc", "valid": True},
+        {"pattern": "[a-z]+", "value": "abc123", "valid": False},
+        {"pattern": "", "value": "abc123!@#", "valid": True},
+    ],
+)
 def test_raise_for_type_mismatch_pattern(story, case):
-    arg_conf = {
-        'type': 'string',
-        'pattern': case['pattern']
-    }
+    arg_conf = {"type": "string", "pattern": case["pattern"]}
 
-    line = {'ln': '10'}
+    line = {"ln": "10"}
 
-    if case['valid']:
-        Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                         case['value'], arg_conf)
+    if case["valid"]:
+        Services.raise_for_type_mismatch(
+            story, line, "arg_name", case["value"], arg_conf
+        )
     else:
         with pytest.raises(ArgumentTypeMismatchError):
-            Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                             case['value'], arg_conf)
+            Services.raise_for_type_mismatch(
+                story, line, "arg_name", case["value"], arg_conf
+            )
 
 
-@mark.parametrize('case', [{
-    # unnested, valid
-    'properties': {
-        'red': {
-            'type': 'float'
+@mark.parametrize(
+    "case",
+    [
+        {
+            # unnested, valid
+            "properties": {
+                "red": {"type": "float"},
+                "green": {"type": "string"},
+                "blue": {"type": "any"},
+            },
+            "value": {"red": 1.023, "green": "green color", "blue": None},
+            "valid": True,
         },
-        'green': {
-            'type': 'string'
+        {
+            # unnested, invalid
+            "properties": {
+                "green": {"type": "string"},
+                "red": {"type": "float"},
+                "blue": {"type": "any"},
+            },
+            "value": {"red": 1, "green": "green color", "blue": None},
+            "valid": False,
         },
-        'blue': {
-            'type': 'any'
-        }
-    },
-    'value': {
-        'red': 1.023,
-        'green': 'green color',
-        'blue': None
-    },
-    'valid': True
-}, {
-    # unnested, invalid
-    'properties': {
-        'green': {
-            'type': 'string'
+        {
+            # unnested, invalid, extra key in value
+            "properties": {
+                "green": {"type": "string"},
+                "red": {"type": "float"},
+                "blue": {"type": "any"},
+            },
+            "value": {
+                "red": 1.023,
+                "green": "green color",
+                "blue": None,
+                "magenta": "magenta color",
+            },
+            "valid": False,
         },
-        'red': {
-            'type': 'float'
+        {
+            # unnested, invalid, extra key in conf
+            "properties": {
+                "green": {"type": "string"},
+                "red": {"type": "float"},
+                "blue": {"type": "any"},
+                "magenta": {"type": "string"},
+            },
+            "value": {"red": 1.023, "green": "green color", "blue": None},
+            "valid": False,
         },
-        'blue': {
-            'type': 'any'
-        }
-    },
-    'value': {
-        'red': 1,
-        'green': 'green color',
-        'blue': None
-    },
-    'valid': False
-}, {
-    # unnested, invalid, extra key in value
-    'properties': {
-        'green': {
-            'type': 'string'
-        },
-        'red': {
-            'type': 'float'
-        },
-        'blue': {
-            'type': 'any'
-        }
-    },
-    'value': {
-        'red': 1.023,
-        'green': 'green color',
-        'blue': None,
-        'magenta': 'magenta color'
-    },
-    'valid': False
-}, {
-    # unnested, invalid, extra key in conf
-    'properties': {
-        'green': {
-            'type': 'string'
-        },
-        'red': {
-            'type': 'float'
-        },
-        'blue': {
-            'type': 'any'
-        },
-        'magenta': {
-            'type': 'string'
-        }
-    },
-    'value': {
-        'red': 1.023,
-        'green': 'green color',
-        'blue': None,
-    },
-    'valid': False
-}, {
-    # nested, valid
-    'properties': {
-        'name': {
-            'type': 'string'
-        },
-        'location': {
-            'type': 'object',
-            'properties': {
-                'street': {
-                    'type': 'string'
+        {
+            # nested, valid
+            "properties": {
+                "name": {"type": "string"},
+                "location": {
+                    "type": "object",
+                    "properties": {
+                        "street": {"type": "string"},
+                        "postcode": {"type": "int"},
+                    },
                 },
-                'postcode': {
-                    'type': 'int'
-                }
-            }
-        }
-    },
-    'value': {
-        'name': 'some place',
-        'location': {
-            'street': 'some street',
-            'postcode': 123
-        }
-    },
-    'valid': True
-}, {
-    # nested, invalid
-    'properties': {
-        'name': {
-            'type': 'string'
+            },
+            "value": {
+                "name": "some place",
+                "location": {"street": "some street", "postcode": 123},
+            },
+            "valid": True,
         },
-        'location': {
-            'type': 'object',
-            'properties': {
-                'street': {
-                    'type': 'string'
+        {
+            # nested, invalid
+            "properties": {
+                "name": {"type": "string"},
+                "location": {
+                    "type": "object",
+                    "properties": {
+                        "street": {"type": "string"},
+                        "postcode": {"type": "int"},
+                    },
                 },
-                'postcode': {
-                    'type': 'int'
-                }
-            }
-        }
-    },
-    'value': {
-        'name': 'some place',
-        'location': {
-            'street': 'some street',
-            'postcode': 'some postcode'
-        }
-    },
-    'valid': False
-}])
+            },
+            "value": {
+                "name": "some place",
+                "location": {
+                    "street": "some street",
+                    "postcode": "some postcode",
+                },
+            },
+            "valid": False,
+        },
+    ],
+)
 def test_raise_for_type_mismatch_object(story, case):
-    arg_conf = {
-        'type': 'object',
-        'properties': case['properties']
-    }
+    arg_conf = {"type": "object", "properties": case["properties"]}
 
-    line = {'ln': '10'}
+    line = {"ln": "10"}
 
-    if case['valid']:
-        Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                         case['value'], arg_conf)
+    if case["valid"]:
+        Services.raise_for_type_mismatch(
+            story, line, "arg_name", case["value"], arg_conf
+        )
     else:
         with pytest.raises(ArgumentTypeMismatchError):
-            Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                             case['value'], arg_conf)
+            Services.raise_for_type_mismatch(
+                story, line, "arg_name", case["value"], arg_conf
+            )
 
 
-@mark.parametrize('typ', ['int', 'float', 'string', 'list', 'map',
-                          'boolean', 'any'])
-@mark.parametrize('val', [None, 1, 0.9, 'hello', [0, 1], {'a': 'b'}, True,
-                          False])
-@mark.parametrize('required', [True, False])
+@mark.parametrize(
+    "typ", ["int", "float", "string", "list", "map", "boolean", "any"]
+)
+@mark.parametrize(
+    "val", [None, 1, 0.9, "hello", [0, 1], {"a": "b"}, True, False]
+)
+@mark.parametrize("required", [True, False])
 def test_raise_for_type_mismatch(story, typ, val, required):
-    arg_conf = {
-        'type': typ
-    }
+    arg_conf = {"type": typ}
 
     if required:
-        arg_conf['required'] = True
+        arg_conf["required"] = True
 
-    line = {'ln': '10'}
+    line = {"ln": "10"}
 
     valid = False
-    if typ == 'string' and isinstance(val, str):
+    if typ == "string" and isinstance(val, str):
         valid = True
-    elif typ == 'int' and isinstance(val, int):
+    elif typ == "int" and isinstance(val, int):
         valid = True
-    elif typ == 'float' and isinstance(val, float):
+    elif typ == "float" and isinstance(val, float):
         valid = True
-    elif typ == 'list' and isinstance(val, list):
+    elif typ == "list" and isinstance(val, list):
         valid = True
-    elif typ == 'map' and isinstance(val, dict):
+    elif typ == "map" and isinstance(val, dict):
         valid = True
-    elif typ == 'boolean' and isinstance(val, bool):
+    elif typ == "boolean" and isinstance(val, bool):
         valid = True
-    elif typ == 'any':
+    elif typ == "any":
         valid = True
     elif val is None and not required:
         valid = True
 
     if valid:
-        Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                         val, arg_conf)
+        Services.raise_for_type_mismatch(
+            story, line, "arg_name", val, arg_conf
+        )
     else:
         with pytest.raises(ArgumentTypeMismatchError):
-            Services.raise_for_type_mismatch(story, line, 'arg_name',
-                                             val, arg_conf)
+            Services.raise_for_type_mismatch(
+                story, line, "arg_name", val, arg_conf
+            )
 
 
-@mark.parametrize('location', ['requestBody', 'query', 'path',
-                               'invalid_loc', 'formBody', 'header', None])
-@mark.parametrize('method', ['POST', 'GET'])
-@mark.parametrize('service_output', [{
-    'properties': {
-        'foo': {
-            'type': 'string'
-        }
-    }
-}, None])
-@mark.parametrize('absolute_url', [True, False])
+@mark.parametrize(
+    "location",
+    [
+        "requestBody",
+        "query",
+        "path",
+        "invalid_loc",
+        "formBody",
+        "header",
+        None,
+    ],
+)
+@mark.parametrize("method", ["POST", "GET"])
+@mark.parametrize(
+    "service_output", [{"properties": {"foo": {"type": "string"}}}, None]
+)
+@mark.parametrize("absolute_url", [True, False])
 @mark.asyncio
-async def test_services_execute_http(patch, story, async_mock, absolute_url,
-                                     location, method, service_output):
-    if location == 'formBody' and method == 'GET':
+async def test_services_execute_http(
+    patch, story, async_mock, absolute_url, location, method, service_output
+):
+    if location == "formBody" and method == "GET":
         return  # Invalid case.
 
-    chain = deque([Service(name='service'), Command(name='cmd')])
-    patch.object(Containers, 'get_hostname', return_value='container_host')
+    chain = deque([Service(name="service"), Command(name="cmd")])
+    patch.object(Containers, "get_hostname", return_value="container_host")
 
-    patch.object(uuid, 'uuid4')
+    patch.object(uuid, "uuid4")
 
-    patch.object(ServiceOutputValidator, 'raise_if_invalid')
+    patch.object(ServiceOutputValidator, "raise_if_invalid")
 
     command_conf = {
-        'http': {
-            'method': method.lower(),
-            'port': 2771,
-            'path': '/invoke'
-        },
-        'arguments': {
-            'foo': {
-                'in': location
-            }
-        }
+        "http": {"method": method.lower(), "port": 2771, "path": "/invoke"},
+        "arguments": {"foo": {"in": location}},
     }
 
     if absolute_url:
-        command_conf['http']['url'] = 'https://extcoolfunctions.com/invoke'
-        del command_conf['http']['port']
-        del command_conf['http']['path']
+        command_conf["http"]["url"] = "https://extcoolfunctions.com/invoke"
+        del command_conf["http"]["port"]
+        del command_conf["http"]["path"]
 
     if service_output is not None:
-        command_conf['output'] = service_output
+        command_conf["output"] = service_output
 
     if location is None:
-        del command_conf['arguments']
+        del command_conf["arguments"]
 
-    if location == 'formBody':
-        command_conf['http']['contentType'] = 'multipart/form-data'
+    if location == "formBody":
+        command_conf["http"]["contentType"] = "multipart/form-data"
 
-    patch.object(story, 'argument_by_name', return_value='bar')
+    patch.object(story, "argument_by_name", return_value="bar")
 
-    if location == 'path':
+    if location == "path":
         if absolute_url:
-            command_conf['http']['url'] = 'https://extcoolfunctions.com' \
-                                          '/invoke/{foo}'
-            expected_url = 'https://extcoolfunctions.com/invoke/bar'
+            command_conf["http"]["url"] = (
+                "https://extcoolfunctions.com" "/invoke/{foo}"
+            )
+            expected_url = "https://extcoolfunctions.com/invoke/bar"
         else:
-            command_conf['http']['path'] = '/invoke/{foo}'
-            expected_url = 'http://container_host:2771/invoke/bar'
-    elif location == 'query':
+            command_conf["http"]["path"] = "/invoke/{foo}"
+            expected_url = "http://container_host:2771/invoke/bar"
+    elif location == "query":
         if absolute_url:
-            expected_url = 'https://extcoolfunctions.com/invoke?foo=bar'
+            expected_url = "https://extcoolfunctions.com/invoke?foo=bar"
         else:
-            expected_url = 'http://container_host:2771/invoke?foo=bar'
+            expected_url = "http://container_host:2771/invoke?foo=bar"
     else:  # requestBody
         if absolute_url:
-            expected_url = 'https://extcoolfunctions.com/invoke'
+            expected_url = "https://extcoolfunctions.com/invoke"
         else:
-            expected_url = 'http://container_host:2771/invoke'
+            expected_url = "http://container_host:2771/invoke"
 
     expected_kwargs = {
-        'method': method,
-        'headers': {},
-        'request_timeout': 60000 * 2,
-        'retry_timeout': 1
+        "method": method,
+        "headers": {},
+        "request_timeout": 60000 * 2,
+        "retry_timeout": 1,
     }
 
-    if location == 'header':
-        expected_kwargs['headers']['foo'] = 'bar'
+    if location == "header":
+        expected_kwargs["headers"]["foo"] = "bar"
 
-    if method == 'POST':
-        expected_kwargs['headers']['Content-Type'] = 'application/json; ' \
-                                                     'charset=utf-8'
+    if method == "POST":
+        expected_kwargs["headers"]["Content-Type"] = (
+            "application/json; " "charset=utf-8"
+        )
 
-        if location == 'requestBody':
-            expected_kwargs['body'] = '{"foo": "bar"}'
-        elif location == 'formBody':
-            expected_kwargs['headers']['Content-Type'] = \
-                f'multipart/form-data; boundary={uuid.uuid4().hex}'
+        if location == "requestBody":
+            expected_kwargs["body"] = '{"foo": "bar"}'
+        elif location == "formBody":
+            expected_kwargs["headers"][
+                "Content-Type"
+            ] = f"multipart/form-data; boundary={uuid.uuid4().hex}"
         else:
-            expected_kwargs['body'] = '{}'
+            expected_kwargs["body"] = "{}"
 
-    line = {
-        'ln': '1'
-    }
+    line = {"ln": "1"}
 
     patch.init(AsyncHTTPClient)
     client = AsyncHTTPClient()
-    response = HTTPResponse(HTTPRequest(url=expected_url), 200,
-                            buffer=StringIO('{"foo": "\U0001f44d"}'),
-                            headers={'Content-Type': 'application/json'})
+    response = HTTPResponse(
+        HTTPRequest(url=expected_url),
+        200,
+        buffer=StringIO('{"foo": "\U0001f44d"}'),
+        headers={"Content-Type": "application/json"},
+    )
 
-    patch.object(HttpUtils, 'fetch_with_retry',
-                 new=async_mock(return_value=response))
+    patch.object(
+        HttpUtils, "fetch_with_retry", new=async_mock(return_value=response)
+    )
 
-    if location == 'invalid_loc' or \
-            (location == 'requestBody' and method == 'GET'):
+    if location == "invalid_loc" or (
+        location == "requestBody" and method == "GET"
+    ):
         with pytest.raises(StoryscriptError):
             await Services.execute_http(story, line, chain, command_conf)
         return
     else:
         ret = await Services.execute_http(story, line, chain, command_conf)
 
-    assert ret == {'foo': '\U0001f44d'}
+    assert ret == {"foo": "\U0001f44d"}
 
-    if location == 'formBody':
+    if location == "formBody":
         call = HttpUtils.fetch_with_retry.mock.mock_calls[0][1]
         assert call[0] == 3
         assert call[1] == story.logger
@@ -741,117 +676,116 @@ async def test_services_execute_http(patch, story, async_mock, absolute_url,
         assert call[3] == client
 
         # Since we can't mock the partial, we must inspect it.
-        actual_body_producer = call[4].pop('body_producer')
+        actual_body_producer = call[4].pop("body_producer")
         assert call[4] == expected_kwargs
 
         assert actual_body_producer.func == Services._multipart_producer
     else:
         HttpUtils.fetch_with_retry.mock.assert_called_with(
-            3, story.logger, expected_url, client, expected_kwargs)
+            3, story.logger, expected_url, client, expected_kwargs
+        )
 
     if service_output is not None:
         ServiceOutputValidator.raise_if_invalid.assert_called_with(
-            command_conf['output'], ret, chain)
+            command_conf["output"], ret, chain
+        )
     else:
         ServiceOutputValidator.raise_if_invalid.assert_not_called()
 
     # Additionally, test for other scenarios.
-    response = HTTPResponse(HTTPRequest(url=expected_url), 200,
-                            buffer=StringIO('foo'), headers={})
+    response = HTTPResponse(
+        HTTPRequest(url=expected_url), 200, buffer=StringIO("foo"), headers={}
+    )
 
-    patch.object(HttpUtils, 'fetch_with_retry',
-                 new=async_mock(return_value=response))
+    patch.object(
+        HttpUtils, "fetch_with_retry", new=async_mock(return_value=response)
+    )
 
     ret = await Services.execute_http(story, line, chain, command_conf)
-    assert ret == 'foo'
+    assert ret == "foo"
 
     response = HTTPResponse(HTTPRequest(url=expected_url), 500)
 
-    patch.object(HttpUtils, 'fetch_with_retry',
-                 new=async_mock(return_value=response))
+    patch.object(
+        HttpUtils, "fetch_with_retry", new=async_mock(return_value=response)
+    )
 
     with pytest.raises(StoryscriptError):
         await Services.execute_http(story, line, chain, command_conf)
 
 
-@mark.parametrize('output_type',
-                  ['string', 'any', 'int', 'float', 'boolean', None])
+@mark.parametrize(
+    "output_type", ["string", "any", "int", "float", "boolean", None]
+)
 def test_parse_output(output_type, story):
     line = {}
-    command_conf = {
-        'output': {
-            'type': output_type
-        }
-    }
+    command_conf = {"output": {"type": output_type}}
 
     expected_output = None
     actual_input = None
 
-    if output_type == 'string':
-        actual_input = 'hello'
-        expected_output = 'hello'
-    elif output_type == 'int':
-        actual_input = b'10'
+    if output_type == "string":
+        actual_input = "hello"
+        expected_output = "hello"
+    elif output_type == "int":
+        actual_input = b"10"
         expected_output = 10
-    elif output_type == 'float':
-        actual_input = b'7.0'
+    elif output_type == "float":
+        actual_input = b"7.0"
         expected_output = 7.0
-    elif output_type == 'boolean':
-        actual_input = f'true'
+    elif output_type == "boolean":
+        actual_input = f"true"
         expected_output = True
     elif output_type is None:
         actual_input = None
         expected_output = None
-    elif output_type == 'any':
-        actual_input = b'empty'
-        expected_output = b'empty'
+    elif output_type == "any":
+        actual_input = b"empty"
+        expected_output = b"empty"
 
-    assert Services.parse_output(
-        command_conf, actual_input, story, line, '') == expected_output
+    assert (
+        Services.parse_output(command_conf, actual_input, story, line, "")
+        == expected_output
+    )
 
 
 def test_parse_output_invalid_cast(story):
-    command_conf = {
-        'output': {
-            'type': 'int'
-        }
-    }
+    command_conf = {"output": {"type": "int"}}
 
     with pytest.raises(StoryscriptError):
-        Services.parse_output(command_conf, 'not_an_int', story, {}, '')
+        Services.parse_output(command_conf, "not_an_int", story, {}, "")
 
 
 def test_parse_output_invalid_type(story):
-    command_conf = {
-        'output': {
-            'type': 'foo'
-        }
-    }
+    command_conf = {"output": {"type": "foo"}}
 
     with pytest.raises(StoryscriptError):
-        Services.parse_output(command_conf, 'blah', story, {}, '')
+        Services.parse_output(command_conf, "blah", story, {}, "")
 
 
 def test_convert_bytes_to_string():
-    assert Services._convert_bytes_to_string(b'hello') == 'hello'
-    assert Services._convert_bytes_to_string('hello') == 'hello'
+    assert Services._convert_bytes_to_string(b"hello") == "hello"
+    assert Services._convert_bytes_to_string("hello") == "hello"
 
 
 # http is a special case service
-@mark.parametrize('case', [
-    [True, 'service_name', 'externally_hosted_service_name'],
-    [False, 'http', 'http']
-])
+@mark.parametrize(
+    "case",
+    [
+        [True, "service_name", "externally_hosted_service_name"],
+        [False, "http", "http"],
+    ],
+)
 def test_services_get_container_for_special_containers(patch, story, case):
     line = {
-        'ln': '10',
+        "ln": "10",
         Line.service: case[1],
-        Line.method: 'execute',
-        Line.command: 'echo'
+        Line.method: "execute",
+        Line.command: "echo",
     }
 
-    patch.object(Services, 'is_hosted_externally', return_value=case[0])
-    patch.object(Containers, 'get')
+    patch.object(Services, "is_hosted_externally", return_value=case[0])
+    patch.object(Containers, "get")
     ret = Services.get_container(story, line)
 
     assert isinstance(ret, StreamingService)
@@ -865,13 +799,13 @@ def test_services_get_container_for_special_containers(patch, story, case):
 
 def test_services_get_container_normal(patch, story):
     line = {
-        'ln': '10',
-        Line.service: 'alpine',
-        Line.method: 'execute',
-        Line.command: 'echo'
+        "ln": "10",
+        Line.service: "alpine",
+        Line.method: "execute",
+        Line.command: "echo",
     }
-    patch.object(Containers, 'get')
-    patch.object(Services, 'is_hosted_externally', return_value=False)
+    patch.object(Containers, "get")
+    patch.object(Services, "is_hosted_externally", return_value=False)
     ret = Services.get_container(story, line)
     Containers.get.assert_called_with(story, line)
     assert ret == Containers.get.return_value
@@ -880,21 +814,21 @@ def test_services_get_container_normal(patch, story):
 @mark.asyncio
 async def test_services_start_container(patch, story, async_mock):
     line = {
-        'ln': '10',
-        Line.service: 'alpine',
-        Line.method: 'execute',
-        Line.command: 'echo'
+        "ln": "10",
+        Line.service: "alpine",
+        Line.method: "execute",
+        Line.command: "echo",
     }
-    patch.object(Containers, 'start', new=async_mock())
-    patch.object(Services, 'is_hosted_externally', return_value=False)
+    patch.object(Containers, "start", new=async_mock())
+    patch.object(Services, "is_hosted_externally", return_value=False)
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_called_with(story, line)
     assert ret == Containers.start.mock.return_value
 
 
-@mark.parametrize('external', [True, False])
+@mark.parametrize("external", [True, False])
 def test_service_is_hosted_externally(app, external):
-    service_name = 'my_service'
+    service_name = "my_service"
     app.services = {
         service_name: {
             ServiceConstants.config: {
@@ -909,13 +843,13 @@ def test_service_is_hosted_externally(app, external):
 @mark.asyncio
 async def test_services_start_container_external(patch, story, async_mock):
     line = {
-        'ln': '10',
-        Line.service: 'alpine',
-        Line.method: 'execute',
-        Line.command: 'echo'
+        "ln": "10",
+        Line.service: "alpine",
+        Line.method: "execute",
+        Line.command: "echo",
     }
-    patch.object(Containers, 'start', new=async_mock())
-    patch.object(Services, 'is_hosted_externally', return_value=True)
+    patch.object(Containers, "start", new=async_mock())
+    patch.object(Services, "is_hosted_externally", return_value=True)
     ret = await Services.start_container(story, line)
     Containers.start.mock.assert_not_called()
     assert ret.hostname is None
@@ -925,63 +859,52 @@ async def test_services_start_container_external(patch, story, async_mock):
 @mark.asyncio
 async def test_services_execute_external_format(patch, story, async_mock):
     line = {
-        Line.service: 'cups',
-        Line.command: 'print',
-        Line.method: 'execute'
+        Line.service: "cups",
+        Line.command: "print",
+        Line.method: "execute",
     }
 
     story.app.services = {
-        'cups': {
-            ServiceConstants.config: {
-                'actions': {
-                    'print': {
-                        'format': {}
-                    }
-                }
-            }
+        "cups": {
+            ServiceConstants.config: {"actions": {"print": {"format": {}}}}
         }
     }
 
-    patch.object(Containers, 'exec', new=async_mock())
+    patch.object(Containers, "exec", new=async_mock())
 
     ret = await Services.execute_external(story, line)
     Containers.exec.mock.assert_called_with(
-        story.logger, story, line, 'cups', 'print')
+        story.logger, story, line, "cups", "print"
+    )
     assert ret == await Containers.exec()
 
 
 @mark.asyncio
 async def test_services_execute_external_http(patch, story, async_mock):
     line = {
-        Line.service: 'cups',
-        Line.command: 'print',
-        Line.method: 'execute'
+        Line.service: "cups",
+        Line.command: "print",
+        Line.method: "execute",
     }
 
     story.app.services = {
-        'cups': {
-            ServiceConstants.config: {
-                'actions': {
-                    'print': {
-                        'http': {}
-                    }
-                }
-            }
-        }
+        "cups": {ServiceConstants.config: {"actions": {"print": {"http": {}}}}}
     }
 
-    patch.object(Services, 'execute_http', new=async_mock())
+    patch.object(Services, "execute_http", new=async_mock())
 
     ret = await Services.execute_external(story, line)
     Services.execute_http.mock.assert_called_with(
-        story, line,
-        deque([Service(name='cups'), Command(name='print')]),
-        {'http': {}})
+        story,
+        line,
+        deque([Service(name="cups"), Command(name="print")]),
+        {"http": {}},
+    )
     assert ret == await Services.execute_http()
 
 
 class Writer:
-    out = ''
+    out = ""
 
     @coroutine
     def write(self, content_bytes):
@@ -994,30 +917,31 @@ def test_multipart_producer():
     w = Writer()
     boundary = str(uuid.uuid4())
     body = {
-        'simple_arg': FormField('simple_arg', 10),
-        'simple_arg2': FormField('simple_arg2', 'hello'),
-        'hello_file': FileFormField('f1', 'hello world'.encode(),
-                                    'hello.txt', 'text/plain')
+        "simple_arg": FormField("simple_arg", 10),
+        "simple_arg2": FormField("simple_arg2", "hello"),
+        "hello_file": FileFormField(
+            "f1", "hello world".encode(), "hello.txt", "text/plain"
+        ),
     }
     list(Services._multipart_producer(body, boundary, w.write))
     expected = (
-        f'--{boundary}\r\n'
+        f"--{boundary}\r\n"
         'Content-Disposition: form-data; name="simple_arg"\r\n'
-        '\r\n'
-        '10'
-        '\r\n'
-        f'--{boundary}\r\n'
+        "\r\n"
+        "10"
+        "\r\n"
+        f"--{boundary}\r\n"
         'Content-Disposition: form-data; name="simple_arg2"\r\n'
-        '\r\n'
-        'hello'
-        '\r\n'
-        f'--{boundary}\r\n'
+        "\r\n"
+        "hello"
+        "\r\n"
+        f"--{boundary}\r\n"
         'Content-Disposition: form-data; name="f1"; filename="hello.txt"\r\n'
-        'Content-Type: text/plain\r\n'
-        '\r\n'
-        'hello world'
-        '\r\n'
-        f'--{boundary}--\r\n'
+        "Content-Type: text/plain\r\n"
+        "\r\n"
+        "hello world"
+        "\r\n"
+        f"--{boundary}--\r\n"
     )
 
     assert w.out == expected
@@ -1026,69 +950,56 @@ def test_multipart_producer():
 @mark.asyncio
 async def test_services_execute_external_unknown(patch, story, async_mock):
     line = {
-        Line.service: 'cups',
-        Line.command: 'print',
-        Line.method: 'execute'
+        Line.service: "cups",
+        Line.command: "print",
+        Line.method: "execute",
     }
 
     story.app.services = {
-        'cups': {
-            ServiceConstants.config: {
-                'actions': {
-                    'print': {
-                        'unix': {}
-                    }
-                }
-            }
-        }
+        "cups": {ServiceConstants.config: {"actions": {"print": {"unix": {}}}}}
     }
 
-    patch.object(Services, 'start_container', new=async_mock())
+    patch.object(Services, "start_container", new=async_mock())
 
     with pytest.raises(StoryscriptError):
         await Services.execute_external(story, line)
 
 
 def test_service_get_command_conf_simple(story):
-    chain = deque([Service('service'), Command('cmd')])
+    chain = deque([Service("service"), Command("cmd")])
     story.app.services = {
-        'service': {
-            'configuration': {
-                'actions': {
-                    'cmd': {'x': 'y'}
-                }
-            }
-        }
+        "service": {"configuration": {"actions": {"cmd": {"x": "y"}}}}
     }
-    assert Services.get_command_conf(story, chain) == {'x': 'y'}
+    assert Services.get_command_conf(story, chain) == {"x": "y"}
 
 
 @mark.asyncio
 async def test_start_container_http(patch, story):
     line = {
-        Line.command: 'server',
-        Line.service: 'http',
-        Line.method: 'execute'
+        Line.command: "server",
+        Line.service: "http",
+        Line.method: "execute",
     }
-    patch.object(Services, 'is_hosted_externally', return_value=False)
+    patch.object(Services, "is_hosted_externally", return_value=False)
     ret = await Services.start_container(story, line)
-    assert ret.name == 'http'
-    assert ret.command == 'server'
-    assert ret.container_name == 'gateway'
+    assert ret.name == "http"
+    assert ret.command == "server"
+    assert ret.container_name == "gateway"
     assert ret.hostname == story.app.config.ASYNCY_HTTP_GW_HOST
 
 
-@mark.parametrize('command', ['write', 'finish'])
-@mark.parametrize('simulate_finished', [True, False])
-@mark.parametrize('bin_content', [True, False])
+@mark.parametrize("command", ["write", "finish"])
+@mark.parametrize("simulate_finished", [True, False])
+@mark.parametrize("bin_content", [True, False])
 @mark.asyncio
-async def test_execute_inline(patch, story, command, simulate_finished,
-                              bin_content):
+async def test_execute_inline(
+    patch, story, command, simulate_finished, bin_content
+):
     # Not a valid combination.
-    if bin_content and command != 'write':
+    if bin_content and command != "write":
         return
 
-    chain = deque([Service('http'), Event('server'), Command(command)])
+    chain = deque([Service("http"), Event("server"), Command(command)])
     req = MagicMock()
     req._finished = simulate_finished
 
@@ -1097,32 +1008,29 @@ async def test_execute_inline(patch, story, command, simulate_finished,
 
     req.is_finished = is_finished
     io_loop = MagicMock()
-    story.set_context({
-        ContextConstants.server_request: req,
-        ContextConstants.server_io_loop: io_loop
-    })
+    story.set_context(
+        {
+            ContextConstants.server_request: req,
+            ContextConstants.server_io_loop: io_loop,
+        }
+    )
 
     command_conf = {
-        'arguments': {
-            'content': {
-                'type': 'string',
-                'in': 'responseBody',
-                'required': True
+        "arguments": {
+            "content": {
+                "type": "string",
+                "in": "responseBody",
+                "required": True,
             }
         }
     }
 
     if bin_content:
-        patch.object(story, 'argument_by_name', return_value=b'bin world!')
+        patch.object(story, "argument_by_name", return_value=b"bin world!")
     else:
-        patch.object(story, 'argument_by_name', return_value='hello world!')
+        patch.object(story, "argument_by_name", return_value="hello world!")
 
-    expected_body = {
-        'command': command,
-        'data': {
-            'content': 'hello world!'
-        }
-    }
+    expected_body = {"command": command, "data": {"content": "hello world!"}}
 
     line = {}
 
@@ -1134,13 +1042,13 @@ async def test_execute_inline(patch, story, command, simulate_finished,
         await Services.execute_inline(story, line, chain, command_conf)
 
     if bin_content:
-        req.write.assert_called_with(b'bin world!')
+        req.write.assert_called_with(b"bin world!")
     else:
-        req.write.assert_called_with(json.dumps(
-            expected_body,
-            cls=HttpDataEncoder) + '\n')
+        req.write.assert_called_with(
+            json.dumps(expected_body, cls=HttpDataEncoder) + "\n"
+        )
 
-    if command == 'finish' or bin_content:
+    if command == "finish" or bin_content:
         io_loop.add_callback.assert_called_with(req.finish)
     else:
         io_loop.add_callback.assert_not_called()
@@ -1151,42 +1059,37 @@ def test_set_logger(logger):
     assert Services.logger == logger
 
 
-@mark.parametrize('service_name', ['http', 'time-client'])
+@mark.parametrize("service_name", ["http", "time-client"])
 @mark.asyncio
 async def test_when(patch, story, async_mock, service_name):
     line = {
-        'ln': '10',
+        "ln": "10",
         LineConstants.service: service_name,
-        LineConstants.command: 'updates',
-        'args': [
+        LineConstants.command: "updates",
+        "args": [
             {
-                '$OBJECT': 'argument',
-                'name': 'foo',
-                'argument': {
-                    '$OBJECT': 'string',
-                    'string': 'bar'
-                }
+                "$OBJECT": "argument",
+                "name": "foo",
+                "argument": {"$OBJECT": "string", "string": "bar"},
             }
-        ]
+        ],
     }
 
     story.app.services = {
         service_name: {
             ServiceConstants.config: {
-                'actions': {
-                    'time-server': {
-                        'events': {
-                            'updates': {
-                                'http': {
-                                    'port': 2000,
-                                    'subscribe': {
-                                        'method': 'post',
-                                        'path': '/sub'
-                                    }
+                "actions": {
+                    "time-server": {
+                        "events": {
+                            "updates": {
+                                "http": {
+                                    "port": 2000,
+                                    "subscribe": {
+                                        "method": "post",
+                                        "path": "/sub",
+                                    },
                                 },
-                                'arguments': {
-                                    'foo': {'required': True}
-                                }
+                                "arguments": {"foo": {"required": True}},
                             }
                         }
                     }
@@ -1195,74 +1098,75 @@ async def test_when(patch, story, async_mock, service_name):
         }
     }
 
-    story.app.config.ENGINE_HOST = 'localhost'
+    story.app.config.ENGINE_HOST = "localhost"
     story.app.config.ENGINE_PORT = 8000
-    story.app.config.ASYNCY_SYNAPSE_HOST = 'localhost'
+    story.app.config.ASYNCY_SYNAPSE_HOST = "localhost"
     story.app.config.ASYNCY_SYNAPSE_PORT = 9000
-    story.app.app_id = 'my_fav_app'
-    story.app.app_dns = 'my_apps_hostname'
+    story.app.app_id = "my_fav_app"
+    story.app.app_dns = "my_apps_hostname"
 
-    streaming_service = StreamingService(service_name, 'time-server',
-                                         'asyncy--foo-1', 'foo.com')
-    story.set_context({
-        service_name: streaming_service
-    })
+    streaming_service = StreamingService(
+        service_name, "time-server", "asyncy--foo-1", "foo.com"
+    )
+    story.set_context({service_name: streaming_service})
 
-    expected_sub_url = 'http://foo.com:2000/sub'
-    expected_url = f'http://{story.app.config.ASYNCY_SYNAPSE_HOST}:' \
-                   f'{story.app.config.ASYNCY_SYNAPSE_PORT}' \
-                   f'/subscribe'
+    expected_sub_url = "http://foo.com:2000/sub"
+    expected_url = (
+        f"http://{story.app.config.ASYNCY_SYNAPSE_HOST}:"
+        f"{story.app.config.ASYNCY_SYNAPSE_PORT}"
+        f"/subscribe"
+    )
 
     expected_body = {
-        'sub_id': 'my_guid_here',
-        'sub_url': expected_sub_url,
-        'sub_method': 'POST',
-        'sub_body': {
-            'endpoint': f'http://localhost:8000/story/event?'
-                        f'story={story.name}&block={line["ln"]}'
-                        f'&app=my_fav_app',
-            'data': {
-                'foo': 'bar'
-            },
-            'event': 'updates',
-            'id': 'my_guid_here'
+        "sub_id": "my_guid_here",
+        "sub_url": expected_sub_url,
+        "sub_method": "POST",
+        "sub_body": {
+            "endpoint": f"http://localhost:8000/story/event?"
+            f'story={story.name}&block={line["ln"]}'
+            f"&app=my_fav_app",
+            "data": {"foo": "bar"},
+            "event": "updates",
+            "id": "my_guid_here",
         },
-        'pod_name': streaming_service.container_name,
-        'app_id': story.app.app_id
+        "pod_name": streaming_service.container_name,
+        "app_id": story.app.app_id,
     }
 
-    if service_name == 'http':
-        expected_body['sub_body']['data']['host'] = story.app.app_dns
+    if service_name == "http":
+        expected_body["sub_body"]["data"]["host"] = story.app.app_dns
 
-    patch.object(uuid, 'uuid4', return_value='my_guid_here')
+    patch.object(uuid, "uuid4", return_value="my_guid_here")
 
     expected_kwargs = {
-        'method': 'POST',
-        'body': json.dumps(expected_body),
-        'headers': {'Content-Type': 'application/json; charset=utf-8'},
-        'request_timeout': 120
+        "method": "POST",
+        "body": json.dumps(expected_body),
+        "headers": {"Content-Type": "application/json; charset=utf-8"},
+        "request_timeout": 120,
     }
 
     patch.init(AsyncHTTPClient)
-    patch.object(story, 'next_block')
-    patch.object(story.app, 'add_subscription')
-    patch.object(story, 'argument_by_name', return_value='bar')
+    patch.object(story, "next_block")
+    patch.object(story.app, "add_subscription")
+    patch.object(story, "argument_by_name", return_value="bar")
     http_res = Mock()
     http_res.code = 204
-    patch.object(HttpUtils, 'fetch_with_retry',
-                 new=async_mock(return_value=http_res))
+    patch.object(
+        HttpUtils, "fetch_with_retry", new=async_mock(return_value=http_res)
+    )
     ret = await Services.when(streaming_service, story, line)
 
     client = AsyncHTTPClient()
 
     HttpUtils.fetch_with_retry.mock.assert_called_with(
-        100, story.logger, expected_url, client, expected_kwargs)
+        100, story.logger, expected_url, client, expected_kwargs
+    )
 
     story.app.add_subscription.assert_called_with(
-        'my_guid_here',
-        story.resolve({'$OBJECT': 'path', 'paths': [service_name]}),
-        'updates',
-        expected_body
+        "my_guid_here",
+        story.resolve({"$OBJECT": "path", "paths": [service_name]}),
+        "updates",
+        expected_body,
     )
 
     assert ret is None
@@ -1274,87 +1178,71 @@ async def test_when(patch, story, async_mock, service_name):
 
 def test_service_get_command_conf_events(story):
     chain = deque(
-        [Service('service'), Command('cmd'), Event('foo'), Command('bar')])
+        [Service("service"), Command("cmd"), Event("foo"), Command("bar")]
+    )
     story.app.services = {
-        'service': {
-            'configuration': {
-                'actions': {
-                    'cmd': {
-                        'events': {
-                            'foo': {
-                                'output': {
-                                    'actions': {
-                                        'bar': {'a': 'b'}
-                                    }
-                                }
-                            }
+        "service": {
+            "configuration": {
+                "actions": {
+                    "cmd": {
+                        "events": {
+                            "foo": {"output": {"actions": {"bar": {"a": "b"}}}}
                         }
                     }
                 }
             }
         }
     }
-    assert Services.get_command_conf(story, chain) == {'a': 'b'}
+    assert Services.get_command_conf(story, chain) == {"a": "b"}
 
 
 def test_http_data_encoder(patch):
-    patch.object(base64, 'b64encode', return_value=b'dg==')
+    patch.object(base64, "b64encode", return_value=b"dg==")
     file_json = {
-        'name': 'name',
-        'body': 'body',
-        'filename': 'filename',
-        'content_type': 'content_type'
+        "name": "name",
+        "body": "body",
+        "filename": "filename",
+        "contentType": "contentType",
     }
-    patch.object(FileFormField, '_asdict', return_value=file_json)
-    form_field_json = {
-        'name': 'name',
-        'body': 'body'
-    }
-    patch.object(FormField, '_asdict', return_value=form_field_json)
-    patch.object(CaseInsensitiveDict, 'items', return_value=[
-        ('key', 'value')
-    ])
+    patch.object(FileFormField, "_asdict", return_value=file_json)
+    form_field_json = {"name": "name", "body": "body"}
+    patch.object(FormField, "_asdict", return_value=form_field_json)
+    patch.object(CaseInsensitiveDict, "items", return_value=[("key", "value")])
     obj = {
-        'file': FileFormField(
-            name='name',
-            body='body',
-            filename='filename',
-            content_type='content_type'
+        "file": FileFormField(
+            name="name",
+            body="body",
+            filename="filename",
+            contentType="contentType",
         ),
-        'field': FormField(
-            name='name',
-            body='body'
+        "field": FormField(name="name", body="body"),
+        "key": b"v",
+        "casedict": CaseInsensitiveDict(data={"key": "value"}),
+        "regex": re.compile("/foo/i"),
+        "streaming_service": StreamingService(
+            name="hello",
+            command="world",
+            container_name="container_name",
+            hostname="hostname",
         ),
-        'key': b'v',
-        'casedict': CaseInsensitiveDict(data={
-            'key': 'value'
-        }),
-        'regex': re.compile('/foo/i'),
-        'streaming_service': StreamingService(
-            name='hello', command='world',
-            container_name='container_name', hostname='hostname'
-        )
     }
 
     json_str = json.dumps(obj, cls=HttpDataEncoder)
 
-    assert json_str == json.dumps({
-        'file': file_json,
-        'field': form_field_json,
-        'key': 'dg==',
-        'casedict': {
-            'key': 'value'
-        },
-        'regex': '/foo/i',
-        'streaming_service': {
-            'name': 'hello',
-            'command': 'world'
+    assert json_str == json.dumps(
+        {
+            "file": file_json,
+            "field": form_field_json,
+            "key": "dg==",
+            "casedict": {"key": "value"},
+            "regex": "/foo/i",
+            "streaming_service": {"name": "hello", "command": "world"},
         }
-    })
+    )
 
     FormField._asdict.assert_called()
     FileFormField._asdict.assert_called()
-    base64.b64encode.assert_called_with(b'v')
+    base64.b64encode.assert_called_with(b"v")
     CaseInsensitiveDict.items.assert_called()
 
 
@@ -1367,9 +1255,7 @@ def type_exc():
 
 
 def test_http_data_encoder_exc(patch, type_exc):
-    patch.object(json.JSONEncoder, 'default', side_effect=type_exc)
-    obj = {
-        'invalid_obj': LineConstants()
-    }
+    patch.object(json.JSONEncoder, "default", side_effect=type_exc)
+    obj = {"invalid_obj": LineConstants()}
     with pytest.raises(StoryscriptRuntimeError):
         json.dumps(obj, cls=HttpDataEncoder)

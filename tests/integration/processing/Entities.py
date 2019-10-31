@@ -9,6 +9,6 @@ class Case:
 
 
 class Suite:
-    def __init__(self, cases, preparation_lines=''):
+    def __init__(self, cases, preparation_lines=""):
         self.cases = cases
         self.preparation_lines = preparation_lines

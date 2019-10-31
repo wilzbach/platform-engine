@@ -15,9 +15,18 @@ class ReportingEvent:
     event_name: typing.Union[str, None]
     exc_info: typing.Union[BaseException, None]
 
-    def __init__(self, story_name=None, story_line=None, app_name=None,
-                 app_uuid=None, app_version=None, owner_email=None,
-                 event_name=None, exc_info=None, owner_uuid=None):
+    def __init__(
+        self,
+        story_name=None,
+        story_line=None,
+        app_name=None,
+        app_uuid=None,
+        app_version=None,
+        owner_email=None,
+        event_name=None,
+        exc_info=None,
+        owner_uuid=None,
+    ):
         self.story_name = story_name
         self.app_uuid = app_uuid
         self.app_name = app_name
@@ -37,7 +46,7 @@ class ReportingEvent:
             owner_email=release.owner_email,
             owner_uuid=release.owner_uuid,
             event_name=evt_name,
-            exc_info=exc_info
+            exc_info=exc_info,
         )
 
     @staticmethod

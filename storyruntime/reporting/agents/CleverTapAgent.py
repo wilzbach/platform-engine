@@ -13,8 +13,9 @@ from ...utils.HttpUtils import HttpUtils
 class CleverTapAgent(ReportingAgent):
     throttle_cache = ExpiringDict(max_len=10000, max_age_seconds=30)
 
-    def __init__(self, account_id: str, account_pass: str,
-                 release: str, logger: Logger):
+    def __init__(
+        self, account_id: str, account_pass: str, release: str, logger: Logger
+    ):
         self._account_id = account_id
         self._account_pass = account_pass
         self._release = release
@@ -23,7 +24,7 @@ class CleverTapAgent(ReportingAgent):
 
     @staticmethod
     def get_throttle_key(re: ReportingEvent) -> str:
-        return f'app_{re.app_uuid}_evt_{re.event_name}'
+        return f"app_{re.app_uuid}_evt_{re.event_name}"
 
     def should_throttle(self, re: ReportingEvent) -> bool:
         key = self.get_throttle_key(re)
@@ -44,29 +45,37 @@ class CleverTapAgent(ReportingAgent):
             return
 
         evt_data = {
-            'Platform release': self._release,
-            'App name': re.app_name,
-            'Version': re.app_version,
-            'Story name': re.story_name,
-            'Story line': re.story_line
+            "Platform release": self._release,
+            "App name": re.app_name,
+            "Version": re.app_version,
+            "Story name": re.story_name,
+            "Story line": re.story_line,
         }
 
         await HttpUtils.fetch_with_retry(
-            tries=3, logger=self._logger,
-            url='https://api.clevertap.com/1/upload',
+            tries=3,
+            logger=self._logger,
+            url="https://api.clevertap.com/1/upload",
             http_client=self._http_client,
             kwargs={
-                'method': 'POST',
-                'body': json.dumps({'d': [{
-                    'ts': int(time.time()),
-                    'identity': re.owner_uuid,
-                    'evtName': re.event_name,
-                    'evtData': evt_data,
-                    'type': 'event'
-                }]}),
-                'headers': {
-                    'X-CleverTap-Account-Id': self._account_id,
-                    'X-CleverTap-Passcode': self._account_pass,
-                    'Content-Type': 'application/json; charset=utf-8'
-                }
-            })
+                "method": "POST",
+                "body": json.dumps(
+                    {
+                        "d": [
+                            {
+                                "ts": int(time.time()),
+                                "identity": re.owner_uuid,
+                                "evtName": re.event_name,
+                                "evtData": evt_data,
+                                "type": "event",
+                            }
+                        ]
+                    }
+                ),
+                "headers": {
+                    "X-CleverTap-Account-Id": self._account_id,
+                    "X-CleverTap-Passcode": self._account_pass,
+                    "Content-Type": "application/json; charset=utf-8",
+                },
+            },
+        )

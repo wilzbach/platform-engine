@@ -6,12 +6,12 @@ class _Sentinel:
         self.keyword = keyword
 
     def __str__(self):
-        return f'_Sentinel#{self.keyword}'
+        return f"_Sentinel#{self.keyword}"
 
 
 class ReturnSentinel(_Sentinel):
     def __init__(self, return_value: any):
-        super().__init__('return')
+        super().__init__("return")
         self.return_value = return_value
 
 
@@ -33,8 +33,9 @@ class LineSentinels:
     1. Incurs a runtime performance hit
     2. It's an exception, which is not what it was designed to do
     """
-    BREAK = _Sentinel('break')
-    CONTINUE = _Sentinel('continue')
+
+    BREAK = _Sentinel("break")
+    CONTINUE = _Sentinel("continue")
     RETURN = ReturnSentinel(None)
 
     @staticmethod

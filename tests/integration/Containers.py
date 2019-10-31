@@ -11,35 +11,27 @@ def test_containers_format_command(story):
     """
     story_text = 'yaml parse data:"foo"\n'
     story.app.services = {
-        'yaml': {
+        "yaml": {
             ServiceConstants.config: {
-                'actions': {
-                    'parse': {
-                        'arguments': {'data': {'type': 'string'}}
-                    }
+                "actions": {
+                    "parse": {"arguments": {"data": {"type": "string"}}}
                 }
             }
         }
     }
 
-    story.tree = storyscript.Api.loads(story_text).result().output()['tree']
+    story.tree = storyscript.Api.loads(story_text).result().output()["tree"]
     assert Containers.format_command(
-        story, story.line('1'), 'yaml', 'parse'
-    ) == ['parse', '{"data":"foo"}']
+        story, story.line("1"), "yaml", "parse"
+    ) == ["parse", '{"data":"foo"}']
 
 
 def test_containers_format_command_no_arguments(story):
-    story_text = 'uuid generate\n'
+    story_text = "uuid generate\n"
     story.app.services = {
-        'uuid': {
-            ServiceConstants.config: {
-                'actions': {
-                    'generate': {}
-                }
-            }
-        }
+        "uuid": {ServiceConstants.config: {"actions": {"generate": {}}}}
     }
-    story.tree = storyscript.Api.loads(story_text).result().output()['tree']
+    story.tree = storyscript.Api.loads(story_text).result().output()["tree"]
     assert Containers.format_command(
-        story, story.line('1'), 'uuid', 'generate'
-    ) == ['generate']
+        story, story.line("1"), "uuid", "generate"
+    ) == ["generate"]
