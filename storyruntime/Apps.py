@@ -82,21 +82,6 @@ class Apps:
             )
             return
 
-        if release.deleted:
-            await Database.update_release_state(
-                logger, config, app_id, release.version, ReleaseState.NO_DEPLOY
-            )
-            logger.warn(
-                f"Deployment halted {app_id}@{release.version}; "
-                f"deleted={release.deleted}; "
-                f"maintenance={release.maintenance}"
-            )
-            logger.warn(
-                f"State changed to NO_DEPLOY for {app_id}@"
-                f"{release.version}"
-            )
-            return
-
         await Database.update_release_state(
             logger, config, app_id, release.version, ReleaseState.DEPLOYING
         )
@@ -334,6 +319,10 @@ class Apps:
                     f"expected {config.APP_ENVIRONMENT}, "
                     f"but got {release.app_environment})"
                 )
+                return
+
+            if release.deleted:
+                glogger.warn(f"Not deploying app {app_id} since it is deleted")
                 return
 
             if release.state == ReleaseState.FAILED.value:

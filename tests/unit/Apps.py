@@ -220,7 +220,7 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
         always_pull_images=False,
         app_dns="app_dns",
         state="QUEUED",
-        deleted=True,
+        deleted=False,
         owner_uuid="owner_uuid",
         owner_email="owner_email",
         app_environment=AppEnvironment.PRODUCTION,
@@ -240,6 +240,7 @@ async def test_reload_app_no_story(patch, config, logger, db, async_mock):
 @mark.parametrize(
     "previous_state", ["QUEUED", "FAILED", "TEMP_DEPLOYMENT_FAILURE"]
 )
+@mark.parametrize("deleted", [True, False])
 @mark.parametrize("app_environment_db", ["STAGING", "PRODUCTION", "DEV"])
 @mark.parametrize("app_environment_config", ["STAGING", "PRODUCTION", "DEV"])
 @mark.asyncio
@@ -252,6 +253,7 @@ async def test_reload_app(
     magic,
     raise_exc,
     previous_state,
+    deleted,
     app_environment_db,
     app_environment_config,
 ):
@@ -285,7 +287,7 @@ async def test_reload_app(
         always_pull_images=False,
         app_dns=app_dns,
         state=previous_state,
-        deleted=True,
+        deleted=deleted,
         owner_uuid="owner_uuid",
         owner_email="example@example.com",
         app_environment=AppEnvironment[app_environment_db],
@@ -315,6 +317,13 @@ async def test_reload_app(
         return
 
     if previous_state == "FAILED":
+        Apps.deploy_release.mock.assert_not_called()
+        logger.warn.assert_called()
+        logger.error.assert_not_called()
+        Database.update_release_state.mock.assert_not_called()
+        return
+
+    if deleted:
         Apps.deploy_release.mock.assert_not_called()
         logger.warn.assert_called()
         logger.error.assert_not_called()
@@ -474,13 +483,11 @@ async def test_deploy_release_many_volumes(patch, async_mock):
 @mark.parametrize("raise_exc", [None, exc, asyncy_exc])
 @mark.parametrize("maintenance", [True, False])
 @mark.parametrize("always_pull_images", [True, False])
-@mark.parametrize("deleted", [True, False])
 @mark.asyncio
 async def test_deploy_release(
     config,
     magic,
     patch,
-    deleted,
     async_mock,
     raise_exc,
     maintenance,
@@ -516,7 +523,7 @@ async def test_deploy_release(
         always_pull_images=always_pull_images,
         app_dns="app_dns",
         state="QUEUED",
-        deleted=deleted,
+        deleted=False,
         owner_uuid="owner_uuid",
         owner_email="owner_email",
         app_environment=AppEnvironment.PRODUCTION,
@@ -527,11 +534,6 @@ async def test_deploy_release(
     if maintenance:
         assert Database.update_release_state.mock.call_count == 0
         app_logger.warn.assert_called()
-    elif deleted:
-        app_logger.warn.assert_called()
-        Database.update_release_state.mock.assert_called_with(
-            app_logger, config, "app_id", "version", ReleaseState.NO_DEPLOY
-        )
     else:
         assert Database.update_release_state.mock.mock_calls[0] == mock.call(
             app_logger, config, "app_id", "version", ReleaseState.DEPLOYING
