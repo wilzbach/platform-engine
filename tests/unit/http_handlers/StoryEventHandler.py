@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+from unittest.mock import call
 
 import pytest
 from pytest import fixture, mark
@@ -7,6 +8,7 @@ from pytest import fixture, mark
 from storyruntime.Apps import Apps
 from storyruntime.constants import ContextConstants
 from storyruntime.entities.Multipart import FileFormField
+from storyruntime.http_handlers.BaseHandler import BaseHandler
 from storyruntime.http_handlers.StoryEventHandler import (
     CLOUD_EVENTS_FILE_KEY,
     StoryEventHandler,
@@ -156,3 +158,32 @@ async def test_post(patch, logger, magic, async_mock, throw_exc, handler):
             context=expected_context,
             block="1",
         )
+
+
+@mark.asyncio
+async def test_finish(patch, handler):
+    """
+    Test that a normal finish doesn't write a multipart boundary.
+    """
+    patch.object(handler, "write")
+    patch.object(BaseHandler, "finish")
+
+    handler.finish()
+    handler.write.assert_not_called()
+    BaseHandler.finish.assert_called()
+
+
+@mark.asyncio
+async def test_finish_multipart(patch, handler):
+    """
+    Test that a multipart finish writes a multipart boundary.
+    """
+    handler.boundary = "\r\n--boundary"
+    patch.object(handler, "write")
+    patch.object(BaseHandler, "finish")
+
+    handler.finish()
+
+    assert handler.write.call_count == 2
+    handler.write.assert_has_calls([call("\r\n--boundary"), call("--")])
+    BaseHandler.finish.assert_called()

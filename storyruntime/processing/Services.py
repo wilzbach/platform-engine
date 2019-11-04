@@ -7,7 +7,6 @@ import uuid
 from collections import deque
 from functools import partial
 from math import inf
-from urllib import parse
 
 from requests.structures import CaseInsensitiveDict
 
@@ -305,37 +304,30 @@ class Services:
                 line=line,
             )
 
-        # BEGIN hack for writing a binary response to the gateway
-        # How we write binary response to the gateway right now:
-        # 1. If the method is command is write,
-        # and the content is an instance of bytes, write it directly
-        # 2. Set the content-type to "application/octet-stream"
-        # 3. Dump the bytes directly in the response
+        # Generate a unique boundary once for this request
+        if not hasattr(req, "boundary"):
+            boundary = uuid.uuid4().hex
+            req.set_header(
+                name="Content-Type",
+                value=f"multipart/mixed; boundary={boundary}",
+            )
+            req.boundary = f"\r\n--{boundary}"
+
+        # Response is sent as multipart/mixed to the HTTP gateway
+        # a) JSON instructions are sent as "application/stream+json"
+        # b) Binary data is sent as "application/octet-stream"
         if (
             chain[0].name == "http"
             and command.name == "write"
             and isinstance(body["data"]["content"], bytes)
         ):
-            req.set_header(
-                name="Content-Type", value="application/octet-stream"
-            )
+            req.write(req.boundary)
+            req.write("\r\nContent-Type: application/octet-stream\n")
             req.write(body["data"]["content"])
-            # Close this connection immediately,
-            # as no more data can be written to it.
-            story.app.logger.info(
-                "Connection has been closed "
-                "for service http implicitly, "
-                "as binary data was written to it."
-            )
-            io_loop.add_callback(req.finish)
-            return
-
-        # END hack for writing a binary response to the gateway
-
-        # Set the header for the first time to something we know.
-        req.set_header("Content-Type", "application/stream+json")
-
-        req.write(json.dumps(body, cls=HttpDataEncoder) + "\n")
+        else:
+            req.write(req.boundary)
+            req.write("\r\nContent-Type: application/stream+json\n")
+            req.write(json.dumps(body, cls=HttpDataEncoder) + "\n")
 
         # HTTP hack
         if chain[0].name == "http" and command.name == "finish":

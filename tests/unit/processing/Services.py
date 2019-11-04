@@ -5,7 +5,7 @@ import re
 import uuid
 from collections import deque, namedtuple
 from io import StringIO
-from unittest.mock import MagicMock, Mock
+from unittest.mock import call, MagicMock, Mock
 
 import pytest
 from pytest import fixture, mark
@@ -993,7 +993,7 @@ async def test_start_container_http(patch, story):
 @mark.parametrize("bin_content", [True, False])
 @mark.asyncio
 async def test_execute_inline(
-    patch, story, command, simulate_finished, bin_content
+    patch, story, command, simulate_finished, bin_content, magic
 ):
     # Not a valid combination.
     if bin_content and command != "write":
@@ -1007,6 +1007,7 @@ async def test_execute_inline(
         return req._finished
 
     req.is_finished = is_finished
+    del req.boundary
     io_loop = MagicMock()
     story.set_context(
         {
@@ -1025,12 +1026,15 @@ async def test_execute_inline(
         }
     }
 
+    boundary = ".boundary."
+    uuid_magic = magic()
+    uuid_magic.hex = boundary
+    patch.object(uuid, "uuid4", return_value=uuid_magic)
+
     if bin_content:
         patch.object(story, "argument_by_name", return_value=b"bin world!")
     else:
         patch.object(story, "argument_by_name", return_value="hello world!")
-
-    expected_body = {"command": command, "data": {"content": "hello world!"}}
 
     line = {}
 
@@ -1041,14 +1045,32 @@ async def test_execute_inline(
     else:
         await Services.execute_inline(story, line, chain, command_conf)
 
+    req.set_header.assert_called_with(
+        name="Content-Type", value=f"multipart/mixed; boundary={boundary}"
+    )
+
     if bin_content:
-        req.write.assert_called_with(b"bin world!")
+        assert req.write.call_count == 3
+        req.write.assert_has_calls(
+            [
+                call(f"\r\n--{boundary}"),
+                call("\r\nContent-Type: application/octet-stream\n"),
+                call(b"bin world!"),
+            ]
+        )
     else:
-        req.write.assert_called_with(
-            json.dumps(expected_body, cls=HttpDataEncoder) + "\n"
+        assert req.write.call_count == 3
+        req.write.assert_has_calls(
+            [
+                call(f"\r\n--{boundary}"),
+                call("\r\nContent-Type: application/stream+json\n"),
+                call(
+                    f'{{"command": "{command}", "data": {{"content": "hello world!"}}}}\n'
+                ),
+            ]
         )
 
-    if command == "finish" or bin_content:
+    if command == "finish":
         io_loop.add_callback.assert_called_with(req.finish)
     else:
         io_loop.add_callback.assert_not_called()
@@ -1219,6 +1241,7 @@ def test_http_data_encoder(patch):
         "key": b"v",
         "casedict": CaseInsensitiveDict(data={"key": "value"}),
         "regex": re.compile("/foo/i"),
+        "str": ".str.",
         "streaming_service": StreamingService(
             name="hello",
             command="world",
@@ -1236,6 +1259,7 @@ def test_http_data_encoder(patch):
             "key": "dg==",
             "casedict": {"key": "value"},
             "regex": "/foo/i",
+            "str": ".str.",
             "streaming_service": {"name": "hello", "command": "world"},
         }
     )

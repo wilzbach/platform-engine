@@ -113,3 +113,14 @@ class StoryEventHandler(BaseHandler):
                 payload["data"]["headers"] = headers
 
         return payload
+
+    def finish(self):
+        """
+        Finish a response connection.
+        If the response was multipart/mixed, finish the current boundary
+        and mark it as final.
+        """
+        if hasattr(self, "boundary"):
+            self.write(self.boundary)
+            self.write("--")  # mark the boundary as the final one
+        super().finish()
