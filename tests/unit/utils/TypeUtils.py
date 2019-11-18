@@ -117,3 +117,38 @@ def test_safe_type_caseinsensitivedict():
             "else": CaseInsensitiveDict(expected["else"]),
         }
     )
+
+
+def test_safe_type_nested(patch):
+
+    _safe_type = TypeUtils.safe_type
+
+    def safe_type(o):
+        return _safe_type(o)
+
+    patch.object(TypeUtils, "safe_type", side_effect=safe_type)
+
+    case_dict = CaseInsensitiveDict(
+        {
+            "hello": "world",
+            "WORLD": "hello",
+            "deeper": CaseInsensitiveDict(
+                {"hello": "world", "WORLD": "hello"}
+            ),
+        }
+    )
+    expected = {
+        "hello": "world",
+        "WORLD": "hello",
+        "else": {
+            "hello": "world",
+            "WORLD": "hello",
+            "deeper": {"hello": "world", "WORLD": "hello"},
+        },
+    }
+
+    assert expected == TypeUtils.safe_type(
+        {"hello": "world", "WORLD": "hello", "else": case_dict}
+    )
+
+    assert TypeUtils.safe_type.call_count == 9

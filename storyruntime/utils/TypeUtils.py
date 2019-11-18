@@ -54,10 +54,11 @@ class TypeUtils:
             return None
 
         if isinstance(o, dict) or isinstance(o, CaseInsensitiveDict):
+            _dict = {}
             for key, val in o.items():
-                o[key] = TypeUtils.safe_type(val)
+                _dict[key] = TypeUtils.safe_type(val)
 
-            return o
+            return _dict
         elif isinstance(o, list):
 
             def build_list():
@@ -65,7 +66,6 @@ class TypeUtils:
                     yield TypeUtils.safe_type(d)
 
             return list(build_list())
-
         elif isinstance(o, StreamingService):
             return SafeStreamingService(name=o.name, command=o.command)
         elif isinstance(o, InternalService):
