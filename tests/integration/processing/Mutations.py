@@ -57,11 +57,11 @@ from .Entities import Case, Suite
                     ],
                 ),
                 Case(
-                    append="e.decrement()",
+                    append="a = e.decrement()",
                     assertion=ContextAssertion(key="e", expected=10),
                 ),
                 Case(
-                    append="e.increment()",
+                    append="a = e.increment()",
                     assertion=ContextAssertion(key="e", expected=10),
                 ),
                 Case(
@@ -532,7 +532,7 @@ async def test_string_mutations(suite: Suite, logger, run_suite):
                     assertion=ContextAssertion(key="a", expected=False),
                 ),
                 Case(
-                    append="arr.remove(item: 3)",
+                    append="b = arr.remove(item: 3)",
                     assertion=ContextAssertion(
                         key="arr", expected=[1, 2, 2, 3, 4, 4, 5, 5]
                     ),
@@ -544,7 +544,7 @@ async def test_string_mutations(suite: Suite, logger, run_suite):
                     ),
                 ),
                 Case(
-                    append="arr.remove(item: 30)",
+                    append="b = arr.remove(item: 30)",
                     assertion=ContextAssertion(
                         key="arr", expected=[1, 2, 2, 3, 4, 4, 5, 5]
                     ),
